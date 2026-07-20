@@ -1,7 +1,8 @@
-import { create } from 'zustand'
-import type { WsMessage } from '../api/protocol'
+// State phiên (Zustand). Có thể dùng ngoài React qua getState() cho SessionController.
 
-export type WsStatus = 'disconnected' | 'connecting' | 'connected'
+import { create } from 'zustand'
+import type { WsStatus } from '../domain/enums'
+import type { WsMessage } from '../domain/events'
 
 interface SessionState {
   wsStatus: WsStatus
