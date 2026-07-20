@@ -1,4 +1,4 @@
-# SPEC: Ứng dụng dịch giọng nói trực tiếp bằng mô hình Local AI
+# SPEC: Ứng dụng dịch giọng nói gần thời gian thực bằng mô hình Local AI
 
 **Tên tạm thời:** Local Live Voice Translator
 **Phiên bản:** 1.0
@@ -697,7 +697,7 @@ Trách nhiệm:
 
 ### Desktop Client
 
-Có thể sử dụng Flutter Desktop để xây dựng:
+Desktop Client được xây dựng bằng Electron, React và TypeScript, đảm nhiệm:
 
 - Giao diện.
 - Quản lý trạng thái.
@@ -705,6 +705,7 @@ Có thể sử dụng Flutter Desktop để xây dựng:
 - Hiển thị phụ đề.
 - Lịch sử hội thoại.
 - Điều khiển session.
+- Phát audio TTS ra thiết bị output.
 
 ### Local AI Service
 
@@ -719,10 +720,8 @@ Một process local riêng đảm nhiệm:
 
 Desktop Client và AI Service giao tiếp qua:
 
-- WebSocket trên `127.0.0.1`.
-- Local socket.
-- gRPC.
-- Standard input/output trong bản prototype đơn giản.
+- REST API trên `127.0.0.1` cho cấu hình, model và lịch sử.
+- WebSocket trên `127.0.0.1` cho audio stream, transcript, kết quả dịch và trạng thái realtime.
 
 Service chỉ được lắng nghe trên localhost và không được mở truy cập từ mạng bên ngoài.
 
@@ -1125,9 +1124,12 @@ Biện pháp:
 
 ### Khác biệt giữa các hệ điều hành
 
-Audio loopback và virtual device hoạt động khác nhau trên Windows, macOS và Linux.
+Audio loopback và virtual device hoạt động khác nhau trên Windows và macOS:
 
-MVP nên chỉ chọn một hệ điều hành mục tiêu. Sau khi pipeline AI ổn định mới mở rộng sang hệ điều hành khác.
+- Windows 11 x64: WASAPI Loopback để thu system audio và VB-CABLE làm virtual microphone.
+- macOS 13 trở lên trên Apple Silicon: ScreenCaptureKit để thu system audio và BlackHole 2ch làm virtual microphone.
+
+MVP hướng tới cả hai hệ điều hành mục tiêu này. Toàn bộ logic đặc thù nền tảng phải nằm sau một audio abstraction layer để pipeline AI dùng chung cho cả Windows và macOS.
 
 ---
 

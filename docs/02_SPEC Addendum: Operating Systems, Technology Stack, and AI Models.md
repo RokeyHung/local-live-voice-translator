@@ -117,7 +117,7 @@ Apple Silicon là mục tiêu hiệu năng chính vì có thể sử dụng Meta
 Best-effort / CPU only
 ```
 
-Không áp dụng tiêu chí độ trễ realtime chính thức cho Mac Intel trong MVP. TranscriptionSuite cũng chỉ cung cấp hướng CPU cho Intel Mac và cảnh báo hiệu năng thấp hơn so với Apple Silicon.
+Theo phạm vi đề cương, macOS chính thức chỉ giới hạn ở Apple Silicon; Mac Intel nằm ngoài phạm vi MVP và không áp dụng tiêu chí độ trễ realtime chính thức. TranscriptionSuite cũng chỉ cung cấp hướng CPU cho Intel Mac và cảnh báo hiệu năng thấp hơn so với Apple Silicon.
 
 ---
 
