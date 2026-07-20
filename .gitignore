@@ -1,0 +1,30 @@
+# Node / Electron
+node_modules/
+dist/
+dist-electron/
+release/
+*.local
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.uv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Models & data (không commit model lớn / dữ liệu phiên)
+models/
+*.gguf
+*.onnx
+*.bin
+data/
+*.sqlite
+*.sqlite3
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+*.log
