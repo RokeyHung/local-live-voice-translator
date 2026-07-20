@@ -1,5 +1,5 @@
-import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge } from 'electron'
 
 // Cấu hình kết nối tới Local AI Service (chỉ localhost). Expose an toàn cho renderer.
 const llvt = {

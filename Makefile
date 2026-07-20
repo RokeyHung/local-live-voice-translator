@@ -48,9 +48,9 @@ lint: ## Lint desktop (eslint) + service (ruff)
 	cd $(DESKTOP_DIR) && $(NPM) run lint
 	cd $(AI_DIR) && $(UV) run ruff check .
 
-format: ## Format desktop (prettier) + service (ruff)
+format: ## Sort imports + format cả hai app
 	cd $(DESKTOP_DIR) && $(NPM) run format
-	cd $(AI_DIR) && $(UV) run ruff format .
+	cd $(AI_DIR) && $(UV) run ruff check --select I --fix . && $(UV) run ruff format .
 
 health: ## Gọi thử endpoint /health của AI service
 	@curl -s http://127.0.0.1:8756/health && echo

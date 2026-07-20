@@ -1,0 +1,94 @@
+"""Đăng ký adapter + nạp/giải phóng provider theo preset.
+
+Đây là "composition root" của tầng model: nơi duy nhất biết adapter cụ thể nào
+ứng với tên nào. Pipeline chỉ thấy ProviderSet (các port).
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from typing import Callable
+
+from llvt_ai_service.adapters.asr.faster_whisper import FasterWhisperAsr
+from llvt_ai_service.adapters.asr.whisper_cpp import WhisperCppAsr
+from llvt_ai_service.adapters.mt.nllb import NllbTranslator
+from llvt_ai_service.adapters.tts.sherpa_onnx import SherpaOnnxTts
+from llvt_ai_service.adapters.vad.silero import SileroVad
+from llvt_ai_service.config.presets import PresetConfig, get_preset_config
+from llvt_ai_service.domain.enums import Preset
+from llvt_ai_service.ports.asr import SpeechToTextProvider
+from llvt_ai_service.ports.translator import TranslationProvider
+from llvt_ai_service.ports.tts import TextToSpeechProvider
+from llvt_ai_service.ports.vad import VoiceActivityDetector
+
+logger = logging.getLogger("llvt.model_manager")
+
+
+@dataclass
+class ProviderSet:
+    vad: VoiceActivityDetector
+    asr: SpeechToTextProvider
+    mt: TranslationProvider
+    tts: TextToSpeechProvider
+
+
+# Registry: tên adapter -> factory. Thêm backend mới = thêm 1 dòng ở đây.
+VAD_REGISTRY: dict[str, Callable[[PresetConfig], VoiceActivityDetector]] = {
+    "silero": lambda _cfg: SileroVad(),
+}
+ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
+    "whisper_cpp": lambda cfg: WhisperCppAsr(cfg.asr_model),
+    "faster_whisper": lambda cfg: FasterWhisperAsr(cfg.asr_model),
+}
+MT_REGISTRY: dict[str, Callable[[PresetConfig], TranslationProvider]] = {
+    "nllb": lambda cfg: NllbTranslator(cfg.mt_model),
+}
+TTS_REGISTRY: dict[str, Callable[[PresetConfig], TextToSpeechProvider]] = {
+    "sherpa_onnx": lambda _cfg: SherpaOnnxTts(),
+}
+
+
+class ModelManager:
+    def __init__(self) -> None:
+        self._providers: ProviderSet | None = None
+        self._preset: Preset | None = None
+
+    @property
+    def preset(self) -> Preset | None:
+        return self._preset
+
+    @property
+    def providers(self) -> ProviderSet:
+        if self._providers is None:
+            raise RuntimeError("Chưa nạp preset — gọi load_preset() trước.")
+        return self._providers
+
+    async def load_preset(self, preset: Preset) -> ProviderSet:
+        await self.unload()
+        cfg = get_preset_config(preset)
+        providers = ProviderSet(
+            vad=VAD_REGISTRY[cfg.vad_adapter](cfg),
+            asr=ASR_REGISTRY[cfg.asr_adapter](cfg),
+            mt=MT_REGISTRY[cfg.mt_adapter](cfg),
+            tts=TTS_REGISTRY[cfg.tts_adapter](cfg),
+        )
+        for provider in (providers.vad, providers.asr, providers.mt, providers.tts):
+            await provider.load()
+        self._providers = providers
+        self._preset = preset
+        logger.info("Loaded preset=%s", preset.value)
+        return providers
+
+    async def unload(self) -> None:
+        if self._providers is None:
+            return
+        for provider in (
+            self._providers.vad,
+            self._providers.asr,
+            self._providers.mt,
+            self._providers.tts,
+        ):
+            await provider.unload()
+        self._providers = None
+        self._preset = None

@@ -10,14 +10,14 @@ Tài liệu này bám theo đề cương [`00_project-outline.md`](00_project-ou
 
 ## 1. Tổng hợp yêu cầu cốt lõi
 
-| Nhóm | Yêu cầu rút gọn |
-| ---- | --------------- |
-| Chức năng | Thu microphone + system audio → VAD → ASR → MT → (Subtitle / TTS) → virtual microphone |
-| Ngôn ngữ | 6 chiều: Việt ↔ Anh, Việt ↔ Nhật, Việt ↔ Trung (giản thể) |
-| Nền tảng | Windows 11 x64; macOS 13+ Apple Silicon (arm64) |
-| Riêng tư | Không cloud trong lúc phiên dịch; xử lý hoàn toàn local; không lưu audio mặc định |
-| Độ trễ | "Gần thời gian thực" theo từng utterance; outgoing tổng ~≤4s, subtitle incoming ~≤3s (máy có GPU phù hợp) |
-| Ổn định | Chạy liên tục ≥60 phút, không rò rỉ RAM, khôi phục pipeline độc lập |
+| Nhóm      | Yêu cầu rút gọn                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------- |
+| Chức năng | Thu microphone + system audio → VAD → ASR → MT → (Subtitle / TTS) → virtual microphone                      |
+| Ngôn ngữ  | 6 chiều: Việt ↔ Anh, Việt ↔ Nhật, Việt ↔ Trung (giản thể)                                                   |
+| Nền tảng  | Windows 11 x64; macOS 13+ Apple Silicon (arm64)                                                             |
+| Riêng tư  | Không cloud trong lúc phiên dịch; xử lý hoàn toàn local; không lưu audio mặc định                           |
+| Độ trễ    | "Gần thời gian thực" theo từng utterance; outgoing tổng ~≤4s, subtitle incoming ~≤3s (máy có GPU phù hợp)   |
+| Ổn định   | Chạy liên tục ≥60 phút, không rò rỉ RAM, khôi phục pipeline độc lập                                         |
 | Kiến trúc | 2 tiến trình: Electron desktop client + Python local AI service, giao tiếp REST + WebSocket qua `127.0.0.1` |
 
 ---
@@ -26,29 +26,29 @@ Tài liệu này bám theo đề cương [`00_project-outline.md`](00_project-ou
 
 ### 2.1. Voice Activity Detection (VAD)
 
-| Giải pháp | Ưu điểm | Hạn chế | Kết luận |
-| --------- | ------- | ------- | -------- |
-| **Silero VAD** | Nhẹ, chính xác cao, đa ngôn ngữ, chạy CPU tốt, ONNX/PyTorch | Cần load model nhỏ | **Chọn làm mặc định** |
-| WebRTC VAD | Cực nhẹ, latency ~0 | Chỉ dựa trên năng lượng, dễ nhầm tiếng ồn | Dùng làm energy gate / fallback |
+| Giải pháp      | Ưu điểm                                                     | Hạn chế                                   | Kết luận                        |
+| -------------- | ----------------------------------------------------------- | ----------------------------------------- | ------------------------------- |
+| **Silero VAD** | Nhẹ, chính xác cao, đa ngôn ngữ, chạy CPU tốt, ONNX/PyTorch | Cần load model nhỏ                        | **Chọn làm mặc định**           |
+| WebRTC VAD     | Cực nhẹ, latency ~0                                         | Chỉ dựa trên năng lượng, dễ nhầm tiếng ồn | Dùng làm energy gate / fallback |
 
 > Quyết định: **Silero VAD** là bộ phát hiện chính; WebRTC VAD làm cổng năng lượng sơ bộ và fallback khi Silero chưa load được.
 
 ### 2.2. Automatic Speech Recognition (ASR)
 
-| Runtime | Nền tảng mạnh | Ghi chú |
-| ------- | ------------- | ------- |
-| **whisper.cpp** | Windows (CPU/CUDA/Vulkan), macOS (Metal/CoreML) | Chạy chung một runtime cho cả 2 OS, hỗ trợ model quantized, C API dễ nhúng → **runtime mặc định** |
-| faster-whisper (CTranslate2) | Windows + NVIDIA CUDA | Backend tăng tốc tùy chọn (giai đoạn tối ưu) |
-| MLX Whisper | macOS Apple Silicon | Backend tối ưu tùy chọn cho Apple Silicon |
+| Runtime                      | Nền tảng mạnh                                   | Ghi chú                                                                                           |
+| ---------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **whisper.cpp**              | Windows (CPU/CUDA/Vulkan), macOS (Metal/CoreML) | Chạy chung một runtime cho cả 2 OS, hỗ trợ model quantized, C API dễ nhúng → **runtime mặc định** |
+| faster-whisper (CTranslate2) | Windows + NVIDIA CUDA                           | Backend tăng tốc tùy chọn (giai đoạn tối ưu)                                                      |
+| MLX Whisper                  | macOS Apple Silicon                             | Backend tối ưu tùy chọn cho Apple Silicon                                                         |
 
 **Model mặc định:** Whisper `large-v3-turbo` quantized **Q5** (preset Balanced). Chỉ dùng task `transcribe` (không dùng `translate` của Whisper) rồi chuyển text sang module dịch riêng. Ngôn ngữ đầu vào truyền tường minh: `vi`, `en`, `ja`, `zh`.
 
 ### 2.3. Machine Translation (MT)
 
-| Model | Ưu điểm | Hạn chế | Kết luận |
-| ----- | ------- | ------- | -------- |
-| **NLLB-200 distilled 600M** | Bao phủ 4 ngôn ngữ mục tiêu, dịch câu/đoạn ngắn ổn định, nhẹ | Giấy phép CC-BY-NC-4.0 (phi thương mại), yếu với văn bản dài | **Mặc định** cho Fast/Balanced |
-| Qwen3-4B-Instruct | Dịch tự nhiên, tận dụng ngữ cảnh | Generative → nguy cơ thêm/bớt nội dung, tốn RAM/VRAM, độ trễ cao | Tùy chọn cho preset Quality |
+| Model                       | Ưu điểm                                                      | Hạn chế                                                          | Kết luận                       |
+| --------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------- | ------------------------------ |
+| **NLLB-200 distilled 600M** | Bao phủ 4 ngôn ngữ mục tiêu, dịch câu/đoạn ngắn ổn định, nhẹ | Giấy phép CC-BY-NC-4.0 (phi thương mại), yếu với văn bản dài     | **Mặc định** cho Fast/Balanced |
+| Qwen3-4B-Instruct           | Dịch tự nhiên, tận dụng ngữ cảnh                             | Generative → nguy cơ thêm/bớt nội dung, tốn RAM/VRAM, độ trễ cao | Tùy chọn cho preset Quality    |
 
 Mã ngôn ngữ NLLB: `vie_Latn`, `eng_Latn`, `jpn_Jpan`, `zho_Hans`. Chỉ dịch trên transcript **final** (không dịch partial liên tục).
 
@@ -56,23 +56,23 @@ Mã ngôn ngữ NLLB: `vie_Latn`, `eng_Latn`, `jpn_Jpan`, `zho_Hans`. Chỉ dị
 
 Runtime: **sherpa-onnx** (offline, ONNX, đa nền tảng, một runtime chung để giảm dependency native).
 
-| Ngôn ngữ | Voice model đề xuất |
-| -------- | ------------------- |
-| Việt | `vits-piper-vi_VN-vais1000-medium` |
-| Anh | `vits-piper-en_US-lessac-medium` |
-| Nhật | `supertonic-3-ja` |
-| Trung | `vits-piper-zh_CN-xiao_ya-medium` |
+| Ngôn ngữ | Voice model đề xuất                |
+| -------- | ---------------------------------- |
+| Việt     | `vits-piper-vi_VN-vais1000-medium` |
+| Anh      | `vits-piper-en_US-lessac-medium`   |
+| Nhật     | `supertonic-3-ja`                  |
+| Trung    | `vits-piper-zh_CN-xiao_ya-medium`  |
 
 > Lưu ý: kiểm tra giấy phép từng voice model trước khi đóng gói phân phối (runtime và voice có thể khác license).
 
 ### 2.5. Thu và định tuyến âm thanh theo nền tảng
 
-| Chức năng | Windows 11 x64 | macOS 13+ (Apple Silicon) |
-| --------- | -------------- | ------------------------- |
-| Thu microphone | WASAPI | CoreAudio |
-| Thu system audio | **WASAPI Loopback** | **ScreenCaptureKit** (bật loại trừ audio của chính app) |
-| Virtual microphone (đưa TTS vào Google Meet) | **VB-CABLE** | **BlackHole 2ch** |
-| Quyền cần xin | — | Microphone + Screen & System Audio Recording |
+| Chức năng                                    | Windows 11 x64      | macOS 13+ (Apple Silicon)                               |
+| -------------------------------------------- | ------------------- | ------------------------------------------------------- |
+| Thu microphone                               | WASAPI              | CoreAudio                                               |
+| Thu system audio                             | **WASAPI Loopback** | **ScreenCaptureKit** (bật loại trừ audio của chính app) |
+| Virtual microphone (đưa TTS vào Google Meet) | **VB-CABLE**        | **BlackHole 2ch**                                       |
+| Quyền cần xin                                | —                   | Microphone + Screen & System Audio Recording            |
 
 Logic đặc thù OS phải nằm sau abstraction layer (`AudioCaptureAdapter` / `AudioOutputAdapter` / `AudioDeviceManager`), Electron không phụ thuộc trực tiếp API của OS.
 
@@ -88,7 +88,7 @@ Logic đặc thù OS phải nằm sau abstraction layer (`AudioCaptureAdapter` /
 │ React + TS + Tailwind         │◀──────▶│ FastAPI + SQLite              │
 │ Zustand + TanStack Query      │   WS   │ VAD · ASR · MT · TTS          │
 │ Audio abstraction (native)    │◀──────▶│ Model manager · Metrics       │
-└──────────────────────────────┘  127.0.0.1 (localhost-only)            
+└──────────────────────────────┘  127.0.0.1 (localhost-only)
 ```
 
 - **Desktop client:** UI, chọn thiết bị, điều khiển phiên, subtitle, lịch sử, phát audio ra output device, thu/định tuyến audio native.
@@ -123,14 +123,14 @@ Mỗi utterance có `id` duy nhất, không xử lý trùng, theo dõi xuyên su
 
 ### 4.1. REST (cấu hình / model / lịch sử)
 
-| Method | Path | Mục đích |
-| ------ | ---- | -------- |
-| GET | `/health` | Trạng thái service, version, `offlineReady`, platform |
-| GET | `/api/config` | Lấy cấu hình hiện tại |
-| PUT | `/api/config` | Cập nhật cấu hình (ngôn ngữ, preset, thiết bị) |
-| GET | `/api/models` | Danh sách model + trạng thái cài đặt |
-| GET | `/api/sessions` | Lịch sử phiên |
-| DELETE | `/api/sessions/{id}` | Xóa phiên |
+| Method | Path                 | Mục đích                                              |
+| ------ | -------------------- | ----------------------------------------------------- |
+| GET    | `/health`            | Trạng thái service, version, `offlineReady`, platform |
+| GET    | `/api/config`        | Lấy cấu hình hiện tại                                 |
+| PUT    | `/api/config`        | Cập nhật cấu hình (ngôn ngữ, preset, thiết bị)        |
+| GET    | `/api/models`        | Danh sách model + trạng thái cài đặt                  |
+| GET    | `/api/sessions`      | Lịch sử phiên                                         |
+| DELETE | `/api/sessions/{id}` | Xóa phiên                                             |
 
 ### 4.2. WebSocket `/ws` — envelope chung
 
@@ -140,18 +140,18 @@ Mọi message là JSON có `type`, `ts` (epoch ms) và `payload`:
 { "type": "asr.partial", "ts": 1721500000000, "payload": { "utteranceId": "…", "text": "…" } }
 ```
 
-| Hướng | `type` | payload chính |
-| ----- | ------ | ------------- |
-| Client→Service | `session.start` | mode, incoming/outgoing language, preset |
-| Client→Service | `session.stop` | — |
-| Client→Service | `audio.chunk` | source (`microphone`/`system`), pcm base64, seq |
-| Client→Service | `control.ptt` | pressed (bool) |
-| Service→Client | `state` | utteranceId, state |
-| Service→Client | `asr.partial` / `asr.final` | utteranceId, language, text, confidence |
-| Service→Client | `mt.result` | utteranceId, sourceText, translatedText |
-| Service→Client | `tts.audio` | requestId, pcm base64, sampleRate |
-| Service→Client | `metrics` | asrMs, mtMs, ttsMs, cpu, ram, gpu, vram |
-| Service→Client | `error` | code, message, utteranceId? |
+| Hướng          | `type`                      | payload chính                                   |
+| -------------- | --------------------------- | ----------------------------------------------- |
+| Client→Service | `session.start`             | mode, incoming/outgoing language, preset        |
+| Client→Service | `session.stop`              | —                                               |
+| Client→Service | `audio.chunk`               | source (`microphone`/`system`), pcm base64, seq |
+| Client→Service | `control.ptt`               | pressed (bool)                                  |
+| Service→Client | `state`                     | utteranceId, state                              |
+| Service→Client | `asr.partial` / `asr.final` | utteranceId, language, text, confidence         |
+| Service→Client | `mt.result`                 | utteranceId, sourceText, translatedText         |
+| Service→Client | `tts.audio`                 | requestId, pcm base64, sampleRate               |
+| Service→Client | `metrics`                   | asrMs, mtMs, ttsMs, cpu, ram, gpu, vram         |
+| Service→Client | `error`                     | code, message, utteranceId?                     |
 
 Audio format nội bộ ASR: PCM signed 16-bit, mono, 16 kHz, frame 20–100 ms. Module audio tự resample về định dạng model yêu cầu.
 
@@ -176,6 +176,7 @@ local-live-voice-translator/
 **Yêu cầu chung:** Node ≥ 20, Python 3.11/3.12 (đã kiểm thử chạy được trên 3.13), `uv` (hoặc `venv`+`pip`).
 
 **AI service:**
+
 ```bash
 cd apps/ai-service
 uv sync                      # hoặc: python3 -m venv .venv && pip install -e .
@@ -183,6 +184,7 @@ uv run llvt-ai-service       # hoặc: uvicorn app.main:app --host 127.0.0.1 --p
 ```
 
 **Desktop client:**
+
 ```bash
 cd apps/desktop
 npm install
@@ -191,7 +193,7 @@ npm run dev                  # Vite + Electron
 
 **Thiết bị âm thanh ảo (thủ công một lần):** cài VB-CABLE (Windows) hoặc BlackHole 2ch (macOS); cấu hình Google Meet dùng thiết bị ảo làm microphone. Chi tiết ở SPEC 02 §12.
 
-Khi service chạy, mở `http://127.0.0.1:8756/health` phải trả `{"status":"ok", ...}`; desktop client hiển thị trạng thái kết nối REST + WS là *Connected*.
+Khi service chạy, mở `http://127.0.0.1:8756/health` phải trả `{"status":"ok", ...}`; desktop client hiển thị trạng thái kết nối REST + WS là _Connected_.
 
 ---
 

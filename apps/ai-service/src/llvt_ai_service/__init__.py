@@ -9,10 +9,11 @@ def main() -> None:
     """Entry point cho `llvt-ai-service`. Chỉ phục vụ trên 127.0.0.1."""
     import uvicorn
 
-    from llvt_ai_service.config import settings
+    from llvt_ai_service.config.settings import get_settings
 
+    settings = get_settings()
     uvicorn.run(
-        "llvt_ai_service.server:app",
+        "llvt_ai_service.app:app",
         host=settings.host,
         port=settings.port,
         reload=False,

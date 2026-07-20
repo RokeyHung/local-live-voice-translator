@@ -1,17 +1,26 @@
-"""WebSocket phiên dịch.
+"""WebSocket transport (mỏng): cầu nối message ↔ SessionController.
 
-Tuần 1: chỉ thiết lập kênh + envelope và phản hồi trạng thái cơ bản để kiểm
-tra kết nối. Pipeline VAD/ASR/MT/TTS sẽ được nối vào từ các tuần sau.
+Không chứa logic nghiệp vụ — chỉ parse message, gọi controller và stream event.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
-from llvt_ai_service.protocol import PipelineState, WsMessage, server_message
+from llvt_ai_service.application.container import Container
+from llvt_ai_service.application.session_service import SessionController
+from llvt_ai_service.domain import events as ev
+from llvt_ai_service.domain.enums import PipelineState
+from llvt_ai_service.ws.protocol import (
+    WsMessage,
+    event_to_wire,
+    parse_audio_chunk,
+    parse_session_config,
+)
 
 logger = logging.getLogger("llvt.ws")
 
@@ -21,45 +30,48 @@ router = APIRouter()
 @router.websocket("/ws")
 async def ws_session(ws: WebSocket) -> None:
     await ws.accept()
-    # Báo cho client biết kênh đã sẵn sàng.
-    await ws.send_json(server_message("state", state=PipelineState.idle.value).model_dump())
+    container: Container = ws.app.state.container
 
+    out_queue: asyncio.Queue[ev.PipelineEvent] = asyncio.Queue()
+
+    async def emit(event: ev.PipelineEvent) -> None:
+        await out_queue.put(event)
+
+    controller = container.session_service.new_controller(emit)
+    await emit(ev.StateChanged(PipelineState.idle))
+
+    sender = asyncio.create_task(_pump(ws, out_queue))
     try:
         while True:
             raw = await ws.receive_json()
-            try:
-                msg = WsMessage.model_validate(raw)
-            except ValidationError as exc:
-                await ws.send_json(
-                    server_message("error", code="bad_message", message=str(exc)).model_dump()
-                )
-                continue
-
-            await _handle(ws, msg)
+            await _dispatch(controller, raw, emit)
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected")
+    finally:
+        sender.cancel()
 
 
-async def _handle(ws: WebSocket, msg: WsMessage) -> None:
-    """Router message tối thiểu cho Tuần 1."""
+async def _pump(ws: WebSocket, queue: asyncio.Queue[ev.PipelineEvent]) -> None:
+    """Đọc event từ queue và đẩy ra client (tách khỏi vòng nhận để stream song song)."""
+    while True:
+        event = await queue.get()
+        await ws.send_json(event_to_wire(event))
+
+
+async def _dispatch(controller: SessionController, raw: object, emit) -> None:
+    try:
+        msg = WsMessage.model_validate(raw)
+    except ValidationError as exc:
+        await emit(ev.PipelineError(code="bad_message", message=str(exc)))
+        return
+
     if msg.type == "session.start":
-        await ws.send_json(
-            server_message("state", state=PipelineState.listening.value).model_dump()
-        )
+        await controller.start(parse_session_config(msg.payload))
     elif msg.type == "session.stop":
-        await ws.send_json(
-            server_message("state", state=PipelineState.stopped.value).model_dump()
-        )
+        await controller.stop()
     elif msg.type == "control.ptt":
-        pressed = bool(msg.payload.get("pressed"))
-        state = PipelineState.speech_detected if pressed else PipelineState.listening
-        await ws.send_json(server_message("state", state=state.value).model_dump())
+        await controller.on_ptt(bool(msg.payload.get("pressed")))
     elif msg.type == "audio.chunk":
-        # Placeholder: các tuần sau đẩy chunk vào VAD/ASR.
-        pass
+        await controller.on_audio(parse_audio_chunk("", msg.payload))
     else:
-        await ws.send_json(
-            server_message(
-                "error", code="unknown_type", message=f"Unsupported type: {msg.type}"
-            ).model_dump()
-        )
+        await emit(ev.PipelineError(code="unknown_type", message=f"Unsupported type: {msg.type}"))

@@ -1,8 +1,8 @@
-import { useEffect, useRef, type JSX, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, type JSX, type ReactNode } from 'react'
 import { fetchHealth } from './api/client'
-import { connectSession, sendMessage } from './api/ws'
 import { PLATFORM } from './api/config'
+import { connectSession, sendMessage } from './api/ws'
 import { useSessionStore } from './store/session'
 
 function StatusDot({ ok }: { ok: boolean }): JSX.Element {
