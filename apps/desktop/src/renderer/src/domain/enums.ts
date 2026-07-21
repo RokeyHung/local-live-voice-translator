@@ -20,5 +20,7 @@ export type Language = 'vi' | 'en' | 'ja' | 'zh'
 
 export type SessionMode = 'listen' | 'speak' | 'two_way'
 
+export type Preset = 'fast' | 'balanced' | 'quality'
+
 // Trạng thái kết nối WebSocket (khái niệm riêng của client).
 export type WsStatus = 'disconnected' | 'connecting' | 'connected'
