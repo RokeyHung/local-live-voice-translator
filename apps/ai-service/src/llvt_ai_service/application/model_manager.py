@@ -16,6 +16,7 @@ from llvt_ai_service.adapters.mt.nllb import NllbTranslator
 from llvt_ai_service.adapters.tts.sherpa_onnx import SherpaOnnxTts
 from llvt_ai_service.adapters.vad.silero import SileroVad
 from llvt_ai_service.config.presets import PresetConfig, get_preset_config
+from llvt_ai_service.config.settings import get_settings
 from llvt_ai_service.domain.enums import Preset
 from llvt_ai_service.ports.asr import SpeechToTextProvider
 from llvt_ai_service.ports.translator import TranslationProvider
@@ -38,7 +39,10 @@ VAD_REGISTRY: dict[str, Callable[[PresetConfig], VoiceActivityDetector]] = {
     "silero": lambda _cfg: SileroVad(),
 }
 ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
-    "whisper_cpp": lambda cfg: WhisperCppAsr(cfg.asr_model),
+    "whisper_cpp": lambda cfg: WhisperCppAsr(
+        cfg.asr_model,
+        models_dir=str(get_settings().models_dir / "whisper-cpp"),
+    ),
     "faster_whisper": lambda cfg: FasterWhisperAsr(cfg.asr_model),
 }
 MT_REGISTRY: dict[str, Callable[[PresetConfig], TranslationProvider]] = {
