@@ -13,7 +13,7 @@ export default function App(): JSX.Element {
       <header className="mb-6">
         <h1 className="text-xl font-semibold">Local Live Voice Translator</h1>
         <p className="text-sm text-slate-400">
-          Tuần 1 — kiểm tra kết nối desktop client ↔ local AI service ({PLATFORM})
+          Tuần 2 — thu microphone → VAD (Silero) qua local AI service ({PLATFORM})
         </p>
       </header>
 
