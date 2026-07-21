@@ -1,9 +1,10 @@
 """Fixtures dùng chung cho test suite.
 
-Quan trọng: ``app`` nạp preset mặc định trong lifespan → gọi ``WhisperCppAsr.load()``,
-mà thật thì sẽ TẢI model GGML (hàng trăm MB) từ HF. Fixture autouse dưới đây thay
-loader thật bằng ``FakeWhisperModel`` để mọi test dựa trên ``TestClient`` chạy nhanh,
-offline và xác định. Test tích hợp model thật là opt-in (xem test_asr.py).
+Quan trọng: ``app`` nạp preset mặc định trong lifespan → gọi ``load()`` của các
+provider, mà thật thì sẽ TẢI model (GGML hàng trăm MB cho ASR, ~2.4GB cho NLLB) từ
+HF. Các fixture autouse dưới đây thay loader thật bằng bản giả để mọi test dựa trên
+``TestClient`` chạy nhanh, offline và xác định. Test tích hợp model thật là opt-in
+(xem test_asr.py / test_mt.py).
 """
 
 from __future__ import annotations
@@ -32,6 +33,17 @@ class FakeWhisperModel:
         return [FakeSegment(self._text)]
 
 
+class FakeNllbBackend:
+    """Bản giả backend NLLB: ghi lại lời gọi, trả text có tiền tố mã đích."""
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, str]] = []
+
+    def translate(self, text: str, src_code: str, tgt_code: str) -> str:
+        self.calls.append({"text": text, "src": src_code, "tgt": tgt_code})
+        return f"[{tgt_code}] {text}"
+
+
 @pytest.fixture(autouse=True)
 def _fake_asr_loader(monkeypatch: pytest.MonkeyPatch) -> None:
     """Chặn tải model thật khi lifespan nạp preset mặc định."""
@@ -40,3 +52,11 @@ def _fake_asr_loader(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         whisper_cpp, "_default_loader", lambda _model_id, _models_dir: FakeWhisperModel()
     )
+
+
+@pytest.fixture(autouse=True)
+def _fake_mt_loader(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Chặn tải NLLB thật khi lifespan nạp preset mặc định."""
+    from llvt_ai_service.adapters.mt import nllb
+
+    monkeypatch.setattr(nllb, "_default_loader", lambda _repo, _dir, _device: FakeNllbBackend())

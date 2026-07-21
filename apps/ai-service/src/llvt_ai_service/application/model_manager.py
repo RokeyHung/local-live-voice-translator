@@ -46,7 +46,10 @@ ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
     "faster_whisper": lambda cfg: FasterWhisperAsr(cfg.asr_model),
 }
 MT_REGISTRY: dict[str, Callable[[PresetConfig], TranslationProvider]] = {
-    "nllb": lambda cfg: NllbTranslator(cfg.mt_model),
+    "nllb": lambda cfg: NllbTranslator(
+        cfg.mt_model,
+        models_dir=str(get_settings().models_dir / "nllb"),
+    ),
 }
 TTS_REGISTRY: dict[str, Callable[[PresetConfig], TextToSpeechProvider]] = {
     "sherpa_onnx": lambda _cfg: SherpaOnnxTts(),
