@@ -4,7 +4,7 @@
 **Mục tiêu tuần:** Tổng hợp yêu cầu, khảo sát giải pháp ASR/MT/TTS/VAD chạy local, chốt kiến trúc sơ bộ và quy ước giao tiếp, dựng môi trường phát triển chạy được trên cả Windows và macOS.
 **Kết quả mong đợi:** Tài liệu khảo sát + kiến trúc sơ bộ (tài liệu này) và môi trường phát triển hai tiến trình hoạt động trên hai nền tảng.
 
-Tài liệu này bám theo đề cương [`00_project-outline.md`](00_project-outline.md), SPEC [`01`](<01_SPEC: Real-Time Voice Translation Application Using Local AI Models.md>) và SPEC Addendum [`02`](<02_SPEC Addendum: Operating Systems, Technology Stack, and AI Models.md>).
+Tài liệu này bám theo đề cương [`00_project-outline.md`](00_project-outline.md), SPEC [`01`](01_spec-realtime-voice-translation.md) và SPEC Addendum [`02`](02_spec-addendum-os-stack-models.md).
 
 ---
 
@@ -119,7 +119,7 @@ Mỗi utterance có `id` duy nhất, không xử lý trùng, theo dõi xuyên su
 
 ## 4. Quy ước giao tiếp (Communication Contract)
 
-Định nghĩa dùng chung giữa hai tiến trình. Bản Pydantic: `apps/ai-service/src/llvt_ai_service/protocol.py`; bản TypeScript mirror: `apps/desktop/src/renderer/src/api/protocol.ts`.
+Định nghĩa dùng chung giữa hai tiến trình. Bản Pydantic: `apps/ai-service/src/llvt_ai_service/ws/protocol.py` + `schemas.py`; bản TypeScript mirror: `apps/desktop/src/renderer/src/domain/{events,models,enums}.ts`.
 
 ### 4.1. REST (cấu hình / model / lịch sử)
 

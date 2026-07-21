@@ -4,7 +4,7 @@
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
 
-> Tài liệu: [đề cương](docs/00_project-outline.md) · [SPEC](<docs/01_SPEC: Real-Time Voice Translation Application Using Local AI Models.md>) · [SPEC Addendum](<docs/02_SPEC Addendum: Operating Systems, Technology Stack, and AI Models.md>) · [Khảo sát & nền tảng (Tuần 1)](docs/03_week1-survey-and-foundation.md)
+> Tài liệu: [đề cương](docs/00_project-outline.md) · [SPEC](docs/01_spec-realtime-voice-translation.md) · [SPEC Addendum](docs/02_spec-addendum-os-stack-models.md) · [Khảo sát & nền tảng (Tuần 1)](docs/03_week1-survey-and-foundation.md)
 
 ## Cấu trúc
 
@@ -27,16 +27,16 @@ make dev       # chạy đồng thời AI service + desktop (Ctrl+C dừng cả 
 
 Các lệnh khác: `make help` để xem đầy đủ.
 
-| Lệnh | Tác dụng |
-| ---- | -------- |
-| `make setup` | Cài phụ thuộc (uv sync + npm install) |
-| `make dev` | Chạy AI service + desktop cùng lúc |
-| `make service` / `make desktop` | Chạy riêng từng phần |
-| `make build` | Typecheck + build desktop |
-| `make test` | Chạy pytest cho AI service |
-| `make lint` / `make format` | Lint / format cả hai app |
-| `make health` | Gọi thử `GET /health` |
-| `make clean` | Xóa venv, node_modules, build output |
+| Lệnh                            | Tác dụng                              |
+| ------------------------------- | ------------------------------------- |
+| `make setup`                    | Cài phụ thuộc (uv sync + npm install) |
+| `make dev`                      | Chạy AI service + desktop cùng lúc    |
+| `make service` / `make desktop` | Chạy riêng từng phần                  |
+| `make build`                    | Typecheck + build desktop             |
+| `make test`                     | Chạy pytest cho AI service            |
+| `make lint` / `make format`     | Lint / format cả hai app              |
+| `make health`                   | Gọi thử `GET /health`                 |
+| `make clean`                    | Xóa venv, node_modules, build output  |
 
 ## Chạy thủ công
 
