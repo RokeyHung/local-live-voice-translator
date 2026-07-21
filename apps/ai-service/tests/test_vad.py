@@ -135,10 +135,10 @@ def test_integration_real_silero():
 
 
 def test_ws_audio_triggers_pipeline():
-    """Contract desktop→service: audio.chunk giọng nói → VAD cắt segment → pipeline chạy.
+    """Contract desktop→service: audio.chunk giọng nói → VAD cắt segment → cả pipeline chạy.
 
-    ASR còn là stub nên phát 'error: not_implemented' — chính điều đó chứng minh VAD đã
-    cắt được một utterance và đẩy qua đúng luồng WS.
+    Với provider giả (conftest), luồng chạy trọn vẹn VAD→ASR→MT→TTS và phát đủ event
+    tới trạng thái Completed — chứng minh VAD cắt được utterance và đẩy qua đúng luồng WS.
     """
     pcm = np.concatenate((_voiced_pcm(1.0), np.zeros(int(SR * 0.6), dtype=np.int16)))
     b64 = base64.b64encode(pcm.tobytes()).decode()
@@ -161,10 +161,11 @@ def test_ws_audio_triggers_pipeline():
                 {"type": "audio.chunk", "payload": {"source": "microphone", "pcm": b64, "seq": 0}}
             )
             seen = []
-            for _ in range(10):
+            for _ in range(15):
                 msg = ws.receive_json()
                 seen.append(msg["type"])
-                if msg["type"] == "error":
-                    assert msg["payload"]["code"] == "not_implemented"
+                assert msg["type"] != "error"
+                if msg["type"] == "state" and msg["payload"]["state"] == "Completed":
                     break
-            assert "state" in seen and "error" in seen
+            # Pipeline đã hoàn tất một chiều outgoing: có ASR, MT và TTS.
+            assert {"asr.final", "mt.result", "tts.audio"} <= set(seen)

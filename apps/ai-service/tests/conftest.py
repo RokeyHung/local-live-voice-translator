@@ -9,6 +9,7 @@ HF. Các fixture autouse dưới đây thay loader thật bằng bản giả đ�
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import numpy as np
@@ -60,3 +61,37 @@ def _fake_mt_loader(monkeypatch: pytest.MonkeyPatch) -> None:
     from llvt_ai_service.adapters.mt import nllb
 
     monkeypatch.setattr(nllb, "_default_loader", lambda _repo, _dir, _device: FakeNllbBackend())
+
+
+class FakeGeneratedAudio:
+    def __init__(self, samples: np.ndarray, sample_rate: int) -> None:
+        self.samples = samples
+        self.sample_rate = sample_rate
+
+
+class FakeTtsEngine:
+    """Bản giả của sherpa_onnx.OfflineTts: trả tín hiệu ngắn, ghi lại lời gọi."""
+
+    sample_rate = 22050
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    def generate(self, text: str, sid: int = 0, speed: float = 1.0) -> FakeGeneratedAudio:
+        self.calls.append({"text": text, "sid": sid, "speed": speed})
+        samples = np.zeros(int(self.sample_rate * 0.1), dtype=np.float32)  # 100ms im lặng
+        return FakeGeneratedAudio(samples, self.sample_rate)
+
+
+@pytest.fixture(autouse=True)
+def _fake_tts_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Chặn tải + khởi tạo voice sherpa-onnx thật (nạp lười khi pipeline synthesize).
+
+    Bỏ qua khi chạy test tích hợp thật (LLVT_RUN_TTS_INTEGRATION=1) để dùng hàm thật.
+    """
+    if os.environ.get("LLVT_RUN_TTS_INTEGRATION") == "1":
+        return
+    from llvt_ai_service.adapters.tts import sherpa_onnx
+
+    monkeypatch.setattr(sherpa_onnx, "_download_voice", lambda _voice, _dir: _dir)
+    monkeypatch.setattr(sherpa_onnx, "_default_engine_loader", lambda _model_dir: FakeTtsEngine())

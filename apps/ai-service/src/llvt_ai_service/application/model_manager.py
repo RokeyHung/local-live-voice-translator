@@ -52,7 +52,9 @@ MT_REGISTRY: dict[str, Callable[[PresetConfig], TranslationProvider]] = {
     ),
 }
 TTS_REGISTRY: dict[str, Callable[[PresetConfig], TextToSpeechProvider]] = {
-    "sherpa_onnx": lambda _cfg: SherpaOnnxTts(),
+    "sherpa_onnx": lambda _cfg: SherpaOnnxTts(
+        models_dir=str(get_settings().models_dir / "sherpa-tts"),
+    ),
 }
 
 
