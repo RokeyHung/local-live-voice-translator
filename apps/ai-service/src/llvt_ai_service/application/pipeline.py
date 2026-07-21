@@ -37,13 +37,15 @@ class TranslationPipeline:
         self._emit = emit
         self._synthesize = synthesize
         self._executor = executor or SerialExecutor()
+        # Mỗi pipeline có stream VAD riêng (state độc lập cho nguồn audio của mình).
+        self._vad = providers.vad.open_stream()
 
     async def feed(self, chunk: AudioChunk) -> None:
         """Đẩy một frame audio; xử lý các utterance mà VAD cắt ra."""
         try:
-            segments = await self._p.vad.accept(chunk.pcm, chunk.sample_rate)
-        except NotImplementedError as exc:
-            await self._emit(ev.PipelineError(code="not_implemented", message=str(exc)))
+            segments = self._vad.accept(chunk.pcm, chunk.sample_rate)
+        except ValueError as exc:
+            await self._emit(ev.PipelineError(code="bad_audio", message=str(exc)))
             return
         for segment in segments:
             await self._process(segment, chunk.session_id)
