@@ -145,22 +145,15 @@ Ví dụ:
 
 Luồng xử lý:
 
-```text
-Google Meet Audio
-    ↓
-System Audio Capture
-    ↓
-Voice Activity Detection
-    ↓
-Speech-to-Text
-    ↓
-Japanese Text
-    ↓
-Translation
-    ↓
-Vietnamese Text
-    ↓
-Subtitle hoặc Text-to-Speech
+```mermaid
+flowchart TD
+    A[Google Meet Audio] --> B[System Audio Capture]
+    B --> C[Voice Activity Detection]
+    C --> D[Speech-to-Text]
+    D --> E[Japanese Text]
+    E --> F[Translation]
+    F --> G[Vietnamese Text]
+    G --> H[Subtitle hoặc Text-to-Speech]
 ```
 
 Đầu ra:
@@ -179,24 +172,16 @@ Ví dụ:
 
 Luồng xử lý:
 
-```text
-Physical Microphone
-    ↓
-Voice Activity Detection
-    ↓
-Speech-to-Text
-    ↓
-Vietnamese Text
-    ↓
-Translation
-    ↓
-English Text
-    ↓
-Text-to-Speech
-    ↓
-Virtual Microphone
-    ↓
-Google Meet
+```mermaid
+flowchart TD
+    A[Physical Microphone] --> B[Voice Activity Detection]
+    B --> C[Speech-to-Text]
+    C --> D[Vietnamese Text]
+    D --> E[Translation]
+    E --> F[English Text]
+    F --> G[Text-to-Speech]
+    G --> H[Virtual Microphone]
+    H --> I[Google Meet]
 ```
 
 ### 5.3. Chế độ Two-way Conversation
@@ -516,37 +501,31 @@ Hiển thị:
 
 ### 9.1. Kiến trúc tổng quan
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│                    Desktop Application                   │
-├──────────────────────────────────────────────────────────┤
-│ UI Layer                                                 │
-│ - Session controls                                       │
-│ - Subtitle                                               │
-│ - Device settings                                        │
-│ - Model settings                                         │
-├──────────────────────────────────────────────────────────┤
-│ Session Manager                                          │
-│ - Pipeline state                                         │
-│ - Language configuration                                 │
-│ - History                                                │
-├───────────────────┬──────────────────────────────────────┤
-│ Incoming Pipeline │ Outgoing Pipeline                    │
-│                   │                                      │
-│ System Audio      │ Physical Microphone                  │
-│      ↓             │      ↓                               │
-│ Preprocessing     │ Preprocessing                        │
-│      ↓             │      ↓                               │
-│ VAD               │ VAD                                  │
-│      ↓             │      ↓                               │
-│ ASR               │ ASR                                  │
-│      ↓             │      ↓                               │
-│ Translation       │ Translation                          │
-│      ↓             │      ↓                               │
-│ Subtitle / TTS    │ TTS                                  │
-│      ↓             │      ↓                               │
-│ Headphones        │ Virtual Microphone                   │
-└───────────────────┴──────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph UI[UI Layer]
+        UI1[Session controls]
+        UI2[Subtitle]
+        UI3[Device settings]
+        UI4[Model settings]
+    end
+    subgraph SM[Session Manager]
+        SM1[Pipeline state]
+        SM2[Language configuration]
+        SM3[History]
+    end
+    UI --> SM
+
+    subgraph IN[Incoming Pipeline]
+        direction TB
+        I1[System Audio] --> I2[Preprocessing] --> I3[VAD] --> I4[ASR] --> I5[Translation] --> I6[Subtitle / TTS] --> I7[Headphones]
+    end
+    subgraph OUT[Outgoing Pipeline]
+        direction TB
+        O1[Physical Microphone] --> O2[Preprocessing] --> O3[VAD] --> O4[ASR] --> O5[Translation] --> O6[TTS] --> O7[Virtual Microphone]
+    end
+    SM --> IN
+    SM --> OUT
 ```
 
 ### 9.2. Các module chính
@@ -742,28 +721,36 @@ Phần này có thể được triển khai bằng native code hoặc thư việ
 
 Mỗi pipeline có các trạng thái:
 
-```text
-Idle
-Initializing
-Listening
-SpeechDetected
-Recognizing
-Translating
-WaitingForConfirmation
-Synthesizing
-Queued
-Speaking
-Completed
-Error
-Stopped
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Initializing
+    Initializing --> Listening
+    Listening --> SpeechDetected
+    SpeechDetected --> Recognizing
+    Recognizing --> Translating
+    Translating --> WaitingForConfirmation
+    WaitingForConfirmation --> Synthesizing
+    Translating --> Synthesizing
+    Synthesizing --> Queued
+    Queued --> Speaking
+    Speaking --> Completed
+    Completed --> Listening
+    Recognizing --> Error
+    Translating --> Error
+    Synthesizing --> Error
+    Error --> Listening
+    Listening --> Stopped
+    Stopped --> [*]
 ```
 
 Ứng dụng không được xử lý hai lần cùng một utterance.
 
 Mỗi utterance phải có ID duy nhất để theo dõi xuyên suốt các bước:
 
-```text
-Audio → ASR → Translation → TTS → Audio Output
+```mermaid
+flowchart LR
+    Audio --> ASR --> Translation --> TTS --> Output[Audio Output]
 ```
 
 ---

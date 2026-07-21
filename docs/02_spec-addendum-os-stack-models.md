@@ -186,15 +186,10 @@ Local AI Service phụ trách:
 
 ### Giao tiếp
 
-```text
-Electron
-   │
-   ├── REST API: cấu hình, model, lịch sử
-   │
-   └── WebSocket: audio stream, transcript, translation, trạng thái
-           │
-           ▼
-Local Python AI Service
+```mermaid
+flowchart TD
+    E[Electron] -->|REST API: cấu hình, model, lịch sử| S[Local Python AI Service]
+    E -->|WebSocket: audio stream, transcript, translation, trạng thái| S
 ```
 
 Service chỉ được bind vào:
@@ -226,13 +221,13 @@ AI Service sẽ được đóng gói thành native sidecar đi kèm ứng dụng
 
 Cấu trúc đóng gói:
 
-```text
-Application
-├── Electron frontend
-├── Local AI service
-├── Native audio components
-├── Model manager
-└── Configuration database
+```mermaid
+flowchart TD
+    App[Application] --> FE[Electron frontend]
+    App --> SVC[Local AI service]
+    App --> NA[Native audio components]
+    App --> MM[Model manager]
+    App --> DB[Configuration database]
 ```
 
 ---
@@ -276,28 +271,22 @@ WASAPI loopback cho phép capture âm thanh đang được phát qua output endp
 
 Luồng:
 
-```text
-Google Meet
-    ↓
-Windows output device
-    ↓
-WASAPI loopback capture
-    ↓
-Incoming translation pipeline
+```mermaid
+flowchart TD
+    A[Google Meet] --> B[Windows output device]
+    B --> C[WASAPI loopback capture]
+    C --> D[Incoming translation pipeline]
 ```
 
 ### Truyền giọng nói đã dịch vào Google Meet
 
 MVP sử dụng VB-CABLE:
 
-```text
-Application TTS output
-    ↓
-CABLE Input
-    ↓
-CABLE Output
-    ↓
-Google Meet microphone
+```mermaid
+flowchart TD
+    A[Application TTS output] --> B[CABLE Input]
+    B --> C[CABLE Output]
+    C --> D[Google Meet microphone]
 ```
 
 VB-CABLE hoạt động như một thiết bị âm thanh ảo: âm thanh phát đến CABLE Input sẽ được chuyển sang CABLE Output để ứng dụng khác nhận như microphone.
@@ -318,12 +307,10 @@ ScreenCaptureKit hỗ trợ capture nội dung màn hình cùng audio của ứn
 
 Luồng:
 
-```text
-Google Meet
-    ↓
-ScreenCaptureKit audio capture
-    ↓
-Incoming translation pipeline
+```mermaid
+flowchart TD
+    A[Google Meet] --> B[ScreenCaptureKit audio capture]
+    B --> C[Incoming translation pipeline]
 ```
 
 Ứng dụng cần yêu cầu các quyền:
@@ -335,12 +322,10 @@ Incoming translation pipeline
 
 MVP sử dụng BlackHole 2ch:
 
-```text
-Application TTS output
-    ↓
-BlackHole 2ch
-    ↓
-Google Meet microphone
+```mermaid
+flowchart TD
+    A[Application TTS output] --> B[BlackHole 2ch]
+    B --> C[Google Meet microphone]
 ```
 
 BlackHole là virtual audio loopback driver dành cho macOS và có thể đưa audio output của một ứng dụng thành input cho ứng dụng khác.
@@ -361,16 +346,14 @@ AudioBuffer
 
 Implementation theo nền tảng:
 
-```text
-WindowsAudioAdapter
-├── WASAPI microphone capture
-├── WASAPI loopback capture
-└── VB-CABLE output
-
-MacOSAudioAdapter
-├── CoreAudio microphone capture
-├── ScreenCaptureKit system audio
-└── BlackHole output
+```mermaid
+flowchart TD
+    W[WindowsAudioAdapter] --> W1[WASAPI microphone capture]
+    W --> W2[WASAPI loopback capture]
+    W --> W3[VB-CABLE output]
+    M[MacOSAudioAdapter] --> M1[CoreAudio microphone capture]
+    M --> M2[ScreenCaptureKit system audio]
+    M --> M3[BlackHole output]
 ```
 
 Electron không được phụ thuộc trực tiếp vào logic riêng của từng hệ điều hành. Các implementation phải nằm phía sau một abstraction layer.
@@ -498,11 +481,11 @@ faster-whisper sử dụng CTranslate2 để thực thi Whisper và phù hợp l
 
 Interface:
 
-```text
-SpeechToTextProvider
-├── WhisperCppProvider
-├── MLXWhisperProvider
-└── FasterWhisperProvider
+```mermaid
+flowchart TD
+    P[SpeechToTextProvider] --> A[WhisperCppProvider]
+    P --> B[MLXWhisperProvider]
+    P --> C[FasterWhisperProvider]
 ```
 
 Trong MVP đầu tiên chỉ bắt buộc hoàn thiện `WhisperCppProvider`. Hai provider còn lại thuộc giai đoạn tối ưu.
@@ -552,16 +535,12 @@ mà không cần thay model.
 
 NLLB được sử dụng theo từng utterance:
 
-```text
-Final ASR transcript
-    ↓
-Text normalization
-    ↓
-Sentence segmentation
-    ↓
-NLLB translation
-    ↓
-Translated text
+```mermaid
+flowchart TD
+    A[Final ASR transcript] --> B[Text normalization]
+    B --> C[Sentence segmentation]
+    C --> D[NLLB translation]
+    D --> E[Translated text]
 ```
 
 Không gửi partial transcript liên tục vào model dịch. Chỉ dịch khi:
@@ -741,40 +720,27 @@ Mục tiêu:
 
 # 10. Kiến trúc hoàn chỉnh được lựa chọn
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ Electron Desktop Application                                 │
-│ React + TypeScript + Tailwind                                │
-├──────────────────────────────────────────────────────────────┤
-│ UI                                                           │
-│ Device Setup │ Subtitles │ History │ Model Manager           │
-├──────────────────────────────────────────────────────────────┤
-│ Audio Abstraction Layer                                      │
-│                                                              │
-│ Windows                           macOS                       │
-│ WASAPI                            CoreAudio                   │
-│ WASAPI Loopback                   ScreenCaptureKit            │
-│ VB-CABLE Output                   BlackHole Output            │
-├──────────────────────────────────────────────────────────────┤
-│ REST API + WebSocket                                         │
-│ 127.0.0.1                                                    │
-├──────────────────────────────────────────────────────────────┤
-│ Python Local AI Service                                      │
-│ FastAPI + SQLite                                             │
-├──────────────────────────────────────────────────────────────┤
-│ Incoming Pipeline                                            │
-│ System Audio → VAD → Whisper → NLLB → Subtitle/TTS           │
-├──────────────────────────────────────────────────────────────┤
-│ Outgoing Pipeline                                            │
-│ Microphone → VAD → Whisper → NLLB → TTS → Virtual Mic        │
-├──────────────────────────────────────────────────────────────┤
-│ Model Layer                                                  │
-│                                                              │
-│ ASR: Whisper large-v3-turbo                                  │
-│ MT: NLLB-200 distilled 600M                                  │
-│ TTS: sherpa-onnx voice models                                │
-│ VAD: Silero VAD                                              │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph APP["Electron Desktop Application — React + TypeScript + Tailwind"]
+        UI["UI: Device Setup · Subtitles · History · Model Manager"]
+    end
+    subgraph AAL["Audio Abstraction Layer"]
+        WIN["Windows: WASAPI · WASAPI Loopback · VB-CABLE Output"]
+        MAC["macOS: CoreAudio · ScreenCaptureKit · BlackHole Output"]
+    end
+    API["REST API + WebSocket — 127.0.0.1"]
+    subgraph SVC["Python Local AI Service — FastAPI + SQLite"]
+        IN["Incoming Pipeline: System Audio → VAD → Whisper → NLLB → Subtitle/TTS"]
+        OUT["Outgoing Pipeline: Microphone → VAD → Whisper → NLLB → TTS → Virtual Mic"]
+    end
+    subgraph MODEL["Model Layer"]
+        M1["ASR: Whisper large-v3-turbo"]
+        M2["MT: NLLB-200 distilled 600M"]
+        M3["TTS: sherpa-onnx voice models"]
+        M4["VAD: Silero VAD"]
+    end
+    APP --> AAL --> API --> SVC --> MODEL
 ```
 
 ---
@@ -792,18 +758,14 @@ VoiceActivityDetectionProvider
 
 Ví dụ:
 
-```text
-SpeechToTextProvider
-├── WhisperCppProvider
-├── FasterWhisperProvider
-└── MLXWhisperProvider
-
-TranslationProvider
-├── NLLBProvider
-└── QwenTranslationProvider
-
-TextToSpeechProvider
-└── SherpaOnnxProvider
+```mermaid
+flowchart TD
+    STT[SpeechToTextProvider] --> STT1[WhisperCppProvider]
+    STT --> STT2[FasterWhisperProvider]
+    STT --> STT3[MLXWhisperProvider]
+    MT[TranslationProvider] --> MT1[NLLBProvider]
+    MT --> MT2[QwenTranslationProvider]
+    TTS[TextToSpeechProvider] --> TTS1[SherpaOnnxProvider]
 ```
 
 Cách tổ chức này được tham khảo từ mô hình multi-backend của TranscriptionSuite, nơi từng backend ASR có khả năng và giới hạn riêng.

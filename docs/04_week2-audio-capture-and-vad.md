@@ -14,6 +14,14 @@
 - **Thu microphone** ở desktop qua WebAudio → PCM signed 16-bit, mono, **16 kHz** → gửi `audio.chunk` qua WebSocket.
 - Luồng `mic → audio.chunk → VAD → utterance → pipeline` đã thông (kiểm chứng bằng test WS).
 
+```mermaid
+flowchart LR
+    MIC[Microphone] --> WA["MicCapture (AudioWorklet, PCM16 16kHz mono)"]
+    WA -->|"audio.chunk (base64) qua WebSocket"| PIPE["TranslationPipeline (AI service)"]
+    PIPE --> VAD["VadStream (Silero)"]
+    VAD -->|utterance + timestamp| ASR["ASR (stub — Tuần 3)"]
+```
+
 ## 2. Kiến trúc VAD: tách "model" khỏi "state theo luồng"
 
 `ProviderSet` (gồm 1 `SileroVad`) dùng chung cho mọi kết nối, trong khi VAD có **state theo từng luồng** (buffer + hidden-state RNN của Silero). Nếu hai pipeline incoming/outgoing dùng chung một VAD → hỏng state.

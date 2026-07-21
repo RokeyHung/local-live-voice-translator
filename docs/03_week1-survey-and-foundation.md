@@ -82,13 +82,20 @@ Logic đặc thù OS phải nằm sau abstraction layer (`AudioCaptureAdapter` /
 
 ### 3.1. Hai tiến trình
 
-```text
-┌──────────────────────────────┐        ┌──────────────────────────────┐
-│ Electron Desktop Client       │  REST  │ Python Local AI Service       │
-│ React + TS + Tailwind         │◀──────▶│ FastAPI + SQLite              │
-│ Zustand + TanStack Query      │   WS   │ VAD · ASR · MT · TTS          │
-│ Audio abstraction (native)    │◀──────▶│ Model manager · Metrics       │
-└──────────────────────────────┘  127.0.0.1 (localhost-only)
+```mermaid
+flowchart LR
+    subgraph C[Electron Desktop Client]
+        C1[React + TS + Tailwind]
+        C2[Zustand + TanStack Query]
+        C3[Audio abstraction native]
+    end
+    subgraph S[Python Local AI Service]
+        S1[FastAPI + SQLite]
+        S2[VAD · ASR · MT · TTS]
+        S3[Model manager · Metrics]
+    end
+    C <-->|REST · 127.0.0.1| S
+    C <-->|WebSocket · 127.0.0.1| S
 ```
 
 - **Desktop client:** UI, chọn thiết bị, điều khiển phiên, subtitle, lịch sử, phát audio ra output device, thu/định tuyến audio native.
@@ -96,21 +103,41 @@ Logic đặc thù OS phải nằm sau abstraction layer (`AudioCaptureAdapter` /
 
 ### 3.2. Provider abstraction (đổi model/runtime không ảnh hưởng pipeline)
 
-```text
-VoiceActivityDetectionProvider ── SileroVadProvider (+ WebRTC gate)
-SpeechToTextProvider ─────────── WhisperCppProvider [MVP] · FasterWhisperProvider · MLXWhisperProvider
-TranslationProvider ──────────── NLLBProvider [MVP] · QwenTranslationProvider
-TextToSpeechProvider ─────────── SherpaOnnxProvider [MVP]
+```mermaid
+flowchart LR
+    VAD[VoiceActivityDetectionProvider] --> V1["SileroVadProvider (+ WebRTC gate)"]
+    STT[SpeechToTextProvider] --> S1["WhisperCppProvider [MVP]"]
+    STT --> S2[FasterWhisperProvider]
+    STT --> S3[MLXWhisperProvider]
+    MT[TranslationProvider] --> M1["NLLBProvider [MVP]"]
+    MT --> M2[QwenTranslationProvider]
+    TTS[TextToSpeechProvider] --> T1["SherpaOnnxProvider [MVP]"]
 ```
 
 MVP bắt buộc hoàn thiện các provider `[MVP]`; các provider còn lại thuộc giai đoạn tối ưu.
 
 ### 3.3. Vòng đời utterance
 
-```text
-Idle → Listening → SpeechDetected → Recognizing → Translating
-     → (WaitingForConfirmation) → Synthesizing → Queued → Speaking → Completed
-                                                                   ↘ Error / Stopped
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Listening
+    Listening --> SpeechDetected
+    SpeechDetected --> Recognizing
+    Recognizing --> Translating
+    Translating --> WaitingForConfirmation
+    WaitingForConfirmation --> Synthesizing
+    Translating --> Synthesizing
+    Synthesizing --> Queued
+    Queued --> Speaking
+    Speaking --> Completed
+    Completed --> [*]
+    Recognizing --> Error
+    Translating --> Error
+    Synthesizing --> Error
+    Error --> [*]
+    Listening --> Stopped
+    Stopped --> [*]
 ```
 
 Mỗi utterance có `id` duy nhất, không xử lý trùng, theo dõi xuyên suốt Audio → ASR → MT → TTS → Output.
