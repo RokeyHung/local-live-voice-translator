@@ -76,7 +76,7 @@ The WebSocket/REST contract is defined twice and MUST stay in sync when changed:
 - Python: `apps/ai-service/src/llvt_ai_service/ws/protocol.py` + `schemas.py`
 - TypeScript mirror: `apps/desktop/src/renderer/src/domain/{events,models,enums}.ts`
 
-WS envelope is `{ type, ts, payload }`. Message types: client→`session.start`/`session.stop`/`audio.chunk`/`control.ptt`; server→`state`/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
+WS envelope is `{ type, ts, payload }`. Message types: client→`session.start`/`session.stop`/`audio.chunk`/`control.ptt`/`control.mute`; server→`state`/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
 
 ## Conventions
 

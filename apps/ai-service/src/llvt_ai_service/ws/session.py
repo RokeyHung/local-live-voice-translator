@@ -71,6 +71,8 @@ async def _dispatch(controller: SessionController, raw: object, emit) -> None:
         await controller.stop()
     elif msg.type == "control.ptt":
         await controller.on_ptt(bool(msg.payload.get("pressed")))
+    elif msg.type == "control.mute":
+        await controller.on_mute(bool(msg.payload.get("muted")))
     elif msg.type == "audio.chunk":
         await controller.on_audio(parse_audio_chunk("", msg.payload))
     else:

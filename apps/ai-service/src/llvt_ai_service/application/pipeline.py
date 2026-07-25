@@ -29,6 +29,7 @@ class TranslationPipeline:
         emit: Emit,
         *,
         synthesize: bool,
+        session_id: str = "",
         executor: SerialExecutor | None = None,
     ) -> None:
         self._p = providers
@@ -36,6 +37,7 @@ class TranslationPipeline:
         self._source = source_type
         self._emit = emit
         self._synthesize = synthesize
+        self._session_id = session_id
         self._executor = executor or SerialExecutor()
         # Mỗi pipeline có stream VAD riêng (state độc lập cho nguồn audio của mình).
         self._vad = providers.vad.open_stream()
@@ -48,11 +50,20 @@ class TranslationPipeline:
             await self._emit(ev.PipelineError(code="bad_audio", message=str(exc)))
             return
         for segment in segments:
-            await self._process(segment, chunk.session_id)
+            await self._process(segment)
 
-    async def _process(self, segment: VadSegment, session_id: str) -> None:
+    async def flush(self) -> None:
+        """Chốt đoạn giọng nói đang dở (khi nhả PTT) và xử lý nốt."""
+        for segment in self._vad.flush():
+            await self._process(segment)
+
+    def discard(self) -> None:
+        """Bỏ audio đang dở, không xử lý (khi mute)."""
+        self._vad.reset()
+
+    async def _process(self, segment: VadSegment) -> None:
         utt = Utterance(
-            session_id=session_id,
+            session_id=self._session_id,
             source=self._source,
             source_language=self._dir.source,
             target_language=self._dir.target,

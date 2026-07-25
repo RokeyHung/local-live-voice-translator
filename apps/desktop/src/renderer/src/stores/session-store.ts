@@ -27,7 +27,9 @@ export interface Metrics {
 interface SessionState {
   wsStatus: WsStatus
   active: boolean
+  muted: boolean
   config: SessionConfig
+  outputDeviceId: string // thiết bị đầu ra TTS (microphone ảo); '' = mặc định. Client-only.
   pipelineState: PipelineState | null
   utterances: Utterance[]
   metrics: Metrics
@@ -36,7 +38,9 @@ interface SessionState {
 
   setWsStatus: (status: WsStatus) => void
   setActive: (active: boolean) => void
+  setMuted: (muted: boolean) => void
   setConfig: (patch: Partial<SessionConfig>) => void
+  setOutputDeviceId: (deviceId: string) => void
   applyMessage: (msg: WsMessage) => void
   clearTranscript: () => void
   reset: () => void
@@ -63,7 +67,9 @@ function upsert(list: Utterance[], id: string, patch: Partial<Utterance>): Utter
 export const useSessionStore = create<SessionState>((set) => ({
   wsStatus: 'disconnected',
   active: false,
+  muted: false,
   config: DEFAULT_SESSION_CONFIG,
+  outputDeviceId: '',
   pipelineState: null,
   utterances: [],
   metrics: EMPTY_METRICS,
@@ -72,7 +78,9 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   setWsStatus: (wsStatus): void => set({ wsStatus }),
   setActive: (active): void => set({ active }),
+  setMuted: (muted): void => set({ muted }),
   setConfig: (patch): void => set((s) => ({ config: { ...s.config, ...patch } })),
+  setOutputDeviceId: (outputDeviceId): void => set({ outputDeviceId }),
 
   applyMessage: (msg): void =>
     set((s) => {

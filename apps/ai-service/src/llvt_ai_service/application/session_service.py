@@ -27,12 +27,18 @@ class SessionController:
         self._incoming: TranslationPipeline | None = None
         self._outgoing: TranslationPipeline | None = None
         self._executor = SerialExecutor()
+        # Push-to-talk là chế độ mặc định: mic chỉ được xử lý khi đang GIỮ nút.
+        self._ptt_active = False
+        self._muted = False
 
     async def start(self, config: SessionConfig) -> None:
         self._session = Session(config=config)
         await self._repo.save_session(self._session)
+        self._ptt_active = False
+        self._muted = False
 
         providers = self._mm.providers
+        session_id = self._session.id
         if config.incoming is not None:
             self._incoming = TranslationPipeline(
                 providers,
@@ -40,6 +46,7 @@ class SessionController:
                 AudioSource.system,
                 self._emit,
                 synthesize=False,
+                session_id=session_id,
                 executor=self._executor,
             )
         if config.outgoing is not None:
@@ -49,24 +56,44 @@ class SessionController:
                 AudioSource.microphone,
                 self._emit,
                 synthesize=True,
+                session_id=session_id,
                 executor=self._executor,
             )
         await self._emit(ev.StateChanged(PipelineState.listening))
 
     async def on_ptt(self, pressed: bool) -> None:
-        state = PipelineState.speech_detected if pressed else PipelineState.listening
-        await self._emit(ev.StateChanged(state))
+        self._ptt_active = pressed
+        if pressed:
+            await self._emit(ev.StateChanged(PipelineState.speech_detected))
+        else:
+            # Nhả nút: chốt câu đang nói dở (client đã ngừng gửi audio).
+            if self._outgoing is not None:
+                await self._outgoing.flush()
+            await self._emit(ev.StateChanged(PipelineState.listening))
+
+    async def on_mute(self, muted: bool) -> None:
+        self._muted = muted
+        # Bật mute giữa chừng: bỏ phần đang nói dở, không phát nốt ra micro ảo.
+        if muted and self._outgoing is not None:
+            self._outgoing.discard()
+        await self._emit(ev.StateChanged(PipelineState.listening))
 
     async def on_audio(self, chunk: AudioChunk) -> None:
-        pipeline = self._incoming if chunk.source == AudioSource.system else self._outgoing
-        if pipeline is not None:
-            await pipeline.feed(chunk)
+        if chunk.source == AudioSource.system:
+            # Chiều incoming (nghe remote) chạy liên tục, không chịu PTT/mute.
+            if self._incoming is not None:
+                await self._incoming.feed(chunk)
+            return
+        # Chiều outgoing (mic): chỉ xử lý khi đang giữ PTT và không mute.
+        if self._outgoing is not None and self._ptt_active and not self._muted:
+            await self._outgoing.feed(chunk)
 
     async def stop(self) -> None:
         if self._session is not None:
             self._session.ended_at_ms = int(time.time() * 1000)
         self._incoming = None
         self._outgoing = None
+        self._ptt_active = False
         await self._emit(ev.StateChanged(PipelineState.stopped))
 
 

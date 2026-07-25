@@ -26,6 +26,14 @@ class VadStream(ABC):
     def reset(self) -> None:
         """Xóa toàn bộ state khi bắt đầu một luồng audio mới."""
 
+    def flush(self) -> list[VadSegment]:
+        """Chốt đoạn đang dở rồi reset (vd khi người dùng nhả Push-to-talk).
+
+        Cần thiết cho PTT: khi nhả nút, client ngừng gửi audio nên VAD không còn
+        nhận được khoảng lặng để tự phát hiện 'end'. Mặc định không có gì để chốt.
+        """
+        return []
+
 
 class VoiceActivityDetector(Provider):
     @abstractmethod

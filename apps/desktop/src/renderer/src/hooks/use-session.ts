@@ -9,6 +9,7 @@ import { SessionController } from '../application/session-controller'
 export interface SessionActions {
   start: () => void
   ptt: (pressed: boolean) => void
+  mute: (muted: boolean) => void
   stop: () => void
 }
 
@@ -29,6 +30,7 @@ export function useSession(): SessionActions {
   return {
     start: () => void ref.current?.start(),
     ptt: (pressed) => ref.current?.ptt(pressed),
+    mute: (muted) => ref.current?.mute(muted),
     stop: () => ref.current?.stop()
   }
 }

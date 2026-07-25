@@ -1,5 +1,6 @@
 // Port: phát audio TTS ra thiết bị đầu ra. Hiện thực đặt phía adapter.
-// (Định tuyến vào microphone ảo BlackHole/VB-CABLE là bước OS-native, đợt sau.)
+// Đầu ra có thể trỏ tới microphone ảo (BlackHole/VB-CABLE) để Google Meet nhận
+// như micro của người dùng — chọn thiết bị qua setSink().
 
 export interface TtsChunk {
   pcm: Int16Array
@@ -11,4 +12,6 @@ export interface AudioOutput {
   play(chunk: TtsChunk): void
   // Dừng phát và xóa hàng đợi.
   stop(): void
+  // Chọn thiết bị đầu ra theo deviceId (rỗng = thiết bị mặc định của hệ điều hành).
+  setSink(deviceId: string): Promise<void>
 }

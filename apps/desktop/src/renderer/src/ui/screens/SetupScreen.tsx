@@ -4,6 +4,7 @@ import type { Language, Preset, SessionMode } from '../../domain/enums'
 import { LANGUAGE_LABELS, PRESET_LABELS } from '../../domain/models'
 import { useSessionStore } from '../../stores/session-store'
 import { HealthCard } from '../components/HealthCard'
+import { OutputDevicePicker } from '../components/OutputDevicePicker'
 import { Select, type Option } from '../components/Select'
 
 const MODE_OPTIONS: Option<SessionMode>[] = [
@@ -104,14 +105,15 @@ export function SetupScreen(): JSX.Element {
       <div className="space-y-4">
         <HealthCard />
         <section className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm">
-          <h2 className="mb-2 font-medium">Thiết bị</h2>
+          <h2 className="mb-3 font-medium">Thiết bị</h2>
           <p className="text-slate-400">
             Nền tảng: <span className="font-mono text-slate-200">{PLATFORM}</span>
           </p>
-          <p className="mt-1 text-slate-400">Đầu vào: microphone hệ thống (16 kHz mono).</p>
-          <p className="mt-2 rounded bg-amber-950/40 p-2 text-xs text-amber-300">
+          <p className="mb-3 mt-1 text-slate-400">Đầu vào: microphone hệ thống (16 kHz mono).</p>
+          <OutputDevicePicker />
+          <p className="mt-3 rounded bg-amber-950/40 p-2 text-xs text-amber-300">
             Nên dùng tai nghe để tránh mic thu lại giọng TTS (vòng lặp âm thanh). Thu system audio
-            và định tuyến microphone ảo (BlackHole/VB-CABLE) sẽ bổ sung ở bước sau.
+            (nguồn incoming) sẽ bổ sung ở bước sau.
           </p>
         </section>
       </div>

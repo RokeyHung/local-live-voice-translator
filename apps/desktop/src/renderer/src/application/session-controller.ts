@@ -37,6 +37,8 @@ function sessionStartPayload(config: SessionConfig): Record<string, unknown> {
 
 export class SessionController {
   private seq = 0
+  private pttActive = false // Push-to-talk: mic chỉ gửi khi đang giữ nút.
+  private muted = false
 
   constructor(
     private readonly channel: SessionChannel,
@@ -68,7 +70,12 @@ export class SessionController {
     const store = useSessionStore.getState()
     const config = store.config
     this.seq = 0
+    this.pttActive = false
+    this.muted = false
+    store.setMuted(false)
     store.clearTranscript()
+    // Trỏ đầu ra TTS tới thiết bị đã chọn (microphone ảo) trước khi phát.
+    await this.output?.setSink(store.outputDeviceId)
     this.channel.send('session.start', sessionStartPayload(config))
     store.setActive(true)
 
@@ -86,6 +93,8 @@ export class SessionController {
   }
 
   private sendAudio(frame: AudioFrame): void {
+    // Chỉ gửi khi đang giữ PTT và không mute (server cũng gate lại, phòng hờ).
+    if (!this.pttActive || this.muted) return
     this.channel.send('audio.chunk', {
       source: 'microphone',
       pcm: toBase64(frame.pcm),
@@ -95,14 +104,27 @@ export class SessionController {
   }
 
   ptt(pressed: boolean): void {
+    this.pttActive = pressed
     this.channel.send('control.ptt', { pressed })
   }
 
+  mute(muted: boolean): void {
+    this.muted = muted
+    this.channel.send('control.mute', { muted })
+    useSessionStore.getState().setMuted(muted)
+    // Bật mute: cắt ngay TTS đang phát ra micro ảo (barge-in).
+    if (muted) this.output?.stop()
+  }
+
   stop(): void {
+    this.pttActive = false
+    this.muted = false
     this.capture?.stop()
     this.output?.stop()
     this.channel.send('session.stop')
-    useSessionStore.getState().setActive(false)
+    const store = useSessionStore.getState()
+    store.setActive(false)
+    store.setMuted(false)
   }
 
   dispose(): void {

@@ -98,6 +98,15 @@ class SileroVadStream(VadStream):
             self._trim()
         return segments
 
+    def flush(self) -> list[VadSegment]:
+        segments: list[VadSegment] = []
+        if self._in_seg:
+            seg = self._cut(self._seg_start, self._cursor)
+            if seg is not None:
+                segments.append(seg)
+        self.reset()  # sạch state cho lượt nói kế tiếp
+        return segments
+
     def _cut(self, start_abs: int, end_abs: int) -> VadSegment | None:
         if end_abs - start_abs < self._min_speech:
             return None  # đoạn quá ngắn → bỏ

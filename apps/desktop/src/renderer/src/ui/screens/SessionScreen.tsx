@@ -9,6 +9,7 @@ import { SubtitleList } from '../components/SubtitleList'
 export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Element {
   const wsStatus = useSessionStore((s) => s.wsStatus)
   const active = useSessionStore((s) => s.active)
+  const muted = useSessionStore((s) => s.muted)
   const config = useSessionStore((s) => s.config)
   const pipelineState = useSessionStore((s) => s.pipelineState)
   const utterances = useSessionStore((s) => s.utterances)
@@ -46,10 +47,19 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
               onMouseDown={() => actions.ptt(true)}
               onMouseUp={() => actions.ptt(false)}
               onMouseLeave={() => actions.ptt(false)}
-              disabled={!active}
+              disabled={!active || muted}
               className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm font-medium hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Push-to-talk (giữ)
+            </button>
+            <button
+              onClick={() => actions.mute(!muted)}
+              disabled={!active}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 ${
+                muted ? 'bg-rose-600 hover:bg-rose-500' : 'bg-slate-700 hover:bg-slate-600'
+              }`}
+            >
+              {muted ? '🔇 Đang tắt mic' : '🎤 Mic đang bật'}
             </button>
           </div>
         </div>

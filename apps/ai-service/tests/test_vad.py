@@ -157,6 +157,9 @@ def test_ws_audio_triggers_pipeline():
                 }
             )
             assert ws.receive_json()["payload"]["state"] == "Listening"
+            # Push-to-talk là gate mặc định: phải giữ nút thì mic mới được xử lý.
+            ws.send_json({"type": "control.ptt", "payload": {"pressed": True}})
+            assert ws.receive_json()["payload"]["state"] == "SpeechDetected"
             ws.send_json(
                 {"type": "audio.chunk", "payload": {"source": "microphone", "pcm": b64, "seq": 0}}
             )
