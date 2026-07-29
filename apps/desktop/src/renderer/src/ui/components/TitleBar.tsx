@@ -2,10 +2,14 @@
 // nằm chồng lên thanh này (titleBarStyle: 'hiddenInset') nên chừa lề trái; toàn
 // thanh là vùng kéo cửa sổ, riêng phần chỉ báo thì không.
 
-import type { JSX } from 'react'
+import type { CSSProperties, JSX } from 'react'
 import { PLATFORM } from '../../application/config'
 import { useDict } from '../../hooks/use-ui'
 import { Dot } from './primitives'
+
+// -webkit-app-region chưa có trong kiểu CSSProperties của React.
+const DRAG = { WebkitAppRegion: 'drag' } as CSSProperties
+const NO_DRAG = { WebkitAppRegion: 'no-drag' } as CSSProperties
 
 export function TitleBar({ offlineReady }: { offlineReady: boolean }): JSX.Element {
   const L = useDict()
@@ -13,45 +17,19 @@ export function TitleBar({ offlineReady }: { offlineReady: boolean }): JSX.Eleme
 
   return (
     <div
-      style={
-        {
-          height: 44,
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          padding: isMac ? '0 16px 0 84px' : '0 16px',
-          borderBottom: '1px solid var(--line)',
-          background: 'var(--inset)',
-          backdropFilter: 'blur(20px)',
-          WebkitAppRegion: 'drag'
-        } as React.CSSProperties
-      }
+      className={`flex h-11 shrink-0 items-center gap-3.5 border-b border-line bg-inset backdrop-blur-xl ${
+        isMac ? 'pr-4 pl-21' : 'px-4'
+      }`}
+      style={DRAG}
     >
-      <div
-        style={{
-          flex: 1,
-          textAlign: 'center',
-          fontSize: 12,
-          fontWeight: 600,
-          color: 'var(--text3)',
-          letterSpacing: 0.3
-        }}
-      >
+      <div className="flex-1 text-center text-sm font-semibold tracking-[0.3px] text-fg-3">
         {L.appName}
       </div>
       <div
-        style={
-          {
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 11,
-            fontWeight: 600,
-            color: offlineReady ? 'var(--ac-grn2)' : 'var(--text4)',
-            WebkitAppRegion: 'no-drag'
-          } as React.CSSProperties
-        }
+        className={`flex items-center gap-1.5 text-sm font-semibold ${
+          offlineReady ? 'text-ac-grn-2' : 'text-fg-4'
+        }`}
+        style={NO_DRAG}
       >
         <Dot color={offlineReady ? '#22c55e' : '#64748b'} size={8} pulse={offlineReady} />
         {L.offline}

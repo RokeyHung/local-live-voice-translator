@@ -1,5 +1,5 @@
-// Màn Quản lý Model: đổi preset (GET/PUT /api/config) và xem model của preset đang
-// chạy. Tải model từ Hugging Face chưa có API bên AI service nên chỉ tra cứu.
+// Màn Quản lý Model: đổi preset (GET/PUT /api/config), xem khâu pipeline đang chạy
+// và model đã tải trên đĩa. Tải model từ Hugging Face chưa có API nên chỉ tra cứu.
 
 import { useMemo, useState, type JSX } from 'react'
 import { formatBytes } from '../../application/format'
@@ -14,7 +14,7 @@ import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
 import { Badge, DisabledButton, Notice, ScreenHeader } from '../components/primitives'
-import { inputStyle, LABEL, MONO, PANEL } from '../styles'
+import { INPUT, SCREEN } from '../styles'
 
 const PRESET_ICON: Record<Preset, IconName> = {
   fast: 'bolt',
@@ -27,6 +27,30 @@ const STAGE_ICON: Record<string, IconName> = {
   ASR: 'wave',
   MT: 'globe',
   TTS: 'volume'
+}
+
+/** Nhãn khâu (VAD/ASR/MT/TTS) — màu theo khâu nên phần màu vẫn inline. */
+function StageTag({ stage, width }: { stage: string; width: string }): JSX.Element {
+  return (
+    <span
+      className={`${width} text-2xs font-bold tracking-[0.5px]`}
+      style={{ color: STAGE_COLORS[stage] ?? 'var(--text3)' }}
+    >
+      {stage}
+    </span>
+  )
+}
+
+function StageIcon({ stage }: { stage: string }): JSX.Element {
+  const color = STAGE_COLORS[stage] ?? 'var(--text3)'
+  return (
+    <span
+      className="flex size-7.5 shrink-0 items-center justify-center rounded-sm"
+      style={{ background: `${color}1a`, color }}
+    >
+      <Icon name={STAGE_ICON[stage] ?? 'box'} size={16} />
+    </span>
+  )
 }
 
 export function ModelsScreen(): JSX.Element {
@@ -96,7 +120,7 @@ export function ModelsScreen(): JSX.Element {
   )
 
   return (
-    <div style={{ padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className={SCREEN}>
       <ScreenHeader
         icon="box"
         title={L.modelMgr}
@@ -116,7 +140,7 @@ export function ModelsScreen(): JSX.Element {
       )}
 
       {/* preset */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 14 }}>
+      <div className="grid grid-cols-3 gap-3.5">
         {PRESETS.map((preset) => {
           const p = PRESET_META[preset]
           const on = current === preset
@@ -127,82 +151,36 @@ export function ModelsScreen(): JSX.Element {
               onClick={() => applyPreset(preset)}
               disabled={disabled}
               title={active ? L.notSupportedYet : undefined}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                textAlign: 'left',
-                color: 'var(--text)',
-                padding: 17,
-                borderRadius: 16,
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                transition: 'all .18s',
-                border: `1px solid ${on ? 'var(--line-strong)' : 'var(--line)'}`,
-                background: on ? 'var(--line-soft)' : 'var(--panel)',
-                boxShadow: on ? '0 0 20px var(--line-soft)' : 'none',
-                opacity: disabled && !on ? 0.55 : 1
-              }}
+              className={[
+                'flex flex-col items-start rounded-2xl border p-4.25 text-left text-fg transition-all',
+                'disabled:cursor-not-allowed',
+                on
+                  ? 'border-line-strong bg-line-soft shadow-[0_0_20px_var(--line-soft)]'
+                  : 'border-line bg-(image:--panel) backdrop-blur-xl hover:border-line-strong',
+                disabled && !on ? 'opacity-55' : ''
+              ].join(' ')}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%'
-                }}
-              >
+              <div className="flex w-full items-center justify-between">
                 <span
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: p.tint,
-                    color: p.color
-                  }}
+                  className="flex size-9 items-center justify-center rounded-md"
+                  style={{ background: p.tint, color: p.color }}
                 >
                   <Icon name={PRESET_ICON[preset]} size={18} />
                 </span>
                 {on && (
                   <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: '3px 8px',
-                      borderRadius: 9999,
-                      background: p.color,
-                      color: '#04121a'
-                    }}
+                    className="rounded-full px-2 py-0.75 text-xs font-bold text-[#04121a]"
+                    style={{ background: p.color }}
                   >
                     {L.presetActive}
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 800, marginTop: 12 }}>{p.name}</div>
-              <div
-                style={{
-                  fontSize: 11.5,
-                  color: 'var(--text3)',
-                  lineHeight: 1.45,
-                  marginTop: 5
-                }}
-              >
+              <div className="mt-3 text-lg font-extrabold">{p.name}</div>
+              <div className="mt-1.25 text-sm leading-snug text-fg-3">
                 {uiLanguage === 'vi' ? p.descVi : p.descEn}
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 14,
-                  marginTop: 12,
-                  fontSize: 10.5,
-                  color: 'var(--text4)',
-                  ...MONO
-                }}
-              >
-                <span>~{p.ramGb} GB RAM</span>
-              </div>
+              <div className="mt-3 font-mono text-xs text-fg-4">~{p.ramGb} GB RAM</div>
             </button>
           )
         })}
@@ -217,310 +195,131 @@ export function ModelsScreen(): JSX.Element {
       )}
 
       {/* khâu pipeline — model + thiết bị THẬT do service báo về */}
-      <div style={{ ...PANEL, overflow: 'hidden' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '13px 18px',
-            borderBottom: '1px solid var(--line)',
-            background: 'var(--surface)'
-          }}
-        >
-          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{L.installed}</span>
+      <div className="panel overflow-hidden">
+        <div className="flex items-center justify-between border-b border-line bg-surface px-4.5 py-3.25">
+          <span className="text-base font-bold">{L.installed}</span>
           {meta && <Badge color={meta.color}>{meta.name}</Badge>}
         </div>
         {stages.length > 0 ? (
-          stages.map((stage) => {
-            const color = STAGE_COLORS[stage.stage] ?? 'var(--text3)'
-            return (
-              <div
-                key={stage.stage}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                  padding: '13px 18px',
-                  borderBottom: '1px solid var(--line-soft)'
-                }}
-              >
-                <span
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: `${color}1a`,
-                    color
-                  }}
-                >
-                  <Icon name={STAGE_ICON[stage.stage] ?? 'box'} size={16} />
-                </span>
-                <span
-                  style={{ width: 44, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color }}
-                >
-                  {stage.stage}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, ...MONO }}>{stage.model}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text4)' }}>
-                    {L.adapterLbl}: {stage.adapter}
-                  </div>
+          stages.map((stage) => (
+            <div
+              key={stage.stage}
+              className="flex items-center gap-3.5 border-b border-line-soft px-4.5 py-3.25"
+            >
+              <StageIcon stage={stage.stage} />
+              <StageTag stage={stage.stage} width="w-11" />
+              <div className="min-w-0 flex-1">
+                <div className="font-mono text-md font-semibold">{stage.model}</div>
+                <div className="text-sm text-fg-4">
+                  {L.adapterLbl}: {stage.adapter}
                 </div>
-                <Badge color={color}>{stage.accel}</Badge>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    width: 80,
-                    justifyContent: 'flex-end',
-                    color: stage.loaded ? 'var(--ac-grn)' : 'var(--text4)'
-                  }}
-                >
-                  {stage.loaded && <Icon name="check" size={14} strokeWidth={2.6} />}
-                  {stage.loaded ? L.loadedLbl : L.loadIdle}
-                </span>
               </div>
-            )
-          })
+              <Badge color={STAGE_COLORS[stage.stage] ?? 'var(--text3)'}>{stage.accel}</Badge>
+              <span
+                className={`inline-flex w-20 items-center justify-end gap-1.5 text-sm font-semibold ${
+                  stage.loaded ? 'text-ac-grn' : 'text-fg-4'
+                }`}
+              >
+                {stage.loaded && <Icon name="check" size={14} strokeWidth={2.6} />}
+                {stage.loaded ? L.loadedLbl : L.loadIdle}
+              </span>
+            </div>
+          ))
         ) : (
-          <div
-            style={{
-              padding: '34px 20px',
-              textAlign: 'center',
-              color: 'var(--text5)',
-              fontSize: 12.5
-            }}
-          >
-            {L.mbIdleS}
-          </div>
+          <div className="px-5 py-8.5 text-center text-base text-fg-5">{L.mbIdleS}</div>
         )}
       </div>
 
       {/* model đã tải trên đĩa — dung lượng thật */}
-      <div style={{ ...PANEL, overflow: 'hidden' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            padding: '13px 18px',
-            borderBottom: '1px solid var(--line)',
-            background: 'var(--surface)'
-          }}
-        >
-          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{L.onDisk}</span>
-          <span style={{ fontSize: 11, color: 'var(--text4)', ...MONO }}>
+      <div className="panel overflow-hidden">
+        <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4.5 py-3.25">
+          <span className="text-base font-bold">{L.onDisk}</span>
+          <span className="font-mono text-sm text-fg-4">
             {installed.data ? formatBytes(totalBytes) : ''}
           </span>
         </div>
-        {(installed.data ?? []).map((model) => {
-          const color = STAGE_COLORS[model.stage] ?? 'var(--text3)'
-          return (
-            <div
-              key={model.path}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 13,
-                padding: '12px 18px',
-                borderBottom: '1px solid var(--line-soft)'
-              }}
-            >
-              <span
-                style={{ width: 40, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color }}
-              >
-                {model.stage}
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 600, ...MONO }}>{model.name}</div>
-                <div
-                  title={model.path}
-                  style={{
-                    fontSize: 10.5,
-                    color: 'var(--text4)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {model.path}
-                </div>
-              </div>
-              <span style={{ fontSize: 11.5, color: 'var(--text3)', ...MONO }}>
-                {formatBytes(model.sizeBytes)}
-              </span>
-            </div>
-          )
-        })}
-        {installed.data && installed.data.length === 0 && (
+        {(installed.data ?? []).map((model) => (
           <div
-            style={{
-              padding: '30px 20px',
-              textAlign: 'center',
-              color: 'var(--text5)',
-              fontSize: 12.5
-            }}
+            key={model.path}
+            className="flex items-center gap-3.25 border-b border-line-soft px-4.5 py-3"
           >
-            {L.noModelsOnDisk}
+            <StageTag stage={model.stage} width="w-10" />
+            <div className="min-w-0 flex-1">
+              <div className="font-mono text-base font-semibold">{model.name}</div>
+              <div className="truncate-1 text-xs text-fg-4" title={model.path}>
+                {model.path}
+              </div>
+            </div>
+            <span className="font-mono text-sm text-fg-3">{formatBytes(model.sizeBytes)}</span>
           </div>
+        ))}
+        {installed.data && installed.data.length === 0 && (
+          <div className="px-5 py-7.5 text-center text-base text-fg-5">{L.noModelsOnDisk}</div>
         )}
         {config.data?.modelsDir && (
-          <div
-            style={{
-              padding: '10px 18px',
-              fontSize: 10.5,
-              color: 'var(--text5)',
-              ...MONO
-            }}
-          >
-            {config.data.modelsDir}
-          </div>
+          <div className="px-4.5 py-2.5 font-mono text-xs text-fg-5">{config.data.modelsDir}</div>
         )}
       </div>
 
       {/* cấu hình tự chọn — cần API model */}
-      <div
-        style={{
-          borderRadius: 16,
-          border: '1px dashed var(--line-strong)',
-          background: 'var(--surface)',
-          padding: '16px 20px'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ color: '#f472b6', display: 'flex' }}>
+      <div className="rounded-2xl border border-dashed border-line-strong bg-surface px-5 py-4">
+        <div className="flex items-center gap-2.25">
+          <span className="flex text-[#f472b6]">
             <Icon name="sliders" size={16} />
           </span>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#f472b6' }}>{L.customTitle}</div>
+          <div className="text-md font-bold text-[#f472b6]">{L.customTitle}</div>
           <Badge color="var(--text4)">{L.notSupported}</Badge>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 5 }}>{L.customSub}</div>
+        <div className="mt-1.25 text-sm text-fg-3">{L.customSub}</div>
       </div>
 
       {/* danh mục tham khảo */}
-      <div style={{ ...PANEL, overflow: 'hidden' }}>
-        <div
-          style={{
-            padding: '14px 18px',
-            borderBottom: '1px solid var(--line)',
-            background: 'var(--surface)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <span style={{ color: '#f59e0b', display: 'flex' }}>
+      <div className="panel overflow-hidden">
+        <div className="border-b border-line bg-surface px-4.5 py-3.5">
+          <div className="flex items-center gap-2.25">
+            <span className="flex text-[#f59e0b]">
               <Icon name="search" size={16} />
             </span>
-            <span style={{ fontSize: 12.5, fontWeight: 700 }}>{L.browseTitle}</span>
+            <span className="text-base font-bold">{L.browseTitle}</span>
             <Badge color="var(--text4)">{L.notSupported}</Badge>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}>{L.browseSub}</div>
-          <div style={{ position: 'relative', marginTop: 12 }}>
-            <span
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--text4)',
-                display: 'flex'
-              }}
-            >
+          <div className="mt-0.75 text-sm text-fg-3">{L.browseSub}</div>
+          <div className="relative mt-3">
+            <span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-fg-4">
               <Icon name="search" size={15} />
             </span>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={L.searchPh}
-              style={{ ...inputStyle, paddingLeft: 36 }}
+              className={`${INPUT} pl-9`}
             />
           </div>
         </div>
-        <div className="cs" style={{ maxHeight: 280, overflowY: 'auto' }}>
+        <div className="cs max-h-70 overflow-y-auto">
           {catalog.length === 0 && (
-            <div
-              style={{
-                padding: '28px 20px',
-                textAlign: 'center',
-                color: 'var(--text5)',
-                fontSize: 12.5
-              }}
-            >
-              {L.noCatalogResults}
-            </div>
+            <div className="px-5 py-7 text-center text-base text-fg-5">{L.noCatalogResults}</div>
           )}
           {catalog.map((entry) => {
-            const color = STAGE_COLORS[entry.stage]
-            // Khớp với danh sách trên đĩa thật, không khớp với bảng preset chép tay.
+            // Khớp với danh sách trên đĩa thật, không khớp với bảng chép tay.
             const inUse = [...installedNames].some(
               (name) => name === entry.name || name.endsWith(`/${entry.name}`)
             )
             return (
               <div
                 key={entry.name}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 13,
-                  padding: '12px 18px',
-                  borderBottom: '1px solid var(--line-soft)'
-                }}
+                className="flex items-center gap-3.25 border-b border-line-soft px-4.5 py-3"
               >
-                <span
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: `${color}1a`,
-                    color
-                  }}
-                >
-                  <Icon name={STAGE_ICON[entry.stage]} size={15} />
-                </span>
-                <span
-                  style={{ width: 40, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color }}
-                >
-                  {entry.stage}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, ...MONO }}>{entry.name}</div>
-                  <div style={{ fontSize: 10.5, color: 'var(--text4)' }}>{entry.detail}</div>
+                <StageIcon stage={entry.stage} />
+                <StageTag stage={entry.stage} width="w-10" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-mono text-base font-semibold">{entry.name}</div>
+                  <div className="text-xs text-fg-4">{entry.detail}</div>
                 </div>
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--text3)',
-                    width: 70,
-                    textAlign: 'right',
-                    ...MONO
-                  }}
-                >
-                  {entry.size}
-                </span>
-                <div style={{ width: 130, display: 'flex', justifyContent: 'flex-end' }}>
+                <span className="w-17.5 text-right font-mono text-sm text-fg-3">{entry.size}</span>
+                <div className="flex w-32 justify-end">
                   {inUse ? (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: 'var(--ac-grn)'
-                      }}
-                    >
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ac-grn">
                       <Icon name="check" size={14} strokeWidth={2.4} />
                       {L.loadedLbl}
                     </span>
@@ -529,7 +328,7 @@ export function ModelsScreen(): JSX.Element {
                       label={L.dlBtn}
                       hint={L.browseDisabled}
                       icon="download"
-                      style={{ height: 30, fontSize: 11.5 }}
+                      className="h-7.5 text-sm"
                     />
                   )}
                 </div>
@@ -539,9 +338,7 @@ export function ModelsScreen(): JSX.Element {
         </div>
       </div>
 
-      <div style={{ ...LABEL, textTransform: 'none', letterSpacing: 0, lineHeight: 1.5 }}>
-        {L.notSupportedYet}
-      </div>
+      <div className="text-xs leading-normal text-fg-4">{L.notSupportedYet}</div>
     </div>
   )
 }

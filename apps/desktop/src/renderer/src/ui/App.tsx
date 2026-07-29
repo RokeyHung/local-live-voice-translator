@@ -40,20 +40,12 @@ export default function App(): JSX.Element {
   return (
     <div
       data-theme={theme}
-      style={{
-        height: '100vh',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        color: 'var(--text)',
-        background: 'var(--app-bg)',
-        overflow: 'hidden'
-      }}
+      className="flex h-screen w-full flex-col overflow-hidden bg-(image:--app-bg) text-fg"
     >
       <TitleBar offlineReady={health.data?.offlineReady ?? false} />
-      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+      <div className="flex min-h-0 flex-1">
         <Sidebar status={status} />
-        <main className="cs" style={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
+        <main className="cs min-w-0 flex-1 overflow-y-auto">
           <RecoveryBanner />
           {screen === 'session' && <SessionScreen actions={actions} />}
           {screen === 'import' && <ImportScreen />}

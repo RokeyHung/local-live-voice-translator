@@ -6,7 +6,6 @@ import { useDict } from '../../hooks/use-ui'
 import { useMeetingStore } from '../../stores/meeting-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon } from '../components/Icon'
-import { MONO } from '../styles'
 
 export function RecoveryBanner(): JSX.Element | null {
   const L = useDict()
@@ -19,25 +18,14 @@ export function RecoveryBanner(): JSX.Element | null {
   if (!meeting) return null
 
   return (
-    <div
-      style={{
-        margin: '16px 26px 0',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 13,
-        padding: '13px 16px',
-        borderRadius: 14,
-        border: '1px solid rgba(251,146,60,.32)',
-        background: 'rgba(251,146,60,.09)'
-      }}
-    >
-      <span style={{ color: '#fb923c', display: 'flex' }}>
+    <div className="mx-6.5 mt-4 flex items-center gap-3.25 rounded-xl border border-[rgba(251,146,60,.32)] bg-[rgba(251,146,60,.09)] px-4 py-3.25">
+      <span className="flex text-[#fb923c]">
         <Icon name="refresh" size={19} />
       </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ac-org2)' }}>{L.recoverT}</div>
-        <div style={{ fontSize: 11.5, color: 'var(--ac-org)', marginTop: 2 }}>
-          {L.recoverS} <span style={{ fontWeight: 600, ...MONO }}>{meeting.title}</span> (
+      <div className="min-w-0 flex-1">
+        <div className="text-base font-bold text-ac-org-2">{L.recoverT}</div>
+        <div className="mt-0.5 text-sm text-ac-org">
+          {L.recoverS} <span className="font-mono font-semibold">{meeting.title}</span> (
           {meeting.rows.length} {L.utter})
         </div>
       </div>
@@ -46,33 +34,13 @@ export function RecoveryBanner(): JSX.Element | null {
           resolveRecovery(true)
           setScreen('history')
         }}
-        style={{
-          height: 32,
-          padding: '0 15px',
-          borderRadius: 9,
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: 'pointer',
-          color: '#04121a',
-          background: 'linear-gradient(135deg,#fb923c,#f59e0b)',
-          border: 'none'
-        }}
+        className="h-8 cursor-pointer rounded-[9px] border-none bg-linear-[135deg,#fb923c,#f59e0b] px-3.75 text-sm font-bold text-[#04121a]"
       >
         {L.recoverBtn}
       </button>
       <button
         onClick={() => resolveRecovery(false)}
-        style={{
-          height: 32,
-          padding: '0 13px',
-          borderRadius: 9,
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: 'pointer',
-          color: 'var(--text3)',
-          background: 'transparent',
-          border: '1px solid var(--line-strong)'
-        }}
+        className="h-8 cursor-pointer rounded-[9px] border border-line-strong bg-transparent px-3.25 text-sm font-semibold text-fg-3 hover:text-fg-2"
       >
         {L.recoverDismiss}
       </button>

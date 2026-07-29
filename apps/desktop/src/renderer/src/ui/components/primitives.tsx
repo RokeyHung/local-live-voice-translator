@@ -1,21 +1,25 @@
 // Khối dựng hình dùng lại giữa các màn: panel kính mờ, tiêu đề màn hình, badge,
 // nút phân đoạn, thanh mức, ô trống, chấm trạng thái.
+//
+// Màu của Badge/Dot/Notice do nơi gọi truyền vào (màu theo khâu pipeline, theo
+// bên phát, theo mức độ cảnh báo) nên phần màu vẫn đi qua `style`; còn lại là
+// class Tailwind.
 
 import type { CSSProperties, JSX, ReactNode } from 'react'
-import { ghostButton, PANEL } from '../styles'
+import { GHOST_BUTTON } from '../styles'
 import { Icon, type IconName } from './Icon'
 
 export function Panel({
   children,
-  style,
-  className
+  className = '',
+  style
 }: {
   children: ReactNode
-  style?: CSSProperties
   className?: string
+  style?: CSSProperties
 }): JSX.Element {
   return (
-    <div className={className} style={{ ...PANEL, ...style }}>
+    <div className={`panel ${className}`} style={style}>
       {children}
     </div>
   )
@@ -37,37 +41,18 @@ export function ScreenHeader({
   right?: ReactNode
 }): JSX.Element {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: 16,
-        flexWrap: 'wrap'
-      }}
-    >
+    <div className="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+        <div className="flex items-center gap-2.75">
           <span
-            style={{
-              display: 'inline-flex',
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              background: tint,
-              color
-            }}
+            className="inline-flex size-8.5 shrink-0 items-center justify-center rounded-md"
+            style={{ background: tint, color }}
           >
             <Icon name={icon} size={18} />
           </span>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3 }}>{title}</div>
+          <div className="text-2xl font-extrabold tracking-[-0.3px]">{title}</div>
         </div>
-        {subtitle && (
-          <div style={{ fontSize: 12.5, color: 'var(--text3)', marginTop: 5 }}>{subtitle}</div>
-        )}
+        {subtitle && <div className="mt-1.25 text-base text-fg-3">{subtitle}</div>}
       </div>
       {right}
     </div>
@@ -85,44 +70,22 @@ export function Dot({
   glow?: boolean
   pulse?: boolean
 }): JSX.Element {
-  if (!pulse) {
-    return (
-      <span
-        style={{
-          width: size,
-          height: size,
-          borderRadius: '50%',
-          background: color,
-          flexShrink: 0,
-          ...(glow ? { boxShadow: `0 0 ${size}px ${color}` } : {})
-        }}
-      />
-    )
+  const core: CSSProperties = {
+    width: size,
+    height: size,
+    background: color,
+    ...(glow ? { boxShadow: `0 0 ${size}px ${color}` } : {})
   }
+
+  if (!pulse) return <span className="shrink-0 rounded-full" style={core} />
+
   return (
-    <span
-      style={{ position: 'relative', display: 'flex', width: size, height: size, flexShrink: 0 }}
-    >
+    <span className="relative flex shrink-0" style={{ width: size, height: size }}>
       <span
-        style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: '50%',
-          background: color,
-          animation: 'ping 1.8s cubic-bezier(0,0,.2,1) infinite',
-          opacity: 0.7
-        }}
+        className="absolute inset-0 rounded-full opacity-70 motion-safe:animate-[ping_1.8s_cubic-bezier(0,0,.2,1)_infinite]"
+        style={{ background: color }}
       />
-      <span
-        style={{
-          position: 'relative',
-          width: size,
-          height: size,
-          borderRadius: '50%',
-          background: color,
-          ...(glow ? { boxShadow: `0 0 ${size}px ${color}` } : {})
-        }}
-      />
+      <span className="relative rounded-full" style={core} />
     </span>
   )
 }
@@ -130,18 +93,8 @@ export function Dot({
 export function Badge({ color, children }: { color: string; children: ReactNode }): JSX.Element {
   return (
     <span
-      style={{
-        fontSize: 9.5,
-        fontWeight: 700,
-        letterSpacing: 0.4,
-        textTransform: 'uppercase',
-        padding: '2px 7px',
-        borderRadius: 9999,
-        color,
-        background: `${color}1f`,
-        border: `1px solid ${color}44`,
-        whiteSpace: 'nowrap'
-      }}
+      className="rounded-full border px-1.75 py-0.5 text-2xs font-bold tracking-[0.4px] whitespace-nowrap uppercase"
+      style={{ color, background: `${color}1f`, borderColor: `${color}44` }}
     >
       {children}
     </span>
@@ -164,40 +117,23 @@ export function Segmented<T extends string>({
   onChange: (value: T) => void
   size?: 'sm' | 'lg'
 }): JSX.Element {
-  const height = size === 'lg' ? 38 : 28
+  const large = size === 'lg'
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 4,
-        padding: 3,
-        borderRadius: 10,
-        background: 'var(--inset2)',
-        border: '1px solid var(--line)'
-      }}
-    >
+    <div className="flex gap-1 rounded-md border border-line bg-inset-2 p-0.75">
       {options.map((option) => {
         const on = option.value === value
+        const active = large
+          ? 'bg-linear-[135deg,#22d3ee,#3b82f6] text-[#04121a]'
+          : 'bg-line-strong text-fg'
         return (
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
-            style={{
-              padding: size === 'lg' ? '0 18px' : '0 12px',
-              height,
-              borderRadius: 7,
-              border: 'none',
-              fontSize: size === 'lg' ? 13 : 11.5,
-              fontWeight: size === 'lg' ? 700 : 600,
-              cursor: 'pointer',
-              transition: 'all .15s',
-              background: on
-                ? size === 'lg'
-                  ? 'linear-gradient(135deg,#22d3ee,#3b82f6)'
-                  : 'var(--line-strong)'
-                : 'transparent',
-              color: on ? (size === 'lg' ? '#04121a' : 'var(--text)') : 'var(--text3)'
-            }}
+            className={[
+              'cursor-pointer rounded-[7px] border-none transition-all',
+              large ? 'h-9.5 px-4.5 text-md font-bold' : 'h-7 px-3 text-sm font-semibold',
+              on ? active : 'bg-transparent text-fg-3 hover:text-fg-2'
+            ].join(' ')}
           >
             {option.label}
           </button>
@@ -219,22 +155,16 @@ export function Meter({
   const pct = Math.max(0, Math.min(100, Math.round(value * 100)))
   return (
     <div
-      style={{
-        flex: 1,
-        height,
-        borderRadius: 9999,
-        background: 'var(--line-soft)',
-        overflow: 'hidden'
-      }}
+      className="flex-1 overflow-hidden rounded-full bg-line-soft"
+      style={{ height }}
+      role="meter"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
     >
       <div
-        style={{
-          height: '100%',
-          width: `${pct}%`,
-          borderRadius: 9999,
-          background: `linear-gradient(90deg,${color},${color}aa)`,
-          transition: 'width .12s linear'
-        }}
+        className="h-full rounded-full transition-[width] duration-100 ease-linear"
+        style={{ width: `${pct}%`, background: `linear-gradient(90deg,${color},${color}aa)` }}
       />
     </div>
   )
@@ -255,43 +185,29 @@ export function EmptyState({
 }): JSX.Element {
   return (
     <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 14,
-        color: 'var(--text5)',
-        padding: '48px 24px',
-        minHeight
-      }}
+      className="flex flex-1 flex-col items-center justify-center gap-3.5 px-6 py-12 text-fg-5"
+      style={{ minHeight }}
     >
       <div
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: 18,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--surface)',
-          color
-        }}
+        className="flex size-15 items-center justify-center rounded-3xl bg-surface"
+        style={{ color }}
       >
         <Icon name={icon} size={28} strokeWidth={1.5} />
       </div>
-      <div style={{ textAlign: 'center', maxWidth: 380 }}>
-        <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text2)' }}>{title}</div>
-        {body && (
-          <div style={{ fontSize: 12.5, color: 'var(--text4)', marginTop: 6, lineHeight: 1.55 }}>
-            {body}
-          </div>
-        )}
+      <div className="max-w-95 text-center">
+        <div className="text-[14.5px] font-bold text-fg-2">{title}</div>
+        {body && <div className="mt-1.5 text-base leading-relaxed text-fg-4">{body}</div>}
       </div>
     </div>
   )
 }
+
+const NOTICE_TONES = {
+  info: { color: '#22d3ee', border: 'rgba(34,211,238,.3)', bg: 'rgba(34,211,238,.07)' },
+  warn: { color: '#fb923c', border: 'rgba(251,146,60,.3)', bg: 'rgba(251,146,60,.08)' },
+  error: { color: '#f87171', border: 'rgba(239,68,68,.3)', bg: 'rgba(239,68,68,.08)' },
+  ok: { color: '#22c55e', border: 'rgba(34,197,94,.3)', bg: 'rgba(34,197,94,.07)' }
+} as const
 
 // Dải thông báo (thông tin / cảnh báo / lỗi) dùng ở nhiều màn.
 export function Notice({
@@ -301,46 +217,28 @@ export function Notice({
   body,
   right
 }: {
-  tone: 'info' | 'warn' | 'error' | 'ok'
+  tone: keyof typeof NOTICE_TONES
   icon: IconName
   title: string
   body?: string
   right?: ReactNode
 }): JSX.Element {
-  const palette = {
-    info: { color: '#22d3ee', border: 'rgba(34,211,238,.3)', bg: 'rgba(34,211,238,.07)' },
-    warn: { color: '#fb923c', border: 'rgba(251,146,60,.3)', bg: 'rgba(251,146,60,.08)' },
-    error: { color: '#f87171', border: 'rgba(239,68,68,.3)', bg: 'rgba(239,68,68,.08)' },
-    ok: { color: '#22c55e', border: 'rgba(34,197,94,.3)', bg: 'rgba(34,197,94,.07)' }
-  }[tone]
+  const palette = NOTICE_TONES[tone]
+  const spinning = icon === 'spinner'
 
   return (
     <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 13,
-        padding: '13px 16px',
-        borderRadius: 14,
-        border: `1px solid ${palette.border}`,
-        background: palette.bg
-      }}
+      className="flex items-center gap-3.25 rounded-xl border px-4 py-3.25"
+      style={{ borderColor: palette.border, background: palette.bg }}
     >
-      <span style={{ display: 'flex', color: palette.color }}>
-        <Icon
-          name={icon}
-          size={19}
-          spin={icon === 'spinner'}
-          strokeWidth={icon === 'spinner' ? 2.6 : 2}
-        />
+      <span className="flex" style={{ color: palette.color }}>
+        <Icon name={icon} size={19} spin={spinning} strokeWidth={spinning ? 2.6 : 2} />
       </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: palette.color }}>{title}</div>
-        {body && (
-          <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2, lineHeight: 1.45 }}>
-            {body}
-          </div>
-        )}
+      <div className="min-w-0 flex-1">
+        <div className="text-base font-bold" style={{ color: palette.color }}>
+          {title}
+        </div>
+        {body && <div className="mt-0.5 text-sm leading-snug text-fg-3">{body}</div>}
       </div>
       {right}
     </div>
@@ -353,19 +251,15 @@ export function DisabledButton({
   label,
   hint,
   icon,
-  style
+  className = ''
 }: {
   label: string
   hint: string
   icon?: IconName
-  style?: CSSProperties
+  className?: string
 }): JSX.Element {
   return (
-    <button
-      disabled
-      title={hint}
-      style={{ ...ghostButton, opacity: 0.45, cursor: 'not-allowed', ...style }}
-    >
+    <button disabled title={hint} className={`${GHOST_BUTTON} opacity-45 ${className}`}>
       {icon && <Icon name={icon} size={13} />}
       {label}
     </button>

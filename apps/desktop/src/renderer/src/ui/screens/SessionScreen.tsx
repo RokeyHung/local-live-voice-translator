@@ -15,7 +15,7 @@ import { Icon, type IconName } from '../components/Icon'
 import { Badge, Dot, EmptyState, Notice, ScreenHeader, Segmented } from '../components/primitives'
 import { UtteranceBubble, UtteranceFocus, UtteranceRow } from '../components/UtteranceViews'
 import { Visualizer } from '../components/Visualizer'
-import { PANEL, selectStyle } from '../styles'
+import { SCREEN, SELECT, SELECT_ARROW } from '../styles'
 import { SIDE_COLOR, toView, type ViewUtterance } from '../utterance-view'
 
 function ModeButton({
@@ -37,29 +37,58 @@ function ModeButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: 2,
-        padding: '13px 16px',
-        borderRadius: 13,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'all .18s',
-        border: `1px solid ${active ? 'rgba(34,211,238,.5)' : 'var(--line)'}`,
-        background: active ? 'rgba(34,211,238,.1)' : 'var(--surface)',
-        color: active ? 'var(--ac-cyan)' : 'var(--text2)',
-        boxShadow: active ? '0 0 16px rgba(34,211,238,.15)' : 'none',
-        opacity: disabled && !active ? 0.55 : 1,
-        fontWeight: 700,
-        fontSize: 14
-      }}
+      className={[
+        'flex flex-1 flex-col items-start gap-0.5 rounded-[13px] border px-4 py-3.25 text-[14px] font-bold transition-all',
+        'disabled:cursor-not-allowed',
+        active
+          ? 'border-[rgba(34,211,238,.5)] bg-[rgba(34,211,238,.1)] text-ac-cyan shadow-[0_0_16px_rgba(34,211,238,.15)]'
+          : 'border-line bg-surface text-fg-2 hover:border-line-strong',
+        disabled && !active ? 'opacity-55' : ''
+      ].join(' ')}
     >
       <Icon name={icon} size={16} />
       <span>{label}</span>
-      <span style={{ fontSize: 10.5, opacity: 0.7, fontWeight: 500 }}>{sub}</span>
+      <span className="text-xs font-medium opacity-70">{sub}</span>
     </button>
+  )
+}
+
+/** Nhãn "Ngôn ngữ cuộc họp" / "Dịch sang" + ô chọn. */
+function LangPicker({
+  label,
+  dotColor,
+  value,
+  disabled,
+  uiLanguage,
+  onChange
+}: {
+  label: string
+  dotColor: string
+  value: Language
+  disabled: boolean
+  uiLanguage: 'vi' | 'en'
+  onChange: (value: Language) => void
+}): JSX.Element {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="label-caps inline-flex items-center gap-1.5">
+        <Dot color={dotColor} size={7} glow={false} />
+        {label}
+      </span>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value as Language)}
+        className={SELECT}
+        style={SELECT_ARROW}
+      >
+        {LANGUAGES.map((code) => (
+          <option key={code} value={code}>
+            {languageName(uiLanguage, code)}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 
@@ -82,59 +111,26 @@ function ColumnPanel({
 }): JSX.Element {
   return (
     <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: 16,
-        overflow: 'hidden',
-        border: `1px solid ${color}38`,
-        background: 'var(--panel)',
-        backdropFilter: 'blur(20px)',
-        minHeight: 0
-      }}
+      className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-(image:--panel) backdrop-blur-xl"
+      style={{ borderColor: `${color}38` }}
     >
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 9,
-          padding: '13px 16px',
-          borderBottom: '1px solid var(--line)',
-          background: `${color}12`
-        }}
+        className="flex items-center gap-2.25 border-b border-line px-4 py-3.25"
+        style={{ background: `${color}12` }}
       >
         <Dot color={color} size={8} />
-        <span style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: 0.4, color }}>{title}</span>
-        <span style={{ fontSize: 11, color: 'var(--text3)' }}>{direction}</span>
+        <span className="text-base font-bold tracking-[0.4px]" style={{ color }}>
+          {title}
+        </span>
+        <span className="text-sm text-fg-3">{direction}</span>
       </div>
-      <div
-        className="cs"
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14
-        }}
-      >
+      <div className="cs flex flex-1 flex-col gap-3.5 overflow-y-auto p-4">
         {items.length === 0 ? (
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              color: 'var(--text5)',
-              padding: '24px 0'
-            }}
-          >
-            <span style={{ animation: 'softpulse 2.5s ease-in-out infinite' }}>
+          <div className="flex flex-1 flex-col items-center justify-center gap-2.5 py-6 text-fg-5">
+            <span className="motion-safe:animate-[softpulse_2.5s_ease-in-out_infinite]">
               <Icon name={emptyIcon} size={34} strokeWidth={1.4} />
             </span>
-            <div style={{ fontSize: 12.5, textAlign: 'center' }}>{emptyText}</div>
+            <div className="text-center text-base">{emptyText}</div>
           </div>
         ) : (
           items.map((u) => <UtteranceRow key={u.id} u={u} L={L} />)
@@ -196,33 +192,15 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
   const ms = (value: number | null): string => (value == null ? '—' : String(value))
 
   return (
-    <div
-      style={{
-        padding: '22px 26px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        minHeight: '100%'
-      }}
-    >
+    <div className={`${SCREEN} min-h-full`}>
       <ScreenHeader
         icon="wave"
         title={L.session}
         color="#22d3ee"
         tint="rgba(34,211,238,.12)"
         right={
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-            <div
-              style={{
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: 0.7,
-                color: 'var(--text4)',
-                fontWeight: 700
-              }}
-            >
-              {L.layout}
-            </div>
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="label-caps tracking-[0.7px]">{L.layout}</div>
             <Segmented
               value={layout}
               onChange={setLayout}
@@ -237,99 +215,37 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
       />
 
       {/* cặp ngôn ngữ */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 10,
-              textTransform: 'uppercase',
-              letterSpacing: 0.6,
-              color: 'var(--text4)',
-              fontWeight: 700
-            }}
-          >
-            <Dot color="#d946ef" size={7} glow={false} />
-            {L.meetingLangLbl}
-          </span>
-          <select
-            value={meetingLang}
-            disabled={active}
-            onChange={(e) => {
-              const value = e.target.value as Language
-              setPair(value, value === myLang ? meetingLang : myLang)
-            }}
-            style={selectStyle}
-          >
-            {LANGUAGES.map((code) => (
-              <option key={code} value={code}>
-                {languageName(uiLanguage, code)}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="flex flex-wrap items-center gap-3.5">
+        <LangPicker
+          label={L.meetingLangLbl}
+          dotColor="#d946ef"
+          value={meetingLang}
+          disabled={active}
+          uiLanguage={uiLanguage}
+          onChange={(value) => setPair(value, value === myLang ? meetingLang : myLang)}
+        />
 
         <button
           onClick={() => setPair(myLang, meetingLang)}
           disabled={active}
           title={L.swapLangs}
-          style={{
-            width: 32,
-            height: 32,
-            marginTop: 16,
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 8,
-            background: 'var(--surface)',
-            border: '1px solid var(--line-strong)',
-            color: 'var(--text3)',
-            cursor: active ? 'not-allowed' : 'pointer',
-            opacity: active ? 0.5 : 1
-          }}
+          className="mt-4 flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-line-strong bg-surface text-fg-3 hover:text-fg disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Icon name="swap" size={15} />
         </button>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 10,
-              textTransform: 'uppercase',
-              letterSpacing: 0.6,
-              color: 'var(--text4)',
-              fontWeight: 700
-            }}
-          >
-            <Dot color="#22d3ee" size={7} glow={false} />
-            {L.myLangLbl}
-          </span>
-          <select
-            value={myLang}
-            disabled={active}
-            onChange={(e) => {
-              const value = e.target.value as Language
-              setPair(value === meetingLang ? myLang : meetingLang, value)
-            }}
-            style={selectStyle}
-          >
-            {LANGUAGES.map((code) => (
-              <option key={code} value={code}>
-                {languageName(uiLanguage, code)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <LangPicker
+          label={L.myLangLbl}
+          dotColor="#22d3ee"
+          value={myLang}
+          disabled={active}
+          uiLanguage={uiLanguage}
+          onChange={(value) => setPair(value === meetingLang ? myLang : meetingLang, value)}
+        />
       </div>
 
       {/* chế độ */}
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div className="flex gap-2.5">
         {(
           [
             { mode: 'listen', label: L.listen, sub: L.listenSub, icon: 'wave' },
@@ -359,15 +275,7 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
 
       {/* nội dung theo bố cục */}
       {layout === 'split' && (
-        <div
-          style={{
-            flex: 1,
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 14,
-            minHeight: 260
-          }}
-        >
+        <div className="grid min-h-65 flex-1 grid-cols-2 gap-3.5">
           <ColumnPanel
             title="REMOTE"
             direction={`${languageName(uiLanguage, meetingLang)} → ${languageName(uiLanguage, myLang)}`}
@@ -390,19 +298,7 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
       )}
 
       {layout === 'timeline' && (
-        <div
-          className="cs"
-          style={{
-            ...PANEL,
-            flex: 1,
-            overflowY: 'auto',
-            padding: 20,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-            minHeight: 260
-          }}
-        >
+        <div className="panel cs flex min-h-65 flex-1 flex-col gap-4 overflow-y-auto p-5">
           {views.length === 0 ? (
             <EmptyState icon="clock" title={L.idleHint} minHeight={220} />
           ) : (
@@ -412,66 +308,22 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
       )}
 
       {layout === 'focus' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, minHeight: 260 }}>
-          <div
-            style={{
-              ...PANEL,
-              borderRadius: 18,
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              padding: '40px 44px',
-              minHeight: 0
-            }}
-          >
+        <div className="flex min-h-65 flex-1 flex-col gap-3.5">
+          <div className="panel flex min-h-0 flex-1 flex-col justify-center rounded-3xl px-11 py-10">
             {latest ? (
               <UtteranceFocus u={latest} L={L} />
             ) : (
               <EmptyState icon="monitor" title={L.idleHint} minHeight={180} />
             )}
           </div>
-          <div
-            className="cs"
-            style={{
-              height: 120,
-              flexShrink: 0,
-              overflowY: 'auto',
-              borderRadius: 14,
-              border: '1px solid var(--line)',
-              background: 'var(--inset)',
-              padding: '12px 16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 9
-            }}
-          >
+          <div className="cs flex h-30 shrink-0 flex-col gap-2.25 overflow-y-auto rounded-xl border border-line bg-inset px-4 py-3">
             {views.slice(-4).map((u) => (
-              <div
-                key={u.id}
-                style={{ display: 'flex', alignItems: 'baseline', gap: 10, fontSize: 12.5 }}
-              >
+              <div key={u.id} className="flex items-baseline gap-2.5 text-base">
                 <Dot color={SIDE_COLOR[u.side]} size={7} glow={false} />
-                <span
-                  style={{
-                    color: 'var(--text4)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    flexShrink: 0
-                  }}
-                >
+                <span className="shrink-0 font-mono text-[10px] text-fg-4">
                   {new Date(u.at).toLocaleTimeString()}
                 </span>
-                <span
-                  style={{
-                    color: 'var(--text2)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {u.displayTarget || u.sourceText}
-                </span>
+                <span className="truncate-1 text-fg-2">{u.displayTarget || u.sourceText}</span>
               </div>
             ))}
           </div>
@@ -479,7 +331,7 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
       )}
 
       {/* mức tín hiệu */}
-      <div style={{ display: 'flex', alignItems: 'stretch', gap: 12 }}>
+      <div className="flex items-stretch gap-3">
         <Visualizer
           label={L.vizRemote}
           level={systemLevel}
@@ -491,35 +343,17 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
       </div>
 
       {/* điều khiển */}
-      <div
-        style={{
-          ...PANEL,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          padding: '14px 18px',
-          flexWrap: 'wrap'
-        }}
-      >
+      <div className="panel flex flex-wrap items-center gap-3.5 px-4.5 py-3.5">
         <button
           onClick={() => (active ? actions.stop() : actions.start())}
           disabled={!wsOk}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 9,
-            height: 42,
-            padding: '0 22px',
-            borderRadius: 11,
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: wsOk ? 'pointer' : 'not-allowed',
-            opacity: wsOk ? 1 : 0.5,
-            border: active ? '1px solid rgba(239,68,68,.3)' : '1px solid transparent',
-            color: active ? 'var(--ac-red)' : '#04121a',
-            background: active ? 'rgba(239,68,68,.12)' : 'linear-gradient(135deg,#22d3ee,#3b82f6)',
-            boxShadow: active ? 'none' : '0 6px 20px rgba(34,211,238,.3)'
-          }}
+          className={[
+            'inline-flex h-10.5 cursor-pointer items-center gap-2.25 rounded-[11px] border px-5.5 text-[14px] font-bold',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            active
+              ? 'border-[rgba(239,68,68,.3)] bg-[rgba(239,68,68,.12)] text-ac-red'
+              : 'border-transparent bg-linear-[135deg,#22d3ee,#3b82f6] text-[#04121a] shadow-[0_6px_20px_rgba(34,211,238,.3)]'
+          ].join(' ')}
         >
           <Icon name={active ? 'pause' : 'play'} size={16} />
           {active ? L.stop : L.start}
@@ -530,24 +364,13 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
           onMouseUp={() => actions.ptt(false)}
           onMouseLeave={() => ptt && actions.ptt(false)}
           disabled={pttDisabled}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            height: 42,
-            padding: '0 18px',
-            borderRadius: 11,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: pttDisabled ? 'not-allowed' : 'pointer',
-            opacity: pttDisabled ? 0.45 : 1,
-            userSelect: 'none',
-            transition: 'all .12s',
-            border: `1px solid ${ptt ? 'rgba(217,70,239,.6)' : 'var(--line-strong)'}`,
-            background: ptt ? 'rgba(217,70,239,.18)' : 'var(--line-soft)',
-            color: ptt ? 'var(--ac-mag)' : 'var(--text2)',
-            boxShadow: ptt ? '0 0 18px rgba(217,70,239,.3)' : 'none'
-          }}
+          className={[
+            'inline-flex h-10.5 cursor-pointer items-center gap-2 rounded-[11px] border px-4.5 text-md font-bold transition-all select-none',
+            'disabled:cursor-not-allowed disabled:opacity-45',
+            ptt
+              ? 'border-[rgba(217,70,239,.6)] bg-[rgba(217,70,239,.18)] text-ac-mag shadow-[0_0_18px_rgba(217,70,239,.3)]'
+              : 'border-line-strong bg-line-soft text-fg-2'
+          ].join(' ')}
         >
           <Icon name="mic" size={16} />
           {ptt ? L.recording : L.ptt}
@@ -556,45 +379,32 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
         <button
           onClick={() => actions.mute(!muted)}
           disabled={!active}
-          style={{
-            height: 42,
-            padding: '0 16px',
-            borderRadius: 11,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: active ? 'pointer' : 'not-allowed',
-            opacity: active ? 1 : 0.45,
-            border: `1px solid ${muted ? 'rgba(251,146,60,.4)' : 'var(--line-strong)'}`,
-            background: muted ? 'rgba(251,146,60,.12)' : 'var(--line-soft)',
-            color: muted ? 'var(--ac-org)' : 'var(--text2)'
-          }}
+          className={[
+            'h-10.5 cursor-pointer rounded-[11px] border px-4 text-md font-semibold',
+            'disabled:cursor-not-allowed disabled:opacity-45',
+            muted
+              ? 'border-[rgba(251,146,60,.4)] bg-[rgba(251,146,60,.12)] text-ac-org'
+              : 'border-line-strong bg-line-soft text-fg-2'
+          ].join(' ')}
         >
           {muted ? L.unmute : L.mute}
         </button>
 
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11.5
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="flex items-center gap-4 font-mono text-sm">
+          <div className="flex items-center gap-1.5">
             <Dot color={active ? '#22c55e' : 'var(--text5)'} size={7} glow={active} />
-            <span style={{ color: 'var(--text3)' }}>{L.mic}</span>
+            <span className="text-fg-3">{L.mic}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="flex items-center gap-1.5">
             <Dot color={vmicOn ? '#d946ef' : 'var(--text5)'} size={7} glow={vmicOn} />
-            <span style={{ color: 'var(--text3)' }}>{L.vmic}</span>
+            <span className="text-fg-3">{L.vmic}</span>
           </div>
-          <span style={{ color: 'var(--text5)' }}>|</span>
-          <span style={{ color: 'var(--ac-cyan)' }}>ASR {ms(metrics.lastAsrMs)}ms</span>
-          <span style={{ color: 'var(--ac-org)' }}>MT {ms(metrics.lastMtMs)}ms</span>
-          <span style={{ color: 'var(--ac-mag)' }}>TTS {ms(metrics.lastTtsDurationMs)}ms</span>
+          <span className="text-fg-5">|</span>
+          <span className="text-ac-cyan">ASR {ms(metrics.lastAsrMs)}ms</span>
+          <span className="text-ac-org">MT {ms(metrics.lastMtMs)}ms</span>
+          <span className="text-ac-mag">TTS {ms(metrics.lastTtsDurationMs)}ms</span>
           {metrics.measured && <Badge color="var(--text4)">client</Badge>}
         </div>
       </div>

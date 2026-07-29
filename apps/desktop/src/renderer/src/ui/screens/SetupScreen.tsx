@@ -1,5 +1,5 @@
-// Màn Thiết bị âm thanh: chọn/kiểm tra 4 đường tín hiệu, xem phần cứng phát hiện
-// được và cảnh báo vòng lặp âm thanh.
+// Màn Thiết bị âm thanh: chọn/kiểm tra 4 đường tín hiệu, xem phần cứng và thiết
+// bị tính toán thật của từng khâu, cảnh báo vòng lặp âm thanh.
 
 import { useState, type JSX } from 'react'
 import {
@@ -19,7 +19,7 @@ import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
 import { Badge, Dot, Meter, Notice, ScreenHeader } from '../components/primitives'
-import { LABEL, MONO, PANEL, selectStyle } from '../styles'
+import { SCREEN, SELECT, SELECT_ARROW } from '../styles'
 
 interface DeviceCardProps {
   icon: IconName
@@ -55,57 +55,31 @@ function DeviceCard({
   L
 }: DeviceCardProps): JSX.Element {
   return (
-    <div
-      style={{
-        ...PANEL,
-        padding: '16px 18px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-        opacity: disabled ? 0.6 : 1
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+    <div className={`panel flex flex-col gap-3 px-4.5 py-4 ${disabled ? 'opacity-60' : ''}`}>
+      <div className="flex items-center gap-2.75">
         <span
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: `${color}24`,
-            color
-          }}
+          className="flex size-8.5 items-center justify-center rounded-md"
+          style={{ background: `${color}24`, color }}
         >
           <Icon name={icon} size={17} />
         </span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 700 }}>{title}</div>
-          <div style={{ fontSize: 11, color: 'var(--text4)' }}>{role}</div>
+        <div className="min-w-0 flex-1">
+          <div className="text-md font-bold">{title}</div>
+          <div className="text-sm text-fg-4">{role}</div>
         </div>
         <Badge color={status.color}>{status.text}</Badge>
       </div>
 
       {disabled || readOnly ? (
-        <div
-          style={{
-            padding: '10px 12px',
-            borderRadius: 10,
-            background: 'var(--inset)',
-            border: '1px dashed var(--line-strong)',
-            fontSize: 12,
-            color: 'var(--text4)',
-            lineHeight: 1.45
-          }}
-        >
+        <div className="rounded-md border border-dashed border-line-strong bg-inset px-3 py-2.5 text-sm leading-snug text-fg-4">
           {hint}
         </div>
       ) : (
         <select
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          style={{ ...selectStyle, height: 38, width: '100%', fontSize: 12.5 }}
+          className={`${SELECT} h-9.5 w-full text-base`}
+          style={SELECT_ARROW}
         >
           <option value="">{L.deviceDefault}</option>
           {devices.map((d) => (
@@ -116,24 +90,13 @@ function DeviceCard({
         </select>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="flex items-center gap-2.5">
         <Meter value={level ?? 0} color={color} />
         <button
           onClick={onTest}
           disabled={disabled || !onTest}
           title={disabled ? hint : undefined}
-          style={{
-            height: 30,
-            padding: '0 13px',
-            borderRadius: 8,
-            fontSize: 11.5,
-            fontWeight: 600,
-            color: 'var(--text)',
-            background: 'var(--line-soft)',
-            border: '1px solid var(--line-strong)',
-            cursor: disabled || !onTest ? 'not-allowed' : 'pointer',
-            opacity: disabled || !onTest ? 0.45 : 1
-          }}
+          className="h-7.5 cursor-pointer rounded-sm border border-line-strong bg-line-soft px-3.25 text-sm font-semibold text-fg disabled:cursor-not-allowed disabled:opacity-45"
         >
           {L.test}
         </button>
@@ -152,28 +115,12 @@ function HwTile({
   color?: string
 }): JSX.Element {
   return (
-    <div
-      style={{
-        padding: '11px 13px',
-        borderRadius: 11,
-        background: 'var(--inset)',
-        border: '1px solid var(--line-soft)',
-        minWidth: 0
-      }}
-    >
-      <div style={{ ...LABEL, fontSize: 9.5, letterSpacing: 0.5 }}>{label}</div>
+    <div className="min-w-0 rounded-[11px] border border-line-soft bg-inset px-3.25 py-2.75">
+      <div className="label-caps text-2xs tracking-[0.5px]">{label}</div>
       <div
         title={value}
-        style={{
-          fontSize: 12,
-          fontWeight: 600,
-          marginTop: 5,
-          color: color ?? 'var(--text)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          ...MONO
-        }}
+        className="truncate-1 mt-1.25 font-mono text-sm font-semibold"
+        style={{ color: color ?? 'var(--text)' }}
       >
         {value}
       </div>
@@ -193,25 +140,14 @@ function StatusRow({
   color: string
 }): JSX.Element {
   return (
-    <div
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
-    >
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text3)' }}>
+    <div className="flex items-center justify-between gap-3">
+      <span className="inline-flex items-center gap-2 text-fg-3">
         <Icon name={icon} size={14} />
         {label}
       </span>
       <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 7,
-          color,
-          fontWeight: 600,
-          minWidth: 0,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap'
-        }}
+        className="truncate-1 inline-flex min-w-0 items-center gap-1.75 font-semibold"
+        style={{ color }}
       >
         <Dot color={color} size={7} glow={false} />
         {value}
@@ -270,7 +206,7 @@ export function SetupScreen(): JSX.Element {
   }
 
   return (
-    <div style={{ padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className={SCREEN}>
       <ScreenHeader
         icon="sliders"
         title={L.setup}
@@ -279,7 +215,7 @@ export function SetupScreen(): JSX.Element {
         tint="rgba(251,146,60,.12)"
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="grid grid-cols-2 gap-3.5">
         <DeviceCard
           icon="mic"
           color="#22c55e"
@@ -346,38 +282,20 @@ export function SetupScreen(): JSX.Element {
       </div>
 
       {/* phần cứng phát hiện được */}
-      <div style={{ ...PANEL, padding: '18px 20px' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 14,
-            flexWrap: 'wrap'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ color: '#a855f7', display: 'flex' }}>
+      <div className="panel px-5 py-4.5">
+        <div className="flex flex-wrap items-center justify-between gap-3.5">
+          <div className="flex items-center gap-2.5">
+            <span className="flex text-[#a855f7]">
               <Icon name="chip" size={17} />
             </span>
             <div>
-              <div style={{ fontSize: 13.5, fontWeight: 700 }}>{L.instanceT}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>
-                {L.instanceSub}
-              </div>
+              <div className="text-md font-bold">{L.instanceT}</div>
+              <div className="mt-px text-sm text-fg-3">{L.instanceSub}</div>
             </div>
           </div>
           {!compute && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 11.5,
-                color: 'var(--text3)'
-              }}
-            >
-              <span style={{ color: '#22d3ee', display: 'flex' }}>
+            <span className="inline-flex items-center gap-2 text-sm text-fg-3">
+              <span className="flex text-[#22d3ee]">
                 <Icon name="spinner" size={13} strokeWidth={2.6} spin />
               </span>
               {L.detecting}
@@ -387,14 +305,7 @@ export function SetupScreen(): JSX.Element {
 
         {compute && (
           <>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, minmax(0,1fr))',
-                gap: 10,
-                marginTop: 16
-              }}
-            >
+            <div className="mt-4 grid grid-cols-4 gap-2.5">
               <HwTile
                 label={L.gpuLbl}
                 value={prettyGpuName(compute.gpuRenderer) || L.notAvail}
@@ -422,12 +333,12 @@ export function SetupScreen(): JSX.Element {
               />
               <HwTile label={L.apiLbl} value={compute.webgpu ? 'WebGPU + WebGL' : 'WebGL'} />
             </div>
+
+            {/* thiết bị tính toán THẬT của từng khâu, do service báo về */}
             <div
+              className="mt-3 grid gap-2.5"
               style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${Math.max(1, serviceStages.length)}, minmax(0,1fr))`,
-                gap: 10,
-                marginTop: 12
+                gridTemplateColumns: `repeat(${Math.max(1, serviceStages.length)}, minmax(0,1fr))`
               }}
             >
               {serviceStages.map((stage) => {
@@ -435,78 +346,31 @@ export function SetupScreen(): JSX.Element {
                 return (
                   <div
                     key={stage.stage}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      gap: 8,
-                      padding: 14,
-                      borderRadius: 13,
-                      border: `1px solid ${color}55`,
-                      background: `${color}12`
-                    }}
+                    className="flex flex-col items-start gap-2 rounded-[13px] border p-3.5"
+                    style={{ borderColor: `${color}55`, background: `${color}12` }}
                   >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%'
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 9.5,
-                          fontWeight: 700,
-                          letterSpacing: 0.6,
-                          color
-                        }}
-                      >
+                    <div className="flex w-full items-center justify-between">
+                      <span className="text-2xs font-bold tracking-[0.6px]" style={{ color }}>
                         {stage.stage}
                       </span>
                       {stage.loaded && (
-                        <span style={{ color, display: 'flex' }}>
+                        <span className="flex" style={{ color }}>
                           <Icon name="check" size={14} strokeWidth={2.6} />
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>
-                      {stage.accel}
-                    </div>
-                    <div
-                      title={stage.model}
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--text4)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '100%',
-                        ...MONO
-                      }}
-                    >
+                    <div className="text-md leading-tight font-bold">{stage.accel}</div>
+                    <div className="truncate-1 max-w-full font-mono text-[10px] text-fg-4">
                       {stage.adapter}
                     </div>
                   </div>
                 )
               })}
             </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 9,
-                marginTop: 12,
-                padding: '10px 13px',
-                borderRadius: 11,
-                background: 'var(--inset)',
-                border: '1px solid var(--line-soft)',
-                fontSize: 11.5,
-                color: 'var(--text3)'
-              }}
-            >
+
+            <div className="mt-3 flex items-center gap-2.25 rounded-[11px] border border-line-soft bg-inset px-3.25 py-2.5 text-sm text-fg-3">
               <Badge color={KIND_COLOR[compute.kind]}>{compute.kind}</Badge>
-              <span style={{ flex: 1 }}>
+              <span className="flex-1">
                 {serviceStages.length > 0 ? L.computeFromService : L.computeReadOnly}
               </span>
             </div>
@@ -515,10 +379,10 @@ export function SetupScreen(): JSX.Element {
       </div>
 
       {/* trạng thái + gợi ý */}
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-        <div style={{ ...PANEL, flex: 1, minWidth: 280, padding: '16px 18px' }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 12 }}>{L.sysStatus}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12.5 }}>
+      <div className="flex flex-wrap gap-3.5">
+        <div className="panel min-w-70 flex-1 px-4.5 py-4">
+          <div className="mb-3 text-base font-bold">{L.sysStatus}</div>
+          <div className="flex flex-col gap-2.5 text-base">
             <StatusRow
               icon="box"
               label={L.models}
@@ -544,29 +408,13 @@ export function SetupScreen(): JSX.Element {
           </div>
         </div>
 
-        <div
-          style={{
-            flex: 1,
-            minWidth: 280,
-            borderRadius: 16,
-            border: '1px solid rgba(251,146,60,.25)',
-            background: 'rgba(251,146,60,.06)',
-            backdropFilter: 'blur(20px)',
-            padding: '16px 18px',
-            display: 'flex',
-            gap: 12
-          }}
-        >
-          <span style={{ color: '#fb923c', display: 'flex', marginTop: 2 }}>
+        <div className="flex min-w-70 flex-1 gap-3 rounded-2xl border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] px-4.5 py-4 backdrop-blur-xl">
+          <span className="mt-0.5 flex text-[#fb923c]">
             <Icon name="warning" size={20} />
           </span>
           <div>
-            <div
-              style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ac-org2)', marginBottom: 5 }}
-            >
-              {L.tipTitle}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--ac-org)', lineHeight: 1.5 }}>
+            <div className="mb-1.25 text-base font-bold text-ac-org-2">{L.tipTitle}</div>
+            <div className="text-sm leading-normal text-ac-org">
               {L.tipBody}
               {PLATFORM === 'darwin'
                 ? ' (BlackHole 2ch)'

@@ -178,39 +178,3 @@ button {
   }
 }
 
-/* Hover states — thiết kế dùng style-hover, ở đây là class tiện ích. */
-.navbtn:hover {
-  background: var(--line-soft);
-  color: var(--text);
-}
-
-.rowbtn:hover {
-  background: var(--surface);
-}
-
-.iconbtn:hover {
-  color: var(--text);
-  background: var(--surface);
-}
-
-.dangerbtn:hover {
-  color: #f87171;
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.mono {
-  font-family: var(--font-mono);
-}
-
-/* Điều khiển gốc kế thừa font + không dùng màu mặc định của trình duyệt. */
-input,
-select,
-textarea {
-  font-family: inherit;
-}
-
-button:disabled,
-select:disabled,
-input:disabled {
-  cursor: not-allowed;
-}

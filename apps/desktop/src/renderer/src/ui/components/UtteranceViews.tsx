@@ -1,6 +1,9 @@
 // Cách hiển thị một câu dịch, dùng chung cho 3 bố cục của màn Phiên dịch.
+//
+// Màu theo bên phát (ME xanh / REMOTE tím) và màu theo trạng thái pipeline đều
+// tính lúc chạy nên đi qua `style`; bố cục và cỡ chữ là class Tailwind.
 
-import type { CSSProperties, JSX } from 'react'
+import type { JSX } from 'react'
 import type { Dict } from '../../application/i18n'
 import { languageShort } from '../../application/i18n'
 import { formatClock } from '../../application/utterances'
@@ -12,28 +15,30 @@ function directionText(u: ViewUtterance): string {
   return `${languageShort(u.sourceLanguage)} → ${languageShort(u.targetLanguage)}`
 }
 
+function SideTag({ side }: { side: ViewUtterance['side'] }): JSX.Element {
+  const color = SIDE_COLOR[side]
+  return (
+    <span
+      className="rounded-xs px-2 py-0.5 text-xs font-extrabold tracking-[0.5px]"
+      style={{ color, background: `${color}1a` }}
+    >
+      {side === 'me' ? 'Me' : 'Remote'}
+    </span>
+  )
+}
+
 // Dạng dòng đơn giản dùng trong hai cột Split.
 export function UtteranceRow({ u, L }: { u: ViewUtterance; L: Dict }): JSX.Element {
   const status = statusMeta(u.state, L)
   return (
-    <div style={{ animation: 'fadeup .3s ease' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-        <span style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--font-mono)' }}>
-          {formatClock(u.at)}
-        </span>
+    <div className="motion-safe:animate-[fadeup_.3s_ease]">
+      <div className="mb-1.25 flex items-center gap-2">
+        <span className="font-mono text-[10px] text-fg-4">{formatClock(u.at)}</span>
         <Badge color={status.color}>{status.text}</Badge>
       </div>
-      <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.5 }}>{u.sourceText}</div>
+      <div className="text-[14px] leading-normal text-fg-2">{u.sourceText}</div>
       {u.displayTarget && (
-        <div
-          style={{
-            fontSize: 15,
-            color: 'var(--text)',
-            fontWeight: 600,
-            lineHeight: 1.5,
-            marginTop: 3
-          }}
-        >
+        <div className="mt-0.75 text-lg leading-normal font-semibold text-fg">
           {u.displayTarget}
         </div>
       )}
@@ -46,59 +51,28 @@ export function UtteranceBubble({ u, L }: { u: ViewUtterance; L: Dict }): JSX.El
   const status = statusMeta(u.state, L)
   const isMe = u.side === 'me'
   const tag = SIDE_COLOR[u.side]
-  const tagStyle: CSSProperties = {
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: 0.5,
-    padding: '2px 8px',
-    borderRadius: 6,
-    color: tag,
-    background: `${tag}1a`
-  }
 
   return (
     <div
-      style={{
-        display: 'flex',
-        justifyContent: isMe ? 'flex-end' : 'flex-start',
-        animation: 'fadeup .3s ease'
-      }}
+      className={`flex motion-safe:animate-[fadeup_.3s_ease] ${isMe ? 'justify-end' : 'justify-start'}`}
     >
       <div
+        className="max-w-[76%] rounded-xl border px-4 py-3.25"
         style={{
-          maxWidth: '76%',
-          padding: '13px 16px',
-          borderRadius: 14,
-          border: `1px solid ${tag}33`,
+          borderColor: `${tag}33`,
           background: isMe ? 'rgba(34,211,238,.06)' : 'rgba(217,70,239,.06)'
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 6,
-            flexDirection: isMe ? 'row-reverse' : 'row'
-          }}
-        >
-          <span style={tagStyle}>{isMe ? 'Me' : 'Remote'}</span>
-          <span style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--font-mono)' }}>
+        <div className={`mb-1.5 flex items-center gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+          <SideTag side={u.side} />
+          <span className="font-mono text-[10px] text-fg-4">
             {directionText(u)} · {formatClock(u.at)}
           </span>
           <Badge color={status.color}>{status.text}</Badge>
         </div>
-        <div style={{ fontSize: 13.5, color: 'var(--text3)', lineHeight: 1.5 }}>{u.sourceText}</div>
+        <div className="text-md leading-normal text-fg-3">{u.sourceText}</div>
         {u.displayTarget && (
-          <div
-            style={{
-              fontSize: 15.5,
-              color: 'var(--text)',
-              fontWeight: 600,
-              lineHeight: 1.5,
-              marginTop: 4
-            }}
-          >
+          <div className="mt-1 text-[15.5px] leading-normal font-semibold text-fg">
             {u.displayTarget}
           </div>
         )}
@@ -110,43 +84,16 @@ export function UtteranceBubble({ u, L }: { u: ViewUtterance; L: Dict }): JSX.El
 // Câu mới nhất, cỡ chữ lớn — bố cục Focus.
 export function UtteranceFocus({ u, L }: { u: ViewUtterance; L: Dict }): JSX.Element {
   const status = statusMeta(u.state, L)
-  const tag = SIDE_COLOR[u.side]
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 800,
-            letterSpacing: 0.5,
-            padding: '2px 8px',
-            borderRadius: 6,
-            color: tag,
-            background: `${tag}1a`
-          }}
-        >
-          {u.side === 'me' ? 'Me' : 'Remote'}
-        </span>
-        <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-mono)' }}>
-          {directionText(u)}
-        </span>
+      <div className="mb-4.5 flex items-center gap-2.5">
+        <SideTag side={u.side} />
+        <span className="font-mono text-sm text-fg-3">{directionText(u)}</span>
         <Badge color={status.color}>{status.text}</Badge>
       </div>
-      <div style={{ fontSize: 19, color: 'var(--text3)', lineHeight: 1.45, fontWeight: 500 }}>
-        {u.sourceText}
-      </div>
+      <div className="text-[19px] leading-snug font-medium text-fg-3">{u.sourceText}</div>
       {u.displayTarget && (
-        <div
-          style={{
-            fontSize: 32,
-            color: 'var(--text)',
-            fontWeight: 800,
-            lineHeight: 1.28,
-            marginTop: 14,
-            letterSpacing: -0.5,
-            textWrap: 'pretty'
-          }}
-        >
+        <div className="mt-3.5 text-[32px] leading-tight font-extrabold tracking-[-0.5px] text-pretty text-fg">
           {u.displayTarget}
         </div>
       )}

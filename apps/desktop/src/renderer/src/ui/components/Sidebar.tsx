@@ -46,68 +46,38 @@ export function Sidebar({ status }: { status: ServiceStatus }): JSX.Element {
     ready: {
       title: L.offlineReady,
       sub: L.noCloud,
-      color: 'var(--ac-grn)',
-      subColor: 'var(--ac-grn3)',
-      bg: 'rgba(34,197,94,.08)',
-      border: 'rgba(34,197,94,.2)',
+      titleClass: 'text-ac-grn',
+      subClass: 'text-ac-grn-3',
+      box: 'border-[rgba(34,197,94,.2)] bg-[rgba(34,197,94,.08)]',
       dot: '#22c55e'
     },
     connecting: {
       title: L.connecting,
       sub: L.appName,
-      color: '#22d3ee',
-      subColor: 'var(--text3)',
-      bg: 'rgba(34,211,238,.08)',
-      border: 'rgba(34,211,238,.2)',
+      titleClass: 'text-[#22d3ee]',
+      subClass: 'text-fg-3',
+      box: 'border-[rgba(34,211,238,.2)] bg-[rgba(34,211,238,.08)]',
       dot: '#22d3ee'
     },
     down: {
       title: L.serviceDown,
       sub: L.serviceDownSub,
-      color: 'var(--ac-org)',
-      subColor: 'var(--text3)',
-      bg: 'rgba(251,146,60,.08)',
-      border: 'rgba(251,146,60,.2)',
+      titleClass: 'text-ac-org',
+      subClass: 'text-fg-3',
+      box: 'border-[rgba(251,146,60,.2)] bg-[rgba(251,146,60,.08)]',
       dot: '#fb923c'
     }
   }[status]
 
   return (
-    <aside
-      style={{
-        width: 236,
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '18px 14px',
-        gap: 6,
-        borderRight: '1px solid var(--line)',
-        background: 'var(--sidebar)',
-        backdropFilter: 'blur(20px)'
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '6px 8px 16px' }}>
-        <div
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 11,
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'linear-gradient(135deg,#22d3ee,#3b82f6)',
-            boxShadow: '0 6px 18px rgba(34,211,238,.35)',
-            color: '#04121a'
-          }}
-        >
+    <aside className="flex w-59 shrink-0 flex-col gap-1.5 border-r border-line bg-sidebar px-3.5 py-4.5 backdrop-blur-xl">
+      <div className="flex items-center gap-2.75 px-2 pt-1.5 pb-4">
+        <div className="flex size-9.5 shrink-0 items-center justify-center rounded-[11px] bg-linear-[135deg,#22d3ee,#3b82f6] text-[#04121a] shadow-[0_6px_18px_rgba(34,211,238,.35)]">
           <Icon name="mic" size={21} strokeWidth={2.4} />
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.15 }}>Voice Translator</div>
-          <div style={{ fontSize: 10.5, color: 'var(--text4)', fontWeight: 500 }}>
-            v{__APP_VERSION__} · Local AI
-          </div>
+        <div className="min-w-0">
+          <div className="text-md leading-tight font-bold">Voice Translator</div>
+          <div className="text-xs font-medium text-fg-4">v{__APP_VERSION__} · Local AI</div>
         </div>
       </div>
 
@@ -116,51 +86,32 @@ export function Sidebar({ status }: { status: ServiceStatus }): JSX.Element {
         return (
           <button
             key={item.id}
-            className="navbtn"
             onClick={() => setScreen(item.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 11,
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: 11,
-              border: `1px solid ${active ? 'var(--line-strong)' : 'transparent'}`,
-              background: active ? 'var(--line)' : 'transparent',
-              color: active ? 'var(--text)' : 'var(--text3)',
-              fontSize: 13,
-              fontWeight: active ? 600 : 500,
-              cursor: 'pointer',
-              transition: 'all .15s',
-              textAlign: 'left'
-            }}
+            className={[
+              'flex w-full cursor-pointer items-center gap-2.75 rounded-[11px] border px-3 py-2.5 text-left text-md transition-all',
+              active
+                ? 'border-line-strong bg-line font-semibold text-fg'
+                : 'border-transparent bg-transparent font-medium text-fg-3 hover:bg-line-soft hover:text-fg'
+            ].join(' ')}
           >
-            <span style={{ display: 'flex', color: item.color }}>
+            <span className="flex" style={{ color: item.color }}>
               <Icon name={item.icon} size={17} />
             </span>
-            <span style={{ flex: 1 }}>{labels[item.id]}</span>
+            <span className="flex-1">{labels[item.id]}</span>
             {active && <Dot color={item.color} size={6} />}
           </button>
         )
       })}
 
-      <div style={{ flex: 1 }} />
+      <div className="flex-1" />
 
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 9,
-          padding: '9px 11px',
-          borderRadius: 11,
-          background: footer.bg,
-          border: `1px solid ${footer.border}`
-        }}
+        className={`flex items-center gap-2.25 rounded-[11px] border px-2.75 py-2.25 ${footer.box}`}
       >
         <Dot color={footer.dot} size={9} pulse />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: footer.color }}>{footer.title}</div>
-          <div style={{ fontSize: 10, color: footer.subColor }}>{footer.sub}</div>
+        <div className="min-w-0">
+          <div className={`text-sm font-semibold ${footer.titleClass}`}>{footer.title}</div>
+          <div className={`text-[10px] ${footer.subClass}`}>{footer.sub}</div>
         </div>
       </div>
     </aside>

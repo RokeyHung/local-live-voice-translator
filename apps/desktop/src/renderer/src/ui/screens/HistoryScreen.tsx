@@ -8,9 +8,13 @@ import { useDict } from '../../hooks/use-ui'
 import { useMeetingStore } from '../../stores/meeting-store'
 import { Icon } from '../components/Icon'
 import { Dot, EmptyState, ScreenHeader } from '../components/primitives'
-import { dangerButton, ghostButton, inputStyle, LABEL, MONO, PANEL } from '../styles'
+import { DANGER_BUTTON, GHOST_BUTTON, ICON_BUTTON, INPUT, SCREEN } from '../styles'
 
-const GRID = '64px 74px 1fr 1fr 120px'
+// Cùng một lưới cho hàng tiêu đề và các dòng bản ghi.
+const GRID = 'grid grid-cols-[64px_74px_1fr_1fr_120px] gap-3'
+
+const REC_BADGE =
+  'inline-flex items-center gap-1.25 rounded-full border border-[rgba(239,68,68,.35)] bg-[rgba(239,68,68,.14)] text-ac-red font-extrabold tracking-[0.5px]'
 
 export function HistoryScreen(): JSX.Element {
   const L = useDict()
@@ -40,7 +44,7 @@ export function HistoryScreen(): JSX.Element {
   const rows = selected?.rows ?? []
 
   return (
-    <div style={{ padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className={SCREEN}>
       <ScreenHeader
         icon="clock"
         title={L.history}
@@ -48,9 +52,9 @@ export function HistoryScreen(): JSX.Element {
         color="#d946ef"
         tint="rgba(217,70,239,.12)"
         right={
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex gap-2">
             <button
-              style={{ ...ghostButton, opacity: selected ? 1 : 0.45 }}
+              className={GHOST_BUTTON}
               disabled={!selected}
               onClick={() =>
                 selected && downloadText(`${selected.title}.txt`, meetingToTxt(selected))
@@ -60,7 +64,7 @@ export function HistoryScreen(): JSX.Element {
               .txt
             </button>
             <button
-              style={{ ...ghostButton, opacity: selected ? 1 : 0.45 }}
+              className={GHOST_BUTTON}
               disabled={!selected}
               onClick={() =>
                 selected && downloadText(`${selected.title}.srt`, meetingToSrt(selected))
@@ -69,88 +73,42 @@ export function HistoryScreen(): JSX.Element {
               <Icon name="download" size={14} />
               .srt
             </button>
-            <button
-              style={{ ...dangerButton, opacity: meetings.length ? 1 : 0.45 }}
-              disabled={meetings.length === 0}
-              onClick={clearAll}
-            >
+            <button className={DANGER_BUTTON} disabled={meetings.length === 0} onClick={clearAll}>
               {L.clearAll}
             </button>
           </div>
         }
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: 14 }}>
+      <div className="grid grid-cols-[270px_1fr] gap-3.5">
         {/* danh sách cuộc họp */}
-        <div style={{ ...PANEL, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <div
-            style={{
-              padding: '11px 12px',
-              borderBottom: '1px solid var(--line)',
-              background: 'var(--surface)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 9
-            }}
-          >
-            <span style={LABEL}>{L.meetingsTitle}</span>
-            <div style={{ position: 'relative' }}>
-              <span
-                style={{
-                  position: 'absolute',
-                  left: 10,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--text4)',
-                  display: 'flex'
-                }}
-              >
+        <div className="panel flex flex-col overflow-hidden">
+          <div className="flex flex-col gap-2.25 border-b border-line bg-surface px-3 py-2.75">
+            <span className="label-caps">{L.meetingsTitle}</span>
+            <div className="relative">
+              <span className="absolute top-1/2 left-2.5 flex -translate-y-1/2 text-fg-4">
                 <Icon name="search" size={14} />
               </span>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={L.searchHistory}
-                style={{ ...inputStyle, height: 34, fontSize: 12, paddingLeft: 32 }}
+                className={`${INPUT} h-8.5 pl-8 text-sm`}
               />
             </div>
           </div>
 
-          <div
-            className="cs"
-            style={{
-              maxHeight: 476,
-              overflowY: 'auto',
-              padding: 10,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8
-            }}
-          >
+          <div className="cs flex max-h-119 flex-col gap-2 overflow-y-auto p-2.5">
             {meetings.length === 0 && (
-              <div
-                style={{
-                  padding: '26px 16px',
-                  textAlign: 'center',
-                  color: 'var(--text5)',
-                  fontSize: 12,
-                  lineHeight: 1.5
-                }}
-              >
+              <div className="px-4 py-6.5 text-center text-sm leading-normal text-fg-5">
                 {L.startToRec}
               </div>
             )}
             {meetings.length > 0 && filtered.length === 0 && (
-              <div style={{ padding: '30px 16px', textAlign: 'center' }}>
+              <div className="px-4 py-7.5 text-center">
                 <Icon name="search" size={26} strokeWidth={1.6} />
-                <div
-                  style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text3)', marginTop: 8 }}
-                >
-                  {L.noResultsT}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text5)', marginTop: 4, lineHeight: 1.5 }}>
-                  {L.noResultsS}
-                </div>
+                <div className="mt-2 text-base font-semibold text-fg-3">{L.noResultsT}</div>
+                <div className="mt-1 text-sm leading-normal text-fg-5">{L.noResultsS}</div>
               </div>
             )}
 
@@ -161,21 +119,14 @@ export function HistoryScreen(): JSX.Element {
                 <div
                   key={m.id}
                   onClick={() => select(m.id)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 5,
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '12px 14px',
-                    borderRadius: 12,
-                    cursor: 'pointer',
-                    transition: 'all .15s',
-                    border: `1px solid ${isSelected ? 'rgba(240,171,252,.4)' : 'var(--line)'}`,
-                    background: isSelected ? 'rgba(240,171,252,.08)' : 'var(--surface)'
-                  }}
+                  className={[
+                    'flex w-full cursor-pointer flex-col gap-1.25 rounded-lg border px-3.5 py-3 text-left transition-all',
+                    isSelected
+                      ? 'border-[rgba(240,171,252,.4)] bg-[rgba(240,171,252,.08)]'
+                      : 'border-line bg-surface hover:border-line-strong'
+                  ].join(' ')}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div className="flex items-center gap-2">
                     {editingId === m.id ? (
                       <input
                         autoFocus
@@ -187,122 +138,48 @@ export function HistoryScreen(): JSX.Element {
                           if (e.key === 'Enter') rename(m.id, draftTitle)
                           if (e.key === 'Escape') setEditing(null)
                         }}
-                        style={{
-                          ...inputStyle,
-                          flex: 1,
-                          minWidth: 0,
-                          height: 26,
-                          padding: '0 8px',
-                          fontSize: 12.5,
-                          fontWeight: 700,
-                          borderColor: 'var(--ac-mag)',
-                          ...MONO
-                        }}
+                        className={`${INPUT} h-6.5 min-w-0 flex-1 border-ac-mag px-2 font-mono text-base font-bold`}
                       />
                     ) : (
                       <span
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          fontSize: 12.5,
-                          fontWeight: 700,
-                          color: isSelected ? 'var(--text)' : 'var(--text2)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          ...MONO
-                        }}
+                        className={`truncate-1 min-w-0 flex-1 font-mono text-base font-bold ${
+                          isSelected ? 'text-fg' : 'text-fg-2'
+                        }`}
                       >
                         {m.title}
                       </span>
                     )}
                     {isRecording && (
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                          fontSize: 8.5,
-                          fontWeight: 800,
-                          letterSpacing: 0.5,
-                          padding: '2px 7px',
-                          borderRadius: 9999,
-                          color: 'var(--ac-red)',
-                          background: 'rgba(239,68,68,.14)',
-                          border: '1px solid rgba(239,68,68,.35)'
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            background: '#ef4444',
-                            animation: 'blink 1s step-start infinite'
-                          }}
-                        />
+                      <span className={`${REC_BADGE} px-1.75 py-0.5 text-[8.5px]`}>
+                        <span className="size-1.5 rounded-full bg-[#ef4444] motion-safe:animate-[blink_1s_step-start_infinite]" />
                         REC
                       </span>
                     )}
                     <button
-                      className="iconbtn"
                       title={L.renameTip}
                       onClick={(e) => {
                         e.stopPropagation()
                         setDraftTitle(m.title)
                         setEditing(m.id)
                       }}
-                      style={{
-                        width: 24,
-                        height: 24,
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: 6,
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text4)',
-                        cursor: 'pointer'
-                      }}
+                      className={`${ICON_BUTTON} hover:bg-[rgba(217,70,239,.1)] hover:text-ac-mag`}
                     >
                       <Icon name="pencil" size={13} />
                     </button>
                     <button
-                      className="dangerbtn"
                       title={L.deleteTip}
                       onClick={(e) => {
                         e.stopPropagation()
                         remove(m.id)
                       }}
-                      style={{
-                        width: 24,
-                        height: 24,
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: 6,
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text4)',
-                        cursor: 'pointer'
-                      }}
+                      className={`${ICON_BUTTON} hover:bg-[rgba(239,68,68,.1)] hover:text-[#f87171]`}
                     >
                       <Icon name="trash" size={13} />
                     </button>
                   </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      fontSize: 10.5,
-                      color: 'var(--text4)'
-                    }}
-                  >
+                  <div className="flex items-center gap-2 text-xs text-fg-4">
                     <span>{formatDateTime(m.startedAtMs)}</span>
-                    <span style={{ opacity: 0.4 }}>·</span>
+                    <span className="opacity-40">·</span>
                     <span>
                       {m.rows.length} {L.utter}
                     </span>
@@ -314,81 +191,33 @@ export function HistoryScreen(): JSX.Element {
         </div>
 
         {/* bản ghi */}
-        <div style={{ ...PANEL, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="panel flex flex-col overflow-hidden">
           {selected ? (
             <>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '12px 18px',
-                  borderBottom: '1px solid var(--line)',
-                  background: 'var(--surface)'
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, ...MONO }}>{selected.title}</div>
-                  <div style={{ fontSize: 10.5, color: 'var(--text4)', marginTop: 2 }}>
+              <div className="flex items-center gap-2.5 border-b border-line bg-surface px-4.5 py-3">
+                <div className="min-w-0 flex-1">
+                  <div className="font-mono text-md font-bold">{selected.title}</div>
+                  <div className="mt-0.5 text-xs text-fg-4">
                     {formatDateTime(selected.startedAtMs)}
                   </div>
                 </div>
                 {selected.id === currentId && (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: 9,
-                      fontWeight: 800,
-                      letterSpacing: 0.5,
-                      padding: '3px 9px',
-                      borderRadius: 9999,
-                      color: 'var(--ac-red)',
-                      background: 'rgba(239,68,68,.14)',
-                      border: '1px solid rgba(239,68,68,.35)'
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: '#ef4444',
-                        animation: 'blink 1s step-start infinite'
-                      }}
-                    />
+                  <span className={`${REC_BADGE} px-2.25 py-0.75 text-3xs`}>
+                    <span className="size-1.5 rounded-full bg-[#ef4444] motion-safe:animate-[blink_1s_step-start_infinite]" />
                     {L.recording}
                   </span>
                 )}
               </div>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: GRID,
-                  gap: 12,
-                  padding: '9px 18px',
-                  borderBottom: '1px solid var(--line-soft)',
-                  ...LABEL,
-                  fontSize: 9.5
-                }}
-              >
+              <div className={`${GRID} label-caps border-b border-line-soft px-4.5 py-2.25`}>
                 <span>{L.colTime}</span>
                 <span>{L.colSrc}</span>
                 <span>{L.colOriginal}</span>
                 <span>{L.colTranslated}</span>
-                <span style={{ textAlign: 'right' }}>{L.colLatency}</span>
+                <span className="text-right">{L.colLatency}</span>
               </div>
-              <div className="cs" style={{ maxHeight: 472, overflowY: 'auto' }}>
+              <div className="cs max-h-118 overflow-y-auto">
                 {rows.length === 0 ? (
-                  <div
-                    style={{
-                      padding: '40px 20px',
-                      textAlign: 'center',
-                      color: 'var(--text5)',
-                      fontSize: 12.5
-                    }}
-                  >
+                  <div className="px-5 py-10 text-center text-base text-fg-5">
                     {L.emptyTranscript}
                   </div>
                 ) : (
@@ -400,59 +229,25 @@ export function HistoryScreen(): JSX.Element {
                     return (
                       <div
                         key={row.id}
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: GRID,
-                          gap: 12,
-                          padding: '12px 18px',
-                          borderBottom: '1px solid var(--line-soft)',
-                          alignItems: 'center',
-                          animation: 'fadeup .3s ease'
-                        }}
+                        className={`${GRID} items-center border-b border-line-soft px-4.5 py-3 motion-safe:animate-[fadeup_.3s_ease]`}
                       >
-                        <span style={{ fontSize: 11, color: 'var(--text4)', ...MONO }}>
-                          {formatClock(row.atMs)}
-                        </span>
+                        <span className="font-mono text-sm text-fg-4">{formatClock(row.atMs)}</span>
                         <span
+                          className="inline-flex items-center gap-1.25 justify-self-start rounded-full border px-2 py-0.5 text-3xs font-bold tracking-[0.4px]"
                           style={{
-                            justifySelf: 'start',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            fontSize: 9,
-                            fontWeight: 700,
-                            letterSpacing: 0.4,
-                            padding: '2px 8px',
-                            borderRadius: 9999,
                             color,
                             background: `${color}1f`,
-                            border: `1px solid ${color}4d`
+                            borderColor: `${color}4d`
                           }}
                         >
                           <Dot color={color} size={5} glow={false} />
                           {row.side === 'me' ? 'ME' : 'REMOTE'}
                         </span>
-                        <span style={{ fontSize: 12.5, color: 'var(--text3)', lineHeight: 1.4 }}>
-                          {row.sourceText}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 12.5,
-                            color: 'var(--text2)',
-                            fontWeight: 500,
-                            lineHeight: 1.4
-                          }}
-                        >
+                        <span className="text-base leading-snug text-fg-3">{row.sourceText}</span>
+                        <span className="text-base leading-snug font-medium text-fg-2">
                           {row.translatedText}
                         </span>
-                        <span
-                          style={{
-                            textAlign: 'right',
-                            fontSize: 10.5,
-                            color: 'var(--text4)',
-                            ...MONO
-                          }}
-                        >
+                        <span className="text-right font-mono text-xs text-fg-4">
                           {latency ? `${latency}ms` : '—'}
                         </span>
                       </div>

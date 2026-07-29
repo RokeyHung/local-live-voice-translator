@@ -7,21 +7,13 @@ import type { JSX } from 'react'
 import { useDict } from '../../hooks/use-ui'
 import { Icon } from '../components/Icon'
 import { Badge, Notice, ScreenHeader } from '../components/primitives'
-import { PANEL } from '../styles'
+import { SCREEN } from '../styles'
 
 export function ImportScreen(): JSX.Element {
   const L = useDict()
 
   return (
-    <div
-      style={{
-        padding: '22px 26px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        maxWidth: 840
-      }}
-    >
+    <div className={`${SCREEN} max-w-210`}>
       <ScreenHeader
         icon="upload"
         title={L.importFiles}
@@ -33,53 +25,17 @@ export function ImportScreen(): JSX.Element {
 
       <div
         aria-disabled
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          padding: '44px 24px',
-          borderRadius: 20,
-          border: '2px dashed var(--line-strong)',
-          background: 'var(--surface)',
-          opacity: 0.6,
-          cursor: 'not-allowed'
-        }}
+        className="flex cursor-not-allowed flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-line-strong bg-surface px-6 py-11 text-center opacity-60"
       >
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'var(--surface)',
-            color: '#2dd4bf',
-            marginBottom: 16
-          }}
-        >
+        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-surface text-[#2dd4bf]">
           <Icon name="upload" size={30} />
         </div>
-        <div style={{ fontSize: 17, fontWeight: 700 }}>{L.importDisabledT}</div>
-        <div
-          style={{
-            fontSize: 12.5,
-            color: 'var(--text3)',
-            marginTop: 8,
-            maxWidth: 460,
-            lineHeight: 1.5
-          }}
-        >
-          {L.importDisabledS}
-        </div>
-        <div style={{ fontSize: 11.5, color: 'var(--text5)', marginTop: 14 }}>{L.dropSub}</div>
+        <div className="text-xl font-bold">{L.importDisabledT}</div>
+        <div className="mt-2 max-w-115 text-base leading-normal text-fg-3">{L.importDisabledS}</div>
+        <div className="mt-3.5 text-sm text-fg-5">{L.dropSub}</div>
       </div>
 
-      <div style={{ ...PANEL, padding: 0 }}>
-        <Notice tone="info" icon="info" title={L.notSupported} body={L.notSupportedYet} />
-      </div>
+      <Notice tone="info" icon="info" title={L.notSupported} body={L.notSupportedYet} />
     </div>
   )
 }

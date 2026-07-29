@@ -7,7 +7,7 @@ import { useDict } from '../../hooks/use-ui'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
 import { ScreenHeader, Segmented } from '../components/primitives'
-import { inputStyle, MONO, PANEL, primaryButton } from '../styles'
+import { INPUT, PRIMARY_BUTTON, SCREEN } from '../styles'
 
 function Section({
   icon,
@@ -25,15 +25,15 @@ function Section({
   children: JSX.Element
 }): JSX.Element {
   return (
-    <div style={{ ...PANEL, padding: '18px 20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-        <span style={{ color, display: 'flex' }}>
+    <div className="panel px-5 py-4.5">
+      <div className="mb-1 flex items-center gap-2.5">
+        <span className="flex" style={{ color }}>
           <Icon name={icon} size={16} />
         </span>
-        <div style={{ fontSize: 13.5, fontWeight: 700 }}>{title}</div>
+        <div className="text-md font-bold">{title}</div>
         {right}
       </div>
-      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 14 }}>{desc}</div>
+      <div className="mb-3.5 text-base text-fg-3">{desc}</div>
       {children}
     </div>
   )
@@ -67,15 +67,7 @@ export function SettingsScreen(): JSX.Element {
   ]
 
   return (
-    <div
-      style={{
-        padding: '22px 26px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        maxWidth: 760
-      }}
-    >
+    <div className={`${SCREEN} max-w-190`}>
       <ScreenHeader
         icon="gear"
         title={L.settings}
@@ -85,35 +77,25 @@ export function SettingsScreen(): JSX.Element {
       />
 
       <Section icon="sun" color="var(--ac-sky)" title={L.appearance} desc={L.themeDesc}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+        <div className="grid grid-cols-3 gap-2.5">
           {themeCards.map((card) => {
             const on = theme === card.mode
             return (
               <button
                 key={card.mode}
                 onClick={() => setTheme(card.mode)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center',
-                  padding: '16px 12px',
-                  borderRadius: 13,
-                  cursor: 'pointer',
-                  transition: 'all .16s',
-                  border: `1px solid ${on ? 'rgba(125,211,252,.5)' : 'var(--line)'}`,
-                  background: on ? 'rgba(125,211,252,.1)' : 'var(--surface)',
-                  color: on ? 'var(--ac-sky2)' : 'var(--text2)',
-                  boxShadow: on ? '0 0 16px rgba(125,211,252,.14)' : 'none'
-                }}
+                className={[
+                  'flex cursor-pointer flex-col items-center rounded-[13px] border px-3 py-4 text-center transition-all',
+                  on
+                    ? 'border-[rgba(125,211,252,.5)] bg-[rgba(125,211,252,.1)] text-ac-sky-2 shadow-[0_0_16px_rgba(125,211,252,.14)]'
+                    : 'border-line bg-surface text-fg-2 hover:border-line-strong'
+                ].join(' ')}
               >
-                <span style={{ display: 'flex', color: on ? 'var(--ac-sky)' : 'var(--text3)' }}>
+                <span className={`flex ${on ? 'text-ac-sky' : 'text-fg-3'}`}>
                   <Icon name={card.icon} size={20} />
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 700, marginTop: 9 }}>{card.label}</span>
-                <span style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 3 }}>
-                  {card.sub}
-                </span>
+                <span className="mt-2.25 text-md font-bold">{card.label}</span>
+                <span className="mt-0.75 text-xs text-fg-3">{card.sub}</span>
               </button>
             )
           })}
@@ -121,7 +103,7 @@ export function SettingsScreen(): JSX.Element {
       </Section>
 
       <Section icon="globe" color="#22d3ee" title={L.uiLang} desc={L.langDesc}>
-        <div style={{ maxWidth: 280 }}>
+        <div className="max-w-70">
           <Segmented
             size="lg"
             value={uiLanguage}
@@ -141,9 +123,9 @@ export function SettingsScreen(): JSX.Element {
             value={hfToken}
             onChange={(e) => setHfToken(e.target.value)}
             placeholder={L.hfPh}
-            style={{ ...inputStyle, maxWidth: 420, ...MONO }}
+            className={`${INPUT} max-w-105 font-mono`}
           />
-          <div style={{ fontSize: 11, color: 'var(--text4)', marginTop: 8 }}>{L.hfUnused}</div>
+          <div className="mt-2 text-sm text-fg-4">{L.hfUnused}</div>
         </div>
       </Section>
 
@@ -154,22 +136,22 @@ export function SettingsScreen(): JSX.Element {
         desc={L.glossDesc}
         right={
           glossary.length > 0 ? (
-            <span style={{ fontSize: 10.5, color: 'var(--text4)', ...MONO }}>
+            <span className="font-mono text-xs text-fg-4">
               {glossary.length} {L.glossCount}
             </span>
           ) : undefined
         }
       >
         <div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div className="mb-3 flex flex-wrap gap-2">
             <input
               value={src}
               onChange={(e) => setSrc(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submitTerm()}
               placeholder={L.glossSrcPh}
-              style={{ ...inputStyle, flex: 1, minWidth: 150, height: 36 }}
+              className={`${INPUT} h-9 min-w-37.5 flex-1`}
             />
-            <span style={{ alignSelf: 'center', color: 'var(--text4)', display: 'flex' }}>
+            <span className="flex self-center text-fg-4">
               <Icon name="arrow-right" size={16} />
             </span>
             <input
@@ -177,49 +159,29 @@ export function SettingsScreen(): JSX.Element {
               onChange={(e) => setDst(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submitTerm()}
               placeholder={L.glossDstPh}
-              style={{ ...inputStyle, flex: 1, minWidth: 150, height: 36 }}
+              className={`${INPUT} h-9 min-w-37.5 flex-1`}
             />
-            <button onClick={submitTerm} style={{ ...primaryButton, height: 36 }}>
+            <button onClick={submitTerm} className={PRIMARY_BUTTON}>
               {L.glossAdd}
             </button>
           </div>
 
           {glossary.length === 0 ? (
-            <div style={{ fontSize: 12, color: 'var(--text5)' }}>{L.glossEmpty}</div>
+            <div className="text-sm text-fg-5">{L.glossEmpty}</div>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div className="flex flex-wrap gap-2">
               {glossary.map((entry) => (
                 <span
                   key={entry.id}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 10px',
-                    borderRadius: 9,
-                    background: 'var(--surface)',
-                    border: '1px solid var(--line-strong)',
-                    fontSize: 12
-                  }}
+                  className="inline-flex items-center gap-2 rounded-[9px] border border-line-strong bg-surface px-2.5 py-1.5 text-sm"
                 >
-                  <span style={{ color: 'var(--text3)', ...MONO }}>{entry.source}</span>
+                  <span className="font-mono text-fg-3">{entry.source}</span>
                   <Icon name="arrow-right" size={12} strokeWidth={2.4} />
-                  <span style={{ fontWeight: 600, ...MONO }}>{entry.target}</span>
+                  <span className="font-mono font-semibold">{entry.target}</span>
                   <button
-                    className="dangerbtn"
                     onClick={() => removeGlossary(entry.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 18,
-                      height: 18,
-                      borderRadius: 5,
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text4)',
-                      cursor: 'pointer'
-                    }}
+                    aria-label={`${L.clear} ${entry.source}`}
+                    className="flex size-4.5 cursor-pointer items-center justify-center rounded-[5px] border-none bg-transparent text-fg-4 transition-colors hover:text-[#f87171]"
                   >
                     <Icon name="x" size={12} strokeWidth={2.4} />
                   </button>

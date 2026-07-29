@@ -3,6 +3,9 @@
 // Chiều cao mỗi cột lấy từ mức RMS thật (không phải animation trang trí): cột giữa
 // cao nhất, hai bên thấp dần, cộng một chút nhiễu ổn định theo chỉ số cột để dải
 // sóng không phẳng lì. Không có tín hiệu thì mọi cột về mức nền.
+//
+// Màu và chiều cao đổi theo từng khung audio nên phần đó buộc phải là inline
+// style — Tailwind không sinh được class cho giá trị tính lúc chạy.
 
 import type { JSX } from 'react'
 import { rmsToDb } from '../../adapters/level-meter'
@@ -33,61 +36,39 @@ export function Visualizer({
 
   return (
     <div
+      className="flex flex-1 flex-col gap-2 rounded-2xl border px-4 py-3.25 backdrop-blur-xl"
       style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-        padding: '13px 16px',
-        borderRadius: 16,
-        border: `1px solid ${color}33`,
-        background: `linear-gradient(to bottom right,${color}0d,var(--inset))`,
-        backdropFilter: 'blur(20px)'
+        borderColor: `${color}33`,
+        background: `linear-gradient(to bottom right,${color}0d,var(--inset))`
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="flex items-center justify-between">
         <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 10.5,
-            fontWeight: 700,
-            letterSpacing: 0.5,
-            textTransform: 'uppercase',
-            color
-          }}
+          className="flex items-center gap-2 text-xs font-bold tracking-[0.5px] uppercase"
+          style={{ color }}
         >
           <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              background: color,
-              boxShadow: `0 0 7px ${color}`
-            }}
+            className="size-1.75 rounded-full"
+            style={{ background: color, boxShadow: `0 0 7px ${color}` }}
           />
           {label}
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)' }}>
+        <span className="font-mono text-[10px] text-fg-3">
           {note ?? (db == null ? '-∞ dB' : `${db} dB`)}
         </span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 38 }}>
+      <div className="flex h-9.5 items-end gap-0.75">
         {Array.from({ length: BARS }, (_, i) => {
           const center = 1 - Math.abs(i - (BARS - 1) / 2) / ((BARS - 1) / 2)
           const height = 12 + norm * (18 + center * 70) * jitter(i)
           return (
             <span
               key={i}
+              className="min-h-0.75 flex-1 rounded-[2px] transition-[height] duration-75 ease-linear"
               style={{
-                flex: 1,
                 height: `${Math.min(100, height)}%`,
-                minHeight: 3,
-                borderRadius: 2,
                 background:
-                  norm > 0.02 ? `linear-gradient(to top,${color},${color}66)` : `${color}2e`,
-                transition: 'height .08s linear'
+                  norm > 0.02 ? `linear-gradient(to top,${color},${color}66)` : `${color}2e`
               }}
             />
           )

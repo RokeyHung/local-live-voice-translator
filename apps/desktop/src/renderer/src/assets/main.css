@@ -1,1 +1,86 @@
+@import 'tailwindcss';
 @import './theme.css';
+
+/* Chủ đề đổi lúc chạy qua data-theme trên <html> (xem hooks/use-ui.ts), không
+ * theo prefers-color-scheme trực tiếp — người dùng chọn được Sáng/Tối/Hệ thống. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* `inline` để utility sinh ra tham chiếu thẳng tới biến của chủ đề, nhờ đó đổi
+ * data-theme là màu đổi theo ngay mà không cần build lại. */
+@theme inline {
+  --color-fg: var(--text);
+  --color-fg-2: var(--text2);
+  --color-fg-3: var(--text3);
+  --color-fg-4: var(--text4);
+  --color-fg-5: var(--text5);
+
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+  --color-surface: var(--surface);
+  --color-inset: var(--inset);
+  --color-inset-2: var(--inset2);
+  --color-sidebar: var(--sidebar);
+
+  --color-ac-cyan: var(--ac-cyan);
+  --color-ac-mag: var(--ac-mag);
+  --color-ac-grn: var(--ac-grn);
+  --color-ac-grn-2: var(--ac-grn2);
+  --color-ac-grn-3: var(--ac-grn3);
+  --color-ac-sky: var(--ac-sky);
+  --color-ac-sky-2: var(--ac-sky2);
+  --color-ac-org: var(--ac-org);
+  --color-ac-org-2: var(--ac-org2);
+  --color-ac-red: var(--ac-red);
+}
+
+/* Thang chữ lấy đúng theo thiết kế (đơn vị px vì đây là app desktop cỡ cố định,
+ * không có nhu cầu co giãn theo cỡ chữ hệ thống). */
+@theme {
+  --font-sans:
+    Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
+    sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  --text-3xs: 9px;
+  --text-2xs: 9.5px;
+  --text-xs: 10.5px;
+  --text-sm: 11.5px;
+  --text-base: 12.5px;
+  --text-md: 13.5px;
+  --text-lg: 15px;
+  --text-xl: 17px;
+  --text-2xl: 20px;
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+  --radius-3xl: 18px;
+}
+
+/* Tấm kính mờ dùng lại ở mọi màn. */
+@utility panel {
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(20px);
+}
+
+/* Nhãn nhỏ in hoa phía trên các nhóm nội dung. */
+@utility label-caps {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text4);
+  font-weight: 700;
+}
+
+/* Một dòng, tràn thì cắt bằng dấu ba chấm. */
+@utility truncate-1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
