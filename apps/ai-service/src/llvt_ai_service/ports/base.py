@@ -16,3 +16,16 @@ class Provider(ABC):
     @abstractmethod
     async def unload(self) -> None:
         """Giải phóng tài nguyên khi kết thúc."""
+
+    @property
+    def loaded(self) -> bool:
+        """Model đã thật sự nằm trong bộ nhớ chưa (mặc định: coi như đã sẵn sàng)."""
+        return True
+
+    def runtime_info(self) -> dict[str, str]:
+        """Thông tin THẬT lúc chạy: model đang dùng, thiết bị tính toán, backend…
+
+        Giao diện hiển thị đúng những gì service đang chạy thay vì đoán từ phía
+        client. Chỉ trả về thứ đọc được chắc chắn; không suy diễn.
+        """
+        return {}

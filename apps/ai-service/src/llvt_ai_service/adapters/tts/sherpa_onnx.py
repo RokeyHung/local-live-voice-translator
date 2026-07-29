@@ -130,6 +130,19 @@ class SherpaOnnxTts(TextToSpeechProvider):
     async def unload(self) -> None:
         self._engines.clear()
 
+    @property
+    def loaded(self) -> bool:
+        # Voice nạp lười theo ngôn ngữ nên provider luôn "sẵn sàng"; chi tiết ở runtime_info.
+        return True
+
+    def runtime_info(self) -> dict[str, str]:
+        return {
+            "model": ", ".join(sorted(self._engines)) or "chưa nạp voice nào",
+            "backend": "sherpa-onnx",
+            "accel": "CPU",
+            "languages": ", ".join(sorted(v.value for v in self._voices)),
+        }
+
     async def synthesize(
         self, text: str, language: Language, voice: str | None = None, speed: float = 1.0
     ) -> TtsResult:

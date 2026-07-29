@@ -11,9 +11,8 @@ import {
 import { prettyGpuName } from '../../adapters/compute-probe'
 import { PLATFORM } from '../../application/config'
 import type { Dict } from '../../application/i18n'
-import { PRESET_META } from '../../application/presets'
-import type { ComputeBackend, ComputeKind } from '../../domain/enums'
-import { useServiceConfig } from '../../hooks/use-config'
+import { PRESET_META, STAGE_COLORS } from '../../application/presets'
+import { useResources, useServiceConfig } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
 import { useAudioDevices, useCompute, useDict, useMicLevel } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
@@ -221,30 +220,6 @@ function StatusRow({
   )
 }
 
-// Các backend suy luận mà ai-service có thể dùng; hiển thị chỉ-đọc — service tự
-// chọn khi nạp model, giao diện chưa đổi được.
-const BACKENDS: {
-  id: ComputeBackend | 'auto'
-  labelKey: 'devAuto' | 'devCuda' | 'devMetal' | 'devVulkan' | 'devCpu'
-  subKey?: 'devAutoSub' | 'devCpuSub'
-  color: string
-  icon: IconName
-  kinds: ComputeKind[]
-}[] = [
-  {
-    id: 'auto',
-    labelKey: 'devAuto',
-    subKey: 'devAutoSub',
-    color: '#22d3ee',
-    icon: 'gear',
-    kinds: []
-  },
-  { id: 'cuda', labelKey: 'devCuda', color: '#76b900', icon: 'chip', kinds: ['nvidia'] },
-  { id: 'metal', labelKey: 'devMetal', color: '#38bdf8', icon: 'bolt', kinds: ['apple'] },
-  { id: 'vulkan', labelKey: 'devVulkan', color: '#a855f7', icon: 'box', kinds: ['amd', 'intel'] },
-  { id: 'cpu', labelKey: 'devCpu', subKey: 'devCpuSub', color: '#64748b', icon: 'chip', kinds: [] }
-]
-
 const KIND_COLOR: Record<string, string> = {
   nvidia: '#76b900',
   apple: 'var(--ac-sky)',
@@ -259,6 +234,7 @@ export function SetupScreen(): JSX.Element {
   const { inputs, outputs } = useAudioDevices()
   const health = useHealth()
   const serviceConfig = useServiceConfig()
+  const resources = useResources(health.isSuccess)
   const active = useSessionStore((s) => s.active)
   const sessionMicLevel = useSessionStore((s) => s.micLevel)
   const systemLevel = useSessionStore((s) => s.systemLevel)
@@ -276,6 +252,7 @@ export function SetupScreen(): JSX.Element {
   const previewLevel = useMicLevel(inputDeviceId, !active)
   const micLevel = active ? sessionMicLevel : previewLevel
 
+  const serviceStages = serviceConfig.data?.stages ?? []
   const outputLabel = outputs.find((d) => d.deviceId === outputDeviceId)?.label ?? ''
   const virtualMics = outputs.filter((d) => looksLikeVirtualMic(d.label))
   const vmicSelected = virtualMicDeviceId !== ''
@@ -425,43 +402,48 @@ export function SetupScreen(): JSX.Element {
               />
               <HwTile
                 label={L.cpuLbl}
-                value={compute.cpuCores ? `${compute.cpuCores} ${L.cores}` : '—'}
+                value={
+                  resources.data
+                    ? `${resources.data.cpuCount} ${L.cores}`
+                    : compute.cpuCores
+                      ? `${compute.cpuCores} ${L.cores}`
+                      : '—'
+                }
               />
               <HwTile
                 label={L.ramLbl}
-                value={compute.ramGb ? `${compute.ramCapped ? '≥' : ''}${compute.ramGb} GB` : '—'}
+                value={
+                  resources.data
+                    ? `${(resources.data.systemTotalMb / 1024).toFixed(0)} GB`
+                    : compute.ramGb
+                      ? `≥${compute.ramGb} GB`
+                      : '—'
+                }
               />
               <HwTile label={L.apiLbl} value={compute.webgpu ? 'WebGPU + WebGL' : 'WebGL'} />
             </div>
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(5, minmax(0,1fr))',
+                gridTemplateColumns: `repeat(${Math.max(1, serviceStages.length)}, minmax(0,1fr))`,
                 gap: 10,
                 marginTop: 12
               }}
             >
-              {BACKENDS.map((backend) => {
-                const available =
-                  backend.id === 'auto' ||
-                  backend.id === 'cpu' ||
-                  backend.kinds.includes(compute.kind)
-                const on = backend.id === compute.recommended
+              {serviceStages.map((stage) => {
+                const color = STAGE_COLORS[stage.stage] ?? 'var(--text3)'
                 return (
                   <div
-                    key={backend.id}
+                    key={stage.stage}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'flex-start',
-                      textAlign: 'left',
                       gap: 8,
                       padding: 14,
                       borderRadius: 13,
-                      opacity: available ? 1 : 0.4,
-                      border: `1px solid ${on ? backend.color : 'var(--line)'}`,
-                      background: on ? `${backend.color}14` : 'var(--surface)',
-                      boxShadow: on ? `0 0 14px ${backend.color}22` : 'none'
+                      border: `1px solid ${color}55`,
+                      background: `${color}12`
                     }}
                   >
                     <div
@@ -474,35 +456,36 @@ export function SetupScreen(): JSX.Element {
                     >
                       <span
                         style={{
-                          display: 'inline-flex',
-                          width: 34,
-                          height: 34,
-                          borderRadius: 9,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: `${backend.color}1a`,
-                          color: backend.color
+                          fontSize: 9.5,
+                          fontWeight: 700,
+                          letterSpacing: 0.6,
+                          color
                         }}
                       >
-                        <Icon name={backend.icon} size={18} />
+                        {stage.stage}
                       </span>
-                      {on && (
-                        <span style={{ color: backend.color, display: 'flex' }}>
-                          <Icon name="check" size={16} strokeWidth={2.6} />
+                      {stage.loaded && (
+                        <span style={{ color, display: 'flex' }}>
+                          <Icon name="check" size={14} strokeWidth={2.6} />
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.2 }}>
-                      {L[backend.labelKey]}
+                    <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>
+                      {stage.accel}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--text4)' }}>
-                      {available
-                        ? on
-                          ? L.recommended
-                          : backend.subKey
-                            ? L[backend.subKey]
-                            : ''
-                        : L.notAvail}
+                    <div
+                      title={stage.model}
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text4)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '100%',
+                        ...MONO
+                      }}
+                    >
+                      {stage.adapter}
                     </div>
                   </div>
                 )
@@ -523,7 +506,9 @@ export function SetupScreen(): JSX.Element {
               }}
             >
               <Badge color={KIND_COLOR[compute.kind]}>{compute.kind}</Badge>
-              <span style={{ flex: 1 }}>{L.computeReadOnly}</span>
+              <span style={{ flex: 1 }}>
+                {serviceStages.length > 0 ? L.computeFromService : L.computeReadOnly}
+              </span>
             </div>
           </>
         )}

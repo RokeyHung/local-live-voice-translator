@@ -95,6 +95,7 @@ export interface Dict {
   cores: string
   atLeast: string
   computeReadOnly: string
+  computeFromService: string
   sysStatus: string
   models: string
   compute: string
@@ -109,6 +110,8 @@ export interface Dict {
   modelSub: string
   presetActive: string
   installed: string
+  onDisk: string
+  noModelsOnDisk: string
   loadIdle: string
   loadedLbl: string
   ramWarnHard: string
@@ -321,6 +324,8 @@ const vi: Dict = {
   cores: 'lõi',
   atLeast: 'ít nhất',
   computeReadOnly: 'AI service tự chọn backend khi nạp model — chưa đổi được từ giao diện.',
+  computeFromService:
+    'Thiết bị thật của từng khâu do AI service báo về khi nạp model — chưa đổi được từ giao diện.',
   sysStatus: 'Trạng thái hệ thống',
   models: 'Model',
   compute: 'Tính toán',
@@ -335,7 +340,9 @@ const vi: Dict = {
 
   modelSub: 'Chọn preset hiệu năng cho pipeline chạy trên máy.',
   presetActive: 'ĐANG DÙNG',
-  installed: 'Model của preset đang dùng',
+  installed: 'Khâu pipeline đang chạy',
+  onDisk: 'Model đã tải trên máy',
+  noModelsOnDisk: 'Chưa có model nào trên đĩa — service sẽ tự tải khi nạp preset.',
   loadIdle: 'Chưa nạp',
   loadedLbl: 'Đã nạp',
   ramWarnHard:
@@ -553,6 +560,8 @@ const en: Dict = {
   atLeast: 'at least',
   computeReadOnly:
     'The AI service picks the backend when loading models — not switchable from the UI.',
+  computeFromService:
+    'Per-stage device reported by the AI service after loading models — not switchable from the UI.',
   sysStatus: 'System status',
   models: 'Models',
   compute: 'Compute',
@@ -567,7 +576,9 @@ const en: Dict = {
 
   modelSub: 'Pick the performance preset the local pipeline runs with.',
   presetActive: 'ACTIVE',
-  installed: 'Models of the active preset',
+  installed: 'Active pipeline stages',
+  onDisk: 'Models on disk',
+  noModelsOnDisk: 'No model files yet — the service downloads them when a preset loads.',
   loadIdle: 'Not loaded',
   loadedLbl: 'Loaded',
   ramWarnHard:

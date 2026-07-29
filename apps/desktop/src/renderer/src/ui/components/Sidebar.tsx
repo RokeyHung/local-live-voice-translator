@@ -106,7 +106,7 @@ export function Sidebar({ status }: { status: ServiceStatus }): JSX.Element {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.15 }}>Voice Translator</div>
           <div style={{ fontSize: 10.5, color: 'var(--text4)', fontWeight: 500 }}>
-            v1.0 · Local AI
+            v{__APP_VERSION__} · Local AI
           </div>
         </div>
       </div>

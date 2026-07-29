@@ -3,6 +3,7 @@
 
 import type { JSX } from 'react'
 import { prettyGpuName } from '../../adapters/compute-probe'
+import { FRAME_SAMPLES, TARGET_SAMPLE_RATE } from '../../adapters/pcm16-stream'
 import { useBenchmark, useResources } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
 import { useCompute, useDict } from '../../hooks/use-ui'
@@ -367,8 +368,11 @@ export function DiagnosticsScreen(): JSX.Element {
       <div>
         <div style={{ ...LABEL, marginBottom: 8 }}>{L.audioT}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 14 }}>
-          <StatRow label={L.sampleRate} value="16 kHz mono" />
-          <StatRow label={L.frameSize} value="1600 (100 ms)" />
+          <StatRow label={L.sampleRate} value={`${TARGET_SAMPLE_RATE / 1000} kHz mono`} />
+          <StatRow
+            label={L.frameSize}
+            value={`${FRAME_SAMPLES} (${(FRAME_SAMPLES / TARGET_SAMPLE_RATE) * 1000} ms)`}
+          />
           <StatRow label={L.utterCount} value={String(metrics.utteranceCount)} />
         </div>
       </div>

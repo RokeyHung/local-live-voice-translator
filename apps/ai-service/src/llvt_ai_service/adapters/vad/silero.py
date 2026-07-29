@@ -149,6 +149,14 @@ class SileroVad(VoiceActivityDetector):
         self._loader = None
         self._iter_cls = None
 
+    @property
+    def loaded(self) -> bool:
+        return self._loader is not None
+
+    def runtime_info(self) -> dict[str, str]:
+        # Silero VAD chạy trên CPU: model rất nhỏ, đẩy sang GPU còn tốn hơn.
+        return {"model": "silero-vad", "backend": "torch", "accel": "CPU"}
+
     def open_stream(self) -> SileroVadStream:
         if self._loader is None or self._iter_cls is None:
             raise RuntimeError("SileroVad chưa load() — không thể open_stream()")

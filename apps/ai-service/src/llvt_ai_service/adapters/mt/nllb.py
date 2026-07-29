@@ -59,7 +59,8 @@ class _TransformersNllb:
         from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
         self._torch = torch
-        self._device = device or ("mps" if torch.backends.mps.is_available() else "cpu")
+        self.device = device or ("mps" if torch.backends.mps.is_available() else "cpu")
+        self._device = self.device
         self._tokenizer = AutoTokenizer.from_pretrained(repo_id, cache_dir=models_dir)
         self._model = AutoModelForSeq2SeqLM.from_pretrained(repo_id, cache_dir=models_dir).to(
             self._device
@@ -110,6 +111,15 @@ class NllbTranslator(TranslationProvider):
 
     async def unload(self) -> None:
         self._backend = None
+
+    @property
+    def loaded(self) -> bool:
+        return self._backend is not None
+
+    def runtime_info(self) -> dict[str, str]:
+        # Thiết bị do chính backend chọn lúc nạp (mps/cuda/cpu), không phải suy đoán.
+        device = getattr(self._backend, "device", None) or self._device or "—"
+        return {"model": self._repo_id, "backend": "transformers", "accel": str(device)}
 
     async def translate(self, text: str, source: Language, target: Language) -> TranslationResult:
         if self._backend is None:

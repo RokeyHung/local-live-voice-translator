@@ -58,6 +58,17 @@ TTS_REGISTRY: dict[str, Callable[[PresetConfig], TextToSpeechProvider]] = {
 }
 
 
+@dataclass
+class StageInfo:
+    """Một khâu của pipeline với thông tin THẬT lấy từ provider đang chạy."""
+
+    stage: str
+    adapter: str
+    model: str
+    accel: str
+    loaded: bool
+
+
 class ModelManager:
     def __init__(self) -> None:
         self._providers: ProviderSet | None = None
@@ -72,6 +83,30 @@ class ModelManager:
         if self._providers is None:
             raise RuntimeError("Chưa nạp preset — gọi load_preset() trước.")
         return self._providers
+
+    def stages(self) -> list[StageInfo]:
+        """Bốn khâu kèm model + thiết bị đang thật sự dùng (rỗng nếu chưa nạp preset)."""
+        if self._providers is None:
+            return []
+        pairs = (
+            ("VAD", self._providers.vad),
+            ("ASR", self._providers.asr),
+            ("MT", self._providers.mt),
+            ("TTS", self._providers.tts),
+        )
+        out: list[StageInfo] = []
+        for stage, provider in pairs:
+            info = provider.runtime_info()
+            out.append(
+                StageInfo(
+                    stage=stage,
+                    adapter=provider.name,
+                    model=info.get("model", "—"),
+                    accel=info.get("accel", "—"),
+                    loaded=provider.loaded,
+                )
+            )
+        return out
 
     async def load_preset(self, preset: Preset) -> ProviderSet:
         await self.unload()

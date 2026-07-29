@@ -1,11 +1,10 @@
-// Bản mirror phía client của config/presets.py bên ai-service.
+// Chỉ còn phần TRÌNH BÀY của preset (tên hiển thị, màu, mô tả, RAM khuyến nghị).
 //
-// Service không expose danh sách model qua REST (chỉ có GET/PUT /api/config trả về
-// tên preset), nên bảng này phải được cập nhật cùng lúc với PRESETS trong
-// apps/ai-service/src/llvt_ai_service/config/presets.py.
+// Danh sách model/adapter/thiết bị của từng khâu KHÔNG nằm ở đây nữa: service trả
+// về qua GET /api/config → `stages`, lấy trực tiếp từ provider đang chạy. Nhờ vậy
+// giao diện không thể lệch với thực tế khi bên service đổi preset.
 
 import type { Preset } from '../domain/enums'
-import type { StageModel } from '../domain/models'
 
 export interface PresetMeta {
   id: Preset
@@ -16,12 +15,7 @@ export interface PresetMeta {
   tint: string
   descVi: string
   descEn: string
-  stages: StageModel[]
 }
-
-const SILERO: StageModel = { stage: 'VAD', adapter: 'silero', model: 'silero-vad' }
-// TTS nạp lười theo ngôn ngữ đích nên preset không cố định một voice cụ thể.
-const SHERPA: StageModel = { stage: 'TTS', adapter: 'sherpa_onnx', model: 'vits-piper (vi/en/zh)' }
 
 export const PRESET_META: Record<Preset, PresetMeta> = {
   fast: {
@@ -31,13 +25,7 @@ export const PRESET_META: Record<Preset, PresetMeta> = {
     color: 'var(--ac-grn2)',
     tint: 'rgba(74,222,128,.12)',
     descVi: 'Model nhỏ, quantize. Ưu tiên độ trễ thấp cho CPU.',
-    descEn: 'Small quantized models. Low latency for CPU.',
-    stages: [
-      SILERO,
-      { stage: 'ASR', adapter: 'whisper_cpp', model: 'whisper-small-q5' },
-      { stage: 'MT', adapter: 'nllb', model: 'nllb-200-distilled-600M-int8' },
-      SHERPA
-    ]
+    descEn: 'Small quantized models. Low latency for CPU.'
   },
   balanced: {
     id: 'balanced',
@@ -46,13 +34,7 @@ export const PRESET_META: Record<Preset, PresetMeta> = {
     color: '#22d3ee',
     tint: 'rgba(34,211,238,.12)',
     descVi: 'Whisper large-v3-turbo Q5 + NLLB-600M. Mặc định.',
-    descEn: 'Whisper large-v3-turbo Q5 + NLLB-600M. Default.',
-    stages: [
-      SILERO,
-      { stage: 'ASR', adapter: 'whisper_cpp', model: 'whisper-large-v3-turbo-q5' },
-      { stage: 'MT', adapter: 'nllb', model: 'nllb-200-distilled-600M' },
-      SHERPA
-    ]
+    descEn: 'Whisper large-v3-turbo Q5 + NLLB-600M. Default.'
   },
   quality: {
     id: 'quality',
@@ -61,13 +43,7 @@ export const PRESET_META: Record<Preset, PresetMeta> = {
     color: '#a855f7',
     tint: 'rgba(168,85,247,.12)',
     descVi: 'Whisper Q8 + NLLB-600M. Chất lượng cao nhất.',
-    descEn: 'Whisper Q8 + NLLB-600M. Highest quality.',
-    stages: [
-      SILERO,
-      { stage: 'ASR', adapter: 'whisper_cpp', model: 'whisper-large-v3-turbo-q8' },
-      { stage: 'MT', adapter: 'nllb', model: 'nllb-200-distilled-600M' },
-      SHERPA
-    ]
+    descEn: 'Whisper Q8 + NLLB-600M. Highest quality.'
   }
 }
 

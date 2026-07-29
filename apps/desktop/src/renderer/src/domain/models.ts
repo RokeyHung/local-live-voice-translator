@@ -41,9 +41,28 @@ export interface ResourceResponse {
   threads: number
 }
 
+// Một khâu pipeline kèm model + thiết bị THẬT mà service đang chạy.
+export interface StageInfo {
+  stage: Stage
+  adapter: string
+  model: string
+  accel: string
+  loaded: boolean
+}
+
 export interface ConfigResponse {
   preset: Preset
   availablePresets: Preset[]
+  stages: StageInfo[]
+  modelsDir: string
+}
+
+// Model đã tải thật trên đĩa (GET /api/models) — dung lượng là số thật.
+export interface InstalledModel {
+  name: string
+  stage: Stage
+  path: string
+  sizeBytes: number
 }
 
 export interface LanguagePair {
@@ -102,13 +121,6 @@ export interface GlossaryEntry {
   id: string
   source: string
   target: string
-}
-
-// Một model cụ thể mà preset đang dùng cho một khâu của pipeline.
-export interface StageModel {
-  stage: Stage
-  adapter: string
-  model: string
 }
 
 // Phần cứng phát hiện được từ renderer (navigator + WebGL). Không có API hệ thống

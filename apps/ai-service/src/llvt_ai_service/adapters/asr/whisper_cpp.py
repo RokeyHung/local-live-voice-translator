@@ -47,6 +47,29 @@ class WhisperModel(Protocol):
 ModelLoader = Callable[[str, str | None], WhisperModel]
 
 
+def _read_system_info() -> str:
+    """Cờ build thật của whisper.cpp (METAL/CUDA/BLAS…) — không đoán từ nền tảng."""
+    try:
+        from pywhispercpp.model import Model
+
+        return str(Model.system_info())
+    except Exception:  # noqa: BLE001 — chỉ là thông tin hiển thị, không được làm hỏng load
+        return ""
+
+
+def _accel_from_system_info(info: str) -> str:
+    """Rút gọn chuỗi cờ build thành tên bộ tăng tốc đang bật."""
+    if not info:
+        return "unknown"
+    if "MTL" in info or "METAL = 1" in info:
+        return "Metal"
+    if "CUDA = 1" in info:
+        return "CUDA"
+    if "BLAS = 1" in info:
+        return "BLAS"
+    return "CPU"
+
+
 def _default_loader(model_id: str, models_dir: str | None) -> WhisperModel:
     from pywhispercpp.model import Model
 
@@ -69,12 +92,25 @@ class WhisperCppAsr(SpeechToTextProvider):
         self._loader = loader or _default_loader
         self._model: WhisperModel | None = None
         self._exec = SerialExecutor()
+        self._system_info = ""
 
     async def load(self) -> None:
         logger.info("WhisperCppAsr.load(model=%s -> %s)", self._model_name, self._model_id)
         # Tải/nạp model là blocking (I/O + CPU) -> chạy ngoài event loop.
         self._model = await asyncio.to_thread(self._loader, self._model_id, self._models_dir)
+        self._system_info = await asyncio.to_thread(_read_system_info)
         logger.info("WhisperCppAsr loaded (models_dir=%s)", self._models_dir)
+
+    @property
+    def loaded(self) -> bool:
+        return self._model is not None
+
+    def runtime_info(self) -> dict[str, str]:
+        return {
+            "model": self._model_id,
+            "backend": "whisper.cpp",
+            "accel": _accel_from_system_info(self._system_info),
+        }
 
     async def unload(self) -> None:
         self._model = None

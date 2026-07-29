@@ -2,11 +2,12 @@
 // chạy. Tải model từ Hugging Face chưa có API bên AI service nên chỉ tra cứu.
 
 import { useMemo, useState, type JSX } from 'react'
+import { formatBytes } from '../../application/format'
 import { format } from '../../application/i18n'
 import { MODEL_CATALOG, PRESET_META, STAGE_COLORS } from '../../application/presets'
 import type { Preset } from '../../domain/enums'
 import { PRESETS } from '../../domain/models'
-import { useServiceConfig, useSetPreset } from '../../hooks/use-config'
+import { useInstalledModels, useServiceConfig, useSetPreset } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
 import { useCompute, useDict } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
@@ -35,12 +36,16 @@ export function ModelsScreen(): JSX.Element {
   const health = useHealth()
   const config = useServiceConfig()
   const setPreset = useSetPreset()
+  const installed = useInstalledModels(health.isSuccess)
   const setSessionConfig = useSessionStore((s) => s.setConfig)
   const active = useSessionStore((s) => s.active)
   const [query, setQuery] = useState('')
 
   const current = config.data?.preset ?? null
   const meta = current ? PRESET_META[current] : null
+  const stages = config.data?.stages ?? []
+  const installedNames = new Set((installed.data ?? []).map((m) => m.name))
+  const totalBytes = (installed.data ?? []).reduce((sum, m) => sum + m.sizeBytes, 0)
   const serviceUp = health.isSuccess
 
   const applyPreset = (preset: Preset): void => {
@@ -211,7 +216,7 @@ export function ModelsScreen(): JSX.Element {
         />
       )}
 
-      {/* model của preset đang chạy */}
+      {/* khâu pipeline — model + thiết bị THẬT do service báo về */}
       <div style={{ ...PANEL, overflow: 'hidden' }}>
         <div
           style={{
@@ -226,9 +231,9 @@ export function ModelsScreen(): JSX.Element {
           <span style={{ fontSize: 12.5, fontWeight: 700 }}>{L.installed}</span>
           {meta && <Badge color={meta.color}>{meta.name}</Badge>}
         </div>
-        {meta ? (
-          meta.stages.map((stage) => {
-            const color = STAGE_COLORS[stage.stage]
+        {stages.length > 0 ? (
+          stages.map((stage) => {
+            const color = STAGE_COLORS[stage.stage] ?? 'var(--text3)'
             return (
               <div
                 key={stage.stage}
@@ -253,16 +258,10 @@ export function ModelsScreen(): JSX.Element {
                     color
                   }}
                 >
-                  <Icon name={STAGE_ICON[stage.stage]} size={16} />
+                  <Icon name={STAGE_ICON[stage.stage] ?? 'box'} size={16} />
                 </span>
                 <span
-                  style={{
-                    width: 44,
-                    fontSize: 9.5,
-                    fontWeight: 700,
-                    letterSpacing: 0.5,
-                    color
-                  }}
+                  style={{ width: 44, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color }}
                 >
                   {stage.stage}
                 </span>
@@ -272,6 +271,7 @@ export function ModelsScreen(): JSX.Element {
                     {L.adapterLbl}: {stage.adapter}
                   </div>
                 </div>
+                <Badge color={color}>{stage.accel}</Badge>
                 <span
                   style={{
                     display: 'inline-flex',
@@ -279,11 +279,13 @@ export function ModelsScreen(): JSX.Element {
                     gap: 6,
                     fontSize: 11,
                     fontWeight: 600,
-                    color: serviceUp ? 'var(--ac-grn)' : 'var(--text4)'
+                    width: 80,
+                    justifyContent: 'flex-end',
+                    color: stage.loaded ? 'var(--ac-grn)' : 'var(--text4)'
                   }}
                 >
-                  {serviceUp && <Icon name="check" size={14} strokeWidth={2.6} />}
-                  {serviceUp ? L.loadedLbl : L.loadIdle}
+                  {stage.loaded && <Icon name="check" size={14} strokeWidth={2.6} />}
+                  {stage.loaded ? L.loadedLbl : L.loadIdle}
                 </span>
               </div>
             )
@@ -298,6 +300,89 @@ export function ModelsScreen(): JSX.Element {
             }}
           >
             {L.mbIdleS}
+          </div>
+        )}
+      </div>
+
+      {/* model đã tải trên đĩa — dung lượng thật */}
+      <div style={{ ...PANEL, overflow: 'hidden' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '13px 18px',
+            borderBottom: '1px solid var(--line)',
+            background: 'var(--surface)'
+          }}
+        >
+          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{L.onDisk}</span>
+          <span style={{ fontSize: 11, color: 'var(--text4)', ...MONO }}>
+            {installed.data ? formatBytes(totalBytes) : ''}
+          </span>
+        </div>
+        {(installed.data ?? []).map((model) => {
+          const color = STAGE_COLORS[model.stage] ?? 'var(--text3)'
+          return (
+            <div
+              key={model.path}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 13,
+                padding: '12px 18px',
+                borderBottom: '1px solid var(--line-soft)'
+              }}
+            >
+              <span
+                style={{ width: 40, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color }}
+              >
+                {model.stage}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, ...MONO }}>{model.name}</div>
+                <div
+                  title={model.path}
+                  style={{
+                    fontSize: 10.5,
+                    color: 'var(--text4)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {model.path}
+                </div>
+              </div>
+              <span style={{ fontSize: 11.5, color: 'var(--text3)', ...MONO }}>
+                {formatBytes(model.sizeBytes)}
+              </span>
+            </div>
+          )
+        })}
+        {installed.data && installed.data.length === 0 && (
+          <div
+            style={{
+              padding: '30px 20px',
+              textAlign: 'center',
+              color: 'var(--text5)',
+              fontSize: 12.5
+            }}
+          >
+            {L.noModelsOnDisk}
+          </div>
+        )}
+        {config.data?.modelsDir && (
+          <div
+            style={{
+              padding: '10px 18px',
+              fontSize: 10.5,
+              color: 'var(--text5)',
+              ...MONO
+            }}
+          >
+            {config.data.modelsDir}
           </div>
         )}
       </div>
@@ -374,7 +459,10 @@ export function ModelsScreen(): JSX.Element {
           )}
           {catalog.map((entry) => {
             const color = STAGE_COLORS[entry.stage]
-            const inUse = meta?.stages.some((s) => s.model === entry.name) ?? false
+            // Khớp với danh sách trên đĩa thật, không khớp với bảng preset chép tay.
+            const inUse = [...installedNames].some(
+              (name) => name === entry.name || name.endsWith(`/${entry.name}`)
+            )
             return (
               <div
                 key={entry.name}

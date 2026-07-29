@@ -99,7 +99,8 @@ export function AboutScreen(): JSX.Element {
           </div>
           <div style={{ display: 'flex', gap: 20, marginTop: 14, fontSize: 11.5, ...MONO }}>
             <span style={{ color: 'var(--text3)' }}>
-              {L.aboutVersion} <span style={{ color: 'var(--text)', fontWeight: 600 }}>1.0.0</span>
+              {L.aboutVersion}{' '}
+              <span style={{ color: 'var(--text)', fontWeight: 600 }}>{__APP_VERSION__}</span>
             </span>
             <span style={{ color: 'var(--text3)' }}>
               {L.aboutBuild}{' '}

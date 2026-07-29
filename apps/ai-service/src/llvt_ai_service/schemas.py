@@ -14,9 +14,28 @@ class HealthResponse(BaseModel):
     platform: str
 
 
+class StageInfoSchema(BaseModel):
+    """Một khâu pipeline với model + thiết bị THẬT của provider đang chạy."""
+
+    stage: str
+    adapter: str
+    model: str
+    accel: str
+    loaded: bool
+
+
 class ConfigResponse(BaseModel):
     preset: Preset
     availablePresets: list[Preset]
+    stages: list[StageInfoSchema] = []
+    modelsDir: str = ""
+
+
+class InstalledModelSchema(BaseModel):
+    name: str
+    stage: str
+    path: str
+    sizeBytes: int
 
 
 class ConfigUpdate(BaseModel):

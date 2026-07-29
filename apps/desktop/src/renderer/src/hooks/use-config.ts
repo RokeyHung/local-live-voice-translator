@@ -4,7 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { HttpAiClient } from '../adapters/http-ai-client'
 import type { Language, Preset } from '../domain/enums'
-import type { BenchmarkResponse, ConfigResponse, ResourceResponse } from '../domain/models'
+import type {
+  BenchmarkResponse,
+  ConfigResponse,
+  InstalledModel,
+  ResourceResponse
+} from '../domain/models'
 import type { AiClient } from '../ports/ai-client'
 
 const client: AiClient = new HttpAiClient()
@@ -43,6 +48,17 @@ export function useResources(enabled: boolean): UseQueryResult<ResourceResponse,
     queryKey: ['resources'],
     queryFn: () => client.fetchResources(),
     refetchInterval: 2000,
+    retry: false,
+    enabled
+  })
+}
+
+// Model đã tải trên đĩa; quét thư mục nên đừng hỏi liên tục.
+export function useInstalledModels(enabled: boolean): UseQueryResult<InstalledModel[], Error> {
+  return useQuery({
+    queryKey: ['installed-models'],
+    queryFn: () => client.fetchInstalledModels(),
+    staleTime: 30_000,
     retry: false,
     enabled
   })

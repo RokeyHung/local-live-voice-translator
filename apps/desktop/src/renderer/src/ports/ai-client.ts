@@ -5,6 +5,7 @@ import type {
   BenchmarkResponse,
   ConfigResponse,
   HealthResponse,
+  InstalledModel,
   ResourceResponse
 } from '../domain/models'
 
@@ -15,4 +16,6 @@ export interface AiClient {
   // Chạy một câu mẫu qua từng khâu để đo độ trễ thực tế của máy.
   runBenchmark(source: Language, target: Language): Promise<BenchmarkResponse>
   fetchResources(): Promise<ResourceResponse>
+  // Model đã tải thật trên đĩa của máy.
+  fetchInstalledModels(): Promise<InstalledModel[]>
 }
