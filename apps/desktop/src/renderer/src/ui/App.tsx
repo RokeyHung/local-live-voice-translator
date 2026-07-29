@@ -1,62 +1,70 @@
-import { useState, type JSX } from 'react'
-import { PLATFORM } from '../application/config'
+// Khung ứng dụng: cửa sổ kính mờ (thanh tiêu đề + sidebar + vùng nội dung) và
+// router đơn giản theo `screen` trong ui-store.
+
+import { useEffect, type JSX } from 'react'
+import { useHealth } from '../hooks/use-health'
 import { useSession } from '../hooks/use-session'
-import { useSessionStore } from '../stores/session-store'
-import { StatusDot } from './components/StatusDot'
+import { useDict, useResolvedTheme } from '../hooks/use-ui'
+import { useUiStore } from '../stores/ui-store'
+import { RecoveryBanner } from './components/RecoveryBanner'
+import { Sidebar, type ServiceStatus } from './components/Sidebar'
+import { TitleBar } from './components/TitleBar'
+import { AboutScreen } from './screens/AboutScreen'
 import { DiagnosticsScreen } from './screens/DiagnosticsScreen'
+import { HistoryScreen } from './screens/HistoryScreen'
+import { ImportScreen } from './screens/ImportScreen'
+import { ModelsScreen } from './screens/ModelsScreen'
 import { SessionScreen } from './screens/SessionScreen'
+import { SettingsScreen } from './screens/SettingsScreen'
 import { SetupScreen } from './screens/SetupScreen'
-import { SubtitleScreen } from './screens/SubtitleScreen'
-
-type Tab = 'setup' | 'session' | 'subtitle' | 'diagnostics'
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'setup', label: 'Setup' },
-  { id: 'session', label: 'Session' },
-  { id: 'subtitle', label: 'Subtitle' },
-  { id: 'diagnostics', label: 'Diagnostics' }
-]
 
 export default function App(): JSX.Element {
   const actions = useSession()
-  const [tab, setTab] = useState<Tab>('setup')
-  const wsStatus = useSessionStore((s) => s.wsStatus)
+  const screen = useUiStore((s) => s.screen)
+  const theme = useResolvedTheme()
+  const health = useHealth()
+  const L = useDict()
+
+  // Chủ đề đặt trên <html> để cả nền body lẫn thanh cuộn đổi theo.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    document.title = L.appName
+  }, [theme, L])
+
+  const status: ServiceStatus = health.isSuccess
+    ? 'ready'
+    : health.isLoading
+      ? 'connecting'
+      : 'down'
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 p-6 text-slate-100">
-      <header className="mb-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Local Live Voice Translator</h1>
-          <p className="text-sm text-slate-400">
-            Dịch giọng nói cục bộ · mic → ASR → dịch → TTS ({PLATFORM})
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <StatusDot ok={wsStatus === 'connected'} />
-          <span className="font-mono">{wsStatus}</span>
-        </div>
-      </header>
-
-      <nav className="mb-5 flex gap-1 border-b border-slate-800">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${
-              tab === t.id
-                ? 'border-indigo-500 text-slate-100'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
-      {tab === 'setup' && <SetupScreen />}
-      {tab === 'session' && <SessionScreen actions={actions} />}
-      {tab === 'subtitle' && <SubtitleScreen />}
-      {tab === 'diagnostics' && <DiagnosticsScreen />}
+    <div
+      data-theme={theme}
+      style={{
+        height: '100vh',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        color: 'var(--text)',
+        background: 'var(--app-bg)',
+        overflow: 'hidden'
+      }}
+    >
+      <TitleBar offlineReady={health.data?.offlineReady ?? false} />
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        <Sidebar status={status} />
+        <main className="cs" style={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
+          <RecoveryBanner />
+          {screen === 'session' && <SessionScreen actions={actions} />}
+          {screen === 'import' && <ImportScreen />}
+          {screen === 'setup' && <SetupScreen />}
+          {screen === 'models' && <ModelsScreen />}
+          {screen === 'diagnostics' && <DiagnosticsScreen />}
+          {screen === 'history' && <HistoryScreen />}
+          {screen === 'settings' && <SettingsScreen />}
+          {screen === 'about' && <AboutScreen />}
+        </main>
+      </div>
     </div>
   )
 }

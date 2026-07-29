@@ -1,12 +1,26 @@
 // Mô hình nghiệp vụ phía client (thuần, không phụ thuộc React/transport).
 
-import type { Language, PipelineState, Preset, SessionMode } from './enums'
+import type {
+  ComputeBackend,
+  ComputeKind,
+  Language,
+  PipelineState,
+  Preset,
+  SessionMode,
+  Side,
+  Stage
+} from './enums'
 
 export interface HealthResponse {
   status: 'ok'
   version: string
   offlineReady: boolean
   platform: string
+}
+
+export interface ConfigResponse {
+  preset: Preset
+  availablePresets: Preset[]
 }
 
 export interface LanguagePair {
@@ -30,9 +44,61 @@ export interface Utterance {
   translatedText?: string
   asrMs?: number
   mtMs?: number
+  ttsMs?: number
   ttsDurationMs?: number
+  totalMs?: number
+  measured?: boolean // true = độ trễ do client đo, false = do service báo
   state: PipelineState
   at: number
+}
+
+// Một dòng đã hoàn tất, được ghi vào cuộc họp (lưu cục bộ).
+export interface MeetingRow {
+  id: string
+  side: Side
+  atMs: number
+  sourceLanguage?: Language
+  targetLanguage?: Language
+  sourceText: string
+  translatedText: string
+  asrMs?: number
+  mtMs?: number
+  ttsMs?: number
+}
+
+// Mỗi lần nhấn Bắt đầu tạo một cuộc họp; lưu trong localStorage.
+export interface Meeting {
+  id: string
+  title: string
+  startedAtMs: number
+  endedAtMs?: number
+  rows: MeetingRow[]
+}
+
+export interface GlossaryEntry {
+  id: string
+  source: string
+  target: string
+}
+
+// Một model cụ thể mà preset đang dùng cho một khâu của pipeline.
+export interface StageModel {
+  stage: Stage
+  adapter: string
+  model: string
+}
+
+// Phần cứng phát hiện được từ renderer (navigator + WebGL). Không có API hệ thống
+// nào khác trong sandbox nên các giá trị thiếu để null.
+export interface ComputeInfo {
+  kind: ComputeKind
+  gpuRenderer: string
+  gpuVendor: string
+  cpuCores: number | null
+  ramGb: number | null
+  ramCapped: boolean // deviceMemory bị chặn trần ở 8 GB → giá trị thật có thể lớn hơn
+  webgpu: boolean
+  recommended: ComputeBackend
 }
 
 export const DEFAULT_SESSION_CONFIG: SessionConfig = {
@@ -42,12 +108,9 @@ export const DEFAULT_SESSION_CONFIG: SessionConfig = {
   preset: 'balanced'
 }
 
-export const LANGUAGE_LABELS: Record<Language, string> = {
-  vi: 'Tiếng Việt',
-  en: 'English',
-  ja: '日本語',
-  zh: '中文'
-}
+export const LANGUAGES: Language[] = ['vi', 'en', 'ja', 'zh']
+
+export const PRESETS: Preset[] = ['fast', 'balanced', 'quality']
 
 export const PRESET_LABELS: Record<Preset, string> = {
   fast: 'Fast',

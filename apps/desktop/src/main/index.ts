@@ -6,10 +6,16 @@ import icon from '../../resources/icon.png?asset'
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1320,
+    height: 880,
+    minWidth: 1040,
+    minHeight: 720,
     show: false,
     autoHideMenuBar: true,
+    backgroundColor: '#0b1120',
+    // macOS: giấu thanh tiêu đề nhưng giữ nút đèn giao thông, để thanh tiêu đề
+    // trong giao diện (TitleBar.tsx) chừa lề trái cho chúng.
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' as const } : {}),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

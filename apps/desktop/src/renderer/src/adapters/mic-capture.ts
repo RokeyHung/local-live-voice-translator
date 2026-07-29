@@ -46,13 +46,14 @@ export class MicCapture implements AudioCapture {
   private source: MediaStreamAudioSourceNode | null = null
   private workletUrl: string | null = null
 
-  async start(onFrame: (frame: AudioFrame) => void): Promise<void> {
+  async start(onFrame: (frame: AudioFrame) => void, deviceId = ''): Promise<void> {
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         channelCount: 1,
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true
+        autoGainControl: true,
+        ...(deviceId ? { deviceId: { exact: deviceId } } : {})
       }
     })
 

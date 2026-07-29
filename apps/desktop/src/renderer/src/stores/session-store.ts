@@ -1,12 +1,19 @@
 // State phiên (Zustand). Dùng ngoài React qua getState() cho SessionController.
 // applyMessage() gom các event WS thành: trạng thái pipeline, danh sách utterance
 // (phụ đề song ngữ) và metrics độ trễ — UI chỉ đọc state đã gom sẵn.
+//
+// Pipeline hiện chưa gửi processingMs, nên khi thiếu, độ trễ từng khâu được đo ở
+// client bằng khoảng cách giữa các event `state` (Recognizing → Translating →
+// Synthesizing → Completed). Giá trị đo kiểu này gồm cả thời gian truyền WS nên
+// được đánh dấu `measured` để hiển thị đúng bản chất.
 
 import { create } from 'zustand'
 import type { PipelineState, WsStatus } from '../domain/enums'
 import type {
   AsrFinalPayload,
+  AsrPartialPayload,
   ErrorPayload,
+  MetricsPayload,
   MtResultPayload,
   StatePayload,
   TtsAudioPayload,
@@ -21,17 +28,28 @@ export interface Metrics {
   lastAsrMs: number | null
   lastMtMs: number | null
   lastTtsDurationMs: number | null
+  lastTotalMs: number | null
+  measured: boolean // true = đo ở client, false = do service báo về
   utteranceCount: number
+}
+
+// Mốc thời gian của từng khâu cho utterance đang chạy (chỉ để tính độ trễ).
+interface StageMarks {
+  recognizing?: number
+  translating?: number
+  synthesizing?: number
 }
 
 interface SessionState {
   wsStatus: WsStatus
   active: boolean
   muted: boolean
+  ptt: boolean
   config: SessionConfig
-  outputDeviceId: string // thiết bị đầu ra TTS (microphone ảo); '' = mặc định. Client-only.
   pipelineState: PipelineState | null
   utterances: Utterance[]
+  partial: { utteranceId: string; text: string } | null
+  micLevel: number // RMS 0..1 của khung mic gần nhất
   metrics: Metrics
   lastError: ErrorPayload | null
   log: WsMessage[]
@@ -39,8 +57,9 @@ interface SessionState {
   setWsStatus: (status: WsStatus) => void
   setActive: (active: boolean) => void
   setMuted: (muted: boolean) => void
+  setPtt: (ptt: boolean) => void
   setConfig: (patch: Partial<SessionConfig>) => void
-  setOutputDeviceId: (deviceId: string) => void
+  setMicLevel: (level: number) => void
   applyMessage: (msg: WsMessage) => void
   clearTranscript: () => void
   reset: () => void
@@ -50,8 +69,13 @@ const EMPTY_METRICS: Metrics = {
   lastAsrMs: null,
   lastMtMs: null,
   lastTtsDurationMs: null,
+  lastTotalMs: null,
+  measured: false,
   utteranceCount: 0
 }
+
+// Mốc thời gian nằm ngoài store: là chi tiết đo đạc, không phải state hiển thị.
+const marks = new Map<string, StageMarks>()
 
 function upsert(list: Utterance[], id: string, patch: Partial<Utterance>): Utterance[] {
   const idx = list.findIndex((u) => u.id === id)
@@ -68,10 +92,12 @@ export const useSessionStore = create<SessionState>((set) => ({
   wsStatus: 'disconnected',
   active: false,
   muted: false,
+  ptt: false,
   config: DEFAULT_SESSION_CONFIG,
-  outputDeviceId: '',
   pipelineState: null,
   utterances: [],
+  partial: null,
+  micLevel: 0,
   metrics: EMPTY_METRICS,
   lastError: null,
   log: [],
@@ -79,33 +105,84 @@ export const useSessionStore = create<SessionState>((set) => ({
   setWsStatus: (wsStatus): void => set({ wsStatus }),
   setActive: (active): void => set({ active }),
   setMuted: (muted): void => set({ muted }),
+  setPtt: (ptt): void => set({ ptt }),
   setConfig: (patch): void => set((s) => ({ config: { ...s.config, ...patch } })),
-  setOutputDeviceId: (outputDeviceId): void => set({ outputDeviceId }),
+  setMicLevel: (micLevel): void => set({ micLevel }),
 
   applyMessage: (msg): void =>
     set((s) => {
       const log = [...s.log.slice(-(MAX_LOG - 1)), msg]
       const p = msg.payload as Record<string, unknown>
+      const now = Date.now()
 
       switch (msg.type) {
         case 'state': {
           const { state, utteranceId } = p as unknown as StatePayload
+          if (!utteranceId) return { log, pipelineState: state }
+
+          const mark = marks.get(utteranceId) ?? {}
+          const patch: Partial<Utterance> = { state }
+          let metrics = s.metrics
+
+          if (state === 'Recognizing') {
+            marks.set(utteranceId, { recognizing: now })
+          } else if (state === 'Translating' && mark.recognizing) {
+            mark.translating = now
+            patch.asrMs = now - mark.recognizing
+            patch.measured = true
+            metrics = { ...metrics, lastAsrMs: patch.asrMs, measured: true }
+          } else if (state === 'Synthesizing' && mark.translating) {
+            mark.synthesizing = now
+            patch.mtMs = now - mark.translating
+            patch.measured = true
+            metrics = { ...metrics, lastMtMs: patch.mtMs, measured: true }
+          } else if (state === 'Completed') {
+            const last = mark.synthesizing ?? mark.translating
+            if (last) {
+              const tail = now - last
+              if (mark.synthesizing) {
+                patch.ttsMs = tail
+                metrics = { ...metrics, lastTtsDurationMs: tail, measured: true }
+              } else {
+                patch.mtMs = tail
+                metrics = { ...metrics, lastMtMs: tail, measured: true }
+              }
+              patch.measured = true
+            }
+            if (mark.recognizing) {
+              patch.totalMs = now - mark.recognizing
+              metrics = { ...metrics, lastTotalMs: patch.totalMs }
+            }
+            metrics = { ...metrics, utteranceCount: metrics.utteranceCount + 1 }
+            marks.delete(utteranceId)
+          }
+
           return {
             log,
             pipelineState: state,
-            utterances: utteranceId ? upsert(s.utterances, utteranceId, { state }) : s.utterances
+            partial: state === 'Completed' ? null : s.partial,
+            utterances: upsert(s.utterances, utteranceId, patch),
+            metrics
           }
+        }
+        case 'asr.partial': {
+          const a = p as unknown as AsrPartialPayload
+          return { log, partial: { utteranceId: a.utteranceId, text: a.text } }
         }
         case 'asr.final': {
           const a = p as unknown as AsrFinalPayload
           return {
             log,
+            partial: null,
             utterances: upsert(s.utterances, a.utteranceId, {
               sourceLanguage: a.language,
               sourceText: a.text,
-              asrMs: a.processingMs ?? undefined
+              ...(a.processingMs != null ? { asrMs: a.processingMs, measured: false } : {})
             }),
-            metrics: { ...s.metrics, lastAsrMs: a.processingMs ?? s.metrics.lastAsrMs }
+            metrics:
+              a.processingMs != null
+                ? { ...s.metrics, lastAsrMs: a.processingMs, measured: false }
+                : s.metrics
           }
         }
         case 'mt.result': {
@@ -115,20 +192,31 @@ export const useSessionStore = create<SessionState>((set) => ({
             utterances: upsert(s.utterances, m.utteranceId, {
               sourceText: m.sourceText,
               translatedText: m.translatedText,
-              mtMs: m.processingMs ?? undefined
+              ...(m.processingMs != null ? { mtMs: m.processingMs, measured: false } : {})
             }),
-            metrics: { ...s.metrics, lastMtMs: m.processingMs ?? s.metrics.lastMtMs }
+            metrics:
+              m.processingMs != null
+                ? { ...s.metrics, lastMtMs: m.processingMs, measured: false }
+                : s.metrics
           }
         }
         case 'tts.audio': {
           const t = p as unknown as TtsAudioPayload
           return {
             log,
-            utterances: upsert(s.utterances, t.utteranceId, { ttsDurationMs: t.durationMs }),
+            utterances: upsert(s.utterances, t.utteranceId, { ttsDurationMs: t.durationMs })
+          }
+        }
+        case 'metrics': {
+          const m = p as unknown as MetricsPayload
+          return {
+            log,
             metrics: {
               ...s.metrics,
-              lastTtsDurationMs: t.durationMs,
-              utteranceCount: s.metrics.utteranceCount + 1
+              lastAsrMs: m.asrMs ?? s.metrics.lastAsrMs,
+              lastMtMs: m.mtMs ?? s.metrics.lastMtMs,
+              lastTtsDurationMs: m.ttsMs ?? s.metrics.lastTtsDurationMs,
+              measured: false
             }
           }
         }
@@ -139,13 +227,19 @@ export const useSessionStore = create<SessionState>((set) => ({
       }
     }),
 
-  clearTranscript: (): void => set({ utterances: [], metrics: EMPTY_METRICS }),
-  reset: (): void =>
+  clearTranscript: (): void => {
+    marks.clear()
+    set({ utterances: [], partial: null, metrics: EMPTY_METRICS, lastError: null })
+  },
+  reset: (): void => {
+    marks.clear()
     set({
       pipelineState: null,
       utterances: [],
+      partial: null,
       metrics: EMPTY_METRICS,
       lastError: null,
       log: []
     })
+  }
 }))

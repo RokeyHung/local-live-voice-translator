@@ -1,0 +1,672 @@
+// Từ điển nhãn giao diện (vi/en). Ngôn ngữ giao diện độc lập với ngôn ngữ dịch:
+// đổi ở màn Cài đặt, không ảnh hưởng cặp ngôn ngữ của phiên.
+
+import type { Language, UiLanguage } from '../domain/enums'
+
+export interface Dict {
+  // chung
+  appName: string
+  offline: string
+  offlineReady: string
+  noCloud: string
+  serviceDown: string
+  serviceDownSub: string
+  notSupported: string
+  notSupportedYet: string
+  recoverT: string
+  recoverS: string
+  recoverBtn: string
+  recoverDismiss: string
+  // điều hướng / tiêu đề màn hình
+  session: string
+  setup: string
+  modelMgr: string
+  diagnostics: string
+  history: string
+  settings: string
+  about: string
+  importFiles: string
+  // phiên dịch
+  layout: string
+  vSplit: string
+  vTimeline: string
+  vFocus: string
+  meetingLangLbl: string
+  myLangLbl: string
+  swapLangs: string
+  listen: string
+  listenSub: string
+  speak: string
+  speakSub: string
+  twoway: string
+  twowaySub: string
+  vizRemote: string
+  vizMe: string
+  mic: string
+  vmic: string
+  waitRemote: string
+  waitMe: string
+  idleHint: string
+  start: string
+  stop: string
+  mute: string
+  unmute: string
+  ptt: string
+  recording: string
+  loopWarn: string
+  remoteSourceMissing: string
+  connecting: string
+  // thiết lập
+  setupSub: string
+  micCard: string
+  micRole: string
+  sysCard: string
+  sysRole: string
+  spkCard: string
+  spkRole: string
+  vmicCard: string
+  vmicRole: string
+  deviceDefault: string
+  noDevice: string
+  test: string
+  active: string
+  ready: string
+  connected: string
+  deferred: string
+  instanceT: string
+  instanceSub: string
+  detecting: string
+  gpuLbl: string
+  cpuLbl: string
+  ramLbl: string
+  apiLbl: string
+  recommended: string
+  notAvail: string
+  devAuto: string
+  devAutoSub: string
+  devCuda: string
+  devMetal: string
+  devVulkan: string
+  devCpu: string
+  devCpuSub: string
+  cores: string
+  atLeast: string
+  computeReadOnly: string
+  sysStatus: string
+  models: string
+  compute: string
+  vmicStatus: string
+  tipTitle: string
+  tipBody: string
+  loopCheckT: string
+  loopOk: string
+  loopWarnSetup: string
+  loopUnknown: string
+  // model
+  modelSub: string
+  presetActive: string
+  installed: string
+  loadIdle: string
+  loadedLbl: string
+  ramWarnHard: string
+  ramWarnSoft: string
+  mbIdleT: string
+  mbIdleS: string
+  mbReadyT: string
+  mbReadyS: string
+  mbDownT: string
+  mbDownS: string
+  applyingPreset: string
+  presetFailed: string
+  stageLbl: string
+  adapterLbl: string
+  customTitle: string
+  customSub: string
+  browseTitle: string
+  browseSub: string
+  browseDisabled: string
+  searchPh: string
+  dlBtn: string
+  noCatalogResults: string
+  // chẩn đoán
+  diagSub: string
+  latencyBreak: string
+  benchTitle: string
+  benchDesc: string
+  benchRun: string
+  benchDisabled: string
+  resourcesT: string
+  audioT: string
+  sampleRate: string
+  frameSize: string
+  utterCount: string
+  wsLog: string
+  clear: string
+  noMessages: string
+  diagEmptyT: string
+  diagEmptyS: string
+  endToEnd: string
+  // lịch sử
+  historySub: string
+  clearAll: string
+  meetingsTitle: string
+  utter: string
+  startToRec: string
+  searchHistory: string
+  noResultsT: string
+  noResultsS: string
+  emptyTranscript: string
+  colTime: string
+  colSrc: string
+  colOriginal: string
+  colTranslated: string
+  colLatency: string
+  renameTip: string
+  deleteTip: string
+  meetingPrefix: string
+  // cài đặt
+  settingsSub: string
+  appearance: string
+  themeDesc: string
+  uiLang: string
+  langDesc: string
+  tSystem: string
+  tLight: string
+  tDark: string
+  tSystemSub: string
+  tLightSub: string
+  tDarkSub: string
+  hfTitle: string
+  hfDesc: string
+  hfPh: string
+  hfUnused: string
+  glossTitle: string
+  glossDesc: string
+  glossSrcPh: string
+  glossDstPh: string
+  glossAdd: string
+  glossEmpty: string
+  glossCount: string
+  // giới thiệu
+  aboutSub: string
+  aboutTagline: string
+  aboutStackT: string
+  aboutPrivacyT: string
+  aboutPrivacyB: string
+  aboutLinksT: string
+  aboutRepo: string
+  aboutDocs: string
+  aboutLicense: string
+  aboutInspired: string
+  aboutVersion: string
+  aboutBuild: string
+  aboutPlatform: string
+  // nhập tệp
+  importSub: string
+  importDisabledT: string
+  importDisabledS: string
+  dropSub: string
+  // trạng thái utterance
+  stRecognizing: string
+  stTranslating: string
+  stSpeaking: string
+  stCompleted: string
+  stFailed: string
+  stWaiting: string
+}
+
+const vi: Dict = {
+  appName: 'Local Live Voice Translator',
+  offline: 'Offline',
+  offlineReady: 'Sẵn sàng Offline',
+  noCloud: 'Không dùng cloud',
+  serviceDown: 'Chưa kết nối AI service',
+  serviceDownSub: 'Chạy `make service` rồi thử lại.',
+  notSupported: 'Chưa hỗ trợ',
+  notSupportedYet: 'Tính năng này cần API tương ứng bên AI service — chưa có trong bản này.',
+  recoverT: 'Khôi phục phiên chưa lưu?',
+  recoverS: 'Ứng dụng đã đóng khi đang ghi. Cuộc họp sau vẫn còn:',
+  recoverBtn: 'Xem lại',
+  recoverDismiss: 'Bỏ qua',
+
+  session: 'Phiên dịch',
+  setup: 'Thiết bị âm thanh',
+  modelMgr: 'Quản lý Model',
+  diagnostics: 'Chẩn đoán',
+  history: 'Lịch sử',
+  settings: 'Cài đặt',
+  about: 'Về ứng dụng',
+  importFiles: 'Nhập tệp',
+
+  layout: 'Bố cục',
+  vSplit: 'Chia đôi',
+  vTimeline: 'Dòng thời gian',
+  vFocus: 'Tập trung',
+  meetingLangLbl: 'Ngôn ngữ cuộc họp',
+  myLangLbl: 'Dịch sang',
+  swapLangs: 'Đảo chiều',
+  listen: 'Nghe',
+  listenSub: 'Dịch giọng remote',
+  speak: 'Nói',
+  speakSub: 'Dịch giọng của bạn',
+  twoway: 'Hai chiều',
+  twowaySub: 'Cả hai cùng lúc',
+  vizRemote: 'Tín hiệu Remote',
+  vizMe: 'Tín hiệu của bạn',
+  mic: 'Mic',
+  vmic: 'Mic ảo',
+  waitRemote: 'Đang chờ giọng nói từ cuộc họp…',
+  waitMe: 'Nhấn giữ để nói…',
+  idleHint: 'Nhấn Bắt đầu để mở phiên dịch',
+  start: 'Bắt đầu',
+  stop: 'Dừng',
+  mute: 'Tắt tiếng',
+  unmute: 'Bật tiếng',
+  ptt: 'Nhấn giữ để nói',
+  recording: 'Đang ghi…',
+  loopWarn: 'Đầu ra không phải tai nghe — nguy cơ mic thu lại giọng TTS.',
+  remoteSourceMissing: 'Thu âm thanh hệ thống chưa bật — chưa có giọng từ cuộc họp.',
+  connecting: 'Đang kết nối…',
+
+  setupSub: 'Chọn và kiểm tra thiết bị trước khi bắt đầu phiên.',
+  micCard: 'Microphone',
+  micRole: 'Nguồn giọng của bạn',
+  sysCard: 'Âm thanh hệ thống',
+  sysRole: 'Giọng từ cuộc họp',
+  spkCard: 'Loa / Tai nghe',
+  spkRole: 'Phát bản dịch cho bạn',
+  vmicCard: 'Microphone ảo',
+  vmicRole: 'Đưa giọng dịch vào Meet',
+  deviceDefault: 'Thiết bị mặc định',
+  noDevice: 'Không tìm thấy thiết bị',
+  test: 'Kiểm tra',
+  active: 'Hoạt động',
+  ready: 'Sẵn sàng',
+  connected: 'Đã kết nối',
+  deferred: 'Chưa bật',
+  instanceT: 'Cấu hình thực thi (Instance)',
+  instanceSub: 'Phần cứng phát hiện được từ ứng dụng.',
+  detecting: 'Đang phát hiện phần cứng…',
+  gpuLbl: 'GPU',
+  cpuLbl: 'CPU',
+  ramLbl: 'RAM',
+  apiLbl: 'API',
+  recommended: 'Khuyến nghị',
+  notAvail: 'Không khả dụng',
+  devAuto: 'Tự động',
+  devAutoSub: 'Theo phần cứng',
+  devCuda: 'NVIDIA CUDA',
+  devMetal: 'Apple Metal',
+  devVulkan: 'Vulkan (AMD/Intel)',
+  devCpu: 'Chỉ CPU',
+  devCpuSub: 'Tương thích nhất',
+  cores: 'lõi',
+  atLeast: 'ít nhất',
+  computeReadOnly: 'AI service tự chọn backend khi nạp model — chưa đổi được từ giao diện.',
+  sysStatus: 'Trạng thái hệ thống',
+  models: 'Model',
+  compute: 'Tính toán',
+  vmicStatus: 'Mic ảo',
+  tipTitle: 'Cấu hình Google Meet',
+  tipBody:
+    'Trong Meet, chọn micro là microphone ảo đã cấu hình và giữ loa là tai nghe vật lý để tránh vọng âm.',
+  loopCheckT: 'Kiểm tra vòng lặp âm thanh',
+  loopOk: 'An toàn — đầu ra là tai nghe',
+  loopWarnSetup: 'Loa đang phát ra tiếng có thể lọt lại vào mic. Dùng tai nghe để tránh vọng âm.',
+  loopUnknown: 'Chưa chọn thiết bị đầu ra — không xác định được nguy cơ vọng âm.',
+
+  modelSub: 'Chọn preset hiệu năng cho pipeline chạy trên máy.',
+  presetActive: 'ĐANG DÙNG',
+  installed: 'Model của preset đang dùng',
+  loadIdle: 'Chưa nạp',
+  loadedLbl: 'Đã nạp',
+  ramWarnHard:
+    'Preset này cần ~{req} GB RAM nhưng máy báo {have} GB. Có thể tràn bộ nhớ hoặc chạy rất chậm.',
+  ramWarnSoft: 'Preset này cần ~{req} GB RAM/VRAM. Kiểm tra máy đủ bộ nhớ trước khi nạp.',
+  mbIdleT: 'Model chưa được nạp',
+  mbIdleS: 'AI service nạp model khi khởi động hoặc khi đổi preset.',
+  mbReadyT: 'AI service đã sẵn sàng',
+  mbReadyS: 'Model của preset đang giữ trong bộ nhớ. Sẵn sàng phiên dịch.',
+  mbDownT: 'Không kết nối được AI service',
+  mbDownS: 'Chạy `make service` để khởi động dịch vụ cục bộ.',
+  applyingPreset: 'Đang nạp preset…',
+  presetFailed: 'Đổi preset thất bại',
+  stageLbl: 'Khâu',
+  adapterLbl: 'Adapter',
+  customTitle: 'Cấu hình tự chọn',
+  customSub: 'Chọn model riêng cho từng khâu — cần API model bên AI service.',
+  browseTitle: 'Tìm & tải model từ Hugging Face',
+  browseSub: 'Danh mục tham khảo theo docs/02 — tải về chưa nối với AI service.',
+  browseDisabled: 'Tải model từ giao diện chưa hỗ trợ.',
+  searchPh: 'Lọc danh mục (whisper, nllb, piper…)',
+  dlBtn: 'Tải về',
+  noCatalogResults: 'Không có model nào khớp từ khóa.',
+
+  diagSub: 'Đo độ trễ và tài nguyên theo thời gian thực.',
+  latencyBreak: 'Phân rã độ trễ (câu gần nhất)',
+  benchTitle: 'Test độ trễ model',
+  benchDesc: 'Chạy một câu mẫu qua cả pipeline để đo độ trễ thực tế.',
+  benchRun: 'Chạy test',
+  benchDisabled: 'Cần endpoint benchmark bên AI service — chưa có.',
+  resourcesT: 'Phần cứng',
+  audioT: 'Đường tín hiệu audio',
+  sampleRate: 'Tần số lấy mẫu',
+  frameSize: 'Kích thước khung',
+  utterCount: 'Số câu đã dịch',
+  wsLog: 'Nhật ký WebSocket',
+  clear: 'Xóa',
+  noMessages: '— chưa có message —',
+  diagEmptyT: 'Chưa có dữ liệu chẩn đoán',
+  diagEmptyS: 'Bắt đầu một phiên phiên dịch để xem độ trễ theo thời gian thực.',
+  endToEnd: 'Tổng đầu-cuối',
+
+  historySub: 'Mỗi cuộc họp được ghi lại riêng khi bạn nhấn Bắt đầu.',
+  clearAll: 'Xóa tất cả',
+  meetingsTitle: 'Cuộc họp',
+  utter: 'câu',
+  startToRec: 'Vào màn Phiên dịch và nhấn Bắt đầu để ghi lại một cuộc họp mới.',
+  searchHistory: 'Tìm theo tên cuộc họp hoặc từ khóa…',
+  noResultsT: 'Không tìm thấy kết quả',
+  noResultsS: 'Thử từ khóa khác hoặc xóa bộ lọc.',
+  emptyTranscript: 'Chưa có câu dịch nào — đang chờ ghi…',
+  colTime: 'Thời gian',
+  colSrc: 'Nguồn',
+  colOriginal: 'Gốc',
+  colTranslated: 'Bản dịch',
+  colLatency: 'Độ trễ',
+  renameTip: 'Đổi tên',
+  deleteTip: 'Xóa',
+  meetingPrefix: 'Cuộc họp',
+
+  settingsSub: 'Tùy chỉnh giao diện và ngôn ngữ của ứng dụng.',
+  appearance: 'Giao diện',
+  themeDesc: 'Chọn chủ đề sáng, tối hoặc theo hệ thống.',
+  uiLang: 'Ngôn ngữ giao diện',
+  langDesc: 'Ngôn ngữ hiển thị của toàn bộ nhãn trong ứng dụng.',
+  tSystem: 'Hệ thống',
+  tLight: 'Sáng',
+  tDark: 'Tối',
+  tSystemSub: 'Theo máy',
+  tLightSub: 'Luôn sáng',
+  tDarkSub: 'Luôn tối',
+  hfTitle: 'Hugging Face Token',
+  hfDesc: 'Lưu token để tải model cần quyền truy cập (gated).',
+  hfPh: 'hf_xxxxxxxxxxxxxxxxxxxx',
+  hfUnused: 'Token chỉ được lưu cục bộ; chức năng tải model chưa nối với AI service.',
+  glossTitle: 'Thuật ngữ tùy chỉnh (Glossary)',
+  glossDesc: 'Thay thế tên riêng và thuật ngữ trong bản dịch hiển thị.',
+  glossSrcPh: 'Từ gốc / thuật ngữ',
+  glossDstPh: 'Dịch thành',
+  glossAdd: 'Thêm',
+  glossEmpty: 'Chưa có thuật ngữ nào.',
+  glossCount: 'thuật ngữ',
+
+  aboutSub: 'Thông tin phiên bản, công nghệ và giấy phép.',
+  aboutTagline: 'Dịch giọng nói trực tiếp, chạy hoàn toàn trên máy của bạn.',
+  aboutStackT: 'Công nghệ lõi',
+  aboutPrivacyT: 'Quyền riêng tư',
+  aboutPrivacyB:
+    'Toàn bộ âm thanh và bản dịch được xử lý cục bộ. Không có dữ liệu nào rời khỏi máy — không gửi lên cloud.',
+  aboutLinksT: 'Liên kết',
+  aboutRepo: 'Kho mã nguồn',
+  aboutDocs: 'Tài liệu',
+  aboutLicense: 'Giấy phép',
+  aboutInspired: 'Lấy cảm hứng từ TranscriptionSuite',
+  aboutVersion: 'Phiên bản',
+  aboutBuild: 'AI service',
+  aboutPlatform: 'Nền tảng',
+
+  importSub: 'Chuyển tệp âm thanh thành văn bản (transcription).',
+  importDisabledT: 'Nhập tệp chưa khả dụng',
+  importDisabledS:
+    'Cần endpoint transcribe theo lô bên AI service. Hiện tại chỉ có pipeline realtime qua WebSocket.',
+  dropSub: 'Hỗ trợ MP3, WAV, M4A, FLAC, OGG, WebM, Opus — nhiều tệp cùng lúc',
+
+  stRecognizing: 'Nhận diện',
+  stTranslating: 'Đang dịch',
+  stSpeaking: 'Đang phát',
+  stCompleted: 'Hoàn tất',
+  stFailed: 'Lỗi',
+  stWaiting: 'Chờ xác nhận'
+}
+
+const en: Dict = {
+  appName: 'Local Live Voice Translator',
+  offline: 'Offline',
+  offlineReady: 'Offline Ready',
+  noCloud: 'No cloud used',
+  serviceDown: 'AI service not connected',
+  serviceDownSub: 'Run `make service` and try again.',
+  notSupported: 'Not supported',
+  notSupportedYet: 'This needs an AI service endpoint that does not exist in this build yet.',
+  recoverT: 'Recover unsaved session?',
+  recoverS: 'The app closed while recording. This meeting is still available:',
+  recoverBtn: 'Review',
+  recoverDismiss: 'Dismiss',
+
+  session: 'Session',
+  setup: 'Audio Setup',
+  modelMgr: 'Model Manager',
+  diagnostics: 'Diagnostics',
+  history: 'History',
+  settings: 'Settings',
+  about: 'About',
+  importFiles: 'Import Files',
+
+  layout: 'Layout',
+  vSplit: 'Split',
+  vTimeline: 'Timeline',
+  vFocus: 'Focus',
+  meetingLangLbl: 'Meeting language',
+  myLangLbl: 'Translate to',
+  swapLangs: 'Swap',
+  listen: 'Listen',
+  listenSub: 'Translate remote',
+  speak: 'Speak',
+  speakSub: 'Translate you',
+  twoway: 'Two-way',
+  twowaySub: 'Both at once',
+  vizRemote: 'Remote signal',
+  vizMe: 'Your signal',
+  mic: 'Mic',
+  vmic: 'Virtual Mic',
+  waitRemote: 'Waiting for meeting audio…',
+  waitMe: 'Hold to talk…',
+  idleHint: 'Press Start to open a session',
+  start: 'Start',
+  stop: 'Stop',
+  mute: 'Mute',
+  unmute: 'Unmute',
+  ptt: 'Push to Talk',
+  recording: 'Recording…',
+  loopWarn: 'Output is not headphones — the mic may pick the TTS voice back up.',
+  remoteSourceMissing: 'System-audio capture is off — no meeting voice yet.',
+  connecting: 'Connecting…',
+
+  setupSub: 'Select and test your devices before starting a session.',
+  micCard: 'Microphone',
+  micRole: 'Your voice input',
+  sysCard: 'System audio',
+  sysRole: 'Voice from the meeting',
+  spkCard: 'Speaker / Headphones',
+  spkRole: 'Plays translation to you',
+  vmicCard: 'Virtual microphone',
+  vmicRole: 'Sends translated voice to Meet',
+  deviceDefault: 'System default',
+  noDevice: 'No device found',
+  test: 'Test',
+  active: 'Active',
+  ready: 'Ready',
+  connected: 'Connected',
+  deferred: 'Off',
+  instanceT: 'Instance settings',
+  instanceSub: 'Hardware detected from the app.',
+  detecting: 'Detecting hardware…',
+  gpuLbl: 'GPU',
+  cpuLbl: 'CPU',
+  ramLbl: 'RAM',
+  apiLbl: 'API',
+  recommended: 'Recommended',
+  notAvail: 'Not available',
+  devAuto: 'Automatic',
+  devAutoSub: 'Follows hardware',
+  devCuda: 'NVIDIA CUDA',
+  devMetal: 'Apple Metal',
+  devVulkan: 'Vulkan (AMD/Intel)',
+  devCpu: 'CPU only',
+  devCpuSub: 'Most compatible',
+  cores: 'cores',
+  atLeast: 'at least',
+  computeReadOnly:
+    'The AI service picks the backend when loading models — not switchable from the UI.',
+  sysStatus: 'System status',
+  models: 'Models',
+  compute: 'Compute',
+  vmicStatus: 'Virtual mic',
+  tipTitle: 'Google Meet setup',
+  tipBody:
+    'In Meet, set the microphone to your virtual microphone and keep output on physical headphones to avoid echo.',
+  loopCheckT: 'Audio-loop check',
+  loopOk: 'Safe — output is headphones',
+  loopWarnSetup: 'Speaker output may leak back into the mic. Use headphones to avoid echo.',
+  loopUnknown: 'No output device selected — echo risk unknown.',
+
+  modelSub: 'Pick the performance preset the local pipeline runs with.',
+  presetActive: 'ACTIVE',
+  installed: 'Models of the active preset',
+  loadIdle: 'Not loaded',
+  loadedLbl: 'Loaded',
+  ramWarnHard:
+    'This preset needs ~{req} GB RAM but the machine reports {have} GB. It may run out of memory or be very slow.',
+  ramWarnSoft: 'This preset needs ~{req} GB RAM/VRAM. Make sure the machine has enough.',
+  mbIdleT: 'Models not loaded',
+  mbIdleS: 'The AI service loads models at startup or when the preset changes.',
+  mbReadyT: 'AI service ready',
+  mbReadyS: 'The preset models are held in memory. Ready to translate.',
+  mbDownT: 'Cannot reach the AI service',
+  mbDownS: 'Run `make service` to start the local service.',
+  applyingPreset: 'Loading preset…',
+  presetFailed: 'Changing preset failed',
+  stageLbl: 'Stage',
+  adapterLbl: 'Adapter',
+  customTitle: 'Custom configuration',
+  customSub: 'Pick a model per stage — needs a model API on the AI service.',
+  browseTitle: 'Search & download from Hugging Face',
+  browseSub: 'Reference catalog from docs/02 — downloading is not wired to the AI service.',
+  browseDisabled: 'Downloading models from the UI is not supported.',
+  searchPh: 'Filter catalog (whisper, nllb, piper…)',
+  dlBtn: 'Download',
+  noCatalogResults: 'No model matches that keyword.',
+
+  diagSub: 'Real-time latency and resource monitoring.',
+  latencyBreak: 'Latency breakdown (last utterance)',
+  benchTitle: 'Model latency test',
+  benchDesc: 'Run one sample utterance through the full pipeline to measure real latency.',
+  benchRun: 'Run test',
+  benchDisabled: 'Needs a benchmark endpoint on the AI service — not available.',
+  resourcesT: 'Hardware',
+  audioT: 'Audio path',
+  sampleRate: 'Sample rate',
+  frameSize: 'Frame size',
+  utterCount: 'Translated lines',
+  wsLog: 'WebSocket log',
+  clear: 'Clear',
+  noMessages: '— no messages yet —',
+  diagEmptyT: 'No diagnostics data yet',
+  diagEmptyS: 'Start a translation session to see real-time latency.',
+  endToEnd: 'End-to-end total',
+
+  historySub: 'Each meeting is recorded separately when you press Start.',
+  clearAll: 'Clear all',
+  meetingsTitle: 'Meetings',
+  utter: 'lines',
+  startToRec: 'Go to the Session screen and press Start to record a new meeting.',
+  searchHistory: 'Search by meeting name or keyword…',
+  noResultsT: 'No results found',
+  noResultsS: 'Try a different keyword or clear the filter.',
+  emptyTranscript: 'No translated lines yet — recording…',
+  colTime: 'Time',
+  colSrc: 'Source',
+  colOriginal: 'Original',
+  colTranslated: 'Translated',
+  colLatency: 'Latency',
+  renameTip: 'Rename',
+  deleteTip: 'Delete',
+  meetingPrefix: 'Meeting',
+
+  settingsSub: 'Customize the appearance and language of the app.',
+  appearance: 'Appearance',
+  themeDesc: 'Choose a light, dark, or system-based theme.',
+  uiLang: 'Interface language',
+  langDesc: 'Display language for every label in the app.',
+  tSystem: 'System',
+  tLight: 'Light',
+  tDark: 'Dark',
+  tSystemSub: 'Match OS',
+  tLightSub: 'Always light',
+  tDarkSub: 'Always dark',
+  hfTitle: 'Hugging Face Token',
+  hfDesc: 'Store a token for gated / private model downloads.',
+  hfPh: 'hf_xxxxxxxxxxxxxxxxxxxx',
+  hfUnused: 'The token is stored locally only; model download is not wired to the AI service.',
+  glossTitle: 'Custom glossary',
+  glossDesc: 'Replace names and industry terms in the translation shown.',
+  glossSrcPh: 'Source term',
+  glossDstPh: 'Translate as',
+  glossAdd: 'Add',
+  glossEmpty: 'No terms yet.',
+  glossCount: 'terms',
+
+  aboutSub: 'Version, technology and license information.',
+  aboutTagline: 'Live voice translation, running entirely on your machine.',
+  aboutStackT: 'Core technology',
+  aboutPrivacyT: 'Privacy',
+  aboutPrivacyB:
+    'All audio and translations are processed locally. No data ever leaves your machine — nothing is sent to the cloud.',
+  aboutLinksT: 'Links',
+  aboutRepo: 'Source repository',
+  aboutDocs: 'Documentation',
+  aboutLicense: 'License',
+  aboutInspired: 'Inspired by TranscriptionSuite',
+  aboutVersion: 'Version',
+  aboutBuild: 'AI service',
+  aboutPlatform: 'Platform',
+
+  importSub: 'Turn audio files into text transcriptions.',
+  importDisabledT: 'Import is not available',
+  importDisabledS:
+    'It needs a batch transcribe endpoint on the AI service. Only the realtime WebSocket pipeline exists today.',
+  dropSub: 'Supports MP3, WAV, M4A, FLAC, OGG, WebM, Opus — multiple files OK',
+
+  stRecognizing: 'Recognizing',
+  stTranslating: 'Translating',
+  stSpeaking: 'Speaking',
+  stCompleted: 'Completed',
+  stFailed: 'Failed',
+  stWaiting: 'Waiting'
+}
+
+const DICTS: Record<UiLanguage, Dict> = { vi, en }
+
+export function dict(lang: UiLanguage): Dict {
+  return DICTS[lang]
+}
+
+const LANGUAGE_NAMES: Record<UiLanguage, Record<Language, string>> = {
+  vi: { vi: 'Tiếng Việt', en: 'Tiếng Anh', ja: 'Tiếng Nhật', zh: 'Tiếng Trung' },
+  en: { vi: 'Vietnamese', en: 'English', ja: 'Japanese', zh: 'Chinese' }
+}
+
+export function languageName(lang: UiLanguage, code: Language): string {
+  return LANGUAGE_NAMES[lang][code]
+}
+
+export function languageShort(code: Language): string {
+  return code.toUpperCase()
+}
+
+export function format(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (m, key: string) =>
+    key in values ? String(values[key]) : m
+  )
+}

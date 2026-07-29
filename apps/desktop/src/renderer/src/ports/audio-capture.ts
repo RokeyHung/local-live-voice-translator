@@ -8,6 +8,7 @@ export interface AudioFrame {
 
 export interface AudioCapture {
   // Bắt đầu thu; mỗi khung audio gọi lại onFrame. Có thể ném lỗi nếu không có quyền.
-  start(onFrame: (frame: AudioFrame) => void): Promise<void>
+  // deviceId rỗng = thiết bị đầu vào mặc định của hệ điều hành.
+  start(onFrame: (frame: AudioFrame) => void, deviceId?: string): Promise<void>
   stop(): void
 }
