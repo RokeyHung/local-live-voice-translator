@@ -1,6 +1,14 @@
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain, session, shell, systemPreferences } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  desktopCapturer,
+  ipcMain,
+  session,
+  shell,
+  systemPreferences
+} from 'electron'
 import icon from '../../resources/icon.png?asset'
 
 function createWindow(): void {
@@ -65,6 +73,28 @@ app.whenReady().then(() => {
   if (process.platform === 'darwin') {
     systemPreferences.askForMediaAccess('microphone').catch(() => undefined)
   }
+
+  // Thu âm thanh hệ thống (giọng phía cuộc họp). Renderer gọi getDisplayMedia();
+  // Electron bắt buộc phải có handler này, nếu không lời gọi bị từ chối thẳng.
+  //
+  // `audio: 'loopback'` lấy đúng luồng ra của hệ điều hành — macOS 13+ đi qua
+  // ScreenCaptureKit, Windows qua WASAPI loopback. Chromium yêu cầu kèm video
+  // nên vẫn phải chọn một nguồn màn hình; renderer bỏ track video ngay sau đó.
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (_request, callback) => {
+      desktopCapturer
+        .getSources({ types: ['screen'], fetchWindowIcons: false })
+        .then((sources) => {
+          // Không có màn hình nào (chưa cấp quyền Ghi màn hình) → hủy yêu cầu.
+          if (sources.length === 0) return callback({})
+          callback({ video: sources[0], audio: 'loopback' })
+        })
+        .catch(() => callback({}))
+    },
+    // Bỏ qua bộ chọn của hệ điều hành: ta luôn lấy loopback toàn hệ thống, người
+    // dùng không phải chọn cửa sổ mỗi lần bắt đầu phiên.
+    { useSystemPicker: false }
+  )
 
   createWindow()
 

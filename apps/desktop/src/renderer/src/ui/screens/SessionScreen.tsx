@@ -159,6 +159,9 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
   const muted = useSessionStore((s) => s.muted)
   const ptt = useSessionStore((s) => s.ptt)
   const micLevel = useSessionStore((s) => s.micLevel)
+  const systemLevel = useSessionStore((s) => s.systemLevel)
+  const systemCapturing = useSessionStore((s) => s.systemCapturing)
+  const ducking = useSessionStore((s) => s.ducking)
   const utterances = useSessionStore((s) => s.utterances)
   const metrics = useSessionStore((s) => s.metrics)
   const wsStatus = useSessionStore((s) => s.wsStatus)
@@ -479,10 +482,10 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
       <div style={{ display: 'flex', alignItems: 'stretch', gap: 12 }}>
         <Visualizer
           label={L.vizRemote}
-          level={0}
+          level={systemLevel}
           color="#d946ef"
-          active={false}
-          note={L.deferred}
+          active={active && systemCapturing}
+          note={ducking ? L.ducking : undefined}
         />
         <Visualizer label={L.vizMe} level={micLevel} color="#22d3ee" active={active && !muted} />
       </div>

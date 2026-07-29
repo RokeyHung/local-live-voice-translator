@@ -14,4 +14,7 @@ export interface AudioOutput {
   stop(): void
   // Chọn thiết bị đầu ra theo deviceId (rỗng = thiết bị mặc định của hệ điều hành).
   setSink(deviceId: string): Promise<void>
+  // Còn audio đang phát hoặc đã xếp lịch phát (tính cả `tailMs` sau khi dứt tiếng).
+  // Dùng để chặn vòng lặp: audio thu vào trong lúc này có thể chính là tiếng TTS.
+  isPlaying(tailMs?: number): boolean
 }

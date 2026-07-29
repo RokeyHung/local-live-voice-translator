@@ -20,7 +20,8 @@ export interface PresetMeta {
 }
 
 const SILERO: StageModel = { stage: 'VAD', adapter: 'silero', model: 'silero-vad' }
-const SHERPA: StageModel = { stage: 'TTS', adapter: 'sherpa_onnx', model: 'vits-piper' }
+// TTS nạp lười theo ngôn ngữ đích nên preset không cố định một voice cụ thể.
+const SHERPA: StageModel = { stage: 'TTS', adapter: 'sherpa_onnx', model: 'vits-piper (vi/en/zh)' }
 
 export const PRESET_META: Record<Preset, PresetMeta> = {
   fast: {
@@ -72,6 +73,9 @@ export const PRESET_META: Record<Preset, PresetMeta> = {
 
 // Danh mục model tham khảo (docs/02_spec-addendum-os-stack-models.md). Chỉ để tra
 // cứu — tải model vẫn làm thủ công, giao diện chưa nối với AI service.
+//
+// Tên voice TTS phải khớp asset trong release `tts-models` của k2-fsa/sherpa-onnx.
+// Không có tiếng Nhật ở đây vì release đó chưa có model VITS tiếng Nhật nào.
 export interface CatalogEntry {
   stage: 'ASR' | 'MT' | 'TTS'
   name: string
@@ -103,7 +107,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   { stage: 'MT', name: 'nllb-200-1.3B', detail: 'facebook · 200 lang', size: '5.5 GB' },
   {
     stage: 'TTS',
-    name: 'vits-piper-vi_VN-vais1000',
+    name: 'vits-piper-vi_VN-vais1000-medium',
     detail: 'rhasspy · sherpa-onnx · vi',
     size: '63 MB'
   },
@@ -115,13 +119,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'TTS',
-    name: 'vits-piper-ja_JP-medium',
-    detail: 'rhasspy · sherpa-onnx · ja',
-    size: '65 MB'
-  },
-  {
-    stage: 'TTS',
-    name: 'vits-piper-zh_CN-huayan',
+    name: 'vits-piper-zh_CN-xiao_ya-medium',
     detail: 'rhasspy · sherpa-onnx · zh',
     size: '62 MB'
   }

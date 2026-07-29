@@ -47,6 +47,13 @@ export class TtsPlayer implements AudioOutput {
     this.sources.add(src)
   }
 
+  // `nextTime` là mốc kết thúc của đoạn cuối đã xếp lịch, nên bao gồm cả phần
+  // chưa phát tới. Cộng thêm tail để phòng trễ của thiết bị đầu ra.
+  isPlaying(tailMs = 300): boolean {
+    if (!this.ctx) return false
+    return this.ctx.currentTime < this.nextTime + tailMs / 1000
+  }
+
   stop(): void {
     for (const src of this.sources) {
       try {

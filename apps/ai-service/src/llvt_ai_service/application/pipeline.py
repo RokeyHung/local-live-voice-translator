@@ -7,7 +7,9 @@ Pipeline chỉ gọi qua PORT nên đổi adapter không ảnh hưởng logic �
 from __future__ import annotations
 
 import logging
-from typing import Awaitable, Callable
+import time
+from contextlib import contextmanager
+from typing import Awaitable, Callable, Iterator
 
 from llvt_ai_service.application.inference import SerialExecutor
 from llvt_ai_service.application.model_manager import ProviderSet
@@ -18,6 +20,22 @@ from llvt_ai_service.domain.models import AudioChunk, LanguagePair, Utterance, V
 logger = logging.getLogger("llvt.pipeline")
 
 Emit = Callable[[ev.PipelineEvent], Awaitable[None]]
+
+
+class _Elapsed:
+    """Bộ đếm thời gian một khâu; `.ms` đọc được sau khi thoát khối with."""
+
+    ms: int = 0
+
+
+@contextmanager
+def _elapsed() -> Iterator[_Elapsed]:
+    marker = _Elapsed()
+    started = time.perf_counter()
+    try:
+        yield marker
+    finally:
+        marker.ms = int((time.perf_counter() - started) * 1000)
 
 
 class TranslationPipeline:
@@ -68,22 +86,42 @@ class TranslationPipeline:
             source_language=self._dir.source,
             target_language=self._dir.target,
         )
+        tts_ms: int | None = None
         try:
             await self._emit(ev.StateChanged(PipelineState.recognizing, utt.id))
-            transcript = await self._p.asr.transcribe(segment.pcm, self._dir.source)
+            with _elapsed() as asr_timer:
+                transcript = await self._p.asr.transcribe(segment.pcm, self._dir.source)
+            asr_ms = asr_timer.ms
             await self._emit(
-                ev.AsrFinal(utt.id, transcript.language, transcript.text, transcript.confidence)
+                ev.AsrFinal(
+                    utt.id,
+                    transcript.language,
+                    transcript.text,
+                    transcript.confidence,
+                    processing_ms=asr_ms,
+                )
             )
 
             await self._emit(ev.StateChanged(PipelineState.translating, utt.id))
-            result = await self._p.mt.translate(transcript.text, self._dir.source, self._dir.target)
-            await self._emit(ev.MtResult(utt.id, result.source_text, result.translated_text))
+            with _elapsed() as mt_timer:
+                result = await self._p.mt.translate(
+                    transcript.text, self._dir.source, self._dir.target
+                )
+            mt_ms = mt_timer.ms
+            await self._emit(
+                ev.MtResult(utt.id, result.source_text, result.translated_text, processing_ms=mt_ms)
+            )
 
             if self._synthesize:
                 await self._emit(ev.StateChanged(PipelineState.synthesizing, utt.id))
-                tts = await self._p.tts.synthesize(result.translated_text, self._dir.target)
+                with _elapsed() as tts_timer:
+                    tts = await self._p.tts.synthesize(result.translated_text, self._dir.target)
+                tts_ms = tts_timer.ms
                 await self._emit(ev.TtsAudio(utt.id, tts.pcm, tts.sample_rate, tts.duration_ms))
 
+            # Thời gian xử lý thật của từng khâu — client dùng để hiển thị độ trễ
+            # thay cho ước lượng đo bằng khoảng cách giữa các event.
+            await self._emit(ev.Metrics(asr_ms=asr_ms, mt_ms=mt_ms, tts_ms=tts_ms))
             await self._emit(ev.StateChanged(PipelineState.completed, utt.id))
         except NotImplementedError as exc:
             await self._emit(

@@ -73,6 +73,9 @@ export interface Dict {
   ready: string
   connected: string
   deferred: string
+  sysHint: string
+  sysCapturing: string
+  ducking: string
   instanceT: string
   instanceSub: string
   detecting: string
@@ -265,7 +268,7 @@ const vi: Dict = {
   ptt: 'Nhấn giữ để nói',
   recording: 'Đang ghi…',
   loopWarn: 'Đầu ra không phải tai nghe — nguy cơ mic thu lại giọng TTS.',
-  remoteSourceMissing: 'Thu âm thanh hệ thống chưa bật — chưa có giọng từ cuộc họp.',
+  remoteSourceMissing: 'Chế độ Nói chỉ dịch giọng của bạn — không thu tiếng cuộc họp.',
   connecting: 'Đang kết nối…',
 
   setupSub: 'Chọn và kiểm tra thiết bị trước khi bắt đầu phiên.',
@@ -284,6 +287,10 @@ const vi: Dict = {
   ready: 'Sẵn sàng',
   connected: 'Đã kết nối',
   deferred: 'Chưa bật',
+  sysHint:
+    'Thu qua loopback của hệ điều hành, tự bật khi bắt đầu phiên ở chế độ Nghe hoặc Hai chiều. macOS cần cấp quyền Ghi màn hình cho ứng dụng.',
+  sysCapturing: 'Đang thu',
+  ducking: 'Tạm ngưng thu (đang phát bản dịch)',
   instanceT: 'Cấu hình thực thi (Instance)',
   instanceSub: 'Phần cứng phát hiện được từ ứng dụng.',
   detecting: 'Đang phát hiện phần cứng…',
@@ -480,7 +487,7 @@ const en: Dict = {
   ptt: 'Push to Talk',
   recording: 'Recording…',
   loopWarn: 'Output is not headphones — the mic may pick the TTS voice back up.',
-  remoteSourceMissing: 'System-audio capture is off — no meeting voice yet.',
+  remoteSourceMissing: 'Speak mode only translates your voice — meeting audio is not captured.',
   connecting: 'Connecting…',
 
   setupSub: 'Select and test your devices before starting a session.',
@@ -499,6 +506,10 @@ const en: Dict = {
   ready: 'Ready',
   connected: 'Connected',
   deferred: 'Off',
+  sysHint:
+    'Captured through the OS loopback; starts automatically in Listen or Two-way mode. On macOS the app needs Screen Recording permission.',
+  sysCapturing: 'Capturing',
+  ducking: 'Capture paused (playing translation)',
   instanceT: 'Instance settings',
   instanceSub: 'Hardware detected from the app.',
   detecting: 'Detecting hardware…',

@@ -50,6 +50,9 @@ interface SessionState {
   utterances: Utterance[]
   partial: { utteranceId: string; text: string } | null
   micLevel: number // RMS 0..1 của khung mic gần nhất
+  systemLevel: number // RMS 0..1 của khung âm thanh hệ thống gần nhất
+  systemCapturing: boolean // đang thu được âm thanh hệ thống (chiều incoming)
+  ducking: boolean // đang tạm bỏ audio incoming vì TTS của mình đang phát
   metrics: Metrics
   lastError: ErrorPayload | null
   log: WsMessage[]
@@ -60,6 +63,9 @@ interface SessionState {
   setPtt: (ptt: boolean) => void
   setConfig: (patch: Partial<SessionConfig>) => void
   setMicLevel: (level: number) => void
+  setSystemLevel: (level: number) => void
+  setSystemCapturing: (capturing: boolean) => void
+  setDucking: (ducking: boolean) => void
   applyMessage: (msg: WsMessage) => void
   clearTranscript: () => void
   reset: () => void
@@ -98,6 +104,9 @@ export const useSessionStore = create<SessionState>((set) => ({
   utterances: [],
   partial: null,
   micLevel: 0,
+  systemLevel: 0,
+  systemCapturing: false,
+  ducking: false,
   metrics: EMPTY_METRICS,
   lastError: null,
   log: [],
@@ -108,6 +117,9 @@ export const useSessionStore = create<SessionState>((set) => ({
   setPtt: (ptt): void => set({ ptt }),
   setConfig: (patch): void => set((s) => ({ config: { ...s.config, ...patch } })),
   setMicLevel: (micLevel): void => set({ micLevel }),
+  setSystemLevel: (systemLevel): void => set({ systemLevel }),
+  setSystemCapturing: (systemCapturing): void => set({ systemCapturing }),
+  setDucking: (ducking): void => set({ ducking }),
 
   applyMessage: (msg): void =>
     set((s) => {

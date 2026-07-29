@@ -57,7 +57,8 @@ export class SessionController {
 
   constructor(
     private readonly channel: SessionChannel,
-    private readonly capture?: AudioCapture,
+    private readonly mic?: AudioCapture,
+    private readonly systemAudio?: AudioCapture,
     private readonly output?: AudioOutput
   ) {}
 
@@ -122,26 +123,60 @@ export class SessionController {
     this.channel.send('session.start', sessionStartPayload(config))
     store.setActive(true)
 
-    if (this.capture && config.mode !== 'listen') {
+    // Chiều outgoing: mic của mình (bị gate bởi PTT/mute).
+    if (this.mic && config.mode !== 'listen') {
       try {
-        await this.capture.start((frame) => this.sendAudio(frame), ui.inputDeviceId)
+        await this.mic.start((frame) => this.sendMic(frame), ui.inputDeviceId)
       } catch (err) {
-        useSessionStore.getState().applyMessage({
-          type: 'error',
-          ts: Date.now(),
-          payload: { code: 'mic_error', message: String(err) }
-        })
+        this.reportError('mic_error', err)
+      }
+    }
+
+    // Chiều incoming: âm thanh hệ thống (giọng phía cuộc họp), chạy liên tục.
+    // Không thu được thì phiên vẫn tiếp tục ở chiều outgoing — chỉ báo lỗi.
+    if (this.systemAudio && config.mode !== 'speak') {
+      try {
+        await this.systemAudio.start((frame) => this.sendSystem(frame))
+        useSessionStore.getState().setSystemCapturing(true)
+      } catch (err) {
+        this.reportError('system_audio_error', err)
       }
     }
   }
 
-  private sendAudio(frame: AudioFrame): void {
+  private reportError(code: string, err: unknown): void {
+    useSessionStore.getState().applyMessage({
+      type: 'error',
+      ts: Date.now(),
+      payload: { code, message: err instanceof Error ? err.message : String(err) }
+    })
+  }
+
+  private sendMic(frame: AudioFrame): void {
     // Mức tín hiệu hiển thị cả khi chưa giữ PTT (để thấy mic có vào hay không).
     useSessionStore.getState().setMicLevel(rms(frame.pcm))
     // Chỉ gửi khi đang giữ PTT và không mute (server cũng gate lại, phòng hờ).
     if (!this.pttActive || this.muted) return
+    this.sendChunk('microphone', frame)
+  }
+
+  private sendSystem(frame: AudioFrame): void {
+    const level = rms(frame.pcm)
+    useSessionStore.getState().setSystemLevel(level)
+    // Chống vòng lặp: loopback thu toàn bộ đầu ra của hệ điều hành, nên nếu TTS
+    // đang phát ra loa (thay vì chỉ ra micro ảo) thì chính giọng dịch của mình
+    // sẽ quay lại chiều incoming và bị dịch tiếp. Bỏ khung trong lúc đang phát.
+    if (this.output?.isPlaying()) {
+      useSessionStore.getState().setDucking(true)
+      return
+    }
+    useSessionStore.getState().setDucking(false)
+    this.sendChunk('system', frame)
+  }
+
+  private sendChunk(source: 'microphone' | 'system', frame: AudioFrame): void {
     this.channel.send('audio.chunk', {
-      source: 'microphone',
+      source,
       pcm: toBase64(frame.pcm),
       seq: this.seq++,
       sampleRate: frame.sampleRate
@@ -165,7 +200,8 @@ export class SessionController {
   stop(): void {
     this.pttActive = false
     this.muted = false
-    this.capture?.stop()
+    this.mic?.stop()
+    this.systemAudio?.stop()
     this.output?.stop()
     this.channel.send('session.stop')
     const store = useSessionStore.getState()
@@ -173,11 +209,15 @@ export class SessionController {
     store.setMuted(false)
     store.setPtt(false)
     store.setMicLevel(0)
+    store.setSystemLevel(0)
+    store.setSystemCapturing(false)
+    store.setDucking(false)
     useMeetingStore.getState().endMeeting()
   }
 
   dispose(): void {
-    this.capture?.stop()
+    this.mic?.stop()
+    this.systemAudio?.stop()
     this.output?.stop()
     this.channel.close()
   }

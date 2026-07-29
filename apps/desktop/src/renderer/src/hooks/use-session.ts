@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { MicCapture } from '../adapters/mic-capture'
+import { SystemAudioCapture } from '../adapters/system-audio-capture'
 import { TtsPlayer } from '../adapters/tts-player'
 import { WsSessionChannel } from '../adapters/ws-session-channel'
 import { SessionController } from '../application/session-controller'
@@ -20,6 +21,7 @@ export function useSession(): SessionActions {
     const controller = new SessionController(
       new WsSessionChannel(),
       new MicCapture(),
+      new SystemAudioCapture(),
       new TtsPlayer()
     )
     ref.current = controller

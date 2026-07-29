@@ -30,11 +30,16 @@ from llvt_ai_service.ports.tts import TextToSpeechProvider
 
 logger = logging.getLogger("llvt.adapters.tts.sherpa_onnx")
 
-# Voice mặc định theo ngôn ngữ (xem SPEC 02 §8.2).
+# Voice mặc định theo ngôn ngữ (xem SPEC 02 §8.2). Tên phải khớp asset trong
+# release `tts-models` của k2-fsa/sherpa-onnx.
+#
+# Tiếng Nhật hiện KHÔNG có voice: release đó không có model VITS tiếng Nhật nào,
+# còn Supertonic thì sherpa-onnx 1.10.46 chưa hỗ trợ (không có
+# OfflineTtsSupertonicModelConfig). Chiều dịch SANG tiếng Nhật vì thế chỉ hiện
+# phụ đề; các chiều khác (ASR/MT tiếng Nhật) vẫn chạy bình thường.
 DEFAULT_VOICE: dict[Language, str] = {
     Language.vi: "vits-piper-vi_VN-vais1000-medium",
     Language.en: "vits-piper-en_US-lessac-medium",
-    Language.ja: "supertonic-3-ja",
     Language.zh: "vits-piper-zh_CN-xiao_ya-medium",
 }
 
@@ -132,7 +137,13 @@ class SherpaOnnxTts(TextToSpeechProvider):
         if not normalized:
             return TtsResult(pcm=b"", sample_rate=0, duration_ms=0, processing_ms=0)
 
-        voice_name = voice or self._voices[language]
+        voice_name = voice or self._voices.get(language)
+        if voice_name is None:
+            # Báo lỗi rõ ràng thay vì tải nhầm một tarball không tồn tại.
+            raise NotImplementedError(
+                f"Chưa có voice TTS cho ngôn ngữ '{language.value}'. "
+                f"Ngôn ngữ hỗ trợ: {', '.join(sorted(v.value for v in self._voices))}."
+            )
         started = time.perf_counter()
         pcm, sample_rate = await self._exec.run(
             self._synthesize_blocking, normalized, voice_name, speed

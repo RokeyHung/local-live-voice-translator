@@ -34,6 +34,7 @@ interface DeviceCardProps {
   level?: number
   onTest?: () => void
   disabled?: boolean
+  readOnly?: boolean // không có bộ chọn thiết bị, chỉ hiện ghi chú
   hint?: string
   L: Dict
 }
@@ -50,6 +51,7 @@ function DeviceCard({
   level,
   onTest,
   disabled,
+  readOnly,
   hint,
   L
 }: DeviceCardProps): JSX.Element {
@@ -86,7 +88,7 @@ function DeviceCard({
         <Badge color={status.color}>{status.text}</Badge>
       </div>
 
-      {disabled ? (
+      {disabled || readOnly ? (
         <div
           style={{
             padding: '10px 12px',
@@ -259,6 +261,8 @@ export function SetupScreen(): JSX.Element {
   const serviceConfig = useServiceConfig()
   const active = useSessionStore((s) => s.active)
   const sessionMicLevel = useSessionStore((s) => s.micLevel)
+  const systemLevel = useSessionStore((s) => s.systemLevel)
+  const systemCapturing = useSessionStore((s) => s.systemCapturing)
 
   const inputDeviceId = useUiStore((s) => s.inputDeviceId)
   const outputDeviceId = useUiStore((s) => s.outputDeviceId)
@@ -319,11 +323,15 @@ export function SetupScreen(): JSX.Element {
           color="#22d3ee"
           title={L.sysCard}
           role={L.sysRole}
-          status={{ text: L.deferred, color: 'var(--text4)' }}
+          status={{
+            text: systemCapturing ? L.sysCapturing : L.ready,
+            color: systemCapturing ? 'var(--ac-grn)' : 'var(--text4)'
+          }}
           devices={[]}
           value=""
-          disabled
-          hint={L.remoteSourceMissing}
+          readOnly
+          hint={L.sysHint}
+          level={systemLevel * 4}
           L={L}
         />
         <DeviceCard
