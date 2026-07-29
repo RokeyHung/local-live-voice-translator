@@ -10,7 +10,7 @@ NPM         ?= npm
 .DEFAULT_GOAL := help
 
 .PHONY: help setup setup-service setup-desktop dev service desktop \
-        build typecheck lint format health test clean
+        build typecheck lint format health test bench accuracy clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -57,6 +57,13 @@ health: ## Gọi thử endpoint /health của AI service
 
 test: ## Chạy test service (pytest)
 	cd $(AI_DIR) && $(UV) run pytest -q
+
+bench: ## Đo độ trễ từng khâu trên máy này (cần AI service đang chạy)
+	@curl -s -X POST http://127.0.0.1:8756/api/benchmark \
+		-H 'Content-Type: application/json' -d '{"source":"vi","target":"en"}' && echo
+
+accuracy: ## Đo WER/chrF trên bộ câu kiểm thử (nạp model riêng, chạy vài phút)
+	cd $(AI_DIR) && $(UV) run python scripts/accuracy.py
 
 clean: ## Xóa venv, node_modules và build output
 	rm -rf $(AI_DIR)/.venv

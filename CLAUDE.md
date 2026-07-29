@@ -78,6 +78,8 @@ The WebSocket/REST contract is defined twice and MUST stay in sync when changed:
 
 WS envelope is `{ type, ts, payload }`. Message types: client→`session.start`/`session.stop`/`audio.chunk`/`control.ptt`/`control.mute`; server→`state`/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
 
+REST: `GET /health`, `GET|PUT /api/config` (preset), `GET|DELETE /api/sessions`, `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+
 ## Conventions
 
 - **Scaffold with official CLIs**, not hand-written boilerplate: `uv init` for Python, `npm create @quick-start/electron` (electron-vite) for the desktop. Add libs via `uv add` / `npm i`.

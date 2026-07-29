@@ -1,10 +1,18 @@
 // Port: client REST tới Local AI Service.
 
-import type { Preset } from '../domain/enums'
-import type { ConfigResponse, HealthResponse } from '../domain/models'
+import type { Language, Preset } from '../domain/enums'
+import type {
+  BenchmarkResponse,
+  ConfigResponse,
+  HealthResponse,
+  ResourceResponse
+} from '../domain/models'
 
 export interface AiClient {
   fetchHealth(): Promise<HealthResponse>
   fetchConfig(): Promise<ConfigResponse>
   updatePreset(preset: Preset): Promise<ConfigResponse>
+  // Chạy một câu mẫu qua từng khâu để đo độ trễ thực tế của máy.
+  runBenchmark(source: Language, target: Language): Promise<BenchmarkResponse>
+  fetchResources(): Promise<ResourceResponse>
 }

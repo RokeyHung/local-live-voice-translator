@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from llvt_ai_service import __version__
 from llvt_ai_service.adapters.persistence.memory import InMemorySessionRepository
 from llvt_ai_service.api import config as config_api
-from llvt_ai_service.api import health, sessions
+from llvt_ai_service.api import diagnostics, health, sessions
 from llvt_ai_service.application.container import Container
 from llvt_ai_service.application.model_manager import ModelManager
 from llvt_ai_service.application.session_service import SessionService
@@ -61,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(config_api.router)
     app.include_router(sessions.router)
+    app.include_router(diagnostics.router)
     app.include_router(ws_session.router)
     return app
 

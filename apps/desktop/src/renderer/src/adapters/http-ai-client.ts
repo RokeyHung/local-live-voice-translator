@@ -1,8 +1,13 @@
 // Adapter: hiện thực AiClient bằng fetch tới REST.
 
 import { AI_BASE_URL } from '../application/config'
-import type { Preset } from '../domain/enums'
-import type { ConfigResponse, HealthResponse } from '../domain/models'
+import type { Language, Preset } from '../domain/enums'
+import type {
+  BenchmarkResponse,
+  ConfigResponse,
+  HealthResponse,
+  ResourceResponse
+} from '../domain/models'
 import type { AiClient } from '../ports/ai-client'
 
 export class HttpAiClient implements AiClient {
@@ -26,5 +31,21 @@ export class HttpAiClient implements AiClient {
     })
     if (!res.ok) throw new Error(`Đổi preset thất bại: HTTP ${res.status}`)
     return (await res.json()) as ConfigResponse
+  }
+
+  async runBenchmark(source: Language, target: Language): Promise<BenchmarkResponse> {
+    const res = await fetch(`${AI_BASE_URL}/api/benchmark`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source, target })
+    })
+    if (!res.ok) throw new Error(`Đo độ trễ thất bại: HTTP ${res.status}`)
+    return (await res.json()) as BenchmarkResponse
+  }
+
+  async fetchResources(): Promise<ResourceResponse> {
+    const res = await fetch(`${AI_BASE_URL}/api/resources`)
+    if (!res.ok) throw new Error(`Đọc tài nguyên thất bại: HTTP ${res.status}`)
+    return (await res.json()) as ResourceResponse
   }
 }

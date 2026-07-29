@@ -3,13 +3,13 @@
 
 import type { JSX } from 'react'
 import { prettyGpuName } from '../../adapters/compute-probe'
-import { PLATFORM } from '../../application/config'
+import { useBenchmark, useResources } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
 import { useCompute, useDict } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { Icon } from '../components/Icon'
-import { Badge, DisabledButton, EmptyState, ScreenHeader } from '../components/primitives'
-import { LABEL, MONO, PANEL } from '../styles'
+import { Badge, EmptyState, Notice, ScreenHeader } from '../components/primitives'
+import { LABEL, MONO, PANEL, primaryButton } from '../styles'
 
 function LatencyBar({
   label,
@@ -120,11 +120,16 @@ export function DiagnosticsScreen(): JSX.Element {
   const L = useDict()
   const compute = useCompute()
   const health = useHealth()
+  const benchmark = useBenchmark()
+  const resources = useResources(health.isSuccess)
+  const config = useSessionStore((s) => s.config)
   const metrics = useSessionStore((s) => s.metrics)
   const log = useSessionStore((s) => s.log)
   const reset = useSessionStore((s) => s.reset)
   const active = useSessionStore((s) => s.active)
 
+  const bench = benchmark.data ?? null
+  const benchMax = bench ? Math.max(bench.vadMs, bench.asrMs, bench.mtMs, bench.ttsMs ?? 0, 1) : 1
   const hasActivity = metrics.utteranceCount > 0 || active
   const max = Math.max(
     1200,
@@ -177,7 +182,7 @@ export function DiagnosticsScreen(): JSX.Element {
         </div>
       )}
 
-      {/* benchmark — chưa có endpoint */}
+      {/* benchmark — chạy thật qua POST /api/benchmark */}
       <div style={{ ...PANEL, padding: '18px 20px' }}>
         <div
           style={{
@@ -193,17 +198,131 @@ export function DiagnosticsScreen(): JSX.Element {
               <Icon name="bolt" size={17} />
             </span>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 700 }}>{L.benchTitle}</span>
-                <Badge color="var(--text4)">{L.notSupported}</Badge>
-              </div>
+              <div style={{ fontSize: 13.5, fontWeight: 700 }}>{L.benchTitle}</div>
               <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 1 }}>
                 {L.benchDesc}
               </div>
             </div>
           </div>
-          <DisabledButton label={L.benchRun} hint={L.benchDisabled} icon="play" />
+          <button
+            onClick={() =>
+              benchmark.mutate({ source: config.outgoing.source, target: config.outgoing.target })
+            }
+            disabled={!health.isSuccess || benchmark.isPending}
+            style={{
+              ...primaryButton,
+              opacity: !health.isSuccess || benchmark.isPending ? 0.5 : 1,
+              cursor: !health.isSuccess || benchmark.isPending ? 'not-allowed' : 'pointer'
+            }}
+          >
+            <Icon
+              name={benchmark.isPending ? 'spinner' : 'play'}
+              size={14}
+              spin={benchmark.isPending}
+              strokeWidth={benchmark.isPending ? 2.6 : 2}
+            />
+            {benchmark.isPending ? L.benchRunning : bench ? L.benchAgain : L.benchRun}
+          </button>
         </div>
+
+        {benchmark.isError && (
+          <div style={{ marginTop: 14 }}>
+            <Notice
+              tone="error"
+              icon="warning"
+              title={L.benchFailed}
+              body={benchmark.error?.message}
+            />
+          </div>
+        )}
+
+        {!bench && !benchmark.isPending && !benchmark.isError && (
+          <div
+            style={{
+              marginTop: 16,
+              padding: 22,
+              borderRadius: 12,
+              border: '1px dashed var(--line-strong)',
+              textAlign: 'center',
+              fontSize: 12,
+              color: 'var(--text4)'
+            }}
+          >
+            {L.benchIdle}
+          </div>
+        )}
+
+        {bench && (
+          <div style={{ marginTop: 16 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 11,
+                color: 'var(--text4)',
+                marginBottom: 12,
+                flexWrap: 'wrap'
+              }}
+            >
+              <span>{L.benchOn}:</span>
+              <span style={{ color: 'var(--text2)', fontWeight: 600, ...MONO }}>
+                {bench.source.toUpperCase()} → {bench.target.toUpperCase()}
+              </span>
+              {bench.preset && <Badge color="var(--text4)">{bench.preset}</Badge>}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <LatencyBar
+                label="VAD · Silero"
+                value={bench.vadMs}
+                max={benchMax}
+                color="var(--ac-grn2)"
+              />
+              <LatencyBar
+                label="ASR · whisper.cpp"
+                value={bench.asrMs}
+                max={benchMax}
+                color="#22d3ee"
+              />
+              <LatencyBar label="MT · NLLB-200" value={bench.mtMs} max={benchMax} color="#fb923c" />
+              <LatencyBar
+                label="TTS · sherpa-onnx"
+                value={bench.ttsMs}
+                max={benchMax}
+                color="#d946ef"
+              />
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                marginTop: 16,
+                padding: '13px 16px',
+                borderRadius: 12,
+                background: 'rgba(34,211,238,.08)',
+                border: '1px solid rgba(34,211,238,.22)',
+                flexWrap: 'wrap'
+              }}
+            >
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ac-cyan)' }}>
+                {L.benchTotal}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'baseline', gap: 10, ...MONO }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#22d3ee' }}>
+                  {bench.totalMs}ms
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text4)' }}>
+                  ×{(bench.totalMs / bench.audioMs).toFixed(2)} {L.rtFactor}
+                </span>
+              </span>
+            </div>
+            <div style={{ fontSize: 10.5, color: 'var(--text5)', marginTop: 10, lineHeight: 1.5 }}>
+              {L.benchNote}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* phần cứng */}
@@ -211,29 +330,34 @@ export function DiagnosticsScreen(): JSX.Element {
         <div style={{ ...LABEL, marginBottom: 8 }}>{L.resourcesT}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 14 }}>
           <InfoTile
-            label={L.cpuLbl}
-            value={compute?.cpuCores ? String(compute.cpuCores) : '—'}
-            unit={compute?.cpuCores ? ` ${L.cores}` : undefined}
-            note={PLATFORM}
+            label={L.serviceCpu}
+            value={resources.data ? resources.data.cpuPercent.toFixed(0) : '—'}
+            unit="%"
+            note={resources.data ? `${resources.data.cpuCount} ${L.cores}` : L.serviceDown}
             color="#22d3ee"
           />
           <InfoTile
-            label={L.ramLbl}
-            value={compute?.ramGb ? `${compute.ramCapped ? '≥' : ''}${compute.ramGb}` : '—'}
+            label={L.serviceRam}
+            value={resources.data ? (resources.data.rssMb / 1024).toFixed(2) : '—'}
             unit=" GB"
-            note={compute?.ramCapped ? L.atLeast : undefined}
+            note={resources.data ? `${resources.data.threads} ${L.serviceThreads}` : undefined}
             color="var(--ac-grn2)"
+          />
+          <InfoTile
+            label={L.systemRam}
+            value={resources.data ? resources.data.systemUsedPercent.toFixed(0) : '—'}
+            unit="%"
+            note={
+              resources.data
+                ? `/ ${(resources.data.systemTotalMb / 1024).toFixed(0)} GB`
+                : undefined
+            }
+            color="#fb923c"
           />
           <InfoTile
             label={L.gpuLbl}
             value={compute ? prettyGpuName(compute.gpuRenderer) || L.notAvail : '—'}
             note={compute?.recommended}
-            color="#fb923c"
-          />
-          <InfoTile
-            label={L.apiLbl}
-            value={compute?.webgpu ? 'WebGPU' : 'WebGL'}
-            note={health.data?.version ? `service ${health.data.version}` : L.serviceDown}
             color="#d946ef"
           />
         </div>

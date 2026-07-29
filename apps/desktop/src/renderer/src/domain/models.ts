@@ -18,6 +18,29 @@ export interface HealthResponse {
   platform: string
 }
 
+// Kết quả đo độ trễ từng khâu do AI service trả về (POST /api/benchmark).
+export interface BenchmarkResponse {
+  vadMs: number
+  asrMs: number
+  mtMs: number
+  ttsMs: number | null // null khi ngôn ngữ đích chưa có voice TTS
+  totalMs: number
+  audioMs: number
+  source: Language
+  target: Language
+  preset: Preset | null
+}
+
+// Tài nguyên của chính tiến trình AI service (GET /api/resources).
+export interface ResourceResponse {
+  cpuPercent: number
+  cpuCount: number
+  rssMb: number
+  systemTotalMb: number
+  systemUsedPercent: number
+  threads: number
+}
+
 export interface ConfigResponse {
   preset: Preset
   availablePresets: Preset[]

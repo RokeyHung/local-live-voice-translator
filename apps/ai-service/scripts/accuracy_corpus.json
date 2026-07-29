@@ -1,0 +1,90 @@
+{
+  "_note": [
+    "Bộ câu kiểm thử độ chính xác (docs/00 Tuần 8).",
+    "`audio` là đường dẫn tới file wav 16 kHz mono do NGƯỜI đọc, tương đối so với thư mục chứa file này.",
+    "Chưa có file thì bỏ trống — script sẽ chạy chế độ round-trip bằng TTS và ghi rõ đó chỉ là smoke test.",
+    "Hãy thay/bổ sung bằng câu thoại họp thật của bạn: đây mới là phần quyết định giá trị của số liệu."
+  ],
+  "cases": [
+    {
+      "id": "vi-01",
+      "language": "vi",
+      "target": "en",
+      "audio": "",
+      "transcript": "Tôi đã hoàn thành phần triển khai API.",
+      "translation": "I have finished the API implementation."
+    },
+    {
+      "id": "vi-02",
+      "language": "vi",
+      "target": "en",
+      "audio": "",
+      "transcript": "Chỉ còn phần kiểm thử tích hợp thôi.",
+      "translation": "Only the integration testing is left."
+    },
+    {
+      "id": "vi-03",
+      "language": "vi",
+      "target": "en",
+      "audio": "",
+      "transcript": "Tôi sẽ gửi bản ghi chú sau buổi họp.",
+      "translation": "I will send the notes after the meeting."
+    },
+    {
+      "id": "vi-04",
+      "language": "vi",
+      "target": "en",
+      "audio": "",
+      "transcript": "Chiều nay chúng ta cùng xem lại thiết kế nhé.",
+      "translation": "Let us review the design together this afternoon."
+    },
+    {
+      "id": "vi-05",
+      "language": "vi",
+      "target": "en",
+      "audio": "",
+      "transcript": "Độ trễ hiện tại khoảng hai giây rưỡi.",
+      "translation": "The current latency is about two and a half seconds."
+    },
+    {
+      "id": "en-01",
+      "language": "en",
+      "target": "vi",
+      "audio": "",
+      "transcript": "Let us start today's standup meeting.",
+      "translation": "Chúng ta bắt đầu buổi họp hôm nay nhé."
+    },
+    {
+      "id": "en-02",
+      "language": "en",
+      "target": "vi",
+      "audio": "",
+      "transcript": "Are there any blockers on your side?",
+      "translation": "Phía bạn có vướng mắc gì không?"
+    },
+    {
+      "id": "en-03",
+      "language": "en",
+      "target": "vi",
+      "audio": "",
+      "transcript": "I will share my screen in a moment.",
+      "translation": "Tôi sẽ chia sẻ màn hình ngay bây giờ."
+    },
+    {
+      "id": "en-04",
+      "language": "en",
+      "target": "vi",
+      "audio": "",
+      "transcript": "The deployment is scheduled for next Monday.",
+      "translation": "Việc triển khai được lên lịch vào thứ Hai tuần sau."
+    },
+    {
+      "id": "en-05",
+      "language": "en",
+      "target": "vi",
+      "audio": "",
+      "transcript": "Thanks everyone, talk to you soon.",
+      "translation": "Cảm ơn mọi người, hẹn gặp lại."
+    }
+  ]
+}

@@ -137,7 +137,18 @@ export interface Dict {
   benchTitle: string
   benchDesc: string
   benchRun: string
-  benchDisabled: string
+  benchRunning: string
+  benchAgain: string
+  benchIdle: string
+  benchOn: string
+  benchTotal: string
+  benchFailed: string
+  benchNote: string
+  rtFactor: string
+  serviceCpu: string
+  serviceRam: string
+  serviceThreads: string
+  systemRam: string
   resourcesT: string
   audioT: string
   sampleRate: string
@@ -354,7 +365,19 @@ const vi: Dict = {
   benchTitle: 'Test độ trễ model',
   benchDesc: 'Chạy một câu mẫu qua cả pipeline để đo độ trễ thực tế.',
   benchRun: 'Chạy test',
-  benchDisabled: 'Cần endpoint benchmark bên AI service — chưa có.',
+  benchRunning: 'Đang đo…',
+  benchAgain: 'Đo lại',
+  benchIdle: 'Chưa đo lần nào. Nhấn "Chạy test" để đo trên máy này.',
+  benchOn: 'Chiều dịch',
+  benchTotal: 'Tổng đầu-cuối',
+  benchFailed: 'Đo độ trễ thất bại',
+  benchNote:
+    'Mỗi khâu chạy với đầu vào cố định nên số đo không phụ thuộc chất lượng khâu trước. Đây là phép đo thời gian, không phải độ chính xác.',
+  rtFactor: 'so với thời gian thực',
+  serviceCpu: 'CPU service',
+  serviceRam: 'RAM service',
+  serviceThreads: 'luồng',
+  systemRam: 'RAM máy',
   resourcesT: 'Phần cứng',
   audioT: 'Đường tín hiệu audio',
   sampleRate: 'Tần số lấy mẫu',
@@ -574,7 +597,19 @@ const en: Dict = {
   benchTitle: 'Model latency test',
   benchDesc: 'Run one sample utterance through the full pipeline to measure real latency.',
   benchRun: 'Run test',
-  benchDisabled: 'Needs a benchmark endpoint on the AI service — not available.',
+  benchRunning: 'Measuring…',
+  benchAgain: 'Measure again',
+  benchIdle: 'No measurement yet. Press "Run test" to measure on this machine.',
+  benchOn: 'Direction',
+  benchTotal: 'End-to-end total',
+  benchFailed: 'Measurement failed',
+  benchNote:
+    'Each stage runs on fixed input, so a stage timing never depends on the previous one. This measures time, not accuracy.',
+  rtFactor: 'vs realtime',
+  serviceCpu: 'Service CPU',
+  serviceRam: 'Service RAM',
+  serviceThreads: 'threads',
+  systemRam: 'System RAM',
   resourcesT: 'Hardware',
   audioT: 'Audio path',
   sampleRate: 'Sample rate',
