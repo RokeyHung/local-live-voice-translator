@@ -78,7 +78,9 @@ The WebSocket/REST contract is defined twice and MUST stay in sync when changed:
 
 WS envelope is `{ type, ts, payload }`. Message types: client→`session.start`/`session.stop`/`audio.chunk`/`control.ptt`/`control.mute`; server→`state`/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
 
-REST: `GET /health`, `GET|PUT /api/config` (preset), `GET|DELETE /api/sessions`, `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers), `GET /api/models` (what's actually on disk, real sizes), `GET|DELETE /api/sessions`, `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+
+API docs live at `/docs` (`make docs`). Swagger UI assets are **vendored** in `llvt_ai_service/static/` and served from `/static` — FastAPI's default CDN would make the docs page blank on an offline machine, which contradicts the whole project. ReDoc is disabled for the same reason. The WS contract can't be expressed in OpenAPI, so it's written into the app description in `api/openapi_meta.py` — keep it in sync with `ws/protocol.py`.
 
 ## Conventions
 

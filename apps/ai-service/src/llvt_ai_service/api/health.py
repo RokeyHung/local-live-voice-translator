@@ -13,7 +13,15 @@ from llvt_ai_service.schemas import HealthResponse
 router = APIRouter(tags=["system"])
 
 
-@router.get("/health", response_model=HealthResponse)
+@router.get(
+    "/health",
+    response_model=HealthResponse,
+    summary="Kiểm tra service",
+    description=(
+        "Trả về phiên bản, nền tảng và cờ `offlineReady`. Ứng dụng desktop gọi "
+        "endpoint này định kỳ để hiện chấm trạng thái ở thanh bên."
+    ),
+)
 def health() -> HealthResponse:
     return HealthResponse(
         version=__version__,

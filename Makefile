@@ -10,7 +10,7 @@ NPM         ?= npm
 .DEFAULT_GOAL := help
 
 .PHONY: help setup setup-service setup-desktop dev service desktop \
-        build typecheck lint format health test bench accuracy clean
+        build typecheck lint format health docs test bench accuracy clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -54,6 +54,9 @@ format: ## Sort imports + format cả hai app
 
 health: ## Gọi thử endpoint /health của AI service
 	@curl -s http://127.0.0.1:8756/health && echo
+
+docs: ## Mở tài liệu API (Swagger UI, chạy cục bộ không cần mạng)
+	@open http://127.0.0.1:8756/docs 2>/dev/null || echo "Mở http://127.0.0.1:8756/docs"
 
 test: ## Chạy test service (pytest)
 	cd $(AI_DIR) && $(UV) run pytest -q

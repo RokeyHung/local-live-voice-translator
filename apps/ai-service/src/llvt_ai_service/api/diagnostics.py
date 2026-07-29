@@ -14,7 +14,21 @@ from llvt_ai_service.schemas import BenchmarkRequest, BenchmarkResponse, Resourc
 router = APIRouter(prefix="/api", tags=["diagnostics"])
 
 
-@router.post("/benchmark", response_model=BenchmarkResponse)
+@router.post(
+    "/benchmark",
+    response_model=BenchmarkResponse,
+    summary="Đo độ trễ từng khâu",
+    description=(
+        "Chạy VAD/ASR trên một đoạn sóng tổng hợp 3 giây và MT/TTS trên một câu mẫu, "
+        "mỗi khâu với đầu vào cố định nên số đo không phụ thuộc chất lượng khâu trước.\n\n"
+        "**Luôn warm-up trước khi bấm giờ.** TTS nạp voice lười theo ngôn ngữ và lần "
+        "suy luận đầu của ASR/MT tốn thêm thời gian dựng graph — đo nguội sẽ ra con số "
+        "vô nghĩa (thực đo: 34.7 s lần đầu so với 1.7 s các lần sau). Kết quả vì thế là "
+        "độ trễ mỗi câu khi máy đã chạy ổn định, KHÔNG gồm thời gian khởi động.\n\n"
+        "Đây là phép đo thời gian, không phải độ chính xác — dùng `scripts/accuracy.py` "
+        "cho phần đó. Ngôn ngữ đích chưa có voice (tiếng Nhật) trả `ttsMs = null`."
+    ),
+)
 async def benchmark(
     body: BenchmarkRequest | None = None, container: Container = Depends(get_container)
 ) -> BenchmarkResponse:
@@ -38,7 +52,16 @@ async def benchmark(
     )
 
 
-@router.get("/resources", response_model=ResourceResponse)
+@router.get(
+    "/resources",
+    response_model=ResourceResponse,
+    summary="Tài nguyên tiến trình service",
+    description=(
+        "CPU% và RSS của chính tiến trình Python, đọc bằng psutil. Renderer nằm trong "
+        "sandbox Chromium nên không tự đo được phần này. Không đo VRAM: Apple Silicon "
+        "dùng bộ nhớ hợp nhất (đã nằm trong RSS)."
+    ),
+)
 def resources() -> ResourceResponse:
     usage = read_usage()
     return ResourceResponse(

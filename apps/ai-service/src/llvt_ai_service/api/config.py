@@ -33,13 +33,30 @@ def _describe(container: Container, preset: Preset) -> ConfigResponse:
     )
 
 
-@router.get("/config", response_model=ConfigResponse)
+@router.get(
+    "/config",
+    response_model=ConfigResponse,
+    summary="Preset đang dùng + trạng thái từng khâu",
+    description=(
+        "`stages` được dựng từ chính provider đang nạp trong bộ nhớ: model thật, "
+        "thiết bị tính toán thật (Metal/mps/CPU) và đã nạp hay chưa. Giao diện đọc "
+        "trực tiếp từ đây thay vì giữ một bảng cấu hình chép tay."
+    ),
+)
 def get_config(container: Container = Depends(get_container)) -> ConfigResponse:
     current = container.model_manager.preset or get_settings().default_preset
     return _describe(container, current)
 
 
-@router.put("/config", response_model=ConfigResponse)
+@router.put(
+    "/config",
+    response_model=ConfigResponse,
+    summary="Đổi preset",
+    description=(
+        "Giải phóng bộ provider hiện tại rồi nạp preset mới — có thể mất vài giây "
+        "và sẽ tải model nếu máy chưa có. Trả về trạng thái sau khi nạp xong."
+    ),
+)
 async def update_config(
     body: ConfigUpdate, container: Container = Depends(get_container)
 ) -> ConfigResponse:
@@ -47,9 +64,16 @@ async def update_config(
     return _describe(container, body.preset)
 
 
-@router.get("/models", response_model=list[InstalledModelSchema])
+@router.get(
+    "/models",
+    response_model=list[InstalledModelSchema],
+    summary="Model đã tải trên đĩa",
+    description=(
+        "Quét thư mục model thật (`whisper-cpp/*.bin`, cache HuggingFace của NLLB, "
+        "thư mục voice của sherpa-onnx) và trả dung lượng thật của từng cái."
+    ),
+)
 def installed_models() -> list[InstalledModelSchema]:
-    """Model đã tải thật trên đĩa, kèm dung lượng thật."""
     return [
         InstalledModelSchema(name=m.name, stage=m.stage, path=m.path, sizeBytes=m.size_bytes)
         for m in scan(get_settings().models_dir)

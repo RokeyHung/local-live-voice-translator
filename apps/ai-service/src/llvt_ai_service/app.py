@@ -13,6 +13,8 @@ from llvt_ai_service import __version__
 from llvt_ai_service.adapters.persistence.memory import InMemorySessionRepository
 from llvt_ai_service.api import config as config_api
 from llvt_ai_service.api import diagnostics, health, sessions
+from llvt_ai_service.api.docs import mount_docs
+from llvt_ai_service.api.openapi_meta import DESCRIPTION, TAGS_METADATA
 from llvt_ai_service.application.container import Container
 from llvt_ai_service.application.model_manager import ModelManager
 from llvt_ai_service.application.session_service import SessionService
@@ -49,7 +51,18 @@ def create_app() -> FastAPI:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
 
-    app = FastAPI(title="LLVT Local AI Service", version=__version__, lifespan=lifespan)
+    app = FastAPI(
+        title="LLVT Local AI Service",
+        version=__version__,
+        description=DESCRIPTION,
+        openapi_tags=TAGS_METADATA,
+        lifespan=lifespan,
+        # /docs được thay bằng bản dùng asset cục bộ (xem api/docs.py); ReDoc nạp
+        # từ CDN nên tắt hẳn — service phải mở được tài liệu khi không có mạng.
+        docs_url=None,
+        redoc_url=None,
+        license_info={"name": "MIT"},
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
@@ -63,6 +76,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions.router)
     app.include_router(diagnostics.router)
     app.include_router(ws_session.router)
+    mount_docs(app)
     return app
 
 
