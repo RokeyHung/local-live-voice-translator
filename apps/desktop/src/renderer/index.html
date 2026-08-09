@@ -3,10 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <title>Electron</title>
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!--
+      https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+
+      connect-src: renderer gọi REST + WebSocket của AI service ở loopback, khác
+      origin với trang (dev: localhost:5173, build: file://) nên 'self' không phủ.
+      script-src blob:: AudioWorklet của Pcm16Stream nạp module từ blob URL.
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+      content="default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' http://127.0.0.1:8756 ws://127.0.0.1:8756"
     />
   </head>
 
