@@ -3,6 +3,7 @@
 
 import { useState, type JSX } from 'react'
 import type { ThemeMode } from '../../domain/enums'
+import { useServiceConfig, useSetHistoryEnabled } from '../../hooks/use-config'
 import { useDict } from '../../hooks/use-ui'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
@@ -53,6 +54,10 @@ export function SettingsScreen(): JSX.Element {
 
   const [src, setSrc] = useState('')
   const [dst, setDst] = useState('')
+
+  // Lưu lịch sử là cấu hình của service (nó mới là nơi ghi DB), không phải của UI.
+  const config = useServiceConfig()
+  const setHistoryEnabled = useSetHistoryEnabled()
 
   const submitTerm = (): void => {
     addGlossary(src, dst)
@@ -113,6 +118,37 @@ export function SettingsScreen(): JSX.Element {
               { value: 'en', label: 'English' }
             ]}
           />
+        </div>
+      </Section>
+
+      <Section icon="shield" color="#22c55e" title={L.privacyT} desc={L.privacyDesc}>
+        <div>
+          <div className="max-w-70">
+            <Segmented
+              size="lg"
+              value={config.data?.historyEnabled === false ? 'off' : 'on'}
+              onChange={(value) => {
+                const preset = config.data?.preset
+                if (!preset) return
+                setHistoryEnabled.mutate({ preset, enabled: value === 'on' })
+              }}
+              options={[
+                { value: 'on', label: L.historyOn },
+                { value: 'off', label: L.historyOff }
+              ]}
+            />
+          </div>
+          <div className="mt-2.5 text-sm text-fg-4">
+            {config.data ? (
+              <>
+                {L.historyPath}{' '}
+                <span className="font-mono text-fg-3">{config.data.historyDbPath}</span>
+              </>
+            ) : (
+              L.historyPathUnknown
+            )}
+          </div>
+          <div className="mt-1 text-sm text-fg-4">{L.historyOffNote}</div>
         </div>
       </Section>
 

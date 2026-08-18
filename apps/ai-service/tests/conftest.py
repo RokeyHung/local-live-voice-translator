@@ -16,6 +16,21 @@ import numpy as np
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _tmp_history_db(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> Any:
+    """Mỗi test dùng một file SQLite riêng trong tmp_path.
+
+    Nếu không, lifespan sẽ mở đúng file lịch sử thật của máy (``~/.llvt/history.db``)
+    và test sẽ ghi vào dữ liệu người dùng.
+    """
+    from llvt_ai_service.config.settings import get_settings
+
+    monkeypatch.setenv("LLVT_DB_PATH", str(tmp_path / "history.db"))
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
 class FakeSegment:
     def __init__(self, text: str, probability: float = 0.9) -> None:
         self.text = text

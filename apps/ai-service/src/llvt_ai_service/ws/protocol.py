@@ -31,7 +31,12 @@ def envelope(type_: str, **payload: Any) -> dict[str, Any]:
 def event_to_wire(event: ev.PipelineEvent) -> dict[str, Any]:
     """Chuyển domain event → message gửi cho client."""
     if isinstance(event, ev.StateChanged):
-        return envelope("state", state=event.state.value, utteranceId=event.utterance_id)
+        return envelope(
+            "state",
+            state=event.state.value,
+            utteranceId=event.utterance_id,
+            sessionId=event.session_id,
+        )
     if isinstance(event, ev.AsrPartial):
         return envelope(
             "asr.partial",
@@ -90,6 +95,12 @@ def parse_session_config(payload: dict[str, Any]) -> SessionConfig:
         outgoing=pair("outgoingSource", "outgoingTarget"),
         preset=Preset(payload.get("preset", "balanced")),
     )
+
+
+def parse_session_title(payload: dict[str, Any]) -> str:
+    """Tên phiên do client đặt (hiển thị ở lịch sử). Cắt bớt để không phình DB."""
+    title = payload.get("title")
+    return title.strip()[:120] if isinstance(title, str) else ""
 
 
 def parse_audio_chunk(session_id: str, payload: dict[str, Any]) -> AudioChunk:

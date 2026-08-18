@@ -4,15 +4,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from llvt_ai_service.application.history import HistoryPolicy
 from llvt_ai_service.application.model_manager import ModelManager
 from llvt_ai_service.application.session_service import SessionService
 from llvt_ai_service.config.settings import Settings
-from llvt_ai_service.ports.repository import SessionRepository
 
 
 @dataclass
 class Container:
     settings: Settings
-    repository: SessionRepository
+    # Kiểu là HistoryPolicy (không phải port trần) để API bật/tắt lưu lịch sử được.
+    repository: HistoryPolicy
     model_manager: ModelManager
     session_service: SessionService

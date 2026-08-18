@@ -31,6 +31,19 @@ export function useSetPreset(): UseMutationResult<ConfigResponse, Error, Preset>
   })
 }
 
+// Bật/tắt lưu lịch sử phiên (SPEC 14.4). Không nạp lại model nên phản hồi ngay.
+export function useSetHistoryEnabled(): UseMutationResult<
+  ConfigResponse,
+  Error,
+  { preset: Preset; enabled: boolean }
+> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ preset, enabled }) => client.setHistoryEnabled(preset, enabled),
+    onSuccess: (data) => queryClient.setQueryData(['config'], data)
+  })
+}
+
 // Đo độ trễ theo yêu cầu (không tự chạy: mỗi lần đo tốn vài giây model thật).
 export function useBenchmark(): UseMutationResult<
   BenchmarkResponse,

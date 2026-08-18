@@ -1,15 +1,9 @@
-// Adapter: lưu tuỳ chọn + lịch sử cuộc họp vào localStorage của renderer.
+// Adapter: lưu tuỳ chọn người dùng vào localStorage của renderer.
 // Toàn bộ dữ liệu nằm trên máy — không đồng bộ ra ngoài.
 
-import type { Meeting } from '../domain/models'
-import type {
-  MeetingRepository,
-  PreferencesRepository,
-  StoredPreferences
-} from '../ports/preferences'
+import type { PreferencesRepository, StoredPreferences } from '../ports/preferences'
 
 const PREFS_KEY = 'llvt.prefs.v1'
-const MEETINGS_KEY = 'llvt.meetings.v1'
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -38,16 +32,5 @@ export class LocalPreferences implements PreferencesRepository {
 
   save(prefs: StoredPreferences): void {
     write(PREFS_KEY, prefs)
-  }
-}
-
-export class LocalMeetings implements MeetingRepository {
-  load(): Meeting[] {
-    const list = read<Meeting[]>(MEETINGS_KEY, [])
-    return Array.isArray(list) ? list : []
-  }
-
-  save(meetings: Meeting[]): void {
-    write(MEETINGS_KEY, meetings)
   }
 }

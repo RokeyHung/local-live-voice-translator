@@ -2,16 +2,13 @@
 // Chỉ phụ thuộc PORT (SessionChannel, AudioCapture, AudioOutput), không phụ thuộc adapter.
 
 import type { WsMessage } from '../domain/events'
-import type { MeetingRow, SessionConfig } from '../domain/models'
+import type { SessionConfig } from '../domain/models'
 import type { AudioCapture, AudioFrame } from '../ports/audio-capture'
 import type { AudioOutput } from '../ports/audio-output'
 import type { SessionChannel } from '../ports/session-channel'
-import { useMeetingStore } from '../stores/meeting-store'
 import { useSessionStore } from '../stores/session-store'
 import { useUiStore } from '../stores/ui-store'
-import { applyGlossary } from './glossary'
 import { dict } from './i18n'
-import { utteranceSide } from './utterances'
 
 function toBase64(pcm: Int16Array): string {
   const bytes = new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength)
@@ -37,8 +34,17 @@ function rms(pcm: Int16Array): number {
   return Math.sqrt(sum / pcm.length)
 }
 
-function sessionStartPayload(config: SessionConfig): Record<string, unknown> {
-  const payload: Record<string, unknown> = { mode: config.mode, preset: config.preset }
+function pad(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+// Tên mặc định của phiên trong lịch sử; đổi được sau ở màn Lịch sử.
+function defaultTitle(prefix: string, at: Date): string {
+  return `${prefix}_${pad(at.getDate())}_${pad(at.getMonth() + 1)}_${at.getFullYear()}_${pad(at.getHours())}${pad(at.getMinutes())}`
+}
+
+function sessionStartPayload(config: SessionConfig, title: string): Record<string, unknown> {
+  const payload: Record<string, unknown> = { mode: config.mode, preset: config.preset, title }
   if (config.mode !== 'listen') {
     payload.outgoingSource = config.outgoing.source
     payload.outgoingTarget = config.outgoing.target
@@ -80,31 +86,8 @@ export class SessionController {
       if (p.pcm)
         this.output.play({ pcm: pcm16FromBase64(p.pcm), sampleRate: p.sampleRate ?? 22050 })
     }
-    // Câu đã chạy hết pipeline → ghi vào cuộc họp đang mở.
-    if (msg.type === 'state') {
-      const p = msg.payload as { state?: string; utteranceId?: string }
-      if (p.state === 'Completed' && p.utteranceId) this.recordUtterance(p.utteranceId)
-    }
-  }
-
-  private recordUtterance(utteranceId: string): void {
-    const session = useSessionStore.getState()
-    const utterance = session.utterances.find((u) => u.id === utteranceId)
-    if (!utterance || !utterance.sourceText) return
-
-    const row: MeetingRow = {
-      id: utterance.id,
-      side: utteranceSide(utterance, session.config),
-      atMs: utterance.at,
-      sourceLanguage: utterance.sourceLanguage,
-      targetLanguage: utterance.targetLanguage,
-      sourceText: utterance.sourceText,
-      translatedText: applyGlossary(utterance.translatedText ?? '', useUiStore.getState().glossary),
-      asrMs: utterance.asrMs,
-      mtMs: utterance.mtMs,
-      ttsMs: utterance.ttsMs
-    }
-    useMeetingStore.getState().appendRow(row)
+    // Câu hoàn tất KHÔNG cần ghi lại ở đây: service đã lưu vào lịch sử (SQLite) ngay
+    // khi chạy xong pipeline, và màn Lịch sử đọc trực tiếp từ đó.
   }
 
   async start(): Promise<void> {
@@ -117,10 +100,10 @@ export class SessionController {
     store.setMuted(false)
     store.setPtt(false)
     store.clearTranscript()
-    useMeetingStore.getState().startMeeting(dict(ui.uiLanguage).meetingPrefix)
     // Trỏ đầu ra TTS tới thiết bị đã chọn (microphone ảo) trước khi phát.
     await this.output?.setSink(ui.virtualMicDeviceId || ui.outputDeviceId)
-    this.channel.send('session.start', sessionStartPayload(config))
+    const title = defaultTitle(dict(ui.uiLanguage).meetingPrefix, new Date())
+    this.channel.send('session.start', sessionStartPayload(config, title))
     store.setActive(true)
 
     // Chiều outgoing: mic của mình (bị gate bởi PTT/mute).
@@ -212,7 +195,6 @@ export class SessionController {
     store.setSystemLevel(0)
     store.setSystemCapturing(false)
     store.setDucking(false)
-    useMeetingStore.getState().endMeeting()
   }
 
   dispose(): void {

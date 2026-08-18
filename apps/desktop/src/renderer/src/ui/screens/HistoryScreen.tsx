@@ -1,11 +1,24 @@
-// Màn Lịch sử: danh sách cuộc họp đã ghi (lưu cục bộ) + bản ghi song ngữ của
-// cuộc họp đang chọn, kèm xuất .txt/.srt.
+// Màn Lịch sử: danh sách phiên đã ghi + bản ghi song ngữ của phiên đang chọn, kèm
+// xuất .txt/.srt.
+//
+// Dữ liệu đến từ AI service (SQLite, GET /api/sessions) — không phải localStorage —
+// nên còn nguyên sau khi tắt app và xoá ở một chỗ duy nhất. Bản dịch hiển thị đúng
+// như đã lưu: glossary là phép thay khi hiển thị phiên đang chạy, không sửa lại
+// bản ghi cũ.
 
 import { useState, type JSX } from 'react'
-import { downloadText, meetingToSrt, meetingToTxt } from '../../application/export'
+import { downloadText, sessionToSrt, sessionToTxt } from '../../application/export'
 import { formatClock, formatDateTime } from '../../application/utterances'
+import { rowSide } from '../../domain/models'
+import {
+  useDeleteAllSessions,
+  useDeleteSession,
+  useRenameSession,
+  useSessionDetail,
+  useSessions
+} from '../../hooks/use-history'
 import { useDict } from '../../hooks/use-ui'
-import { useMeetingStore } from '../../stores/meeting-store'
+import { useSessionStore } from '../../stores/session-store'
 import { Icon } from '../components/Icon'
 import { Dot, EmptyState, ScreenHeader } from '../components/primitives'
 import { DANGER_BUTTON, GHOST_BUTTON, ICON_BUTTON, INPUT, SCREEN } from '../styles'
@@ -18,30 +31,33 @@ const REC_BADGE =
 
 export function HistoryScreen(): JSX.Element {
   const L = useDict()
-  const meetings = useMeetingStore((s) => s.meetings)
-  const selectedId = useMeetingStore((s) => s.selectedId)
-  const currentId = useMeetingStore((s) => s.currentId)
-  const query = useMeetingStore((s) => s.query)
-  const editingId = useMeetingStore((s) => s.editingId)
-  const select = useMeetingStore((s) => s.select)
-  const rename = useMeetingStore((s) => s.rename)
-  const remove = useMeetingStore((s) => s.remove)
-  const clearAll = useMeetingStore((s) => s.clearAll)
-  const setQuery = useMeetingStore((s) => s.setQuery)
-  const setEditing = useMeetingStore((s) => s.setEditing)
+  const active = useSessionStore((s) => s.active)
+  const currentId = useSessionStore((s) => s.historySessionId)
+
+  const [query, setQuery] = useState('')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [draftTitle, setDraftTitle] = useState('')
 
-  const q = query.trim().toLowerCase()
-  const filtered = q
-    ? meetings.filter(
-        (m) =>
-          m.title.toLowerCase().includes(q) ||
-          m.rows.some((r) => `${r.sourceText} ${r.translatedText}`.toLowerCase().includes(q))
-      )
-    : meetings
+  // Đang có phiên chạy thì service ghi thêm câu liên tục → hỏi lại theo nhịp ngắn.
+  const sessionsQuery = useSessions(query, active)
+  const sessions = sessionsQuery.data ?? []
+  const rename = useRenameSession()
+  const removeSession = useDeleteSession()
+  const clearAll = useDeleteAllSessions()
 
-  const selected = meetings.find((m) => m.id === selectedId) ?? meetings[0] ?? null
-  const rows = selected?.rows ?? []
+  // Phiên đã chọn có thể vừa bị xoá hoặc bị bộ lọc loại ra → lùi về phiên đầu danh sách.
+  const selected =
+    sessions.find((s) => s.id === selectedId) ?? (sessions.length > 0 ? sessions[0] : null)
+  const detailQuery = useSessionDetail(selected?.id ?? null, active && selected?.id === currentId)
+  const detail = detailQuery.data ?? null
+  const rows = detail?.utterances ?? []
+
+  const submitRename = (id: string): void => {
+    const clean = draftTitle.trim()
+    setEditingId(null)
+    if (clean) rename.mutate({ id, title: clean })
+  }
 
   return (
     <div className={SCREEN}>
@@ -55,25 +71,25 @@ export function HistoryScreen(): JSX.Element {
           <div className="flex gap-2">
             <button
               className={GHOST_BUTTON}
-              disabled={!selected}
-              onClick={() =>
-                selected && downloadText(`${selected.title}.txt`, meetingToTxt(selected))
-              }
+              disabled={!detail}
+              onClick={() => detail && downloadText(`${detail.title}.txt`, sessionToTxt(detail))}
             >
               <Icon name="download" size={14} />
               .txt
             </button>
             <button
               className={GHOST_BUTTON}
-              disabled={!selected}
-              onClick={() =>
-                selected && downloadText(`${selected.title}.srt`, meetingToSrt(selected))
-              }
+              disabled={!detail}
+              onClick={() => detail && downloadText(`${detail.title}.srt`, sessionToSrt(detail))}
             >
               <Icon name="download" size={14} />
               .srt
             </button>
-            <button className={DANGER_BUTTON} disabled={meetings.length === 0} onClick={clearAll}>
+            <button
+              className={DANGER_BUTTON}
+              disabled={sessions.length === 0 || clearAll.isPending}
+              onClick={() => clearAll.mutate()}
+            >
               {L.clearAll}
             </button>
           </div>
@@ -81,7 +97,7 @@ export function HistoryScreen(): JSX.Element {
       />
 
       <div className="grid grid-cols-[270px_1fr] gap-3.5">
-        {/* danh sách cuộc họp */}
+        {/* danh sách phiên */}
         <div className="panel flex flex-col overflow-hidden">
           <div className="flex flex-col gap-2.25 border-b border-line bg-surface px-3 py-2.75">
             <span className="label-caps">{L.meetingsTitle}</span>
@@ -99,12 +115,17 @@ export function HistoryScreen(): JSX.Element {
           </div>
 
           <div className="cs flex max-h-119 flex-col gap-2 overflow-y-auto p-2.5">
-            {meetings.length === 0 && (
+            {sessionsQuery.isError && (
+              <div className="px-4 py-6.5 text-center text-sm leading-normal text-ac-red">
+                {L.historyUnavailable}
+              </div>
+            )}
+            {!sessionsQuery.isError && sessions.length === 0 && !query.trim() && (
               <div className="px-4 py-6.5 text-center text-sm leading-normal text-fg-5">
                 {L.startToRec}
               </div>
             )}
-            {meetings.length > 0 && filtered.length === 0 && (
+            {!sessionsQuery.isError && sessions.length === 0 && query.trim() && (
               <div className="px-4 py-7.5 text-center">
                 <Icon name="search" size={26} strokeWidth={1.6} />
                 <div className="mt-2 text-base font-semibold text-fg-3">{L.noResultsT}</div>
@@ -112,13 +133,13 @@ export function HistoryScreen(): JSX.Element {
               </div>
             )}
 
-            {filtered.map((m) => {
-              const isSelected = m.id === selected?.id
-              const isRecording = m.id === currentId
+            {sessions.map((session) => {
+              const isSelected = session.id === selected?.id
+              const isRecording = active && session.id === currentId
               return (
                 <div
-                  key={m.id}
-                  onClick={() => select(m.id)}
+                  key={session.id}
+                  onClick={() => setSelectedId(session.id)}
                   className={[
                     'flex w-full cursor-pointer flex-col gap-1.25 rounded-lg border px-3.5 py-3 text-left transition-all',
                     isSelected
@@ -127,16 +148,16 @@ export function HistoryScreen(): JSX.Element {
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
-                    {editingId === m.id ? (
+                    {editingId === session.id ? (
                       <input
                         autoFocus
                         value={draftTitle}
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => setDraftTitle(e.target.value)}
-                        onBlur={() => rename(m.id, draftTitle)}
+                        onBlur={() => submitRename(session.id)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') rename(m.id, draftTitle)
-                          if (e.key === 'Escape') setEditing(null)
+                          if (e.key === 'Enter') submitRename(session.id)
+                          if (e.key === 'Escape') setEditingId(null)
                         }}
                         className={`${INPUT} h-6.5 min-w-0 flex-1 border-ac-mag px-2 font-mono text-base font-bold`}
                       />
@@ -146,7 +167,7 @@ export function HistoryScreen(): JSX.Element {
                           isSelected ? 'text-fg' : 'text-fg-2'
                         }`}
                       >
-                        {m.title}
+                        {session.title}
                       </span>
                     )}
                     {isRecording && (
@@ -159,8 +180,8 @@ export function HistoryScreen(): JSX.Element {
                       title={L.renameTip}
                       onClick={(e) => {
                         e.stopPropagation()
-                        setDraftTitle(m.title)
-                        setEditing(m.id)
+                        setDraftTitle(session.title)
+                        setEditingId(session.id)
                       }}
                       className={`${ICON_BUTTON} hover:bg-[rgba(217,70,239,.1)] hover:text-ac-mag`}
                     >
@@ -170,7 +191,7 @@ export function HistoryScreen(): JSX.Element {
                       title={L.deleteTip}
                       onClick={(e) => {
                         e.stopPropagation()
-                        remove(m.id)
+                        removeSession.mutate(session.id)
                       }}
                       className={`${ICON_BUTTON} hover:bg-[rgba(239,68,68,.1)] hover:text-[#f87171]`}
                     >
@@ -178,10 +199,10 @@ export function HistoryScreen(): JSX.Element {
                     </button>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-fg-4">
-                    <span>{formatDateTime(m.startedAtMs)}</span>
+                    <span>{formatDateTime(session.startedAtMs)}</span>
                     <span className="opacity-40">·</span>
                     <span>
-                      {m.rows.length} {L.utter}
+                      {session.utteranceCount} {L.utter}
                     </span>
                   </div>
                 </div>
@@ -201,7 +222,7 @@ export function HistoryScreen(): JSX.Element {
                     {formatDateTime(selected.startedAtMs)}
                   </div>
                 </div>
-                {selected.id === currentId && (
+                {active && selected.id === currentId && (
                   <span className={`${REC_BADGE} px-2.25 py-0.75 text-3xs`}>
                     <span className="size-1.5 rounded-full bg-[#ef4444] motion-safe:animate-[blink_1s_step-start_infinite]" />
                     {L.recording}
@@ -222,16 +243,20 @@ export function HistoryScreen(): JSX.Element {
                   </div>
                 ) : (
                   rows.map((row) => {
-                    const color = row.side === 'me' ? '#22d3ee' : '#d946ef'
+                    const side = rowSide(row)
+                    const color = side === 'me' ? '#22d3ee' : '#d946ef'
                     const latency = [row.asrMs, row.mtMs, row.ttsMs]
                       .filter((v): v is number => v != null)
                       .join('·')
+                    const failed = row.status === 'failed'
                     return (
                       <div
                         key={row.id}
                         className={`${GRID} items-center border-b border-line-soft px-4.5 py-3 motion-safe:animate-[fadeup_.3s_ease]`}
                       >
-                        <span className="font-mono text-sm text-fg-4">{formatClock(row.atMs)}</span>
+                        <span className="font-mono text-sm text-fg-4">
+                          {formatClock(row.startedAtMs)}
+                        </span>
                         <span
                           className="inline-flex items-center gap-1.25 justify-self-start rounded-full border px-2 py-0.5 text-3xs font-bold tracking-[0.4px]"
                           style={{
@@ -241,11 +266,17 @@ export function HistoryScreen(): JSX.Element {
                           }}
                         >
                           <Dot color={color} size={5} glow={false} />
-                          {row.side === 'me' ? 'ME' : 'REMOTE'}
+                          {side === 'me' ? 'ME' : 'REMOTE'}
                         </span>
-                        <span className="text-base leading-snug text-fg-3">{row.sourceText}</span>
-                        <span className="text-base leading-snug font-medium text-fg-2">
-                          {row.translatedText}
+                        <span className="text-base leading-snug text-fg-3">
+                          {row.sourceText ?? ''}
+                        </span>
+                        <span
+                          className={`text-base leading-snug font-medium ${failed ? 'text-ac-red' : 'text-fg-2'}`}
+                        >
+                          {failed
+                            ? `${L.rowFailed}${row.error ? ` (${row.error})` : ''}`
+                            : (row.translatedText ?? '')}
                         </span>
                         <span className="text-right font-mono text-xs text-fg-4">
                           {latency ? `${latency}ms` : '—'}
@@ -257,7 +288,11 @@ export function HistoryScreen(): JSX.Element {
               </div>
             </>
           ) : (
-            <EmptyState icon="clock" title={L.startToRec} minHeight={300} />
+            <EmptyState
+              icon="clock"
+              title={sessionsQuery.isError ? L.historyUnavailable : L.startToRec}
+              minHeight={300}
+            />
           )}
         </div>
       </div>

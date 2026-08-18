@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from llvt_ai_service.domain.enums import Language, Preset
+from llvt_ai_service.domain.enums import (
+    AudioSource,
+    Language,
+    Preset,
+    SessionMode,
+    UtteranceStatus,
+)
 
 
 class HealthResponse(BaseModel):
@@ -29,6 +35,9 @@ class ConfigResponse(BaseModel):
     availablePresets: list[Preset]
     stages: list[StageInfoSchema] = []
     modelsDir: str = ""
+    # Nơi lưu lịch sử + có đang lưu hay không (SPEC 14.4 yêu cầu hiện rõ cho người dùng).
+    historyDbPath: str = ""
+    historyEnabled: bool = True
 
 
 class InstalledModelSchema(BaseModel):
@@ -40,12 +49,47 @@ class InstalledModelSchema(BaseModel):
 
 class ConfigUpdate(BaseModel):
     preset: Preset
+    # None = giữ nguyên; bật/tắt lưu lịch sử không cần nạp lại model.
+    historyEnabled: bool | None = None
 
 
 class SessionSummary(BaseModel):
     id: str
+    title: str = ""
     startedAtMs: int
     endedAtMs: int | None = None
+    mode: SessionMode | None = None
+    preset: Preset | None = None
+    utteranceCount: int = 0
+
+
+class UtteranceSchema(BaseModel):
+    """Một câu đã chạy qua pipeline (SPEC 7.11 — không kèm audio)."""
+
+    id: str
+    source: AudioSource
+    sourceLanguage: Language
+    targetLanguage: Language
+    sourceText: str | None = None
+    translatedText: str | None = None
+    asrMs: int | None = None
+    mtMs: int | None = None
+    ttsMs: int | None = None
+    status: UtteranceStatus
+    error: str | None = None
+    startedAtMs: int
+    endedAtMs: int | None = None
+
+
+class SessionDetail(SessionSummary):
+    utterances: list[UtteranceSchema] = []
+
+
+class SessionUpdate(BaseModel):
+    title: str | None = None
+    # Đóng một phiên bị bỏ dở (app tắt giữa phiên nên không có `session.stop`):
+    # mốc kết thúc lấy theo câu cuối cùng đã lưu, không phải thời điểm bấm nút.
+    close: bool | None = None
 
 
 class BenchmarkRequest(BaseModel):

@@ -6,7 +6,13 @@ import time
 import uuid
 from dataclasses import dataclass, field
 
-from llvt_ai_service.domain.enums import AudioSource, Language, Preset, SessionMode
+from llvt_ai_service.domain.enums import (
+    AudioSource,
+    Language,
+    Preset,
+    SessionMode,
+    UtteranceStatus,
+)
 
 
 def _uuid() -> str:
@@ -37,6 +43,8 @@ class Session:
     config: SessionConfig | None = None
     started_at_ms: int = field(default_factory=_now_ms)
     ended_at_ms: int | None = None
+    # Tên do người dùng đặt (client gửi kèm session.start, đổi được sau).
+    title: str = ""
 
 
 @dataclass
@@ -99,3 +107,6 @@ class Utterance:
     asr_ms: int | None = None
     mt_ms: int | None = None
     tts_ms: int | None = None
+    status: UtteranceStatus = UtteranceStatus.success
+    # Mã lỗi khi status=failed (không chứa nội dung hội thoại).
+    error: str | None = None

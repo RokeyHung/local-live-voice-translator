@@ -31,8 +31,8 @@ class SessionController:
         self._ptt_active = False
         self._muted = False
 
-    async def start(self, config: SessionConfig) -> None:
-        self._session = Session(config=config)
+    async def start(self, config: SessionConfig, title: str = "") -> None:
+        self._session = Session(config=config, title=title)
         await self._repo.save_session(self._session)
         self._ptt_active = False
         self._muted = False
@@ -48,6 +48,7 @@ class SessionController:
                 synthesize=False,
                 session_id=session_id,
                 executor=self._executor,
+                repository=self._repo,
             )
         if config.outgoing is not None:
             self._outgoing = TranslationPipeline(
@@ -58,8 +59,10 @@ class SessionController:
                 synthesize=True,
                 session_id=session_id,
                 executor=self._executor,
+                repository=self._repo,
             )
-        await self._emit(ev.StateChanged(PipelineState.listening))
+        # Kèm sessionId để client biết phiên nào trong lịch sử ứng với phiên đang chạy.
+        await self._emit(ev.StateChanged(PipelineState.listening, session_id=session_id))
 
     async def on_ptt(self, pressed: bool) -> None:
         self._ptt_active = pressed
@@ -89,12 +92,17 @@ class SessionController:
             await self._outgoing.feed(chunk)
 
     async def stop(self) -> None:
+        session_id = ""
         if self._session is not None:
             self._session.ended_at_ms = int(time.time() * 1000)
+            # Ghi lại để mốc kết thúc vào được lịch sử; phiên còn `ended_at` rỗng ở
+            # lần mở app sau nghĩa là app tắt đột ngột giữa phiên.
+            await self._repo.save_session(self._session)
+            session_id = self._session.id
         self._incoming = None
         self._outgoing = None
         self._ptt_active = False
-        await self._emit(ev.StateChanged(PipelineState.stopped))
+        await self._emit(ev.StateChanged(PipelineState.stopped, session_id=session_id or None))
 
 
 class SessionService:

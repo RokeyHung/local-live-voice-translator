@@ -22,6 +22,9 @@ export type SessionMode = 'listen' | 'speak' | 'two_way'
 
 export type Preset = 'fast' | 'balanced' | 'quality'
 
+// Kết quả chạy pipeline của một câu trong lịch sử.
+export type UtteranceStatus = 'success' | 'failed'
+
 // --- Khái niệm chỉ có ở client (không nằm trong contract WS/REST) ---
 
 // Trạng thái kết nối WebSocket.

@@ -20,6 +20,7 @@ from llvt_ai_service.ws.protocol import (
     event_to_wire,
     parse_audio_chunk,
     parse_session_config,
+    parse_session_title,
 )
 
 logger = logging.getLogger("llvt.ws")
@@ -66,7 +67,7 @@ async def _dispatch(controller: SessionController, raw: object, emit) -> None:
         return
 
     if msg.type == "session.start":
-        await controller.start(parse_session_config(msg.payload))
+        await controller.start(parse_session_config(msg.payload), parse_session_title(msg.payload))
     elif msg.type == "session.stop":
         await controller.stop()
     elif msg.type == "control.ptt":

@@ -21,7 +21,7 @@ chỉ biết `ports` + `domain`; `adapters` và `transport` là vòng ngoài, c�
 | ---- | ------- | ------- | ---------------- |
 | Domain | `domain/` | Model + enum + event thuần | (không gì) |
 | Ports | `ports/` | Interface (ABC) cho VAD/ASR/MT/TTS/Repository | domain |
-| Application | `application/` | Pipeline, ModelManager, SessionService, Container | ports, domain |
+| Application | `application/` | Pipeline, ModelManager, SessionService, HistoryPolicy, Container | ports, domain |
 | Adapters | `adapters/` | Hiện thực port: whisper.cpp, NLLB, sherpa-onnx, memory/SQLite | ports, domain |
 | Config | `config/` | Settings + preset → chọn adapter/model | domain |
 | Transport | `api/`, `ws/` | REST + WebSocket mỏng, gọi application | application, schemas |
@@ -44,6 +44,11 @@ Không đụng `application/pipeline.py` hay transport. Đó là mục tiêu c�
 
 ## Trạng thái hiện tại
 
-Khung đã đầy đủ; các adapter AI là **stub** (raise `NotImplementedError` với mốc
-tuần). Hiện thực thật: VAD (Tuần 2), ASR (Tuần 3), MT (Tuần 4), TTS (Tuần 5),
-SQLite repository (Tuần 6).
+Mọi adapter trong pipeline đã chạy model thật: VAD Silero (Tuần 2), ASR whisper.cpp
+(Tuần 3), MT NLLB-200 (Tuần 4), TTS sherpa-onnx (Tuần 5), lịch sử phiên trong SQLite
+(`adapters/persistence/sqlite.py`, món nợ của Tuần 6). Còn **stub**:
+`adapters/asr/faster_whisper.py` (thuộc giai đoạn tối ưu).
+
+Ghi lịch sử đi qua `application/history.py` (`HistoryPolicy`) — một decorator hiện
+thực chính port `SessionRepository`, cho phép tắt việc GHI mà vẫn đọc/xoá được, đúng
+yêu cầu quyền riêng tư ở SPEC 14.4.

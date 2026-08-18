@@ -13,6 +13,8 @@ export interface WsMessage<P = Record<string, unknown>> {
 export interface StatePayload {
   state: PipelineState
   utteranceId?: string
+  // Chỉ có ở mốc Listening (bắt đầu) và Stopped: id phiên trong lịch sử service.
+  sessionId?: string | null
 }
 
 export interface AsrPartialPayload {

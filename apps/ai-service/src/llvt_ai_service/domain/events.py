@@ -12,6 +12,8 @@ from llvt_ai_service.domain.enums import Language, PipelineState
 class StateChanged:
     state: PipelineState
     utterance_id: str | None = None
+    # Chỉ có ở mốc bắt đầu/kết thúc phiên: id phiên trong lịch sử.
+    session_id: str | None = None
 
 
 @dataclass

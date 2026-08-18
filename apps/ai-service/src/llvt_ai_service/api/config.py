@@ -20,6 +20,7 @@ router = APIRouter(prefix="/api", tags=["config"])
 
 
 def _describe(container: Container, preset: Preset) -> ConfigResponse:
+    settings = get_settings()
     return ConfigResponse(
         preset=preset,
         availablePresets=list(Preset),
@@ -29,7 +30,9 @@ def _describe(container: Container, preset: Preset) -> ConfigResponse:
             )
             for s in container.model_manager.stages()
         ],
-        modelsDir=str(get_settings().models_dir),
+        modelsDir=str(settings.models_dir),
+        historyDbPath=str(settings.db_path),
+        historyEnabled=container.repository.enabled,
     )
 
 
@@ -51,16 +54,22 @@ def get_config(container: Container = Depends(get_container)) -> ConfigResponse:
 @router.put(
     "/config",
     response_model=ConfigResponse,
-    summary="Đổi preset",
+    summary="Đổi preset / bật tắt lưu lịch sử",
     description=(
-        "Giải phóng bộ provider hiện tại rồi nạp preset mới — có thể mất vài giây "
-        "và sẽ tải model nếu máy chưa có. Trả về trạng thái sau khi nạp xong."
+        "Đổi preset sẽ giải phóng bộ provider hiện tại rồi nạp preset mới — có thể mất "
+        "vài giây và sẽ tải model nếu máy chưa có. Gửi lại đúng preset đang chạy thì "
+        "không nạp lại gì cả, nên có thể dùng để chỉ đổi `historyEnabled`. Trả về "
+        "trạng thái sau khi áp dụng."
     ),
 )
 async def update_config(
     body: ConfigUpdate, container: Container = Depends(get_container)
 ) -> ConfigResponse:
-    await container.model_manager.load_preset(body.preset)
+    if body.historyEnabled is not None:
+        container.repository.enabled = body.historyEnabled
+    current = container.model_manager.preset
+    if body.preset != current:
+        await container.model_manager.load_preset(body.preset)
     return _describe(container, body.preset)
 
 

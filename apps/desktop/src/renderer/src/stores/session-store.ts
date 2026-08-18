@@ -47,6 +47,8 @@ interface SessionState {
   ptt: boolean
   config: SessionConfig
   pipelineState: PipelineState | null
+  // Id phiên trong lịch sử của service (service gửi kèm event state khi bắt đầu).
+  historySessionId: string | null
   utterances: Utterance[]
   partial: { utteranceId: string; text: string } | null
   micLevel: number // RMS 0..1 của khung mic gần nhất
@@ -101,6 +103,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   ptt: false,
   config: DEFAULT_SESSION_CONFIG,
   pipelineState: null,
+  historySessionId: null,
   utterances: [],
   partial: null,
   micLevel: 0,
@@ -129,8 +132,9 @@ export const useSessionStore = create<SessionState>((set) => ({
 
       switch (msg.type) {
         case 'state': {
-          const { state, utteranceId } = p as unknown as StatePayload
-          if (!utteranceId) return { log, pipelineState: state }
+          const { state, utteranceId, sessionId } = p as unknown as StatePayload
+          const historySessionId = sessionId ?? s.historySessionId
+          if (!utteranceId) return { log, pipelineState: state, historySessionId }
 
           const mark = marks.get(utteranceId) ?? {}
           const patch: Partial<Utterance> = { state }
@@ -172,6 +176,7 @@ export const useSessionStore = create<SessionState>((set) => ({
           return {
             log,
             pipelineState: state,
+            historySessionId,
             partial: state === 'Completed' ? null : s.partial,
             utterances: upsert(s.utterances, utteranceId, patch),
             metrics
@@ -241,12 +246,19 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   clearTranscript: (): void => {
     marks.clear()
-    set({ utterances: [], partial: null, metrics: EMPTY_METRICS, lastError: null })
+    set({
+      utterances: [],
+      partial: null,
+      metrics: EMPTY_METRICS,
+      lastError: null,
+      historySessionId: null
+    })
   },
   reset: (): void => {
     marks.clear()
     set({
       pipelineState: null,
+      historySessionId: null,
       utterances: [],
       partial: null,
       metrics: EMPTY_METRICS,

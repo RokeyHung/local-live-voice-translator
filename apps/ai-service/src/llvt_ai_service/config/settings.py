@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     # Thư mục chứa model đã tải (whisper.cpp gguf, NLLB, sherpa-onnx voices).
     models_dir: Path = Path.home() / ".llvt" / "models"
 
+    # File SQLite giữ lịch sử phiên (chỉ văn bản, không có audio).
+    db_path: Path = Path.home() / ".llvt" / "history.db"
+
+    # SPEC 14.4: người dùng tắt được việc lưu lịch sử. Tắt thì chỉ ngừng GHI —
+    # dữ liệu cũ vẫn xem và xoá được.
+    history_enabled: bool = True
+
     # Sau khi model đã cài, service hoạt động offline.
     offline_ready: bool = True
 

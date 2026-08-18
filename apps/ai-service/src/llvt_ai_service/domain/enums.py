@@ -42,3 +42,10 @@ class Preset(str, Enum):
     fast = "fast"
     balanced = "balanced"
     quality = "quality"
+
+
+class UtteranceStatus(str, Enum):
+    """Kết quả chạy pipeline của một câu (SPEC 7.11 yêu cầu lưu trạng thái)."""
+
+    success = "success"
+    failed = "failed"

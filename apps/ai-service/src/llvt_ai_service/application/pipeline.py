@@ -14,8 +14,9 @@ from typing import Awaitable, Callable, Iterator
 from llvt_ai_service.application.inference import SerialExecutor
 from llvt_ai_service.application.model_manager import ProviderSet
 from llvt_ai_service.domain import events as ev
-from llvt_ai_service.domain.enums import AudioSource, PipelineState
+from llvt_ai_service.domain.enums import AudioSource, PipelineState, UtteranceStatus
 from llvt_ai_service.domain.models import AudioChunk, LanguagePair, Utterance, VadSegment
+from llvt_ai_service.ports.repository import SessionRepository
 
 logger = logging.getLogger("llvt.pipeline")
 
@@ -49,6 +50,7 @@ class TranslationPipeline:
         synthesize: bool,
         session_id: str = "",
         executor: SerialExecutor | None = None,
+        repository: SessionRepository | None = None,
     ) -> None:
         self._p = providers
         self._dir = direction
@@ -57,6 +59,7 @@ class TranslationPipeline:
         self._synthesize = synthesize
         self._session_id = session_id
         self._executor = executor or SerialExecutor()
+        self._repo = repository
         # Mỗi pipeline có stream VAD riêng (state độc lập cho nguồn audio của mình).
         self._vad = providers.vad.open_stream()
 
@@ -86,12 +89,12 @@ class TranslationPipeline:
             source_language=self._dir.source,
             target_language=self._dir.target,
         )
-        tts_ms: int | None = None
         try:
             await self._emit(ev.StateChanged(PipelineState.recognizing, utt.id))
             with _elapsed() as asr_timer:
                 transcript = await self._p.asr.transcribe(segment.pcm, self._dir.source)
-            asr_ms = asr_timer.ms
+            asr_ms = utt.asr_ms = asr_timer.ms
+            utt.source_text = transcript.text
             await self._emit(
                 ev.AsrFinal(
                     utt.id,
@@ -107,7 +110,8 @@ class TranslationPipeline:
                 result = await self._p.mt.translate(
                     transcript.text, self._dir.source, self._dir.target
                 )
-            mt_ms = mt_timer.ms
+            mt_ms = utt.mt_ms = mt_timer.ms
+            utt.translated_text = result.translated_text
             await self._emit(
                 ev.MtResult(utt.id, result.source_text, result.translated_text, processing_ms=mt_ms)
             )
@@ -116,14 +120,37 @@ class TranslationPipeline:
                 await self._emit(ev.StateChanged(PipelineState.synthesizing, utt.id))
                 with _elapsed() as tts_timer:
                     tts = await self._p.tts.synthesize(result.translated_text, self._dir.target)
-                tts_ms = tts_timer.ms
+                utt.tts_ms = tts_timer.ms
                 await self._emit(ev.TtsAudio(utt.id, tts.pcm, tts.sample_rate, tts.duration_ms))
 
             # Thời gian xử lý thật của từng khâu — client dùng để hiển thị độ trễ
             # thay cho ước lượng đo bằng khoảng cách giữa các event.
-            await self._emit(ev.Metrics(asr_ms=asr_ms, mt_ms=mt_ms, tts_ms=tts_ms))
+            await self._emit(ev.Metrics(asr_ms=asr_ms, mt_ms=mt_ms, tts_ms=utt.tts_ms))
             await self._emit(ev.StateChanged(PipelineState.completed, utt.id))
         except NotImplementedError as exc:
+            utt.status = UtteranceStatus.failed
+            utt.error = "not_implemented"
             await self._emit(
                 ev.PipelineError(code="not_implemented", message=str(exc), utterance_id=utt.id)
             )
+        except Exception as exc:
+            # Câu lỗi vẫn phải vào lịch sử (SPEC 7.11: lưu trạng thái thành công/thất
+            # bại); lỗi ngoài dự kiến thì trả tiếp lên transport như trước.
+            utt.status = UtteranceStatus.failed
+            utt.error = type(exc).__name__
+            raise
+        finally:
+            utt.ended_at_ms = int(time.time() * 1000)
+            await self._save(utt)
+
+    async def _save(self, utt: Utterance) -> None:
+        """Ghi câu vào lịch sử; lỗi lưu trữ không được làm chết phiên dịch."""
+        if self._repo is None or not utt.session_id:
+            return
+        # VAD cắt cả đoạn chỉ có tiếng ồn → ASR trả rỗng; đừng làm rác lịch sử.
+        if utt.status is UtteranceStatus.success and not (utt.source_text or "").strip():
+            return
+        try:
+            await self._repo.save_utterance(utt)
+        except Exception:  # noqa: BLE001 — chỉ log mã lỗi, không log nội dung câu
+            logger.warning("Không lưu được utterance %s vào lịch sử", utt.id, exc_info=True)

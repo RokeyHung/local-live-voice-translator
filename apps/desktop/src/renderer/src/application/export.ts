@@ -1,6 +1,6 @@
-// Xuất một cuộc họp ra .txt / .srt và tải xuống (Blob URL — không rời khỏi máy).
+// Xuất bản ghi một phiên ra .txt / .srt và tải xuống (Blob URL — không rời khỏi máy).
 
-import type { Meeting } from '../domain/models'
+import { rowSide, type HistorySessionDetail } from '../domain/models'
 import { formatClock, formatDateTime } from './utterances'
 
 function pad(n: number): string {
@@ -13,24 +13,25 @@ function srtTime(offsetMs: number): string {
   return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)},${String(ms).padStart(3, '0')}`
 }
 
-export function meetingToTxt(meeting: Meeting): string {
-  const body = meeting.rows
+export function sessionToTxt(session: HistorySessionDetail): string {
+  const body = session.utterances
     .map(
       (row) =>
-        `[${formatClock(row.atMs)}] ${row.side === 'me' ? 'ME' : 'REMOTE'}\n  ${row.sourceText}\n  → ${row.translatedText}`
+        `[${formatClock(row.startedAtMs)}] ${rowSide(row) === 'me' ? 'ME' : 'REMOTE'}\n  ${row.sourceText ?? ''}\n  → ${row.translatedText ?? ''}`
     )
     .join('\n\n')
-  return `${meeting.title}\n${formatDateTime(meeting.startedAtMs)}\n\n${body}\n`
+  return `${session.title}\n${formatDateTime(session.startedAtMs)}\n\n${body}\n`
 }
 
-export function meetingToSrt(meeting: Meeting): string {
-  return meeting.rows
+export function sessionToSrt(session: HistorySessionDetail): string {
+  const rows = session.utterances
+  return rows
     .map((row, i) => {
-      const start = row.atMs - meeting.startedAtMs
-      const next = meeting.rows[i + 1]
-      const end = next ? next.atMs - meeting.startedAtMs : start + 4000
-      const who = row.side === 'me' ? '[Me]' : '[Remote]'
-      return `${i + 1}\n${srtTime(start)} --> ${srtTime(end)}\n${who} ${row.translatedText}\n`
+      const start = row.startedAtMs - session.startedAtMs
+      const next = rows[i + 1]
+      const end = next ? next.startedAtMs - session.startedAtMs : start + 4000
+      const who = rowSide(row) === 'me' ? '[Me]' : '[Remote]'
+      return `${i + 1}\n${srtTime(start)} --> ${srtTime(end)}\n${who} ${row.translatedText ?? ''}\n`
     })
     .join('\n')
 }

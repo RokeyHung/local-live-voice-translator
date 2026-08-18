@@ -10,12 +10,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from llvt_ai_service import __version__
-from llvt_ai_service.adapters.persistence.memory import InMemorySessionRepository
+from llvt_ai_service.adapters.persistence.sqlite import SqliteSessionRepository
 from llvt_ai_service.api import config as config_api
 from llvt_ai_service.api import diagnostics, health, sessions
 from llvt_ai_service.api.docs import mount_docs
 from llvt_ai_service.api.openapi_meta import DESCRIPTION, TAGS_METADATA
 from llvt_ai_service.application.container import Container
+from llvt_ai_service.application.history import HistoryPolicy
 from llvt_ai_service.application.model_manager import ModelManager
 from llvt_ai_service.application.session_service import SessionService
 from llvt_ai_service.config.settings import get_settings
@@ -27,7 +28,9 @@ logger = logging.getLogger("llvt")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
-    repository = InMemorySessionRepository()
+    store = SqliteSessionRepository(settings.db_path)
+    # Chính sách bật/tắt lưu bọc ngoài adapter; phần còn lại chỉ thấy một repository.
+    repository = HistoryPolicy(store, enabled=settings.history_enabled)
     model_manager = ModelManager()
     await model_manager.load_preset(settings.default_preset)
     session_service = SessionService(model_manager, repository)
@@ -38,11 +41,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         model_manager=model_manager,
         session_service=session_service,
     )
-    logger.info("AI service ready (preset=%s)", settings.default_preset.value)
+    logger.info(
+        "AI service ready (preset=%s, history=%s, db=%s)",
+        settings.default_preset.value,
+        "on" if settings.history_enabled else "off",
+        settings.db_path,
+    )
     try:
         yield
     finally:
         await model_manager.unload()
+        store.dispose()
 
 
 def create_app() -> FastAPI:

@@ -1,6 +1,7 @@
 // Mô hình nghiệp vụ phía client (thuần, không phụ thuộc React/transport).
 
 import type {
+  AudioSource,
   ComputeBackend,
   ComputeKind,
   Language,
@@ -8,7 +9,8 @@ import type {
   Preset,
   SessionMode,
   Side,
-  Stage
+  Stage,
+  UtteranceStatus
 } from './enums'
 
 export interface HealthResponse {
@@ -55,6 +57,8 @@ export interface ConfigResponse {
   availablePresets: Preset[]
   stages: StageInfo[]
   modelsDir: string
+  historyDbPath: string
+  historyEnabled: boolean
 }
 
 // Model đã tải thật trên đĩa (GET /api/models) — dung lượng là số thật.
@@ -94,27 +98,44 @@ export interface Utterance {
   at: number
 }
 
-// Một dòng đã hoàn tất, được ghi vào cuộc họp (lưu cục bộ).
-export interface MeetingRow {
-  id: string
-  side: Side
-  atMs: number
-  sourceLanguage?: Language
-  targetLanguage?: Language
-  sourceText: string
-  translatedText: string
-  asrMs?: number
-  mtMs?: number
-  ttsMs?: number
-}
+// --- Lịch sử phiên (mirror schemas.py: SessionSummary / UtteranceSchema / SessionDetail) ---
+//
+// Nguồn dữ liệu là SQLite bên ai-service (GET /api/sessions), không phải localStorage:
+// lịch sử phải còn sau khi tắt app và xoá được ở một chỗ duy nhất.
 
-// Mỗi lần nhấn Bắt đầu tạo một cuộc họp; lưu trong localStorage.
-export interface Meeting {
+export interface HistorySession {
   id: string
   title: string
   startedAtMs: number
-  endedAtMs?: number
-  rows: MeetingRow[]
+  endedAtMs?: number | null // rỗng = đang chạy, hoặc phiên bị bỏ dở
+  mode?: SessionMode | null
+  preset?: Preset | null
+  utteranceCount: number
+}
+
+export interface HistoryRow {
+  id: string
+  source: AudioSource
+  sourceLanguage: Language
+  targetLanguage: Language
+  sourceText?: string | null
+  translatedText?: string | null
+  asrMs?: number | null
+  mtMs?: number | null
+  ttsMs?: number | null
+  status: UtteranceStatus
+  error?: string | null
+  startedAtMs: number
+  endedAtMs?: number | null
+}
+
+export interface HistorySessionDetail extends HistorySession {
+  utterances: HistoryRow[]
+}
+
+// Bên phát suy ra thẳng từ nguồn audio đã lưu (không phải đoán theo cặp ngôn ngữ).
+export function rowSide(row: HistoryRow): Side {
+  return row.source === 'microphone' ? 'me' : 'remote'
 }
 
 export interface GlossaryEntry {

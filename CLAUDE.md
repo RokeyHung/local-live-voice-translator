@@ -8,7 +8,7 @@ Near-real-time, **fully local** speech translation desktop app (đồ án tốt 
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
 
-The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00); adapters are stubbed with the week they get implemented (VAD=T2, ASR=T3, MT=T4, TTS=T5, SQLite repo=T6).
+The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models. Remaining: real Google Meet + Windows 11 runs, a Japanese TTS voice, and T9 (report, packaging, demo).
 
 ## Repository layout
 
@@ -56,8 +56,8 @@ The core discipline everywhere: **dependencies point inward** — `adapters → 
 
 - `domain/` — pure `enums`, `models`, `events` (dataclasses; no framework imports).
 - `ports/` — ABCs: `SpeechToTextProvider`, `TranslationProvider`, `TextToSpeechProvider`, `VoiceActivityDetector`, `SessionRepository`. All AI providers extend `Provider` (async `load()`/`unload()`).
-- `adapters/` — concrete impls (currently **stubs** raising `NotImplementedError`): `asr/whisper_cpp.py`, `mt/nllb.py`, `tts/sherpa_onnx.py`, `vad/silero.py`, `persistence/memory.py`.
-- `application/` — `TranslationPipeline` (VAD→ASR→MT→TTS, calls only ports), `ModelManager` (registry mapping adapter-name→factory, `load_preset()`), `SessionService`/`SessionController` (per-connection), `SerialExecutor` (runs blocking model calls in a thread + lock, since whisper.cpp contexts are not thread-safe), `Container` (DI holder).
+- `adapters/` — real impls: `asr/whisper_cpp.py` (pywhispercpp), `mt/nllb.py` (transformers), `tts/sherpa_onnx.py`, `vad/silero.py`, `persistence/sqlite.py` (session history, SQLAlchemy Core) + `persistence/memory.py` (in-memory, used by tests). `asr/faster_whisper.py` is the only remaining stub (optimization phase).
+- `application/` — `TranslationPipeline` (VAD→ASR→MT→TTS, calls only ports; also persists each finished utterance), `ModelManager` (registry mapping adapter-name→factory, `load_preset()`), `SessionService`/`SessionController` (per-connection), `HistoryPolicy` (port-implementing decorator that turns history writes off — SPEC 14.4 privacy opt-out), `SerialExecutor` (runs blocking model calls in a thread + lock, since whisper.cpp contexts are not thread-safe), `Container` (DI holder).
 - `config/` — `settings.py` (pydantic-settings, `LLVT_` env prefix), `presets.py` (Fast/Balanced/Quality → adapter+model choices).
 - `api/` + `ws/` — thin transport. `app.py` builds the `Container` in the FastAPI **lifespan** and attaches it to `app.state`; routes get it via `api/deps.py`.
 
@@ -76,9 +76,11 @@ The WebSocket/REST contract is defined twice and MUST stay in sync when changed:
 - Python: `apps/ai-service/src/llvt_ai_service/ws/protocol.py` + `schemas.py`
 - TypeScript mirror: `apps/desktop/src/renderer/src/domain/{events,models,enums}.ts`
 
-WS envelope is `{ type, ts, payload }`. Message types: client→`session.start`/`session.stop`/`audio.chunk`/`control.ptt`/`control.mute`; server→`state`/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
+WS envelope is `{ type, ts, payload }`. Message types: client→`session.start` (carries the history `title`)/`session.stop`/`audio.chunk`/`control.ptt`/`control.mute`; server→`state` (carries `sessionId` at session start/stop so the client can point at the right history row)/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
 
-REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers), `GET /api/models` (what's actually on disk, real sizes), `GET|DELETE /api/sessions`, `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers, plus `historyDbPath`/`historyEnabled`), `GET /api/models` (what's actually on disk, real sizes), `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+
+Session history: `GET /api/sessions` (`?q=` searches titles + utterance text), `GET /api/sessions/{id}` (bilingual transcript), `PATCH /api/sessions/{id}` (`title` to rename, `close` to close a session abandoned by a crash), `DELETE /api/sessions/{id}`, `DELETE /api/sessions` (clear all). Rows are written by the pipeline as each utterance finishes; the desktop History screen reads only from here (no localStorage copy).
 
 API docs live at `/docs` (`make docs`). Swagger UI assets are **vendored** in `llvt_ai_service/static/` and served from `/static` — FastAPI's default CDN would make the docs page blank on an offline machine, which contradicts the whole project. ReDoc is disabled for the same reason. The WS contract can't be expressed in OpenAPI, so it's written into the app description in `api/openapi_meta.py` — keep it in sync with `ws/protocol.py`.
 

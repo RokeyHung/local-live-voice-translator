@@ -181,6 +181,16 @@ export interface Dict {
   renameTip: string
   deleteTip: string
   meetingPrefix: string
+  historyUnavailable: string
+  rowFailed: string
+  // quyền riêng tư / lưu lịch sử
+  privacyT: string
+  privacyDesc: string
+  historyOn: string
+  historyOff: string
+  historyPath: string
+  historyPathUnknown: string
+  historyOffNote: string
   // cài đặt
   settingsSub: string
   appearance: string
@@ -414,6 +424,17 @@ const vi: Dict = {
   renameTip: 'Đổi tên',
   deleteTip: 'Xóa',
   meetingPrefix: 'Cuộc họp',
+  historyUnavailable: 'Không đọc được lịch sử — AI service chưa chạy?',
+  rowFailed: 'Câu này chạy lỗi',
+
+  privacyT: 'Quyền riêng tư',
+  privacyDesc:
+    'Lịch sử phiên (câu gốc, bản dịch, độ trễ) lưu trong một file SQLite trên máy. Không lưu file âm thanh, không gửi ra ngoài.',
+  historyOn: 'Lưu lịch sử',
+  historyOff: 'Không lưu',
+  historyPath: 'Nơi lưu:',
+  historyPathUnknown: 'Chưa đọc được cấu hình từ AI service.',
+  historyOffNote: 'Tắt thì phiên mới không được ghi; dữ liệu cũ vẫn xem và xóa được ở màn Lịch sử.',
 
   settingsSub: 'Tùy chỉnh giao diện và ngôn ngữ của ứng dụng.',
   appearance: 'Giao diện',
@@ -650,6 +671,18 @@ const en: Dict = {
   renameTip: 'Rename',
   deleteTip: 'Delete',
   meetingPrefix: 'Meeting',
+  historyUnavailable: 'Cannot read history — is the AI service running?',
+  rowFailed: 'This line failed',
+
+  privacyT: 'Privacy',
+  privacyDesc:
+    'Session history (original text, translation, latency) is stored in a SQLite file on this machine. No audio is saved and nothing leaves the device.',
+  historyOn: 'Save history',
+  historyOff: "Don't save",
+  historyPath: 'Stored at:',
+  historyPathUnknown: 'Could not read the configuration from the AI service.',
+  historyOffNote:
+    'When off, new sessions are not recorded; existing data stays readable and deletable on the History screen.',
 
   settingsSub: 'Customize the appearance and language of the app.',
   appearance: 'Appearance',

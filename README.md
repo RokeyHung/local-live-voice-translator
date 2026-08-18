@@ -61,6 +61,17 @@ npm run dev
 
 Cửa sổ Electron sẽ hiển thị trạng thái kết nối REST + WebSocket tới AI service.
 
+## Dữ liệu trên máy
+
+| Đường dẫn                | Nội dung                                     | Đổi bằng          |
+| ------------------------ | -------------------------------------------- | ----------------- |
+| `~/.llvt/models/`        | Model đã tải (whisper.cpp, NLLB, voice TTS)  | `LLVT_MODELS_DIR` |
+| `~/.llvt/history.db`     | Lịch sử phiên: câu gốc, bản dịch, độ trễ     | `LLVT_DB_PATH`    |
+
+Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Quyền riêng tư** (hoặc `LLVT_HISTORY_ENABLED=false`); xóa từng phiên hoặc xóa tất cả ở màn **Lịch sử**.
+
 ## Trạng thái
 
-Đang ở **Tuần 1 — Khảo sát và chuẩn bị nền tảng**: đã dựng khung hai tiến trình, quy ước giao tiếp REST/WS và UI kiểm tra kết nối. Pipeline AI (VAD/ASR/MT/TTS) sẽ được hiện thực từ Tuần 2.
+Pipeline chạy **model thật** đầy đủ: VAD (Tuần 2) → ASR (Tuần 3) → MT (Tuần 4) → TTS (Tuần 5), giao diện desktop 8 màn (Tuần 6), dịch hai chiều + microphone ảo + thu âm thanh hệ thống (Tuần 7), đo độ trễ/tài nguyên/độ chính xác (Tuần 8), lịch sử phiên lưu SQLite.
+
+Còn lại: chạy thử thật trong Google Meet và trên Windows 11, voice TTS tiếng Nhật, và Tuần 9 (báo cáo, đóng gói, video demo).

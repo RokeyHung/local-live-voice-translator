@@ -25,7 +25,7 @@ Envelope chung: `{ "type": string, "ts": number, "payload": object }`
 
 | type | payload | ý nghĩa |
 | --- | --- | --- |
-| `session.start` | `mode`, `preset`, `incomingSource/Target`, `outgoingSource/Target` | mở phiên, dựng pipeline cho từng chiều |
+| `session.start` | `mode`, `preset`, `incomingSource/Target`, `outgoingSource/Target`, `title` | mở phiên, dựng pipeline cho từng chiều; `title` là tên phiên trong lịch sử |
 | `session.stop` | — | đóng phiên |
 | `audio.chunk` | `source` (`microphone`\\|`system`), `pcm` (base64 PCM16 mono 16 kHz), `seq`, `sampleRate` | đẩy một khung audio |
 | `control.ptt` | `pressed` | giữ/nhả Push-to-talk; nhả thì chốt câu đang nói dở |
@@ -35,7 +35,7 @@ Envelope chung: `{ "type": string, "ts": number, "payload": object }`
 
 | type | payload |
 | --- | --- |
-| `state` | `state` (Idle/Listening/Recognizing/Translating/Synthesizing/Completed/…), `utteranceId` |
+| `state` | `state` (Idle/Listening/Recognizing/Translating/Synthesizing/Completed/…), `utteranceId`, `sessionId` (chỉ ở mốc bắt đầu/kết thúc phiên) |
 | `asr.partial` | `utteranceId`, `language`, `text` |
 | `asr.final` | `utteranceId`, `language`, `text`, `confidence`, `processingMs` |
 | `mt.result` | `utteranceId`, `sourceText`, `translatedText`, `processingMs` |
@@ -70,6 +70,12 @@ TAGS_METADATA = [
     },
     {
         "name": "sessions",
-        "description": "Lịch sử phiên đã mở (repository hiện lưu trong bộ nhớ).",
+        "description": (
+            "Lịch sử phiên: mỗi câu lưu kèm cặp ngôn ngữ, câu gốc, bản dịch, thời gian "
+            "xử lý từng khâu và trạng thái. Dữ liệu nằm trong một file SQLite trên máy "
+            "người dùng (`LLVT_DB_PATH`, xem `historyDbPath` ở `GET /api/config`); "
+            "không lưu audio. Tắt lưu bằng `historyEnabled` thì chỉ ngừng ghi — đọc và "
+            "xoá vẫn hoạt động."
+        ),
     },
 ]
