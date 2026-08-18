@@ -2,6 +2,7 @@
 // router đơn giản theo `screen` trong ui-store.
 
 import { useEffect, type JSX } from 'react'
+import { useServiceConfig } from '../hooks/use-config'
 import { useHealth } from '../hooks/use-health'
 import { useSession } from '../hooks/use-session'
 import { useDict, useResolvedTheme } from '../hooks/use-ui'
@@ -31,8 +32,14 @@ export default function App(): JSX.Element {
     document.title = L.appName
   }, [theme, L])
 
+  // Service sống chưa đủ để nói "Sẵn sàng Offline": model chỉ vào bộ nhớ khi bấm
+  // "Khởi động model" hoặc khi bắt đầu phiên, nên phải xem `stages` có gì chưa.
+  const config = useServiceConfig()
+  const modelsLoaded = (config.data?.stages.length ?? 0) > 0
   const status: ServiceStatus = health.isSuccess
-    ? 'ready'
+    ? modelsLoaded
+      ? 'ready'
+      : 'idle'
     : health.isLoading
       ? 'connecting'
       : 'down'

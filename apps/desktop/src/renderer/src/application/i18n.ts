@@ -122,6 +122,14 @@ export interface Dict {
   mbReadyS: string
   mbDownT: string
   mbDownS: string
+  mbLoadT: string
+  mbLoadS: string
+  startModels: string
+  reloadModels: string
+  unloadModels: string
+  loadFailed: string
+  modelsIdleBadge: string
+  mbIdleHint: string
   applyingPreset: string
   presetFailed: string
   stageLbl: string
@@ -372,11 +380,19 @@ const vi: Dict = {
     'Preset này cần ~{req} GB RAM nhưng máy báo {have} GB. Có thể tràn bộ nhớ hoặc chạy rất chậm.',
   ramWarnSoft: 'Preset này cần ~{req} GB RAM/VRAM. Kiểm tra máy đủ bộ nhớ trước khi nạp.',
   mbIdleT: 'Model chưa được nạp',
-  mbIdleS: 'AI service nạp model khi khởi động hoặc khi đổi preset.',
+  mbIdleS: 'Nhấn "Khởi động model" hoặc bấm Bắt đầu ở màn Phiên dịch để nạp vào bộ nhớ.',
   mbReadyT: 'AI service đã sẵn sàng',
   mbReadyS: 'Model của preset đang giữ trong bộ nhớ. Sẵn sàng phiên dịch.',
   mbDownT: 'Không kết nối được AI service',
   mbDownS: 'Chạy `make service` để khởi động dịch vụ cục bộ.',
+  mbLoadT: 'Đang nạp model…',
+  mbLoadS: 'Đưa trọng số vào RAM. Lần đầu còn phải tải model nên có thể lâu.',
+  startModels: 'Khởi động model',
+  reloadModels: 'Nạp lại',
+  unloadModels: 'Giải phóng',
+  loadFailed: 'Nạp model thất bại',
+  modelsIdleBadge: 'Chưa nạp model',
+  mbIdleHint: 'Bấm Bắt đầu để nạp',
   applyingPreset: 'Đang nạp preset…',
   presetFailed: 'Đổi preset thất bại',
   stageLbl: 'Khâu',
@@ -634,11 +650,19 @@ const en: Dict = {
     'This preset needs ~{req} GB RAM but the machine reports {have} GB. It may run out of memory or be very slow.',
   ramWarnSoft: 'This preset needs ~{req} GB RAM/VRAM. Make sure the machine has enough.',
   mbIdleT: 'Models not loaded',
-  mbIdleS: 'The AI service loads models at startup or when the preset changes.',
+  mbIdleS: 'Press "Start models", or press Start on the Session screen, to load them into memory.',
   mbReadyT: 'AI service ready',
   mbReadyS: 'The preset models are held in memory. Ready to translate.',
   mbDownT: 'Cannot reach the AI service',
   mbDownS: 'Run `make service` to start the local service.',
+  mbLoadT: 'Loading models…',
+  mbLoadS: 'Bringing weights into RAM. The first run also downloads them, so it can take a while.',
+  startModels: 'Start models',
+  reloadModels: 'Reload',
+  unloadModels: 'Free memory',
+  loadFailed: 'Loading models failed',
+  modelsIdleBadge: 'Models not loaded',
+  mbIdleHint: 'Press Start to load',
   applyingPreset: 'Loading preset…',
   presetFailed: 'Changing preset failed',
   stageLbl: 'Stage',

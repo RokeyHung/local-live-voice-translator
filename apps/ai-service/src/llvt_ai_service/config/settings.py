@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # Preset mặc định khi khởi động.
     default_preset: Preset = Preset.balanced
 
+    # Nạp model ngay khi service khởi động. Mặc định TẮT: nạp mất hàng chục giây và
+    # lần đầu còn tải vài GB, trong khi người dùng có thể chỉ muốn mở app xem cấu
+    # hình. Model được nạp khi bấm "Khởi động model" hoặc khi bắt đầu phiên.
+    preload_models: bool = False
+
     # Thư mục chứa model đã tải (whisper.cpp gguf, NLLB, sherpa-onnx voices).
     models_dir: Path = Path.home() / ".llvt" / "models"
 

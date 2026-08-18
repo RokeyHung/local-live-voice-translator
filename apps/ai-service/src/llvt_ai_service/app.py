@@ -32,7 +32,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Chính sách bật/tắt lưu bọc ngoài adapter; phần còn lại chỉ thấy một repository.
     repository = HistoryPolicy(store, enabled=settings.history_enabled)
     model_manager = ModelManager()
-    await model_manager.load_preset(settings.default_preset)
+    if settings.preload_models:
+        await model_manager.load_preset(settings.default_preset)
+    else:
+        # Không nạp vội: khởi động service phải nhanh và không được tự ý tải vài GB.
+        model_manager.select_preset(settings.default_preset)
     session_service = SessionService(model_manager, repository)
 
     app.state.container = Container(
@@ -42,8 +46,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         session_service=session_service,
     )
     logger.info(
-        "AI service ready (preset=%s, history=%s, db=%s)",
+        "AI service ready (preset=%s, model=%s, history=%s, db=%s)",
         settings.default_preset.value,
+        "đã nạp" if model_manager.loaded else "chưa nạp (nạp khi cần)",
         "on" if settings.history_enabled else "off",
         settings.db_path,
     )

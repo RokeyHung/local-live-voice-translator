@@ -7,6 +7,7 @@ import { languageName, type Dict } from '../../application/i18n'
 import { utteranceSide } from '../../application/utterances'
 import type { Language } from '../../domain/enums'
 import { LANGUAGES } from '../../domain/models'
+import { useServiceConfig } from '../../hooks/use-config'
 import type { SessionActions } from '../../hooks/use-session'
 import { useAudioDevices, useDict } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
@@ -152,6 +153,9 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
   const config = useSessionStore((s) => s.config)
   const setConfig = useSessionStore((s) => s.setConfig)
   const active = useSessionStore((s) => s.active)
+  // Model nạp theo nhu cầu nên phiên có thể bắt đầu lúc bộ nhớ còn trống.
+  const serviceConfig = useServiceConfig()
+  const modelsLoaded = (serviceConfig.data?.stages.length ?? 0) > 0
   const muted = useSessionStore((s) => s.muted)
   const ptt = useSessionStore((s) => s.ptt)
   const micLevel = useSessionStore((s) => s.micLevel)
@@ -265,6 +269,11 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
         ))}
       </div>
 
+      {/* Bắt đầu phiên khi model chưa nạp: service nạp ngay lúc đó, câu đầu tiên sẽ
+          phải chờ. Nói rõ để người dùng không tưởng ứng dụng bị treo. */}
+      {active && !modelsLoaded && (
+        <Notice tone="info" icon="spinner" title={L.mbLoadT} body={L.mbLoadS} />
+      )}
       {wsStatus === 'connecting' && <Notice tone="info" icon="spinner" title={L.connecting} />}
       {wsStatus === 'disconnected' && (
         <Notice tone="warn" icon="warning" title={L.serviceDown} body={L.serviceDownSub} />

@@ -62,6 +62,18 @@ export class HttpAiClient implements AiClient {
     return (await res.json()) as ConfigResponse
   }
 
+  async loadModels(reload = false): Promise<ConfigResponse> {
+    const res = await fetch(`${AI_BASE_URL}/api/models/load?reload=${reload}`, { method: 'POST' })
+    if (!res.ok) throw new Error(`Nạp model thất bại: HTTP ${res.status}`)
+    return (await res.json()) as ConfigResponse
+  }
+
+  async unloadModels(): Promise<ConfigResponse> {
+    const res = await fetch(`${AI_BASE_URL}/api/models/unload`, { method: 'POST' })
+    if (!res.ok) throw new Error(`Giải phóng model thất bại: HTTP ${res.status}`)
+    return (await res.json()) as ConfigResponse
+  }
+
   async deleteInstalledModels(): Promise<DeletedModels> {
     const res = await fetch(`${AI_BASE_URL}/api/models`, { method: 'DELETE' })
     if (!res.ok) throw new Error(`Xoá model thất bại: HTTP ${res.status}`)

@@ -84,6 +84,20 @@ class ModelManager:
         return self._preset
 
     @property
+    def loaded(self) -> bool:
+        return self._providers is not None
+
+    def select_preset(self, preset: Preset) -> None:
+        """Ghi nhận preset sẽ dùng mà KHÔNG nạp model.
+
+        Dùng lúc khởi động: service sẵn sàng trả lời REST ngay, model chỉ vào bộ nhớ
+        khi người dùng bấm "Khởi động model" hoặc bắt đầu một phiên.
+        """
+        if self._providers is not None:
+            raise RuntimeError("Đang có provider nạp sẵn — dùng load_preset() để đổi.")
+        self._preset = preset
+
+    @property
     def providers(self) -> ProviderSet:
         if self._providers is None:
             raise RuntimeError("Chưa nạp preset — gọi load_preset() trước.")

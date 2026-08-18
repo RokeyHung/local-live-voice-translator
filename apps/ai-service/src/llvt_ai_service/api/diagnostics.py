@@ -34,8 +34,10 @@ async def benchmark(
 ) -> BenchmarkResponse:
     """Chạy một câu mẫu qua từng khâu và trả thời gian thực tế của máy này."""
     request = body or BenchmarkRequest()
+    # Model có thể chưa nạp (service không nạp lúc khởi động) → nạp trước khi đo.
+    providers = await container.model_manager.ensure_loaded()
     result = await run_benchmark(
-        container.model_manager.providers,
+        providers,
         Language(request.source),
         Language(request.target),
     )

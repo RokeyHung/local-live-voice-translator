@@ -61,7 +61,9 @@ The core discipline everywhere: **dependencies point inward** — `adapters → 
 - `config/` — `settings.py` (pydantic-settings, `LLVT_` env prefix), `presets.py` (Fast/Balanced/Quality → adapter+model choices).
 - `api/` + `ws/` — thin transport. `app.py` builds the `Container` in the FastAPI **lifespan** and attaches it to `app.state`; routes get it via `api/deps.py`.
 
-Key flow: lifespan → `ModelManager.load_preset(default)` → WS `/ws` creates a `SessionController` per connection → messages drive `TranslationPipeline` → domain `PipelineEvent`s are converted to JSON by `ws/protocol.py` and streamed back.
+Key flow: lifespan → `ModelManager.select_preset(default)` (records the preset, loads **nothing**) → WS `/ws` creates a `SessionController` per connection → messages drive `TranslationPipeline` → domain `PipelineEvent`s are converted to JSON by `ws/protocol.py` and streamed back.
+
+Models are loaded **on demand**, never at startup (startup is ~0.4s instead of ~45s): `POST /api/models/load` (the "Khởi động model" button), the first `session.start`, or `POST /api/benchmark` all funnel through `ModelManager.ensure_loaded()`. `LLVT_PRELOAD_MODELS=true` restores eager loading for headless runs. An empty `stages` array in `GET /api/config` is the wire-level signal for "nothing in memory yet" — the UI keys its status badge off it.
 
 **Adding a new backend** (e.g. MLX Whisper): implement the port in `adapters/`, add one line to the relevant registry in `application/model_manager.py`, point a preset at it in `config/presets.py`. Do not touch `application/pipeline.py` or transport.
 
@@ -78,7 +80,7 @@ The WebSocket/REST contract is defined twice and MUST stay in sync when changed:
 
 WS envelope is `{ type, ts, payload }`. Message types: client→`session.start` (carries the history `title`)/`session.stop`/`audio.chunk`/`control.ptt`/`control.mute`; server→`state` (carries `sessionId` at session start/stop so the client can point at the right history row)/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
 
-REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers, plus `modelsDir`/`historyDbPath`/`historyEnabled`), `GET|DELETE /api/models` (what's actually on disk with real sizes; DELETE removes only the dirs the app created), `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers, plus `modelsDir`/`historyDbPath`/`historyEnabled`), `GET|DELETE /api/models` (what's actually on disk with real sizes; DELETE removes only the dirs the app created), `POST /api/models/load` (`?reload=true` rebuilds) and `POST /api/models/unload`, `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
 
 Settings the user can change from the app (currently `modelsDir`) are written to `~/.llvt/settings.json` by `config/runtime_config.py` and read back as a pydantic-settings source that ranks **below** env vars — `LLVT_MODELS_DIR` wins and the API then returns `modelsDirEditable: false` / 409. Changing `modelsDir` unloads the providers instead of reloading them (the new folder is usually empty, so reloading would download GBs inside the request); `ModelManager.ensure_loaded()` re-loads them when the next session starts.
 

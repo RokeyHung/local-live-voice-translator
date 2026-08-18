@@ -45,8 +45,7 @@ def test_save_rejects_unknown_keys():
 def test_put_models_dir_persists_and_frees_models(tmp_path):
     with TestClient(app) as client:
         assert client.get("/api/config").json()["modelsDirEditable"] is True
-        # Lifespan đã nạp preset → có đủ bốn khâu.
-        assert len(client.get("/api/config").json()["stages"]) == 4
+        assert len(client.post("/api/models/load").json()["stages"]) == 4
 
         target = tmp_path / "models-moi"
         body = client.put("/api/config", json={"preset": "balanced", "modelsDir": str(target)})

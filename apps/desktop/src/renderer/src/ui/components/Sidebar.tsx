@@ -24,7 +24,9 @@ const NAV: NavItem[] = [
   { id: 'about', icon: 'info', color: '#818cf8' }
 ]
 
-export type ServiceStatus = 'ready' | 'connecting' | 'down'
+// `idle` = service sống nhưng model chưa nạp (service không nạp lúc khởi động).
+// Chỉ được nói "Sẵn sàng Offline" khi model đã thật sự nằm trong bộ nhớ.
+export type ServiceStatus = 'ready' | 'idle' | 'connecting' | 'down'
 
 export function Sidebar({ status }: { status: ServiceStatus }): JSX.Element {
   const L = useDict()
@@ -50,6 +52,14 @@ export function Sidebar({ status }: { status: ServiceStatus }): JSX.Element {
       subClass: 'text-ac-grn-3',
       box: 'border-[rgba(34,197,94,.2)] bg-[rgba(34,197,94,.08)]',
       dot: '#22c55e'
+    },
+    idle: {
+      title: L.modelsIdleBadge,
+      sub: L.mbIdleHint,
+      titleClass: 'text-fg-2',
+      subClass: 'text-fg-4',
+      box: 'border-line-strong bg-surface',
+      dot: '#64748b'
     },
     connecting: {
       title: L.connecting,

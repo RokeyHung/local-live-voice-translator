@@ -20,6 +20,9 @@ export interface AiClient {
   setHistoryEnabled(preset: Preset, enabled: boolean): Promise<ConfigResponse>
   // Đổi thư mục lưu model; service lưu lại và giải phóng model đang nạp.
   setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse>
+  // Nạp model vào bộ nhớ (service không nạp lúc khởi động). Có thể mất vài phút lần đầu.
+  loadModels(reload?: boolean): Promise<ConfigResponse>
+  unloadModels(): Promise<ConfigResponse>
   // Xoá model đã tải để lấy lại dung lượng đĩa.
   deleteInstalledModels(): Promise<DeletedModels>
   // Chạy một câu mẫu qua từng khâu để đo độ trễ thực tế của máy.

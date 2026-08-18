@@ -59,8 +59,9 @@ TAGS_METADATA = [
         "description": (
             "Preset hiệu năng, thư mục lưu model và trạng thái model. `stages` lấy trực "
             "tiếp từ provider đang chạy nên luôn khớp với thứ service thật sự dùng; "
-            "`stages` rỗng nghĩa là model chưa nạp (vừa đổi thư mục hoặc vừa xoá) và sẽ "
-            "tự nạp lại ở phiên kế tiếp."
+            "`stages` **rỗng** nghĩa là chưa có model nào trong bộ nhớ — service không nạp "
+            "lúc khởi động, model chỉ vào RAM khi gọi `POST /api/models/load`, khi bắt đầu "
+            "phiên, hoặc khi chạy benchmark."
         ),
     },
     {

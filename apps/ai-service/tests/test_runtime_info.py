@@ -21,7 +21,9 @@ STAGES = ["VAD", "ASR", "MT", "TTS"]
 
 def test_config_reports_every_pipeline_stage():
     with TestClient(app) as client:
-        body = client.get("/api/config").json()
+        # Service không nạp model lúc khởi động → chưa nạp thì chưa có khâu nào.
+        assert client.get("/api/config").json()["stages"] == []
+        body = client.post("/api/models/load").json()
         assert [s["stage"] for s in body["stages"]] == STAGES
         for stage in body["stages"]:
             assert stage["adapter"], stage

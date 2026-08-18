@@ -132,6 +132,41 @@ def installed_models() -> list[InstalledModelSchema]:
     ]
 
 
+@router.post(
+    "/models/load",
+    response_model=ConfigResponse,
+    summary="Nạp model vào bộ nhớ",
+    description=(
+        "Nạp model của preset đang chọn. Service **không** nạp lúc khởi động, nên đây là "
+        "nút bấm tương ứng với 'Khởi động model' ở màn Quản lý model.\n\n"
+        "Lệnh này **chặn cho tới khi nạp xong** — lần đầu còn phải tải model về nên có "
+        "thể mất vài phút; những lần sau chỉ vài chục giây. Gọi lại khi model đã nạp thì "
+        "không làm gì, trừ khi `reload=true` (nạp lại từ đầu)."
+    ),
+)
+async def load_models(
+    reload: bool = False, container: Container = Depends(get_container)
+) -> ConfigResponse:
+    manager = container.model_manager
+    preset = manager.preset or get_settings().default_preset
+    if reload:
+        await manager.load_preset(preset)
+    else:
+        await manager.ensure_loaded()
+    return _describe(container, preset)
+
+
+@router.post(
+    "/models/unload",
+    response_model=ConfigResponse,
+    summary="Giải phóng model khỏi bộ nhớ",
+    description="Trả RAM lại cho máy; phiên kế tiếp sẽ tự nạp lại.",
+)
+async def unload_models(container: Container = Depends(get_container)) -> ConfigResponse:
+    await container.model_manager.unload()
+    return _describe(container, container.model_manager.preset or get_settings().default_preset)
+
+
 @router.delete(
     "/models",
     response_model=DeletedModels,

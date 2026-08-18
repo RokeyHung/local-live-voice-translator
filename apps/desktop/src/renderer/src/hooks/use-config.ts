@@ -19,6 +19,9 @@ export function useServiceConfig(): UseQueryResult<ConfigResponse, Error> {
   return useQuery({
     queryKey: ['config'],
     queryFn: () => client.fetchConfig(),
+    // Model có thể được nạp từ nơi khác (bắt đầu phiên, chạy benchmark) nên hỏi lại
+    // theo nhịp chậm để chỉ báo "đã nạp / chưa nạp" không bị đứng hình.
+    refetchInterval: 5000,
     retry: false
   })
 }
@@ -41,6 +44,27 @@ export function useSetHistoryEnabled(): UseMutationResult<
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ preset, enabled }) => client.setHistoryEnabled(preset, enabled),
+    onSuccess: (data) => queryClient.setQueryData(['config'], data)
+  })
+}
+
+// Nạp model theo yêu cầu ("Khởi động model"/"Nạp lại"). Lần đầu có thể mất vài phút
+// vì còn tải model về, nên đừng đặt timeout hay tự thử lại.
+export function useLoadModels(): UseMutationResult<ConfigResponse, Error, boolean | void> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (reload) => client.loadModels(reload === true),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['config'], data)
+      void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+    }
+  })
+}
+
+export function useUnloadModels(): UseMutationResult<ConfigResponse, Error, void> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => client.unloadModels(),
     onSuccess: (data) => queryClient.setQueryData(['config'], data)
   })
 }

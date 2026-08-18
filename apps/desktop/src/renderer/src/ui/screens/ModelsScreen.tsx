@@ -7,14 +7,20 @@ import { format } from '../../application/i18n'
 import { MODEL_CATALOG, PRESET_META, STAGE_COLORS } from '../../application/presets'
 import type { Preset } from '../../domain/enums'
 import { PRESETS } from '../../domain/models'
-import { useInstalledModels, useServiceConfig, useSetPreset } from '../../hooks/use-config'
+import {
+  useInstalledModels,
+  useLoadModels,
+  useServiceConfig,
+  useSetPreset,
+  useUnloadModels
+} from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
 import { useCompute, useDict } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
 import { Badge, DisabledButton, Notice, ScreenHeader } from '../components/primitives'
-import { INPUT, SCREEN } from '../styles'
+import { GHOST_BUTTON, INPUT, PRIMARY_BUTTON, SCREEN } from '../styles'
 
 const PRESET_ICON: Record<Preset, IconName> = {
   fast: 'bolt',
@@ -65,9 +71,15 @@ export function ModelsScreen(): JSX.Element {
   const active = useSessionStore((s) => s.active)
   const [query, setQuery] = useState('')
 
+  const loadModels = useLoadModels()
+  const unloadModels = useUnloadModels()
+
   const current = config.data?.preset ?? null
   const meta = current ? PRESET_META[current] : null
   const stages = config.data?.stages ?? []
+  // Service không nạp model lúc khởi động: `stages` rỗng nghĩa là chưa có gì trong RAM.
+  const modelsLoaded = stages.length > 0
+  const busy = loadModels.isPending || unloadModels.isPending || setPreset.isPending
   const installedNames = new Set((installed.data ?? []).map((m) => m.name))
   const totalBytes = (installed.data ?? []).reduce((sum, m) => sum + m.sizeBytes, 0)
   const serviceUp = health.isSuccess
@@ -81,14 +93,14 @@ export function ModelsScreen(): JSX.Element {
 
   const banner = !serviceUp
     ? { tone: 'warn' as const, icon: 'warning' as IconName, title: L.mbDownT, body: L.mbDownS }
-    : setPreset.isPending
+    : loadModels.isPending || setPreset.isPending
       ? {
           tone: 'info' as const,
           icon: 'spinner' as IconName,
-          title: L.applyingPreset,
-          body: L.mbIdleS
+          title: setPreset.isPending ? L.applyingPreset : L.mbLoadT,
+          body: L.mbLoadS
         }
-      : current
+      : modelsLoaded
         ? {
             tone: 'ok' as const,
             icon: 'check-circle' as IconName,
@@ -96,6 +108,32 @@ export function ModelsScreen(): JSX.Element {
             body: L.mbReadyS
           }
         : { tone: 'info' as const, icon: 'box' as IconName, title: L.mbIdleT, body: L.mbIdleS }
+
+  // Nút bên phải dải trạng thái: chưa nạp → khởi động; đã nạp → nạp lại + giải phóng.
+  const bannerAction = !serviceUp ? null : modelsLoaded ? (
+    <div className="flex gap-2">
+      <button
+        className={GHOST_BUTTON}
+        disabled={busy || active}
+        onClick={() => loadModels.mutate(true)}
+      >
+        <Icon name="refresh" size={14} />
+        {L.reloadModels}
+      </button>
+      <button
+        className={GHOST_BUTTON}
+        disabled={busy || active}
+        onClick={() => unloadModels.mutate()}
+      >
+        {L.unloadModels}
+      </button>
+    </div>
+  ) : (
+    <button className={PRIMARY_BUTTON} disabled={busy} onClick={() => loadModels.mutate(false)}>
+      <Icon name="play" size={14} />
+      {L.startModels}
+    </button>
+  )
 
   // Cảnh báo bộ nhớ: deviceMemory bị chặn trần 8 GB nên chỉ cảnh báo mềm khi chạm trần.
   const ramWarning = useMemo(() => {
@@ -129,7 +167,13 @@ export function ModelsScreen(): JSX.Element {
         tint="rgba(168,85,247,.12)"
       />
 
-      <Notice tone={banner.tone} icon={banner.icon} title={banner.title} body={banner.body} />
+      <Notice
+        tone={banner.tone}
+        icon={banner.icon}
+        title={banner.title}
+        body={banner.body}
+        right={bannerAction}
+      />
       {setPreset.isError && (
         <Notice
           tone="error"
@@ -137,6 +181,9 @@ export function ModelsScreen(): JSX.Element {
           title={L.presetFailed}
           body={setPreset.error?.message}
         />
+      )}
+      {loadModels.isError && (
+        <Notice tone="error" icon="warning" title={L.loadFailed} body={loadModels.error.message} />
       )}
 
       {/* preset */}
