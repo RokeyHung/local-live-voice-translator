@@ -1,11 +1,12 @@
 """Adapter TTS: sherpa-onnx (runtime mặc định) — Tuần 5.
 
-Tổng hợp giọng nói offline bằng ``sherpa-onnx`` (ONNX Runtime). Mỗi ngôn ngữ đích
-dùng một voice model VITS (Piper). Voice model KHÔNG nằm trên HF mà là tarball trong
+Tổng hợp giọng nói offline bằng ``sherpa-onnx`` (ONNX Runtime) cho **vi/en/zh**; mỗi
+ngôn ngữ một voice model VITS. Voice model KHÔNG nằm trên HF mà là tarball trong
 GitHub releases của k2-fsa → adapter tự tải + giải nén lần đầu vào ``models_dir``.
+Tiếng Nhật do ``adapters/tts/kokoro_ja.py`` đảm nhiệm (xem lý do ở đó).
 
 Nạp **lười theo ngôn ngữ**: chỉ tải/khởi tạo voice khi thật sự cần synthesize cho
-ngôn ngữ đó (tránh tải cả 4 voice khi chỉ dùng 1–2). Một ``SerialExecutor`` nội bộ
+ngôn ngữ đó (tránh tải cả ba voice khi chỉ dùng một). Một ``SerialExecutor`` nội bộ
 đẩy tải + generate (blocking) sang worker thread và tuần tự hóa.
 
 Đầu ra: PCM signed 16-bit, mono, sample rate theo model. Định tuyến ra loa/mic ảo
@@ -33,14 +34,18 @@ logger = logging.getLogger("llvt.adapters.tts.sherpa_onnx")
 # Voice mặc định theo ngôn ngữ (xem SPEC 02 §8.2). Tên phải khớp asset trong
 # release `tts-models` của k2-fsa/sherpa-onnx.
 #
-# Tiếng Nhật hiện KHÔNG có voice: release đó không có model VITS tiếng Nhật nào,
-# còn Supertonic thì sherpa-onnx 1.10.46 chưa hỗ trợ (không có
-# OfflineTtsSupertonicModelConfig). Chiều dịch SANG tiếng Nhật vì thế chỉ hiện
-# phụ đề; các chiều khác (ASR/MT tiếng Nhật) vẫn chạy bình thường.
+# Không có tiếng Nhật ở đây: release đó không có model VITS tiếng Nhật, còn Kokoro
+# thì sherpa-onnx chỉ cài phần xử lý văn bản cho tiếng Anh và tiếng Trung. Tiếng
+# Nhật do `adapters/tts/kokoro_ja.py` lo, ghép vào qua `LanguageRoutedTts`.
+#
+# Tiếng Trung KHÔNG dùng voice Piper: `vits-piper-zh_CN-xiao_ya-medium` cần g2pW
+# (chỉ có trong bản Piper chạy bằng Python, xem MODEL_CARD của nó) nên qua
+# sherpa-onnx sẽ sinh ra 0 token và chết ở tầng ONNX. `sherpa-onnx-vits-zh-ll` đi
+# kèm từ điển jieba + lexicon nên chạy đúng — đã kiểm chứng bằng ASR nghe lại.
 DEFAULT_VOICE: dict[Language, str] = {
     Language.vi: "vits-piper-vi_VN-vais1000-medium",
     Language.en: "vits-piper-en_US-lessac-medium",
-    Language.zh: "vits-piper-zh_CN-xiao_ya-medium",
+    Language.zh: "sherpa-onnx-vits-zh-ll",
 }
 
 # Tarball voice model của sherpa-onnx (GitHub releases, tag tts-models).
@@ -86,14 +91,27 @@ def _default_engine_loader(model_dir: Path) -> TtsEngine:
     onnx = _find_onnx(model_dir)
     data_dir = model_dir / "espeak-ng-data"
     lexicon = model_dir / "lexicon.txt"
+    # Voice tiếng Trung tách câu bằng jieba: thiếu `dict_dir` thì tra từ điển không
+    # ra chữ nào, sherpa đưa mảng token RỖNG vào ONNX và đổ lỗi ở tầng Conv
+    # ("Invalid input shape: {0}") — lỗi không hề nhắc tới từ điển.
+    dict_dir = model_dir / "dict"
     vits = sherpa_onnx.OfflineTtsVitsModelConfig(
         model=str(onnx),
         tokens=str(model_dir / "tokens.txt"),
         data_dir=str(data_dir) if data_dir.is_dir() else "",
+        dict_dir=str(dict_dir) if dict_dir.is_dir() else "",
         lexicon=str(lexicon) if lexicon.is_file() else "",
     )
+    # Luật đọc số/ngày/số điện thoại đi kèm voice (chủ yếu cho tiếng Trung); không
+    # có thì model đọc "2026" thành từng chữ số.
+    rules = [
+        str(p)
+        for name in ("date.fst", "number.fst", "phone.fst")
+        if (p := model_dir / name).is_file()
+    ]
     config = sherpa_onnx.OfflineTtsConfig(
         model=sherpa_onnx.OfflineTtsModelConfig(vits=vits, num_threads=2, provider="cpu"),
+        rule_fsts=",".join(rules),
         max_num_sentences=1,
     )
     return sherpa_onnx.OfflineTts(config)

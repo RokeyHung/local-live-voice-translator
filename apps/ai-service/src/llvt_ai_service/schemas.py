@@ -103,7 +103,7 @@ class BenchmarkResponse(BaseModel):
     vadMs: int
     asrMs: int
     mtMs: int
-    ttsMs: int | None = None  # None khi ngôn ngữ đích chưa có voice
+    ttsMs: int | None = None  # None khi máy chưa tải được voice cho ngôn ngữ đích
     totalMs: int
     audioMs: int  # độ dài đoạn audio mẫu đưa vào VAD/ASR
     source: Language

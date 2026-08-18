@@ -8,7 +8,7 @@ Near-real-time, **fully local** speech translation desktop app (đồ án tốt 
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
 
-The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models. Remaining: real Google Meet + Windows 11 runs, a Japanese TTS voice, and T9 (report, packaging, demo).
+The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models. Remaining: real Google Meet + Windows 11 runs, and T9 (report, packaging, demo).
 
 ## Repository layout
 
@@ -56,8 +56,8 @@ The core discipline everywhere: **dependencies point inward** — `adapters → 
 
 - `domain/` — pure `enums`, `models`, `events` (dataclasses; no framework imports).
 - `ports/` — ABCs: `SpeechToTextProvider`, `TranslationProvider`, `TextToSpeechProvider`, `VoiceActivityDetector`, `SessionRepository`. All AI providers extend `Provider` (async `load()`/`unload()`).
-- `adapters/` — real impls: `asr/whisper_cpp.py` (pywhispercpp), `mt/nllb.py` (transformers), `tts/sherpa_onnx.py`, `vad/silero.py`, `persistence/sqlite.py` (session history, SQLAlchemy Core) + `persistence/memory.py` (in-memory, used by tests). `asr/faster_whisper.py` is the only remaining stub (optimization phase).
-- `application/` — `TranslationPipeline` (VAD→ASR→MT→TTS, calls only ports; also persists each finished utterance), `ModelManager` (registry mapping adapter-name→factory, `load_preset()`), `SessionService`/`SessionController` (per-connection), `HistoryPolicy` (port-implementing decorator that turns history writes off — SPEC 14.4 privacy opt-out), `SerialExecutor` (runs blocking model calls in a thread + lock, since whisper.cpp contexts are not thread-safe), `Container` (DI holder).
+- `adapters/` — real impls: `asr/whisper_cpp.py` (pywhispercpp), `mt/nllb.py` (transformers), `tts/sherpa_onnx.py` (vi/en/zh), `tts/kokoro_ja.py` (Japanese — sherpa-onnx has no working Japanese front-end, so this one pairs the Kokoro ONNX model with misaki/OpenJTalk G2P), `vad/silero.py`, `persistence/sqlite.py` (session history, SQLAlchemy Core) + `persistence/memory.py` (in-memory, used by tests). `asr/faster_whisper.py` is the only remaining stub (optimization phase).
+- `application/` — `TranslationPipeline` (VAD→ASR→MT→TTS, calls only ports; also persists each finished utterance), `ModelManager` (registry mapping adapter-name→factory, `load_preset()`), `SessionService`/`SessionController` (per-connection), `HistoryPolicy` (port-implementing decorator that turns history writes off — SPEC 14.4 privacy opt-out), `LanguageRoutedTts` (picks the TTS engine per target language; policy, so it lives here rather than in an adapter), `SerialExecutor` (runs blocking model calls in a thread + lock, since whisper.cpp contexts are not thread-safe), `Container` (DI holder).
 - `config/` — `settings.py` (pydantic-settings, `LLVT_` env prefix), `presets.py` (Fast/Balanced/Quality → adapter+model choices).
 - `api/` + `ws/` — thin transport. `app.py` builds the `Container` in the FastAPI **lifespan** and attaches it to `app.state`; routes get it via `api/deps.py`.
 

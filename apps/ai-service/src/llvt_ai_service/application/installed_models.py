@@ -5,8 +5,9 @@ Mỗi adapter tự tải model theo kiểu riêng nên bố cục thư mục kh�
 - ``whisper-cpp/``  : file ``.bin`` phẳng do pywhispercpp tải về.
 - ``nllb/``         : cache của HuggingFace (``models--facebook--nllb-...``).
 - ``sherpa-tts/``   : mỗi voice một thư mục đã giải nén.
+- ``kokoro-ja/``    : model + bộ giọng tiếng Nhật (hai file .onnx/.bin rời).
 
-Hàm ở đây quét đúng ba bố cục đó và trả dung lượng thật để giao diện khỏi phải
+Hàm ở đây quét đúng bốn bố cục đó và trả dung lượng thật để giao diện khỏi phải
 bịa số. Thư mục nào chưa tồn tại thì bỏ qua — nghĩa là khâu đó chưa tải model.
 """
 
@@ -89,5 +90,17 @@ def scan(models_dir: Path) -> list[InstalledModel]:
                         size_bytes=_dir_size(entry),
                     )
                 )
+
+    # Voice tiếng Nhật không nằm chung với sherpa-onnx vì dùng runtime khác.
+    kokoro_dir = models_dir / "kokoro-ja"
+    if kokoro_dir.is_dir():
+        found.append(
+            InstalledModel(
+                name="kokoro-ja",
+                stage="TTS",
+                path=str(kokoro_dir),
+                size_bytes=_dir_size(kokoro_dir),
+            )
+        )
 
     return found

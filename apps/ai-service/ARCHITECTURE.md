@@ -45,9 +45,14 @@ Không đụng `application/pipeline.py` hay transport. Đó là mục tiêu c�
 ## Trạng thái hiện tại
 
 Mọi adapter trong pipeline đã chạy model thật: VAD Silero (Tuần 2), ASR whisper.cpp
-(Tuần 3), MT NLLB-200 (Tuần 4), TTS sherpa-onnx (Tuần 5), lịch sử phiên trong SQLite
+(Tuần 3), MT NLLB-200 (Tuần 4), TTS sherpa-onnx cho vi/en/zh (Tuần 5) và Kokoro +
+G2P OpenJTalk cho tiếng Nhật (`adapters/tts/kokoro_ja.py`), lịch sử phiên trong SQLite
 (`adapters/persistence/sqlite.py`, món nợ của Tuần 6). Còn **stub**:
 `adapters/asr/faster_whisper.py` (thuộc giai đoạn tối ưu).
+
+Khâu TTS chạy hai engine nên có `application/tts_router.py` (`LanguageRoutedTts`):
+cũng hiện thực port `TextToSpeechProvider`, chọn engine theo ngôn ngữ đích. Pipeline
+vẫn chỉ thấy một provider.
 
 Ghi lịch sử đi qua `application/history.py` (`HistoryPolicy`) — một decorator hiện
 thực chính port `SessionRepository`, cho phép tắt việc GHI mà vẫn đọc/xoá được, đúng

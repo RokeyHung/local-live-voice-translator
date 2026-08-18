@@ -95,9 +95,15 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'TTS',
-    name: 'vits-piper-zh_CN-xiao_ya-medium',
-    detail: 'rhasspy · sherpa-onnx · zh',
-    size: '62 MB'
+    name: 'sherpa-onnx-vits-zh-ll',
+    detail: 'k2-fsa · sherpa-onnx · zh',
+    size: '119 MB'
+  },
+  {
+    stage: 'TTS',
+    name: 'kokoro-ja',
+    detail: 'hexgrad · kokoro-onnx + OpenJTalk · ja',
+    size: '354 MB'
   }
 ]
 

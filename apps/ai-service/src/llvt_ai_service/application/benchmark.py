@@ -121,7 +121,8 @@ async def run_benchmark(
         await providers.tts.synthesize(translation.translated_text, target)
         tts_ms = int((time.perf_counter() - tts_started) * 1000)
     except NotImplementedError:
-        # Ngôn ngữ đích chưa có voice (vd tiếng Nhật) — chiều đó chỉ có phụ đề.
+        # Bốn ngôn ngữ trong phạm vi đồ án đều đã có voice; nhánh này chỉ còn cho
+        # trường hợp máy chưa tải được model của khâu TTS cho ngôn ngữ đó.
         logger.info("Bỏ qua khâu TTS: chưa có voice cho %s", target.value)
 
     return BenchmarkResult(

@@ -25,7 +25,7 @@ export interface BenchmarkResponse {
   vadMs: number
   asrMs: number
   mtMs: number
-  ttsMs: number | null // null khi ngôn ngữ đích chưa có voice TTS
+  ttsMs: number | null // null khi máy chưa tải được voice cho ngôn ngữ đích
   totalMs: number
   audioMs: number
   source: Language

@@ -58,7 +58,81 @@ Adapter **là nơi duy nhất** biết sherpa-onnx; pipeline chỉ thấy port `
 
 ## 5. Còn nợ / đợt sau
 
-- **Voice ja/zh:** `supertonic-3-ja` và `vits-piper-zh_CN-xiao_ya-medium` trong `DEFAULT_VOICE` cần đối chiếu lại với danh sách release hiện tại của k2-fsa (có thể thay bằng model đã xác nhận) — mới kiểm thử thật en/vi.
+- ~~**Voice ja/zh:** `supertonic-3-ja` và `vits-piper-zh_CN-xiao_ya-medium` trong `DEFAULT_VOICE` cần đối chiếu lại với danh sách release hiện tại của k2-fsa~~ → đã xử lý, xem [mục 6](#6-bổ-sung-18082026--tiếng-nhật-và-tiếng-trung).
 - **Phát audio + định tuyến (desktop):** phát `tts.audio` ra loa; đưa vào BlackHole (macOS)/VB-CABLE (Windows) để Google Meet nhận — tuần tích hợp desktop.
 - **Hàng đợi phát + cancel** (đề cương §5 Tuần 5): quản lý hàng đợi TTS và hủy câu ở phía phát (desktop) / điều phối phiên.
 - Cân nhắc `provider="coreml"` trên Apple Silicon để tăng tốc; hiện dùng `cpu` cho ổn định/di động.
+
+## 6. Bổ sung 18/08/2026 — tiếng Nhật và tiếng Trung
+
+Hai voice còn nợ ở mục 5 hoá ra **cùng hỏng vì một loại nguyên nhân**: model có tồn tại,
+nhưng phần chuyển **chữ → âm vị** (G2P) mà chúng cần thì sherpa-onnx không có. Cả hai đều
+được phát hiện bằng cách cho ASR **nghe lại** chính audio do TTS sinh ra, chứ không phải
+bằng đọc tài liệu.
+
+### 6.1. Tiếng Nhật — đổi sang Kokoro + OpenJTalk
+
+Bản phát hành `tts-models` của k2-fsa không có model VITS tiếng Nhật nào (đối chiếu đủ
+642 asset). Kokoro v1.0 **có** 5 giọng Nhật (`jf_alpha`, `jf_gongitsune`, `jf_nezumi`,
+`jf_tebukuro`, `jm_kumo`, sid 37–41) nhưng tài liệu sherpa-onnx ghi rõ: _"It is a
+multi-lingual model, but we only add English and Chinese support for it."_ Metadata của
+chính file model cũng ghi `voice = en-us`.
+
+Hậu quả đo được — đưa 「こんにちは、今日はプロジェクトの会議です。」 vào sherpa-onnx với
+giọng jf_alpha:
+
+|              | Kết quả                                                                 |
+| ------------ | ----------------------------------------------------------------------- |
+| Độ dài audio | **18,5 giây** cho một câu ~3 giây                                       |
+| ASR nghe lại | 「日本語の字幕を作成しています。」 — **không liên quan gì** tới câu vào |
+
+Chữ Nhật bị phiên âm bằng espeak tiếng Anh nên model đọc ra tiếng Nhật vô nghĩa.
+
+**Cách xử lý:** giữ nguyên trọng số Kokoro nhưng thay G2P — adapter mới
+`adapters/tts/kokoro_ja.py` chuyển câu sang âm vị bằng `misaki.ja` (gọi OpenJTalk, đúng
+bộ G2P mà bản Kokoro gốc dùng) rồi mới đưa vào ONNX. Vì khâu TTS giờ chạy hai engine,
+`application/tts_router.py` (`LanguageRoutedTts`) chọn engine theo ngôn ngữ đích; pipeline
+vẫn chỉ thấy một provider.
+
+Kiểm chứng bằng round-trip TTS → ASR (whisper large-v3-turbo, `language=ja`):
+
+| Câu vào                                    | ASR nghe lại                           | Audio |
+| ------------------------------------------ | -------------------------------------- | ----- |
+| こんにちは、今日はプロジェクトの会議です。 | こんにちは今日はプロジェクトの会議です | 2,6 s |
+| 会議は10時30分に始まります。               | 会議は10時30分に始まります。           | 2,8 s |
+| この機能はまだテスト中です。               | この機能はまだテスト中です。           | 2,0 s |
+
+Đúng cả kanji, số và katakana (3/3, chỉ lệch dấu câu).
+
+**Chọn bản fp32 chứ không phải int8.** Đo cùng một câu trên máy dev: int8 (92 MB) mất
+**1497 ms**, fp32 (326 MB) chỉ **706 ms** — ARM không có kernel int8 tối ưu nên bản "nhẹ
+hơn" lại chậm gấp đôi. Máy x86 có AVX-VNNI nhiều khả năng ngược lại, nên tên file để đổi
+được qua tham số `model_file`.
+
+### 6.2. Tiếng Trung — đổi voice, và bổ sung `dict_dir`
+
+`vits-piper-zh_CN-xiao_ya-medium` chết ngay khi tổng hợp:
+
+```text
+RuntimeError: Non-zero status code returned while running Conv node.
+Status Message: Invalid input shape: {0}
+```
+
+`{0}` nghĩa là **mảng token rỗng** — thông báo lỗi ở tầng Conv không hề nhắc tới nguyên
+nhân thật. MODEL*CARD của chính voice đó ghi: *"Only works on the Python version of Piper
+1.4+ due to a dependency on g2pW"\_ — tức nó cần một bộ G2P mà sherpa-onnx không có.
+
+Đổi sang **`sherpa-onnx-vits-zh-ll`** (đi kèm từ điển jieba + lexicon) và sửa
+`_default_engine_loader` truyền thêm:
+
+- `dict_dir` khi voice có thư mục `dict/` — thiếu nó thì tra từ điển không ra chữ nào và
+  lại rơi vào đúng lỗi "Invalid input shape: {0}";
+- `rule_fsts` (`date.fst`, `number.fst`, `phone.fst`) — thiếu thì model đọc "2026" thành
+  từng chữ số rời.
+
+Kiểm chứng round-trip: 你好，今天我们开项目会议。 → nghe lại 您好,今天我们开项目会议。
+(lệch một chữ đồng âm nǐ/nín do ASR), và 会议在十点三十分开始。 → khớp nguyên câu.
+vi/en kiểm tra lại sau khi đổi loader vẫn đúng.
+
+Từ đợt này, **cả bốn ngôn ngữ trong phạm vi đồ án đều tổng hợp được giọng**; số đo độ
+trễ từng chiều xem [`10_week8-experiments.md`](10_week8-experiments.md) mục 2.

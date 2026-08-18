@@ -13,11 +13,13 @@ from typing import Callable
 from llvt_ai_service.adapters.asr.faster_whisper import FasterWhisperAsr
 from llvt_ai_service.adapters.asr.whisper_cpp import WhisperCppAsr
 from llvt_ai_service.adapters.mt.nllb import NllbTranslator
+from llvt_ai_service.adapters.tts.kokoro_ja import KokoroJaTts
 from llvt_ai_service.adapters.tts.sherpa_onnx import SherpaOnnxTts
 from llvt_ai_service.adapters.vad.silero import SileroVad
+from llvt_ai_service.application.tts_router import LanguageRoutedTts
 from llvt_ai_service.config.presets import PresetConfig, get_preset_config
 from llvt_ai_service.config.settings import get_settings
-from llvt_ai_service.domain.enums import Preset
+from llvt_ai_service.domain.enums import Language, Preset
 from llvt_ai_service.ports.asr import SpeechToTextProvider
 from llvt_ai_service.ports.translator import TranslationProvider
 from llvt_ai_service.ports.tts import TextToSpeechProvider
@@ -52,8 +54,11 @@ MT_REGISTRY: dict[str, Callable[[PresetConfig], TranslationProvider]] = {
     ),
 }
 TTS_REGISTRY: dict[str, Callable[[PresetConfig], TextToSpeechProvider]] = {
-    "sherpa_onnx": lambda _cfg: SherpaOnnxTts(
-        models_dir=str(get_settings().models_dir / "sherpa-tts"),
+    # sherpa-onnx đọc vi/en/zh; tiếng Nhật đi qua Kokoro + G2P OpenJTalk vì phần xử
+    # lý văn bản của sherpa-onnx không hỗ trợ tiếng Nhật (xem adapters/tts/kokoro_ja).
+    "sherpa_onnx": lambda _cfg: LanguageRoutedTts(
+        SherpaOnnxTts(models_dir=str(get_settings().models_dir / "sherpa-tts")),
+        {Language.ja: KokoroJaTts(models_dir=str(get_settings().models_dir))},
     ),
 }
 

@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api", tags=["diagnostics"])
         "vô nghĩa (thực đo: 34.7 s lần đầu so với 1.7 s các lần sau). Kết quả vì thế là "
         "độ trễ mỗi câu khi máy đã chạy ổn định, KHÔNG gồm thời gian khởi động.\n\n"
         "Đây là phép đo thời gian, không phải độ chính xác — dùng `scripts/accuracy.py` "
-        "cho phần đó. Ngôn ngữ đích chưa có voice (tiếng Nhật) trả `ttsMs = null`."
+        "cho phần đó. `ttsMs = null` nghĩa là máy chưa tải được voice cho ngôn ngữ đích."
     ),
 )
 async def benchmark(

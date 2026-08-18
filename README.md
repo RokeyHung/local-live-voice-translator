@@ -4,7 +4,7 @@
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
 
-> Tài liệu: [đề cương](docs/00_project-outline.md) · [SPEC](docs/01_spec-realtime-voice-translation.md) · [SPEC Addendum](docs/02_spec-addendum-os-stack-models.md) · [Khảo sát & nền tảng (Tuần 1)](docs/03_week1-survey-and-foundation.md)
+> Tài liệu: [đề cương](docs/00_project-outline.md) · [SPEC](docs/01_spec-realtime-voice-translation.md) · [SPEC Addendum](docs/02_spec-addendum-os-stack-models.md) · ghi chú từng tuần: [T1](docs/03_week1-survey-and-foundation.md) · [T2](docs/04_week2-audio-capture-and-vad.md) · [T3](docs/05_week3-asr.md) · [T4](docs/06_week4-mt.md) · [T5](docs/07_week5-tts.md) · [T6](docs/08_week6-desktop.md) · [T7](docs/09_week7-two-way.md) · [T8](docs/10_week8-experiments.md)
 
 ## Cấu trúc
 
@@ -63,15 +63,15 @@ Cửa sổ Electron sẽ hiển thị trạng thái kết nối REST + WebSocket
 
 ## Dữ liệu trên máy
 
-| Đường dẫn                | Nội dung                                     | Đổi bằng          |
-| ------------------------ | -------------------------------------------- | ----------------- |
-| `~/.llvt/models/`        | Model đã tải (whisper.cpp, NLLB, voice TTS)  | `LLVT_MODELS_DIR` |
-| `~/.llvt/history.db`     | Lịch sử phiên: câu gốc, bản dịch, độ trễ     | `LLVT_DB_PATH`    |
+| Đường dẫn            | Nội dung                                                  | Đổi bằng          |
+| -------------------- | --------------------------------------------------------- | ----------------- |
+| `~/.llvt/models/`    | Model đã tải (whisper.cpp, NLLB, voice TTS, Kokoro tiếng Nhật) | `LLVT_MODELS_DIR` |
+| `~/.llvt/history.db` | Lịch sử phiên: câu gốc, bản dịch, độ trễ                  | `LLVT_DB_PATH`    |
 
 Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Quyền riêng tư** (hoặc `LLVT_HISTORY_ENABLED=false`); xóa từng phiên hoặc xóa tất cả ở màn **Lịch sử**.
 
 ## Trạng thái
 
-Pipeline chạy **model thật** đầy đủ: VAD (Tuần 2) → ASR (Tuần 3) → MT (Tuần 4) → TTS (Tuần 5), giao diện desktop 8 màn (Tuần 6), dịch hai chiều + microphone ảo + thu âm thanh hệ thống (Tuần 7), đo độ trễ/tài nguyên/độ chính xác (Tuần 8), lịch sử phiên lưu SQLite.
+Pipeline chạy **model thật** đầy đủ: VAD (Tuần 2) → ASR (Tuần 3) → MT (Tuần 4) → TTS (Tuần 5), giao diện desktop 8 màn (Tuần 6), dịch hai chiều + microphone ảo + thu âm thanh hệ thống (Tuần 7), đo độ trễ/tài nguyên/độ chính xác (Tuần 8), lịch sử phiên lưu SQLite, TTS đủ bốn ngôn ngữ (tiếng Nhật dùng Kokoro + G2P OpenJTalk vì sherpa-onnx không đọc được tiếng Nhật).
 
-Còn lại: chạy thử thật trong Google Meet và trên Windows 11, voice TTS tiếng Nhật, và Tuần 9 (báo cáo, đóng gói, video demo).
+Còn lại: chạy thử thật trong Google Meet và trên Windows 11, và Tuần 9 (báo cáo, đóng gói, video demo).
