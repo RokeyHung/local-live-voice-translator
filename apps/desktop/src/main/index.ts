@@ -4,6 +4,7 @@ import {
   app,
   BrowserWindow,
   desktopCapturer,
+  dialog,
   ipcMain,
   session,
   shell,
@@ -65,6 +66,20 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // Hộp thoại chọn thư mục (màn Cài đặt → thư mục lưu model). Renderer nằm trong
+  // sandbox nên không tự mở được hộp thoại của hệ điều hành; trả '' khi người dùng huỷ.
+  ipcMain.handle('dialog:chooseDirectory', async (_event, current?: string) => {
+    const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openDirectory', 'createDirectory'],
+      ...(current ? { defaultPath: current } : {})
+    }
+    const result = window
+      ? await dialog.showOpenDialog(window, options)
+      : await dialog.showOpenDialog(options)
+    return result.canceled ? '' : (result.filePaths[0] ?? '')
+  })
 
   // Cấp quyền thu audio cho renderer (getUserMedia). Chỉ localhost/desktop nên an toàn.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {

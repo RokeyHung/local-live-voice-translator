@@ -35,6 +35,8 @@ class ConfigResponse(BaseModel):
     availablePresets: list[Preset]
     stages: list[StageInfoSchema] = []
     modelsDir: str = ""
+    # False khi biến môi trường LLVT_MODELS_DIR đang quyết định → giao diện không đổi được.
+    modelsDirEditable: bool = True
     # Nơi lưu lịch sử + có đang lưu hay không (SPEC 14.4 yêu cầu hiện rõ cho người dùng).
     historyDbPath: str = ""
     historyEnabled: bool = True
@@ -51,6 +53,15 @@ class ConfigUpdate(BaseModel):
     preset: Preset
     # None = giữ nguyên; bật/tắt lưu lịch sử không cần nạp lại model.
     historyEnabled: bool | None = None
+    # None = giữ nguyên. Đổi thư mục model sẽ giải phóng provider đang nạp.
+    modelsDir: str | None = None
+
+
+class DeletedModels(BaseModel):
+    """Kết quả xoá model đã tải."""
+
+    removed: list[str]
+    freedBytes: int
 
 
 class SessionSummary(BaseModel):

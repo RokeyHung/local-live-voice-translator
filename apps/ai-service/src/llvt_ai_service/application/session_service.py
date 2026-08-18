@@ -37,7 +37,8 @@ class SessionController:
         self._ptt_active = False
         self._muted = False
 
-        providers = self._mm.providers
+        # Model có thể đang trống (vừa đổi thư mục model hoặc vừa xoá) → nạp lại.
+        providers = await self._mm.ensure_loaded()
         session_id = self._session.id
         if config.incoming is not None:
             self._incoming = TranslationPipeline(

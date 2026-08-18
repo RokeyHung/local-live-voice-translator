@@ -57,8 +57,15 @@ export interface ConfigResponse {
   availablePresets: Preset[]
   stages: StageInfo[]
   modelsDir: string
+  modelsDirEditable: boolean // false khi LLVT_MODELS_DIR đang quyết định
   historyDbPath: string
   historyEnabled: boolean
+}
+
+// Kết quả DELETE /api/models.
+export interface DeletedModels {
+  removed: string[]
+  freedBytes: number
 }
 
 // Model đã tải thật trên đĩa (GET /api/models) — dung lượng là số thật.

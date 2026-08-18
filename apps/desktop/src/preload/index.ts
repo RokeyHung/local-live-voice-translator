@@ -1,11 +1,14 @@
 import { electronAPI } from '@electron-toolkit/preload'
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 
 // Cấu hình kết nối tới Local AI Service (chỉ localhost). Expose an toàn cho renderer.
 const llvt = {
   aiBaseUrl: 'http://127.0.0.1:8756',
   aiWsUrl: 'ws://127.0.0.1:8756/ws',
-  platform: process.platform
+  platform: process.platform,
+  // Mở hộp thoại chọn thư mục của hệ điều hành; '' nghĩa là người dùng huỷ.
+  chooseDirectory: (current?: string): Promise<string> =>
+    ipcRenderer.invoke('dialog:chooseDirectory', current)
 }
 
 if (process.contextIsolated) {

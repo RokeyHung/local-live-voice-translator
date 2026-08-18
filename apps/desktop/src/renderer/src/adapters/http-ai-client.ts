@@ -5,6 +5,7 @@ import type { Language, Preset } from '../domain/enums'
 import type {
   BenchmarkResponse,
   ConfigResponse,
+  DeletedModels,
   HealthResponse,
   HistorySession,
   HistorySessionDetail,
@@ -45,6 +46,26 @@ export class HttpAiClient implements AiClient {
     })
     if (!res.ok) throw new Error(`Đổi chế độ lưu lịch sử thất bại: HTTP ${res.status}`)
     return (await res.json()) as ConfigResponse
+  }
+
+  async setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse> {
+    const res = await fetch(`${AI_BASE_URL}/api/config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preset, modelsDir: dir })
+    })
+    if (!res.ok) {
+      // Service trả lý do cụ thể (đường dẫn không ghi được, bị env khoá) — hiện nguyên văn.
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Đổi thư mục model thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as ConfigResponse
+  }
+
+  async deleteInstalledModels(): Promise<DeletedModels> {
+    const res = await fetch(`${AI_BASE_URL}/api/models`, { method: 'DELETE' })
+    if (!res.ok) throw new Error(`Xoá model thất bại: HTTP ${res.status}`)
+    return (await res.json()) as DeletedModels
   }
 
   async runBenchmark(source: Language, target: Language): Promise<BenchmarkResponse> {

@@ -57,8 +57,10 @@ TAGS_METADATA = [
     {
         "name": "config",
         "description": (
-            "Preset hiệu năng và trạng thái model. `stages` lấy trực tiếp từ provider "
-            "đang chạy nên luôn khớp với thứ service thật sự dùng."
+            "Preset hiệu năng, thư mục lưu model và trạng thái model. `stages` lấy trực "
+            "tiếp từ provider đang chạy nên luôn khớp với thứ service thật sự dùng; "
+            "`stages` rỗng nghĩa là model chưa nạp (vừa đổi thư mục hoặc vừa xoá) và sẽ "
+            "tự nạp lại ở phiên kế tiếp."
         ),
     },
     {

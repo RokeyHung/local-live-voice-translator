@@ -183,6 +183,19 @@ export interface Dict {
   meetingPrefix: string
   historyUnavailable: string
   rowFailed: string
+  // thư mục lưu model
+  dirTitle: string
+  dirDesc: string
+  dirBrowse: string
+  dirUsed: string
+  dirPh: string
+  dirClear: string
+  dirApply: string
+  dirNote: string
+  dirLocked: string
+  dirConfirmClear: string
+  dirCleared: string
+  dirNothingToClear: string
   // quyền riêng tư / lưu lịch sử
   privacyT: string
   privacyDesc: string
@@ -426,6 +439,21 @@ const vi: Dict = {
   meetingPrefix: 'Cuộc họp',
   historyUnavailable: 'Không đọc được lịch sử — AI service chưa chạy?',
   rowFailed: 'Câu này chạy lỗi',
+
+  dirTitle: 'Thư mục lưu model',
+  dirDesc: 'Chọn nơi tải về và nạp model. Đặt sang ổ đĩa khác nếu ổ cục bộ sắp đầy.',
+  dirBrowse: 'Chọn thư mục…',
+  dirUsed: 'Đang dùng',
+  dirPh: '/đường/dẫn/model',
+  dirClear: 'Xóa toàn bộ model',
+  dirApply: 'Áp dụng',
+  dirNote:
+    'Model đã tải không được chuyển sang thư mục mới; nếu chỗ mới trống thì lần nạp sau sẽ tải lại.',
+  dirLocked: 'Biến môi trường LLVT_MODELS_DIR đang quyết định thư mục này.',
+  dirConfirmClear:
+    'Xóa toàn bộ model đã tải trong thư mục này? Lần bắt đầu phiên sau sẽ phải tải lại.',
+  dirCleared: 'Đã xóa model, giải phóng',
+  dirNothingToClear: 'Không có model nào để xóa.',
 
   privacyT: 'Quyền riêng tư',
   privacyDesc:
@@ -673,6 +701,22 @@ const en: Dict = {
   meetingPrefix: 'Meeting',
   historyUnavailable: 'Cannot read history — is the AI service running?',
   rowFailed: 'This line failed',
+
+  dirTitle: 'Model storage folder',
+  dirDesc:
+    'Choose where models are downloaded and loaded from. Point to another drive if your local disk is full.',
+  dirBrowse: 'Choose folder…',
+  dirUsed: 'In use',
+  dirPh: '/path/to/models',
+  dirClear: 'Delete all models',
+  dirApply: 'Apply',
+  dirNote:
+    'Downloaded models are not moved to the new folder; if it is empty they will be downloaded again on the next load.',
+  dirLocked: 'The LLVT_MODELS_DIR environment variable is controlling this folder.',
+  dirConfirmClear:
+    'Delete every downloaded model in this folder? They will be downloaded again the next time a session starts.',
+  dirCleared: 'Models deleted, freed',
+  dirNothingToClear: 'No models to delete.',
 
   privacyT: 'Privacy',
   privacyDesc:

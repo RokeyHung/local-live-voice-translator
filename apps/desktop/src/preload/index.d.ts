@@ -7,6 +7,7 @@ declare global {
       aiBaseUrl: string
       aiWsUrl: string
       platform: string
+      chooseDirectory: (current?: string) => Promise<string>
     }
   }
 }

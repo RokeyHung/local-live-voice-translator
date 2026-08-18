@@ -78,7 +78,9 @@ The WebSocket/REST contract is defined twice and MUST stay in sync when changed:
 
 WS envelope is `{ type, ts, payload }`. Message types: client→`session.start` (carries the history `title`)/`session.stop`/`audio.chunk`/`control.ptt`/`control.mute`; server→`state` (carries `sessionId` at session start/stop so the client can point at the right history row)/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
 
-REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers, plus `historyDbPath`/`historyEnabled`), `GET /api/models` (what's actually on disk, real sizes), `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers, plus `modelsDir`/`historyDbPath`/`historyEnabled`), `GET|DELETE /api/models` (what's actually on disk with real sizes; DELETE removes only the dirs the app created), `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+
+Settings the user can change from the app (currently `modelsDir`) are written to `~/.llvt/settings.json` by `config/runtime_config.py` and read back as a pydantic-settings source that ranks **below** env vars — `LLVT_MODELS_DIR` wins and the API then returns `modelsDirEditable: false` / 409. Changing `modelsDir` unloads the providers instead of reloading them (the new folder is usually empty, so reloading would download GBs inside the request); `ModelManager.ensure_loaded()` re-loads them when the next session starts.
 
 Session history: `GET /api/sessions` (`?q=` searches titles + utterance text), `GET /api/sessions/{id}` (bilingual transcript), `PATCH /api/sessions/{id}` (`title` to rename, `close` to close a session abandoned by a crash), `DELETE /api/sessions/{id}`, `DELETE /api/sessions` (clear all). Rows are written by the pipeline as each utterance finishes; the desktop History screen reads only from here (no localStorage copy).
 

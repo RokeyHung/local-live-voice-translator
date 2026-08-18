@@ -7,6 +7,7 @@ import type { Language, Preset } from '../domain/enums'
 import type {
   BenchmarkResponse,
   ConfigResponse,
+  DeletedModels,
   InstalledModel,
   ResourceResponse
 } from '../domain/models'
@@ -41,6 +42,34 @@ export function useSetHistoryEnabled(): UseMutationResult<
   return useMutation({
     mutationFn: ({ preset, enabled }) => client.setHistoryEnabled(preset, enabled),
     onSuccess: (data) => queryClient.setQueryData(['config'], data)
+  })
+}
+
+// Đổi thư mục lưu model. Service giải phóng model đang nạp nên phải làm mới cả
+// cấu hình lẫn danh sách model trên đĩa.
+export function useSetModelsDir(): UseMutationResult<
+  ConfigResponse,
+  Error,
+  { preset: Preset; dir: string }
+> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ preset, dir }) => client.setModelsDir(preset, dir),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['config'], data)
+      void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+    }
+  })
+}
+
+export function useDeleteInstalledModels(): UseMutationResult<DeletedModels, Error, void> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => client.deleteInstalledModels(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+      void queryClient.invalidateQueries({ queryKey: ['config'] })
+    }
   })
 }
 

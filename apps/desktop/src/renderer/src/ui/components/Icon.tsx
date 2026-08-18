@@ -11,6 +11,7 @@ export type IconName =
   | 'monitor'
   | 'sliders'
   | 'box'
+  | 'folder'
   | 'clock'
   | 'gear'
   | 'info'
@@ -89,6 +90,9 @@ const PATHS: Record<IconName, JSX.Element> = {
       <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
       <line x1="12" y1="22.08" x2="12" y2="12" />
     </>
+  ),
+  folder: (
+    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z" />
   ),
   clock: (
     <>

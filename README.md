@@ -67,8 +67,11 @@ Cửa sổ Electron sẽ hiển thị trạng thái kết nối REST + WebSocket
 | -------------------- | --------------------------------------------------------- | ----------------- |
 | `~/.llvt/models/`    | Model đã tải (whisper.cpp, NLLB, voice TTS, Kokoro tiếng Nhật) | `LLVT_MODELS_DIR` |
 | `~/.llvt/history.db` | Lịch sử phiên: câu gốc, bản dịch, độ trễ                  | `LLVT_DB_PATH`    |
+| `~/.llvt/settings.json` | Tuỳ chọn đổi trong app (thư mục lưu model)             | —                 |
 
 Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Quyền riêng tư** (hoặc `LLVT_HISTORY_ENABLED=false`); xóa từng phiên hoặc xóa tất cả ở màn **Lịch sử**.
+
+Đổi chỗ lưu model ở màn **Cài đặt → Thư mục lưu model** (model đã tải không tự chuyển sang chỗ mới). Đặt `LLVT_MODELS_DIR` thì biến môi trường thắng và giao diện khoá ô này lại.
 
 ## Trạng thái
 

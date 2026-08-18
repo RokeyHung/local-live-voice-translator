@@ -113,6 +113,16 @@ class ModelManager:
             )
         return out
 
+    async def ensure_loaded(self) -> ProviderSet:
+        """Nạp preset gần nhất (hoặc mặc định) nếu đang trống.
+
+        Cần thiết vì đổi thư mục model / xoá model sẽ giải phóng provider: phiên bắt
+        đầu ngay sau đó phải tự nạp lại thay vì ném RuntimeError ra transport.
+        """
+        if self._providers is not None:
+            return self._providers
+        return await self.load_preset(self._preset or get_settings().default_preset)
+
     async def load_preset(self, preset: Preset) -> ProviderSet:
         await self.unload()
         cfg = get_preset_config(preset)
@@ -140,4 +150,5 @@ class ModelManager:
         ):
             await provider.unload()
         self._providers = None
-        self._preset = None
+        # Giữ lại preset đang chọn: giải phóng bộ nhớ không có nghĩa là quên lựa chọn
+        # của người dùng — `ensure_loaded()` sẽ nạp đúng preset đó khi cần.

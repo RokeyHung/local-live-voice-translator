@@ -4,6 +4,7 @@ import type { Language, Preset } from '../domain/enums'
 import type {
   BenchmarkResponse,
   ConfigResponse,
+  DeletedModels,
   HealthResponse,
   HistorySession,
   HistorySessionDetail,
@@ -17,6 +18,10 @@ export interface AiClient {
   updatePreset(preset: Preset): Promise<ConfigResponse>
   // Bật/tắt lưu lịch sử (không nạp lại model).
   setHistoryEnabled(preset: Preset, enabled: boolean): Promise<ConfigResponse>
+  // Đổi thư mục lưu model; service lưu lại và giải phóng model đang nạp.
+  setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse>
+  // Xoá model đã tải để lấy lại dung lượng đĩa.
+  deleteInstalledModels(): Promise<DeletedModels>
   // Chạy một câu mẫu qua từng khâu để đo độ trễ thực tế của máy.
   runBenchmark(source: Language, target: Language): Promise<BenchmarkResponse>
   fetchResources(): Promise<ResourceResponse>

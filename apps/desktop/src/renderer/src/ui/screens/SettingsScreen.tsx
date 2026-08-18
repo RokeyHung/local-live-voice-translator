@@ -2,13 +2,21 @@
 // Toàn bộ lưu trong localStorage của máy.
 
 import { useState, type JSX } from 'react'
+import { chooseDirectory } from '../../application/config'
+import { formatBytes } from '../../application/format'
 import type { ThemeMode } from '../../domain/enums'
-import { useServiceConfig, useSetHistoryEnabled } from '../../hooks/use-config'
+import {
+  useDeleteInstalledModels,
+  useInstalledModels,
+  useServiceConfig,
+  useSetHistoryEnabled,
+  useSetModelsDir
+} from '../../hooks/use-config'
 import { useDict } from '../../hooks/use-ui'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
 import { ScreenHeader, Segmented } from '../components/primitives'
-import { INPUT, PRIMARY_BUTTON, SCREEN } from '../styles'
+import { DANGER_BUTTON, GHOST_BUTTON, INPUT, PRIMARY_BUTTON, SCREEN } from '../styles'
 
 function Section({
   icon,
@@ -55,9 +63,40 @@ export function SettingsScreen(): JSX.Element {
   const [src, setSrc] = useState('')
   const [dst, setDst] = useState('')
 
-  // Lưu lịch sử là cấu hình của service (nó mới là nơi ghi DB), không phải của UI.
+  // Lưu lịch sử + thư mục model là cấu hình của service (nó mới là nơi ghi đĩa).
   const config = useServiceConfig()
   const setHistoryEnabled = useSetHistoryEnabled()
+  const setModelsDir = useSetModelsDir()
+  const deleteModels = useDeleteInstalledModels()
+  const installed = useInstalledModels(true)
+
+  const serverDir = config.data?.modelsDir ?? ''
+  const dirEditable = config.data?.modelsDirEditable !== false
+  // null = đang bám theo giá trị thật của service; chuỗi = người dùng đang sửa dở.
+  const [dirDraft, setDirDraft] = useState<string | null>(null)
+  const dirValue = dirDraft ?? serverDir
+
+  const usedBytes = (installed.data ?? []).reduce((sum, m) => sum + m.sizeBytes, 0)
+  const dirDirty = dirValue.trim() !== '' && dirValue.trim() !== serverDir
+
+  const applyDir = (dir: string): void => {
+    const preset = config.data?.preset
+    const clean = dir.trim()
+    if (!preset || !clean || clean === serverDir) return
+    setModelsDir.mutate({ preset, dir: clean }, { onSuccess: () => setDirDraft(null) })
+  }
+
+  const browseDir = async (): Promise<void> => {
+    const picked = await chooseDirectory(serverDir || undefined)
+    if (!picked) return // người dùng bấm Huỷ
+    setDirDraft(picked)
+    applyDir(picked)
+  }
+
+  const clearModels = (): void => {
+    if (!window.confirm(L.dirConfirmClear)) return
+    deleteModels.mutate()
+  }
 
   const submitTerm = (): void => {
     addGlossary(src, dst)
@@ -118,6 +157,76 @@ export function SettingsScreen(): JSX.Element {
               { value: 'en', label: 'English' }
             ]}
           />
+        </div>
+      </Section>
+
+      <Section
+        icon="folder"
+        color="#fb923c"
+        title={L.dirTitle}
+        desc={L.dirDesc}
+        right={
+          installed.data ? (
+            <span className="font-mono text-xs text-fg-4">
+              {L.dirUsed}: {formatBytes(usedBytes)}
+            </span>
+          ) : undefined
+        }
+      >
+        <div>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={dirValue}
+              disabled={!dirEditable}
+              onChange={(e) => setDirDraft(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && applyDir(dirValue)}
+              onBlur={() => applyDir(dirValue)}
+              placeholder={L.dirPh}
+              className={`${INPUT} min-w-60 flex-1 font-mono disabled:cursor-not-allowed disabled:opacity-60`}
+            />
+            {dirDirty && (
+              <button
+                className={PRIMARY_BUTTON}
+                disabled={setModelsDir.isPending}
+                onClick={() => applyDir(dirValue)}
+              >
+                {L.dirApply}
+              </button>
+            )}
+            <button
+              className={`${GHOST_BUTTON} hover:border-[#fb923c] hover:text-ac-org`}
+              disabled={!dirEditable || setModelsDir.isPending}
+              onClick={() => void browseDir()}
+            >
+              <Icon name="folder" size={15} />
+              {L.dirBrowse}
+            </button>
+            <button
+              className={DANGER_BUTTON}
+              disabled={deleteModels.isPending || usedBytes === 0}
+              onClick={clearModels}
+            >
+              <span className="inline-flex items-center gap-1.75">
+                <Icon name="trash" size={15} />
+                {L.dirClear}
+              </span>
+            </button>
+          </div>
+
+          <div className="mt-2.5 text-sm text-fg-4">{dirEditable ? L.dirNote : L.dirLocked}</div>
+          {setModelsDir.isError && (
+            <div className="mt-1 text-sm text-ac-red">{setModelsDir.error.message}</div>
+          )}
+          {deleteModels.isError && (
+            <div className="mt-1 text-sm text-ac-red">{deleteModels.error.message}</div>
+          )}
+          {deleteModels.isSuccess && (
+            <div className="mt-1 text-sm text-fg-4">
+              {deleteModels.data.removed.length === 0
+                ? L.dirNothingToClear
+                : `${L.dirCleared} ${formatBytes(deleteModels.data.freedBytes)}.`}
+            </div>
+          )}
         </div>
       </Section>
 

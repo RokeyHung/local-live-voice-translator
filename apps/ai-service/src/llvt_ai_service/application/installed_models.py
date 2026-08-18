@@ -14,10 +14,15 @@ bịa số. Thư mục nào chưa tồn tại thì bỏ qua — nghĩa là khâu
 from __future__ import annotations
 
 import logging
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
 logger = logging.getLogger("llvt.installed_models")
+
+# Chỉ bốn thư mục này là do app tạo ra. Xoá model nghĩa là xoá đúng chúng, KHÔNG phải
+# xoá sạch `models_dir` — người dùng có thể trỏ nó vào một thư mục có sẵn thứ khác.
+MANAGED_DIRS = ("whisper-cpp", "nllb", "sherpa-tts", "kokoro-ja")
 
 
 @dataclass
@@ -92,7 +97,7 @@ def scan(models_dir: Path) -> list[InstalledModel]:
                 )
 
     # Voice tiếng Nhật không nằm chung với sherpa-onnx vì dùng runtime khác.
-    kokoro_dir = models_dir / "kokoro-ja"
+    kokoro_dir = models_dir / MANAGED_DIRS[3]
     if kokoro_dir.is_dir():
         found.append(
             InstalledModel(
@@ -104,3 +109,26 @@ def scan(models_dir: Path) -> list[InstalledModel]:
         )
 
     return found
+
+
+def purge(models_dir: Path) -> tuple[list[str], int]:
+    """Xoá model đã tải; trả (tên thư mục đã xoá, số byte giải phóng).
+
+    Chỉ đụng tới ``MANAGED_DIRS``. Gọi hàm này khi provider đã được giải phóng, nếu
+    không Windows sẽ không cho xoá file đang mở.
+    """
+    removed: list[str] = []
+    freed = 0
+    for name in MANAGED_DIRS:
+        target = models_dir / name
+        if not target.is_dir():
+            continue
+        size = _dir_size(target)
+        try:
+            shutil.rmtree(target)
+        except OSError:
+            logger.warning("Không xoá được %s", target, exc_info=True)
+            continue
+        removed.append(name)
+        freed += size
+    return removed, freed
