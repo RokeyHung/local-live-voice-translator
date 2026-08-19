@@ -1,7 +1,8 @@
 {
   "_note": [
     "Bộ câu kiểm thử độ chính xác (docs/00 Tuần 8).",
-    "`audio` là đường dẫn tới file wav 16 kHz mono do NGƯỜI đọc, tương đối so với thư mục chứa file này.",
+    "`audio` là đường dẫn tới file ghi âm do NGƯỜI đọc, tương đối so với thư mục chứa file này.",
+    "Thả file vào `audio/` (xem audio/README.md); nhận wav/mp3/m4a, không đúng chuẩn thì ffmpeg tự chuyển.",
     "Chưa có file thì bỏ trống — script sẽ chạy chế độ round-trip bằng TTS và ghi rõ đó chỉ là smoke test.",
     "Hãy thay/bổ sung bằng câu thoại họp thật của bạn: đây mới là phần quyết định giá trị của số liệu."
   ],

@@ -5,8 +5,9 @@ Chạy:  uv run python scripts/accuracy.py            # bảng kết quả ra st
 
 Hai chế độ, tuỳ trường `audio` trong accuracy_corpus.json:
 
-- **audio thật** (khuyến nghị): file wav 16 kHz mono do người đọc. Đây là con số
-  duy nhất dùng được cho báo cáo.
+- **audio thật** (khuyến nghị): file ghi âm do người đọc, đặt trong ``scripts/audio/``
+  rồi điền tên vào trường ``audio``. Nhận wav/mp3/m4a — thứ gì không phải wav PCM16
+  mono 16 kHz sẽ được ffmpeg chuyển giúp. Đây là con số duy nhất dùng cho báo cáo.
 - **round-trip TTS** (khi `audio` rỗng): tự đọc câu tham chiếu bằng chính TTS của
   hệ thống rồi cho ASR nghe lại. Tiện để kiểm tra pipeline còn sống, nhưng WER sẽ
   LẠC QUAN hơn thực tế — giọng tổng hợp sạch, không nhiễu, không giọng vùng miền.
@@ -24,6 +25,9 @@ import argparse
 import asyncio
 import json
 import re
+import shutil
+import subprocess
+import tempfile
 import unicodedata
 import wave
 from collections import Counter
@@ -119,6 +123,47 @@ def read_wav_16k_mono(path: Path) -> bytes:
         return wav.readframes(wav.getnframes())
 
 
+def convert_to_wav_16k_mono(path: Path) -> bytes:
+    """Chuyển mp3/m4a/wav-khác-chuẩn về PCM16 mono 16 kHz bằng ffmpeg.
+
+    Điện thoại và máy ghi âm xuất ra mp3/m4a stereo 44.1 kHz, trong khi ASR chỉ nhận
+    đúng một định dạng (PCM16 mono 16 kHz). Bắt người dùng tự convert trước khi đưa
+    vào bộ câu là chỗ dễ sai, nên script tự làm — miễn là máy có ffmpeg.
+    """
+    if shutil.which("ffmpeg") is None:
+        raise RuntimeError(
+            f"{path.name}: cần ffmpeg để đọc định dạng này.\n"
+            "  macOS: brew install ffmpeg · Windows: winget install Gyan.FFmpeg\n"
+            f"  Hoặc tự chuyển sang wav: ffmpeg -i {path.name} -ac 1 -ar 16000 out.wav"
+        )
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "converted.wav"
+        result = subprocess.run(  # noqa: S603 (đường dẫn từ bộ câu của chính người dùng)
+            [
+                "ffmpeg", "-nostdin", "-loglevel", "error", "-y",
+                "-i", str(path),
+                "-ac", "1", "-ar", str(TARGET_SAMPLE_RATE), "-c:a", "pcm_s16le",
+                str(out),
+            ],
+            capture_output=True,
+            text=True,
+        )  # fmt: skip
+        if result.returncode != 0:
+            raise RuntimeError(f"{path.name}: ffmpeg lỗi — {result.stderr.strip()[:200]}")
+        return read_wav_16k_mono(out)
+
+
+def load_audio(path: Path) -> bytes:
+    """Đọc file audio tham chiếu bất kể định dạng; trả PCM16 mono 16 kHz."""
+    if path.suffix.lower() == ".wav":
+        try:
+            return read_wav_16k_mono(path)
+        except (ValueError, wave.Error):
+            # wav stereo / 44.1 kHz / nén — vẫn dùng được, chỉ cần đi qua ffmpeg.
+            return convert_to_wav_16k_mono(path)
+    return convert_to_wav_16k_mono(path)
+
+
 def resample_to_16k(pcm: bytes, sample_rate: int) -> bytes:
     """Lấy mẫu lại tuyến tính — đủ cho việc đưa đầu ra TTS vào ASR."""
     if sample_rate == TARGET_SAMPLE_RATE:
@@ -153,8 +198,12 @@ async def run(corpus_path: Path) -> list[CaseResult]:
             target = Language(case["target"])
 
             audio_path = (corpus_path.parent / case["audio"]).resolve() if case["audio"] else None
-            if audio_path and audio_path.is_file():
-                pcm = read_wav_16k_mono(audio_path)
+            if audio_path and not audio_path.is_file():
+                # Khai báo file rồi mà gõ sai đường dẫn thì phải BÁO, không được lặng lẽ
+                # rơi về round-trip: người chạy sẽ tưởng mình đang có số đo giọng thật.
+                raise FileNotFoundError(f"{case['id']}: không thấy file audio {audio_path}")
+            if audio_path:
+                pcm = load_audio(audio_path)
                 audio_source = "recorded"
             else:
                 spoken = await providers.tts.synthesize(case["transcript"], language)

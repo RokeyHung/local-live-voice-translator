@@ -23,6 +23,18 @@ data/
 *.sqlite
 *.sqlite3
 
+# Audio tham chiếu của bộ đo độ chính xác: là dữ liệu giọng nói, không commit.
+apps/ai-service/scripts/audio/*
+!apps/ai-service/scripts/audio/README.md
+soak*.json
+
+# Bản ghi nguồn thả tạm vào repo để cắt bộ câu.
+*.mov
+*.mp4
+*.m4a
+*.mp3
+*.wav
+
 # OS / editor
 .DS_Store
 Thumbs.db

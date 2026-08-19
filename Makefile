@@ -6,11 +6,15 @@ AI_DIR      := apps/ai-service
 DESKTOP_DIR := apps/desktop
 UV          ?= uv
 NPM         ?= npm
+# Thời lượng của `make soak` (đổi bằng: make soak MINUTES=5)
+MINUTES     ?= 60
+# Tiền tố tên file của `make segment` (make segment MEDIA=x.mov PREFIX=vlog)
+PREFIX      ?= rec
 
 .DEFAULT_GOAL := help
 
 .PHONY: help setup setup-service setup-desktop dev service desktop \
-        build typecheck lint format health docs test bench accuracy clean
+        build typecheck lint format health docs test bench accuracy soak segment clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -67,6 +71,14 @@ bench: ## Đo độ trễ từng khâu trên máy này (cần AI service đang c
 
 accuracy: ## Đo WER/chrF trên bộ câu kiểm thử (nạp model riêng, chạy vài phút)
 	cd $(AI_DIR) && $(UV) run python scripts/accuracy.py
+
+soak: ## Chạy liên tục 60 phút kiểm tra ổn định (cần AI service đang chạy)
+	cd $(AI_DIR) && $(UV) run python scripts/soak.py --minutes $(MINUTES) \
+		$(if $(AUDIO),--audio $(abspath $(AUDIO))) --json soak-report.json
+
+segment: ## Cắt bản ghi dài thành bộ câu để đo WER (make segment MEDIA=file.mov)
+	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make segment MEDIA=ban-ghi.mov [PREFIX=vlog]"; exit 1; }
+	cd $(AI_DIR) && $(UV) run python scripts/segment_audio.py $(abspath $(MEDIA)) --prefix $(PREFIX)
 
 clean: ## Xóa venv, node_modules và build output
 	rm -rf $(AI_DIR)/.venv
