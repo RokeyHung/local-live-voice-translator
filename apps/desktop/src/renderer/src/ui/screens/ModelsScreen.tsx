@@ -45,16 +45,16 @@ function LoadProgressPanel({ progress, L }: { progress: LoadProgress; L: Dict })
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-(image:--panel) p-4.25 backdrop-blur-xl">
+    <div className="panel px-4.5 py-4.25">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-bold text-fg-2">{L.lpTitle}</div>
-        <div className="font-mono text-sm font-bold text-fg-2">{Math.round(overall)}%</div>
+        <div className="text-base font-bold text-fg-2">{L.lpTitle}</div>
+        <div className="font-mono text-md font-extrabold text-fg-2">{Math.round(overall)}%</div>
       </div>
       <div className="mt-2.5 flex">
-        <Meter value={overall / 100} color="#a855f7" height={10} />
+        <Meter value={overall / 100} color="#a855f7" to="#6366f1" height={10} />
       </div>
 
-      <div className="mt-3.5 flex flex-col gap-1.5">
+      <div className="mt-3.5 flex flex-col gap-1.75">
         {progress.stages.map((stage) => {
           const running = stage.status === 'downloading' || stage.status === 'loading'
           const color = stage.status === 'failed' ? '#f87171' : STAGE_COLORS[stage.stage]
@@ -65,7 +65,7 @@ function LoadProgressPanel({ progress, L }: { progress: LoadProgress; L: Dict })
               : formatBytes(stage.doneBytes)
             : ''
           return (
-            <div key={stage.stage} className="flex items-center gap-2.5 text-sm">
+            <div key={stage.stage} className="flex items-center gap-2.5 text-base">
               <span
                 className="flex size-5 shrink-0 items-center justify-center"
                 style={{ color: stage.status === 'waiting' ? 'var(--text5)' : color }}
@@ -83,12 +83,12 @@ function LoadProgressPanel({ progress, L }: { progress: LoadProgress; L: Dict })
                   size={14}
                 />
               </span>
-              <span className="w-10 shrink-0 font-mono text-xs font-bold" style={{ color }}>
+              <span className="w-10 shrink-0 font-mono text-sm font-bold" style={{ color }}>
                 {stage.stage}
               </span>
               <span className="min-w-0 flex-1 truncate text-fg-3">{stage.model}</span>
-              {bytes && <span className="shrink-0 font-mono text-xs text-fg-4">{bytes}</span>}
-              <span className="w-24 shrink-0 text-right text-xs text-fg-4">
+              {bytes && <span className="shrink-0 font-mono text-sm text-fg-4">{bytes}</span>}
+              <span className="w-23 shrink-0 text-right text-sm text-fg-4">
                 {stage.percent !== null && running
                   ? `${stage.estimated ? '≈' : ''}${Math.round(stage.percent)}%`
                   : (stage.note ?? '') || statusText[stage.status]}
@@ -97,8 +97,6 @@ function LoadProgressPanel({ progress, L }: { progress: LoadProgress; L: Dict })
           )
         })}
       </div>
-
-      <div className="mt-3 text-xs leading-relaxed text-fg-5">{L.lpHint}</div>
     </div>
   )
 }
@@ -150,13 +148,15 @@ export function ModelsScreen(): JSX.Element {
   const unloadModels = useUnloadModels()
   // Chỉ hỏi tiến trình khi đang nạp; hỏi thêm một nhịp sau khi xong để thanh kịp đầy.
   const loadProgress = useLoadProgress(loadModels.isPending || setPreset.isPending)
+  const overallPercent = loadProgress.data?.overallPercent ?? 0
 
   const current = config.data?.preset ?? null
   const meta = current ? PRESET_META[current] : null
   const stages = config.data?.stages ?? []
   // Service không nạp model lúc khởi động: `stages` rỗng nghĩa là chưa có gì trong RAM.
   const modelsLoaded = stages.length > 0
-  const busy = loadModels.isPending || unloadModels.isPending || setPreset.isPending
+  const loading = loadModels.isPending || setPreset.isPending
+  const busy = loading || unloadModels.isPending
   const installedNames = new Set((installed.data ?? []).map((m) => m.name))
   const totalBytes = (installed.data ?? []).reduce((sum, m) => sum + m.sizeBytes, 0)
   const serviceUp = health.isSuccess
@@ -170,7 +170,7 @@ export function ModelsScreen(): JSX.Element {
 
   const banner = !serviceUp
     ? { tone: 'warn' as const, icon: 'warning' as IconName, title: L.mbDownT, body: L.mbDownS }
-    : loadModels.isPending || setPreset.isPending
+    : loading
       ? {
           tone: 'info' as const,
           icon: 'spinner' as IconName,
@@ -186,8 +186,13 @@ export function ModelsScreen(): JSX.Element {
           }
         : { tone: 'info' as const, icon: 'box' as IconName, title: L.mbIdleT, body: L.mbIdleS }
 
-  // Nút bên phải dải trạng thái: chưa nạp → khởi động; đã nạp → nạp lại + giải phóng.
-  const bannerAction = !serviceUp ? null : modelsLoaded ? (
+  // Bên phải dải trạng thái: đang nạp → phần trăm tổng (bảng tiến trình ở dưới nói rõ
+  // từng khâu); chưa nạp → khởi động; đã nạp → nạp lại + giải phóng.
+  const bannerAction = !serviceUp ? null : loading ? (
+    <span className="font-mono text-[14px] font-bold text-[#22d3ee]">
+      {Math.round(overallPercent)}%
+    </span>
+  ) : modelsLoaded ? (
     <div className="flex gap-2">
       <button
         className={GHOST_BUTTON}
@@ -262,11 +267,6 @@ export function ModelsScreen(): JSX.Element {
       {loadModels.isError && (
         <Notice tone="error" icon="warning" title={L.loadFailed} body={loadModels.error.message} />
       )}
-      {/* Giữ lại bảng sau khi nạp xong để thấy kết quả; giải phóng model thì bỏ đi
-          vì lúc đó nó mô tả một thứ không còn nằm trong bộ nhớ nữa. */}
-      {loadProgress.data && loadProgress.data.stages.length > 0 && (busy || modelsLoaded) && (
-        <LoadProgressPanel progress={loadProgress.data} L={L} />
-      )}
 
       {/* preset */}
       <div className="grid grid-cols-3 gap-3.5">
@@ -321,6 +321,12 @@ export function ModelsScreen(): JSX.Element {
           icon="warning"
           title={ramWarning.text}
         />
+      )}
+
+      {/* Giữ lại bảng sau khi nạp xong để thấy kết quả; giải phóng model thì bỏ đi
+          vì lúc đó nó mô tả một thứ không còn nằm trong bộ nhớ nữa. */}
+      {loadProgress.data && loadProgress.data.stages.length > 0 && (busy || modelsLoaded) && (
+        <LoadProgressPanel progress={loadProgress.data} L={L} />
       )}
 
       {/* khâu pipeline — model + thiết bị THẬT do service báo về */}

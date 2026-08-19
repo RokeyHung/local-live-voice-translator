@@ -6,14 +6,22 @@ import { looksLikeHeadphones } from '../../adapters/audio-devices'
 import { languageName, type Dict } from '../../application/i18n'
 import { utteranceSide } from '../../application/utterances'
 import type { Language } from '../../domain/enums'
-import { LANGUAGES } from '../../domain/models'
-import { useServiceConfig } from '../../hooks/use-config'
+import { LANGUAGES, type LoadProgress } from '../../domain/models'
+import { useLoadProgress, useServiceConfig } from '../../hooks/use-config'
 import type { SessionActions } from '../../hooks/use-session'
-import { useAudioDevices, useDict } from '../../hooks/use-ui'
+import { useAudioDevices, useDict, useStickyBottom } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
-import { Badge, Dot, EmptyState, Notice, ScreenHeader, Segmented } from '../components/primitives'
+import {
+  Badge,
+  Dot,
+  EmptyState,
+  Meter,
+  Notice,
+  ScreenHeader,
+  Segmented
+} from '../components/primitives'
 import { UtteranceBubble, UtteranceFocus, UtteranceRow } from '../components/UtteranceViews'
 import { Visualizer } from '../components/Visualizer'
 import { SCREEN, SELECT, SELECT_ARROW } from '../styles'
@@ -93,6 +101,44 @@ function LangPicker({
   )
 }
 
+// Dải "đang nạp model" hiện ngay trong phiên: model nạp theo nhu cầu nên phiên có
+// thể bắt đầu lúc bộ nhớ còn trống, câu đầu tiên phải chờ nạp xong.
+//
+// Tên model và phần trăm là số service báo về; chưa có ảnh chụp tiến trình nào thì
+// chỉ hiện dòng chờ chứ không dựng thanh giả.
+function StartupActivity({ progress, L }: { progress?: LoadProgress; L: Dict }): JSX.Element {
+  const stage = progress?.stages.find((s) => s.stage === progress.currentStage)
+  const percent = progress?.overallPercent ?? null
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-[rgba(34,211,238,.28)] bg-[rgba(34,211,238,.06)] px-4 py-3">
+      <span className="flex shrink-0 text-ac-cyan">
+        <Icon name="spinner" size={15} spin strokeWidth={2.6} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-base font-bold text-[#22d3ee]">{L.mbLoadT}</div>
+        <div className="truncate-1 font-mono text-sm text-fg-3">{stage?.model ?? L.mbLoadS}</div>
+      </div>
+      {percent !== null && (
+        <>
+          <div className="flex w-35 shrink-0">
+            <Meter value={percent / 100} color="#22d3ee" to="#3b82f6" height={6} />
+          </div>
+          <span className="shrink-0 font-mono text-base font-bold text-[#22d3ee]">
+            {Math.round(percent)}%
+          </span>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Đủ để biết danh sách có gì mới: thêm câu, hoặc câu cuối vừa dài thêm (bản nháp ASR). */
+function tailSignature(items: ViewUtterance[]): string {
+  const tail = items[items.length - 1]
+  return `${items.length}|${tail?.id ?? ''}|${tail ? tail.displayTarget || tail.sourceText : ''}`
+}
+
 function ColumnPanel({
   title,
   direction,
@@ -110,13 +156,17 @@ function ColumnPanel({
   emptyText: string
   L: Dict
 }): JSX.Element {
+  // Mỗi cột cuộn độc lập: đọc lại phần REMOTE không kéo theo cột ME, và khung
+  // điều khiển bên dưới luôn nằm trong tầm mắt.
+  const listRef = useStickyBottom<HTMLDivElement>(tailSignature(items))
+
   return (
     <div
       className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-(image:--panel) backdrop-blur-xl"
       style={{ borderColor: `${color}38` }}
     >
       <div
-        className="flex items-center gap-2.25 border-b border-line px-4 py-3.25"
+        className="flex shrink-0 items-center gap-2.25 border-b border-line px-4 py-3.25"
         style={{ background: `${color}12` }}
       >
         <Dot color={color} size={8} />
@@ -125,7 +175,7 @@ function ColumnPanel({
         </span>
         <span className="text-sm text-fg-3">{direction}</span>
       </div>
-      <div className="cs flex flex-1 flex-col gap-3.5 overflow-y-auto p-4">
+      <div ref={listRef} className="cs flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto p-4">
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2.5 py-6 text-fg-5">
             <span className="motion-safe:animate-[softpulse_2.5s_ease-in-out_infinite]">
@@ -156,6 +206,7 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
   // Model nạp theo nhu cầu nên phiên có thể bắt đầu lúc bộ nhớ còn trống.
   const serviceConfig = useServiceConfig()
   const modelsLoaded = (serviceConfig.data?.stages.length ?? 0) > 0
+  const loadProgress = useLoadProgress(active && !modelsLoaded)
   const muted = useSessionStore((s) => s.muted)
   const ptt = useSessionStore((s) => s.ptt)
   const micLevel = useSessionStore((s) => s.micLevel)
@@ -188,6 +239,10 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
   const meList = views.filter((u) => u.side === 'me')
   const latest = views[views.length - 1] ?? null
 
+  // Hai bố cục còn lại cũng cuộn trong khung của chúng, nên cũng cần bám đáy.
+  const timelineRef = useStickyBottom<HTMLDivElement>(tailSignature(views))
+  const recentRef = useStickyBottom<HTMLDivElement>(tailSignature(views))
+
   const outputLabel = outputs.find((d) => d.deviceId === outputDeviceId)?.label ?? ''
   const loopRisk = active && outputLabel !== '' && !looksLikeHeadphones(outputLabel)
   const vmicOn = active && !muted && virtualMicDeviceId !== ''
@@ -195,8 +250,11 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
 
   const ms = (value: number | null): string => (value == null ? '—' : String(value))
 
+  // `flex-1 min-h-0`: màn ăn đúng chiều cao vùng nội dung, nhờ đó vùng phụ đề có
+  // chiều cao xác định và tự cuộn bên trong thay vì đẩy dài cả trang. Cửa sổ quá
+  // thấp thì `min-h-65` bên dưới vẫn giữ chỗ và trang ngoài cuộn như trước.
   return (
-    <div className={`${SCREEN} min-h-full`}>
+    <div className={`${SCREEN} min-h-0 flex-1`}>
       <ScreenHeader
         icon="wave"
         title={L.session}
@@ -269,11 +327,6 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
         ))}
       </div>
 
-      {/* Bắt đầu phiên khi model chưa nạp: service nạp ngay lúc đó, câu đầu tiên sẽ
-          phải chờ. Nói rõ để người dùng không tưởng ứng dụng bị treo. */}
-      {active && !modelsLoaded && (
-        <Notice tone="info" icon="spinner" title={L.mbLoadT} body={L.mbLoadS} />
-      )}
       {wsStatus === 'connecting' && <Notice tone="info" icon="spinner" title={L.connecting} />}
       {wsStatus === 'disconnected' && (
         <Notice tone="warn" icon="warning" title={L.serviceDown} body={L.serviceDownSub} />
@@ -307,7 +360,10 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
       )}
 
       {layout === 'timeline' && (
-        <div className="panel cs flex min-h-65 flex-1 flex-col gap-4 overflow-y-auto p-5">
+        <div
+          ref={timelineRef}
+          className="panel cs flex min-h-65 flex-1 flex-col gap-4 overflow-y-auto p-5"
+        >
           {views.length === 0 ? (
             <EmptyState icon="clock" title={L.idleHint} minHeight={220} />
           ) : (
@@ -325,7 +381,10 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
               <EmptyState icon="monitor" title={L.idleHint} minHeight={180} />
             )}
           </div>
-          <div className="cs flex h-30 shrink-0 flex-col gap-2.25 overflow-y-auto rounded-xl border border-line bg-inset px-4 py-3">
+          <div
+            ref={recentRef}
+            className="cs flex h-30 shrink-0 flex-col gap-2.25 overflow-y-auto rounded-xl border border-line bg-inset px-4 py-3"
+          >
             {views.slice(-4).map((u) => (
               <div key={u.id} className="flex items-baseline gap-2.5 text-base">
                 <Dot color={SIDE_COLOR[u.side]} size={7} glow={false} />
@@ -338,6 +397,10 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
           </div>
         </div>
       )}
+
+      {/* Bắt đầu phiên khi model chưa nạp: service nạp ngay lúc đó, câu đầu tiên sẽ
+          phải chờ. Nói rõ để người dùng không tưởng ứng dụng bị treo. */}
+      {active && !modelsLoaded && <StartupActivity progress={loadProgress.data} L={L} />}
 
       {/* mức tín hiệu */}
       <div className="flex items-stretch gap-3">

@@ -146,10 +146,14 @@ export function Segmented<T extends string>({
 export function Meter({
   value,
   color,
+  to,
   height = 8
 }: {
   value: number // 0..1
   color: string
+  // Màu cuối của dải. Bỏ trống thì nhạt dần chính `color` — thanh tiến trình nạp
+  // model là chỗ duy nhất thiết kế đổi hẳn sang màu khác (tím → chàm).
+  to?: string
   height?: number
 }): JSX.Element {
   const pct = Math.max(0, Math.min(100, Math.round(value * 100)))
@@ -164,7 +168,10 @@ export function Meter({
     >
       <div
         className="h-full rounded-full transition-[width] duration-100 ease-linear"
-        style={{ width: `${pct}%`, background: `linear-gradient(90deg,${color},${color}aa)` }}
+        style={{
+          width: `${pct}%`,
+          background: `linear-gradient(90deg,${color},${to ?? `${color}aa`})`
+        }}
       />
     </div>
   )

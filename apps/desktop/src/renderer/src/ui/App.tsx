@@ -52,7 +52,9 @@ export default function App(): JSX.Element {
       <TitleBar />
       <div className="flex min-h-0 flex-1">
         <Sidebar status={status} />
-        <main className="cs min-w-0 flex-1 overflow-y-auto">
+        {/* flex-col để màn nào cần chiều cao xác định (Phiên dịch: cột phụ đề cuộn
+            riêng) thì xin `flex-1`; màn khác vẫn cao theo nội dung như cũ. */}
+        <main className="cs flex min-w-0 flex-1 flex-col overflow-y-auto">
           <RecoveryBanner />
           {screen === 'session' && <SessionScreen actions={actions} />}
           {screen === 'import' && <ImportScreen />}

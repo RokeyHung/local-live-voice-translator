@@ -11,14 +11,14 @@ import {
 import { prettyGpuName } from '../../adapters/compute-probe'
 import { PLATFORM } from '../../application/config'
 import type { Dict } from '../../application/i18n'
-import { PRESET_META, STAGE_COLORS } from '../../application/presets'
+import { PRESET_META } from '../../application/presets'
 import { useResources, useServiceConfig } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
 import { useAudioDevices, useCompute, useDict, useMicLevel } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
-import { Badge, Dot, Meter, Notice, ScreenHeader } from '../components/primitives'
+import { Badge, Dot, Meter, ScreenHeader } from '../components/primitives'
 import { SCREEN, SELECT, SELECT_ARROW } from '../styles'
 
 interface DeviceCardProps {
@@ -108,21 +108,197 @@ function DeviceCard({
 function HwTile({
   label,
   value,
-  color
+  color,
+  mono = true
 }: {
   label: string
   value: string
   color?: string
+  mono?: boolean
 }): JSX.Element {
   return (
     <div className="min-w-0 rounded-[11px] border border-line-soft bg-inset px-3.25 py-2.75">
       <div className="label-caps text-2xs tracking-[0.5px]">{label}</div>
       <div
         title={value}
-        className="truncate-1 mt-1.25 font-mono text-sm font-semibold"
+        className={`truncate-1 mt-1.25 text-[12px] font-semibold ${mono ? 'font-mono' : ''}`}
         style={{ color: color ?? 'var(--text)' }}
       >
         {value}
+      </div>
+    </div>
+  )
+}
+
+// Năm thiết bị tính toán của thiết kế. Ứng dụng KHÔNG chọn được backend (AI service
+// tự quyết lúc nạp model) nên các ô này chỉ để đọc: ô nào trùng với `accel` service
+// đang báo về thì đánh dấu "đang dùng", ô nào máy không có thì mờ đi.
+interface ComputeTileDef {
+  id: string
+  icon: IconName
+  color: string
+  label: (L: Dict) => string
+  sub: (L: Dict) => string
+  available: (kind: string) => boolean
+}
+
+const COMPUTE_TILES: ComputeTileDef[] = [
+  {
+    id: 'auto',
+    icon: 'sun',
+    color: '#22d3ee',
+    label: (L) => L.devAuto,
+    sub: (L) => L.devAutoSub,
+    available: () => true
+  },
+  {
+    id: 'cuda',
+    icon: 'chip',
+    color: '#76b900',
+    label: (L) => L.devCuda,
+    sub: () => '',
+    available: (kind) => kind === 'nvidia'
+  },
+  {
+    id: 'metal',
+    icon: 'apple',
+    color: '#38bdf8',
+    label: (L) => L.devMetal,
+    sub: () => '',
+    available: (kind) => kind === 'apple'
+  },
+  {
+    id: 'vulkan',
+    icon: 'box',
+    color: '#a855f7',
+    label: (L) => L.devVulkan,
+    sub: () => '',
+    available: (kind) => kind === 'amd' || kind === 'intel'
+  },
+  {
+    id: 'cpu',
+    icon: 'chip',
+    color: '#64748b',
+    label: (L) => L.devCpu,
+    sub: (L) => L.devCpuSub,
+    available: () => true
+  }
+]
+
+/** Tên bộ tăng tốc service báo về ("Metal", "CUDA", "mps", "BLAS"…) → ô tương ứng. */
+function tileOfAccel(accel: string): string {
+  const a = accel.toLowerCase()
+  if (a.includes('metal') || a.includes('mps')) return 'metal'
+  if (a.includes('cuda')) return 'cuda'
+  if (a.includes('vulkan')) return 'vulkan'
+  return 'cpu'
+}
+
+function ComputeTile({
+  icon,
+  color,
+  label,
+  sub,
+  available,
+  inUse,
+  recommended,
+  hint,
+  L
+}: {
+  icon: IconName
+  color: string
+  label: string
+  sub: string
+  available: boolean
+  inUse: boolean
+  recommended: boolean
+  hint: string
+  L: Dict
+}): JSX.Element {
+  return (
+    <div
+      title={hint}
+      className={`flex flex-col items-start gap-2 rounded-[13px] border p-3.5 ${available ? '' : 'opacity-40'}`}
+      style={{
+        borderColor: inUse ? color : 'var(--line)',
+        background: inUse ? `${color}14` : 'var(--surface)',
+        ...(inUse ? { boxShadow: `0 0 14px ${color}22` } : {})
+      }}
+    >
+      <div className="flex w-full items-center justify-between">
+        <span
+          className="inline-flex size-8.5 items-center justify-center rounded-[9px]"
+          style={{ background: `${color}1a`, color }}
+        >
+          <Icon name={icon} size={18} />
+        </span>
+        {inUse ? (
+          <span className="flex" style={{ color }} title={L.devInUse}>
+            <Icon name="check" size={16} strokeWidth={2.6} />
+          </span>
+        ) : (
+          recommended && (
+            <span
+              className="rounded-full px-1.5 py-0.5 text-3xs font-bold"
+              style={{ color, background: `${color}1a` }}
+            >
+              {L.recommended}
+            </span>
+          )
+        )}
+      </div>
+      <div className="text-[12px] leading-tight font-bold">{label}</div>
+      <div className="text-[10px] text-fg-4">{available ? sub : L.notAvail}</div>
+    </div>
+  )
+}
+
+const LOOP_TONE = {
+  ok: {
+    color: 'var(--ac-grn)',
+    border: 'rgba(34,197,94,.25)',
+    bg: 'rgba(34,197,94,.06)',
+    tint: 'rgba(34,197,94,.14)'
+  },
+  warn: {
+    color: 'var(--ac-org2)',
+    border: 'rgba(251,146,60,.3)',
+    bg: 'rgba(251,146,60,.07)',
+    tint: 'rgba(251,146,60,.14)'
+  }
+} as const
+
+// Thẻ kiểm tra vòng lặp âm thanh, khép lại màn hình: xanh khi đầu ra là tai nghe,
+// cam khi loa ngoài có thể vọng ngược vào mic. Màu tính theo kết quả nên đi qua
+// `style` chứ không phải class.
+function LoopCard({
+  tone,
+  icon,
+  title,
+  message
+}: {
+  tone: keyof typeof LOOP_TONE
+  icon: IconName
+  title: string
+  message: string
+}): JSX.Element {
+  const palette = LOOP_TONE[tone]
+  return (
+    <div
+      className="flex items-center gap-3.25 rounded-2xl border px-4.5 py-4 backdrop-blur-xl"
+      style={{ borderColor: palette.border, background: palette.bg }}
+    >
+      <span
+        className="flex size-8.5 shrink-0 items-center justify-center rounded-md"
+        style={{ background: palette.tint, color: palette.color }}
+      >
+        <Icon name={icon} size={18} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-base font-bold" style={{ color: palette.color }}>
+          {title}
+        </div>
+        <div className="mt-0.75 text-sm leading-snug text-fg-3">{message}</div>
       </div>
     </div>
   )
@@ -189,6 +365,11 @@ export function SetupScreen(): JSX.Element {
   const micLevel = active ? sessionMicLevel : previewLevel
 
   const serviceStages = serviceConfig.data?.stages ?? []
+  // Khâu nào đã nạp thì `accel` là bộ tăng tốc THẬT đang chạy — dùng nó để đánh dấu
+  // ô thiết bị, chứ không suy từ phần cứng máy.
+  const accelsInUse = new Set(
+    serviceStages.filter((s) => s.loaded).map((s) => tileOfAccel(s.accel))
+  )
   const outputLabel = outputs.find((d) => d.deviceId === outputDeviceId)?.label ?? ''
   const virtualMics = outputs.filter((d) => looksLikeVirtualMic(d.label))
   const vmicSelected = virtualMicDeviceId !== ''
@@ -310,6 +491,7 @@ export function SetupScreen(): JSX.Element {
                 label={L.gpuLbl}
                 value={prettyGpuName(compute.gpuRenderer) || L.notAvail}
                 color={KIND_COLOR[compute.kind]}
+                mono={false}
               />
               <HwTile
                 label={L.cpuLbl}
@@ -334,36 +516,29 @@ export function SetupScreen(): JSX.Element {
               <HwTile label={L.apiLbl} value={compute.webgpu ? 'WebGPU + WebGL' : 'WebGL'} />
             </div>
 
-            {/* thiết bị tính toán THẬT của từng khâu, do service báo về */}
-            <div
-              className="mt-3 grid gap-2.5"
-              style={{
-                gridTemplateColumns: `repeat(${Math.max(1, serviceStages.length)}, minmax(0,1fr))`
-              }}
-            >
-              {serviceStages.map((stage) => {
-                const color = STAGE_COLORS[stage.stage] ?? 'var(--text3)'
+            {/* thiết bị tính toán — chỉ để đọc, dấu tích là accel THẬT service báo về */}
+            <div className="mt-3 grid grid-cols-5 gap-2.5">
+              {COMPUTE_TILES.map((tile) => {
+                const available = tile.available(compute.kind)
+                const inUse = accelsInUse.has(tile.id)
                 return (
-                  <div
-                    key={stage.stage}
-                    className="flex flex-col items-start gap-2 rounded-[13px] border p-3.5"
-                    style={{ borderColor: `${color}55`, background: `${color}12` }}
-                  >
-                    <div className="flex w-full items-center justify-between">
-                      <span className="text-2xs font-bold tracking-[0.6px]" style={{ color }}>
-                        {stage.stage}
-                      </span>
-                      {stage.loaded && (
-                        <span className="flex" style={{ color }}>
-                          <Icon name="check" size={14} strokeWidth={2.6} />
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-md leading-tight font-bold">{stage.accel}</div>
-                    <div className="truncate-1 max-w-full font-mono text-[10px] text-fg-4">
-                      {stage.adapter}
-                    </div>
-                  </div>
+                  <ComputeTile
+                    key={tile.id}
+                    icon={tile.icon}
+                    color={tile.color}
+                    label={tile.label(L)}
+                    sub={tile.sub(L)}
+                    available={available}
+                    inUse={inUse}
+                    recommended={
+                      available &&
+                      !inUse &&
+                      ((compute.kind === 'nvidia' && tile.id === 'cuda') ||
+                        (compute.kind === 'apple' && tile.id === 'metal'))
+                    }
+                    hint={L.computeReadOnly}
+                    L={L}
+                  />
                 )
               })}
             </div>
@@ -414,7 +589,7 @@ export function SetupScreen(): JSX.Element {
           </span>
           <div>
             <div className="mb-1.25 text-base font-bold text-ac-org-2">{L.tipTitle}</div>
-            <div className="text-sm leading-normal text-ac-org">
+            <div className="text-[12px] leading-normal text-ac-org">
               {L.tipBody}
               {PLATFORM === 'darwin'
                 ? ' (BlackHole 2ch)'
@@ -426,7 +601,7 @@ export function SetupScreen(): JSX.Element {
         </div>
       </div>
 
-      <Notice tone={loop.tone} icon={loop.icon} title={L.loopCheckT} body={loop.msg} />
+      <LoopCard tone={loop.tone} icon={loop.icon} title={L.loopCheckT} message={loop.msg} />
     </div>
   )
 }

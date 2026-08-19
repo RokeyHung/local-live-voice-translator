@@ -1,7 +1,7 @@
 // Hook cầu nối cho phần trình bày: từ điển nhãn, chủ đề đã giải quyết, phần cứng,
 // danh sách thiết bị và mức tín hiệu mic.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { listInputDevices, listOutputDevices, type AudioDevice } from '../adapters/audio-devices'
 import { probeCompute } from '../adapters/compute-probe'
 import { LevelMeter } from '../adapters/level-meter'
@@ -31,6 +31,34 @@ export function useResolvedTheme(): 'light' | 'dark' {
 
   if (theme === 'system') return systemLight ? 'light' : 'dark'
   return theme
+}
+
+/**
+ * Giữ một vùng cuộn bám đáy khi `signature` đổi (có câu mới, hoặc bản nháp ASR
+ * dài thêm). Người dùng cuộn lên đọc lại thì nhả ra, cuộn về sát đáy thì bám lại
+ * — nếu không, phụ đề mới sẽ giật màn hình ngay lúc đang đọc câu cũ.
+ */
+export function useStickyBottom<T extends HTMLElement>(signature: string): RefObject<T | null> {
+  const ref = useRef<T>(null)
+  const stuck = useRef(true)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onScroll = (): void => {
+      stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // useLayoutEffect: nhảy xuống đáy trước khi trình duyệt vẽ, tránh nháy một khung.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (el && stuck.current) el.scrollTop = el.scrollHeight
+  }, [signature])
+
+  return ref
 }
 
 export function useCompute(): ComputeInfo | null {

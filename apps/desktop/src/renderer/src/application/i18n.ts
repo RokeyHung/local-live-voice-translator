@@ -91,6 +91,7 @@ export interface Dict {
   devVulkan: string
   devCpu: string
   devCpuSub: string
+  devInUse: string
   cores: string
   atLeast: string
   computeReadOnly: string
@@ -134,7 +135,6 @@ export interface Dict {
   lpLoading: string
   lpDone: string
   lpFailed: string
-  lpHint: string
   modelsIdleBadge: string
   mbIdleHint: string
   applyingPreset: string
@@ -358,6 +358,7 @@ const vi: Dict = {
   devVulkan: 'Vulkan (AMD/Intel)',
   devCpu: 'Chỉ CPU',
   devCpuSub: 'Tương thích nhất',
+  devInUse: 'Đang dùng',
   cores: 'lõi',
   atLeast: 'ít nhất',
   computeReadOnly: 'AI service tự chọn backend khi nạp model — chưa đổi được từ giao diện.',
@@ -403,9 +404,6 @@ const vi: Dict = {
   lpLoading: 'đang nạp…',
   lpDone: 'xong',
   lpFailed: 'lỗi',
-  lpHint:
-    'Số MB là dung lượng đã có trên đĩa. Dấu ≈ nghĩa là dung lượng tổng chỉ ước lượng; ' +
-    'khâu nào không biết tổng thì chỉ hiện số MB, không hiện phần trăm.',
   modelsIdleBadge: 'Chưa nạp model',
   mbIdleHint: 'Bấm Bắt đầu để nạp',
   applyingPreset: 'Đang nạp preset…',
@@ -635,6 +633,7 @@ const en: Dict = {
   devVulkan: 'Vulkan (AMD/Intel)',
   devCpu: 'CPU only',
   devCpuSub: 'Most compatible',
+  devInUse: 'In use',
   cores: 'cores',
   atLeast: 'at least',
   computeReadOnly:
@@ -681,9 +680,6 @@ const en: Dict = {
   lpLoading: 'loading…',
   lpDone: 'done',
   lpFailed: 'failed',
-  lpHint:
-    'Megabytes are what is actually on disk. A ≈ sign means the total size is an estimate; ' +
-    'stages with an unknown total show megabytes only, never a made-up percentage.',
   modelsIdleBadge: 'Models not loaded',
   mbIdleHint: 'Press Start to load',
   applyingPreset: 'Loading preset…',
