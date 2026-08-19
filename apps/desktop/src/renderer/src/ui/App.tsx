@@ -49,7 +49,7 @@ export default function App(): JSX.Element {
       data-theme={theme}
       className="flex h-screen w-full flex-col overflow-hidden bg-(color:--app-base) bg-(image:--app-bg) text-fg"
     >
-      <TitleBar offlineReady={health.data?.offlineReady ?? false} />
+      <TitleBar />
       <div className="flex min-h-0 flex-1">
         <Sidebar status={status} />
         <main className="cs min-w-0 flex-1 overflow-y-auto">

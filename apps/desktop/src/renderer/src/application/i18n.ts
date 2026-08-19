@@ -6,7 +6,6 @@ import type { Language, UiLanguage } from '../domain/enums'
 export interface Dict {
   // chung
   appName: string
-  offline: string
   offlineReady: string
   noCloud: string
   serviceDown: string
@@ -128,6 +127,14 @@ export interface Dict {
   reloadModels: string
   unloadModels: string
   loadFailed: string
+  // Bảng tiến trình nạp model.
+  lpTitle: string
+  lpWaiting: string
+  lpDownloading: string
+  lpLoading: string
+  lpDone: string
+  lpFailed: string
+  lpHint: string
   modelsIdleBadge: string
   mbIdleHint: string
   applyingPreset: string
@@ -265,7 +272,6 @@ export interface Dict {
 
 const vi: Dict = {
   appName: 'Local Live Voice Translator',
-  offline: 'Offline',
   offlineReady: 'Sẵn sàng Offline',
   noCloud: 'Không dùng cloud',
   serviceDown: 'Chưa kết nối AI service',
@@ -391,6 +397,15 @@ const vi: Dict = {
   reloadModels: 'Nạp lại',
   unloadModels: 'Giải phóng',
   loadFailed: 'Nạp model thất bại',
+  lpTitle: 'Tiến trình nạp model',
+  lpWaiting: 'chờ',
+  lpDownloading: 'đang tải…',
+  lpLoading: 'đang nạp…',
+  lpDone: 'xong',
+  lpFailed: 'lỗi',
+  lpHint:
+    'Số MB là dung lượng đã có trên đĩa. Dấu ≈ nghĩa là dung lượng tổng chỉ ước lượng; ' +
+    'khâu nào không biết tổng thì chỉ hiện số MB, không hiện phần trăm.',
   modelsIdleBadge: 'Chưa nạp model',
   mbIdleHint: 'Bấm Bắt đầu để nạp',
   applyingPreset: 'Đang nạp preset…',
@@ -534,7 +549,6 @@ const vi: Dict = {
 
 const en: Dict = {
   appName: 'Local Live Voice Translator',
-  offline: 'Offline',
   offlineReady: 'Offline Ready',
   noCloud: 'No cloud used',
   serviceDown: 'AI service not connected',
@@ -661,6 +675,15 @@ const en: Dict = {
   reloadModels: 'Reload',
   unloadModels: 'Free memory',
   loadFailed: 'Loading models failed',
+  lpTitle: 'Model loading progress',
+  lpWaiting: 'waiting',
+  lpDownloading: 'downloading…',
+  lpLoading: 'loading…',
+  lpDone: 'done',
+  lpFailed: 'failed',
+  lpHint:
+    'Megabytes are what is actually on disk. A ≈ sign means the total size is an estimate; ' +
+    'stages with an unknown total show megabytes only, never a made-up percentage.',
   modelsIdleBadge: 'Models not loaded',
   mbIdleHint: 'Press Start to load',
   applyingPreset: 'Loading preset…',
