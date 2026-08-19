@@ -16,6 +16,7 @@
 | `POST /api/benchmark` | Độ trễ từng khâu VAD/ASR/MT/TTS trên máy này  | nút "Chạy test" ở màn Chẩn đoán, `make bench` |
 | `GET /api/resources`  | CPU% và RSS của chính tiến trình service      | màn Chẩn đoán (hỏi lại mỗi 2 s)               |
 | `scripts/accuracy.py` | WER cho ASR, chrF cho MT trên bộ câu kiểm thử | `make accuracy`                               |
+| `scripts/soak.py`     | Chạy liên tục nhiều giờ (tiêu chí 14)         | `make soak MINUTES=60`                        |
 
 ## 2. Đo độ trễ — hai cái bẫy phải tránh
 
@@ -84,11 +85,64 @@ Trước đợt này màn Chẩn đoán có ô "Chưa hỗ trợ" và vài giá 
 service, RAM của service và RAM máy lấy từ `GET /api/resources`. Nguyên tắc giữ xuyên
 suốt dự án: **thà để trống/đánh dấu chưa hỗ trợ còn hơn hiển thị số bịa**.
 
-## 5. Còn nợ
+## 5. Chạy liên tục (tiêu chí nghiệm thu 14)
+
+Bài "chạy ít nhất 60 phút không crash" được viết thành script thay vì bấm tay:
+`scripts/soak.py` đóng vai client, nói đúng giao thức WebSocket mà desktop dùng, và
+lặp một lượt nói mỗi vài giây theo **nhịp thời gian thực** (dồn cục audio thì đo ra
+một thứ khác hẳn).
+
+```bash
+make service                 # cửa sổ 1
+make soak MINUTES=60         # cửa sổ 2 — kết quả ghi ra soak-report.json
+```
+
+Script bắt ba kiểu hỏng của việc chạy dài, tương ứng ba thứ nó theo dõi:
+
+| Theo dõi                               | Bắt được gì                                                            |
+| -------------------------------------- | ---------------------------------------------------------------------- |
+| WebSocket + `/health` sau khi chạy     | Service chết hoặc rớt kết nối giữa chừng → **TRƯỢT**                   |
+| RSS lấy định kỳ từ `/api/resources`    | Rò rỉ bộ nhớ (SPEC `01` §16: "không tăng RAM liên tục theo thời gian") |
+| Độ trễ 10% câu đầu so với 10% câu cuối | Trôi hiệu năng do hàng đợi/cache tích tụ                               |
+
+Rò rỉ và trôi chỉ ra **cảnh báo** kèm số liệu, không tự đánh trượt: quyết định ngưỡng
+là việc của người đọc báo cáo. Driver có test riêng (`tests/test_soak.py`) chạy qua
+provider giả nên không cần model thật.
+
+Mặc định script phát sóng tổng hợp. Có bản ghi thật thì truyền vào — VAD và ASR cư xử
+khác hẳn với tiếng nói thật (ngắt nghỉ, tạp âm, âm lượng thay đổi):
+
+```bash
+make soak MINUTES=15 AUDIO=apps/ai-service/scripts/audio   # thư mục: mỗi wav một lượt nói
+```
+
+Bài chạy 60 phút với model thật vẫn **chưa thực hiện** — cần một máy rảnh trong một
+giờ, đưa vào phần đo đạc của Tuần 9.
+
+## 6. Bộ câu giọng thật: công cụ cắt sẵn
+
+WER chỉ có giá trị khi câu tham chiếu do **người** gõ. Có sẵn một bản ghi dài thì
+`scripts/segment_audio.py` lo phần cơ học: dùng chính Silero VAD của dự án tách các
+đoạn có tiếng nói, ghi ra wav 16 kHz mono và sinh khung JSON để điền lời.
+
+```bash
+make segment MEDIA=ban-ghi.mov PREFIX=vlog
+```
+
+Thử trên một vlog tiếng Việt dài 7 phút 59: VAD tách được **115 đoạn**, trong đó 66
+đoạn dài 1,5–12 s (vừa một câu nói); trung vị 2,0 s, tổng thời lượng có tiếng nói 362 s
+trên 479 s — đúng tỉ lệ nói/nghỉ của hội thoại thật, và cũng là lần đầu VAD được chạy
+trên giọng người thật thay vì sóng tổng hợp.
+
+Phần còn lại — nghe và gõ đúng lời — **không tự động được**. Lấy đầu ra của ASR làm câu
+tham chiếu thì WER luôn ≈ 0% và con số ấy chỉ chứng minh ASR bằng chính nó.
+
+## 7. Còn nợ
 
 - **Chạy thử trên Windows 11**: toàn bộ số ở trên là của máy macOS. Windows cần đo lại
   (đặc biệt: WASAPI loopback, VB-CABLE, và TTS int8 — trên x86 có AVX-VNNI thì bản int8
   của Kokoro nhiều khả năng nhanh hơn fp32, ngược với kết quả trên ARM).
-- **Bộ câu thu bằng giọng người thật** để có WER dùng được cho báo cáo.
-- **Kiểm thử chạy liên tục 60 phút** (tiêu chí nghiệm thu số 14 trong SPEC `01` §18).
+- **Gõ lời cho bộ câu giọng thật** (mục 6 đã cắt sẵn đoạn) để có WER dùng cho báo cáo.
+  Nếu dùng bản ghi của người khác thì ghi rõ nguồn, hoặc thay bằng giọng tự thu.
+- **Chạy `make soak MINUTES=60` với model thật** và đính kết quả vào báo cáo.
 - Kịch bản Google Meet đầy đủ — xem [`09_week7-two-way.md`](09_week7-two-way.md) mục 8.

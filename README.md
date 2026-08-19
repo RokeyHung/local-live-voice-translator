@@ -4,7 +4,9 @@
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
 
-> Tài liệu: [đề cương](docs/00_project-outline.md) · [SPEC](docs/01_spec-realtime-voice-translation.md) · [SPEC Addendum](docs/02_spec-addendum-os-stack-models.md) · ghi chú từng tuần: [T1](docs/03_week1-survey-and-foundation.md) · [T2](docs/04_week2-audio-capture-and-vad.md) · [T3](docs/05_week3-asr.md) · [T4](docs/06_week4-mt.md) · [T5](docs/07_week5-tts.md) · [T6](docs/08_week6-desktop.md) · [T7](docs/09_week7-two-way.md) · [T8](docs/10_week8-experiments.md)
+> **Hướng dẫn dùng:** [cài đặt](docs/12_install-guide.md) · [microphone ảo + Google Meet](docs/13_google-meet-and-virtual-mic.md)
+>
+> **Tài liệu kỹ thuật:** [đề cương](docs/00_project-outline.md) · [SPEC](docs/01_spec-realtime-voice-translation.md) · [SPEC Addendum](docs/02_spec-addendum-os-stack-models.md) · ghi chú từng tuần: [T1](docs/03_week1-survey-and-foundation.md) · [T2](docs/04_week2-audio-capture-and-vad.md) · [T3](docs/05_week3-asr.md) · [T4](docs/06_week4-mt.md) · [T5](docs/07_week5-tts.md) · [T6](docs/08_week6-desktop.md) · [T7](docs/09_week7-two-way.md) · [T8](docs/10_week8-experiments.md) · [bổ sung](docs/11_hardening-history-settings-models.md)
 
 ## Cấu trúc
 
@@ -36,7 +38,13 @@ Các lệnh khác: `make help` để xem đầy đủ.
 | `make test`                     | Chạy pytest cho AI service            |
 | `make lint` / `make format`     | Lint / format cả hai app              |
 | `make health`                   | Gọi thử `GET /health`                 |
+| `make bench`                    | Đo độ trễ từng khâu trên máy này      |
+| `make accuracy`                 | Đo WER/chrF trên bộ câu kiểm thử      |
+| `make soak MINUTES=60`          | Chạy liên tục kiểm tra ổn định        |
+| `make segment MEDIA=x.mov`      | Cắt bản ghi dài thành bộ câu đo WER   |
 | `make clean`                    | Xóa venv, node_modules, build output  |
+
+`make bench` và `make soak` cần AI service **đang chạy** (`make service`) và model đã tải.
 
 ## Chạy thủ công
 
@@ -65,11 +73,11 @@ Cửa sổ Electron sẽ hiển thị trạng thái kết nối REST + WebSocket
 
 ## Dữ liệu trên máy
 
-| Đường dẫn            | Nội dung                                                  | Đổi bằng          |
-| -------------------- | --------------------------------------------------------- | ----------------- |
-| `~/.llvt/models/`    | Model đã tải (whisper.cpp, NLLB, voice TTS, Kokoro tiếng Nhật) | `LLVT_MODELS_DIR` |
-| `~/.llvt/history.db` | Lịch sử phiên: câu gốc, bản dịch, độ trễ                  | `LLVT_DB_PATH`    |
-| `~/.llvt/settings.json` | Tuỳ chọn đổi trong app (thư mục lưu model)             | —                 |
+| Đường dẫn               | Nội dung                                                       | Đổi bằng          |
+| ----------------------- | -------------------------------------------------------------- | ----------------- |
+| `~/.llvt/models/`       | Model đã tải (whisper.cpp, NLLB, voice TTS, Kokoro tiếng Nhật) | `LLVT_MODELS_DIR` |
+| `~/.llvt/history.db`    | Lịch sử phiên: câu gốc, bản dịch, độ trễ                       | `LLVT_DB_PATH`    |
+| `~/.llvt/settings.json` | Tuỳ chọn đổi trong app (thư mục lưu model)                     | —                 |
 
 Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Quyền riêng tư** (hoặc `LLVT_HISTORY_ENABLED=false`); xóa từng phiên hoặc xóa tất cả ở màn **Lịch sử**.
 
@@ -79,4 +87,4 @@ Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Qu
 
 Pipeline chạy **model thật** đầy đủ: VAD (Tuần 2) → ASR (Tuần 3) → MT (Tuần 4) → TTS (Tuần 5), giao diện desktop 8 màn (Tuần 6), dịch hai chiều + microphone ảo + thu âm thanh hệ thống (Tuần 7), đo độ trễ/tài nguyên/độ chính xác (Tuần 8), lịch sử phiên lưu SQLite, TTS đủ bốn ngôn ngữ (tiếng Nhật dùng Kokoro + G2P OpenJTalk vì sherpa-onnx không đọc được tiếng Nhật).
 
-Còn lại: chạy thử thật trong Google Meet và trên Windows 11, và Tuần 9 (báo cáo, đóng gói, video demo).
+Còn lại: chạy thử thật trong Google Meet và trên Windows 11, thu bộ câu bằng giọng người thật cho phép đo độ chính xác, và Tuần 9 (báo cáo, đóng gói, video demo).

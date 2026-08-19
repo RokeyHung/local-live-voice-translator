@@ -8,7 +8,7 @@ Near-real-time, **fully local** speech translation desktop app (đồ án tốt 
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
 
-The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models. Remaining: real Google Meet + Windows 11 runs, and T9 (report, packaging, demo).
+The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models, each with a note in `docs/` (`04`–`10`); `11` covers the post-T8 batch (history, settings, model lifecycle). End-user docs: `12` install, `13` virtual mic + Google Meet. Remaining: real Google Meet + Windows 11 runs, a 60-minute soak with real models, a human-voice accuracy corpus, and T9 (report, packaging, demo).
 
 ## Repository layout
 
@@ -31,6 +31,9 @@ make test      # pytest for ai-service
 make lint      # eslint (desktop) + ruff check (service)
 make format    # sort imports + format BOTH apps (ianvs prettier plugin + ruff isort)
 make health    # curl GET /health
+make bench     # per-stage latency (service must be running)
+make accuracy  # WER/chrF over scripts/accuracy_corpus.json
+make soak MINUTES=60  # long-run stability check (service must be running)
 make clean     # remove .venv, node_modules, build output
 ```
 
@@ -80,7 +83,7 @@ The WebSocket/REST contract is defined twice and MUST stay in sync when changed:
 
 WS envelope is `{ type, ts, payload }`. Message types: client→`session.start` (carries the history `title`)/`session.stop`/`audio.chunk`/`control.ptt`/`control.mute`; server→`state` (carries `sessionId` at session start/stop so the client can point at the right history row)/`asr.partial`/`asr.final`/`mt.result`/`tts.audio`/`metrics`/`error`.
 
-REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers, plus `modelsDir`/`historyDbPath`/`historyEnabled`), `GET|DELETE /api/models` (what's actually on disk with real sizes; DELETE removes only the dirs the app created), `POST /api/models/load` (`?reload=true` rebuilds) and `POST /api/models/unload`, `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
+REST: `GET /health`, `GET|PUT /api/config` (preset + real per-stage model/device from the loaded providers, plus `modelsDir`/`historyDbPath`/`historyEnabled`), `GET|DELETE /api/models` (what's actually on disk with real sizes; DELETE removes only the dirs the app created), `POST /api/models/load` (`?reload=true` rebuilds) and `POST /api/models/unload`, `GET /api/models/progress` (per-stage load/download progress, polled by the UI *while* the blocking load runs), `POST /api/benchmark` (stage latency — always warms models up first), `GET /api/resources` (service process CPU/RSS via psutil).
 
 Settings the user can change from the app (currently `modelsDir`) are written to `~/.llvt/settings.json` by `config/runtime_config.py` and read back as a pydantic-settings source that ranks **below** env vars — `LLVT_MODELS_DIR` wins and the API then returns `modelsDirEditable: false` / 409. Changing `modelsDir` unloads the providers instead of reloading them (the new folder is usually empty, so reloading would download GBs inside the request); `ModelManager.ensure_loaded()` re-loads them when the next session starts.
 
