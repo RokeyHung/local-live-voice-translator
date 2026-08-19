@@ -9,6 +9,7 @@ import type {
   HistorySession,
   HistorySessionDetail,
   InstalledModel,
+  LoadProgress,
   ResourceResponse
 } from '../domain/models'
 
@@ -22,6 +23,8 @@ export interface AiClient {
   setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse>
   // Nạp model vào bộ nhớ (service không nạp lúc khởi động). Có thể mất vài phút lần đầu.
   loadModels(reload?: boolean): Promise<ConfigResponse>
+  // Tiến trình của lượt nạp đang chạy (hỏi song song với loadModels).
+  fetchLoadProgress(): Promise<LoadProgress>
   unloadModels(): Promise<ConfigResponse>
   // Xoá model đã tải để lấy lại dung lượng đĩa.
   deleteInstalledModels(): Promise<DeletedModels>

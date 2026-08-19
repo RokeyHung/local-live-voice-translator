@@ -1,7 +1,7 @@
 // Hook cầu nối: preset đang chạy bên AI service (GET/PUT /api/config).
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
+import type { QueryClient, UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { HttpAiClient } from '../adapters/http-ai-client'
 import type { Language, Preset } from '../domain/enums'
 import type {
@@ -9,11 +9,27 @@ import type {
   ConfigResponse,
   DeletedModels,
   InstalledModel,
+  LoadProgress,
   ResourceResponse
 } from '../domain/models'
 import type { AiClient } from '../ports/ai-client'
 
 const client: AiClient = new HttpAiClient()
+
+const LOAD_PROGRESS_KEY = ['load-progress']
+
+// Lấy ảnh chụp cuối cùng của tiến trình khi lệnh nạp kết thúc.
+//
+// Query tiến trình chỉ bật trong lúc đang nạp, mà react-query giữ lại dữ liệu cũ của
+// query đã tắt — không kéo lần cuối thì bảng đứng hình ở lần hỏi áp chót ("MT đang
+// nạp", "TTS chờ") dù model đã xong. `invalidateQueries` không đủ vì query đang tắt
+// thì không tự chạy lại, nên phải `fetchQuery` thẳng.
+function refreshProgress(queryClient: QueryClient): void {
+  void queryClient.fetchQuery({
+    queryKey: LOAD_PROGRESS_KEY,
+    queryFn: () => client.fetchLoadProgress()
+  })
+}
 
 export function useServiceConfig(): UseQueryResult<ConfigResponse, Error> {
   return useQuery({
@@ -31,7 +47,8 @@ export function useSetPreset(): UseMutationResult<ConfigResponse, Error, Preset>
   return useMutation({
     // Đổi preset khiến service nạp lại model — có thể mất vài giây.
     mutationFn: (preset: Preset) => client.updatePreset(preset),
-    onSuccess: (data) => queryClient.setQueryData(['config'], data)
+    onSuccess: (data) => queryClient.setQueryData(['config'], data),
+    onSettled: () => refreshProgress(queryClient)
   })
 }
 
@@ -57,7 +74,22 @@ export function useLoadModels(): UseMutationResult<ConfigResponse, Error, boolea
     onSuccess: (data) => {
       queryClient.setQueryData(['config'], data)
       void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
-    }
+    },
+    // Cả khi hỏng cũng phải cập nhật: bảng tiến trình là chỗ chỉ ra khâu nào chết.
+    onSettled: () => refreshProgress(queryClient)
+  })
+}
+
+// Tiến trình nạp model. Chỉ hỏi trong lúc đang nạp; nhịp nhanh hơn các query khác vì
+// đây là thứ người dùng đang nhìn chằm chằm, nhưng vẫn chậm hơn chu kỳ lấy mẫu của
+// service (0,5 s) để không hỏi lại cùng một con số.
+export function useLoadProgress(enabled: boolean): UseQueryResult<LoadProgress, Error> {
+  return useQuery({
+    queryKey: LOAD_PROGRESS_KEY,
+    queryFn: () => client.fetchLoadProgress(),
+    refetchInterval: 700,
+    retry: false,
+    enabled
   })
 }
 

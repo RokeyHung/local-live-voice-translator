@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from llvt_ai_service.api.deps import get_container
 from llvt_ai_service.application.container import Container
 from llvt_ai_service.application.installed_models import purge, scan
+from llvt_ai_service.application.load_progress import progress
+from llvt_ai_service.application.model_manager import ModelLoadError
 from llvt_ai_service.config import runtime_config
 from llvt_ai_service.config.settings import get_settings, reload_settings
 from llvt_ai_service.domain.enums import Preset
@@ -18,6 +20,7 @@ from llvt_ai_service.schemas import (
     ConfigUpdate,
     DeletedModels,
     InstalledModelSchema,
+    LoadProgressResponse,
     StageInfoSchema,
 )
 
@@ -149,11 +152,39 @@ async def load_models(
 ) -> ConfigResponse:
     manager = container.model_manager
     preset = manager.preset or get_settings().default_preset
-    if reload:
-        await manager.load_preset(preset)
-    else:
-        await manager.ensure_loaded()
+    try:
+        if reload:
+            await manager.load_preset(preset)
+        else:
+            await manager.ensure_loaded()
+    except ModelLoadError as exc:
+        # Hầu hết trường hợp là mất mạng giữa lúc tải model, hoặc hết chỗ trên đĩa —
+        # lỗi của môi trường chứ không phải của request, nên 503 chứ không phải 500.
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Không nạp được model cho khâu {exc.stage}. Lần đầu cần mạng để tải model — "
+                f"kiểm tra kết nối rồi bấm lại. Chi tiết: {exc.cause}"
+            ),
+        ) from exc
     return _describe(container, preset)
+
+
+@router.get(
+    "/models/progress",
+    response_model=LoadProgressResponse,
+    summary="Tiến trình nạp model",
+    description=(
+        "Trả tiến trình của lượt nạp **đang chạy** — hỏi song song trong lúc "
+        "`POST /api/models/load` còn đang chặn (giao diện hỏi lại mỗi ~0,7 giây).\n\n"
+        "`doneBytes` là số byte **đo được** trên đĩa, không phải ước lượng. Model nào "
+        "không biết dung lượng thì `totalBytes`/`percent` là `null` — giao diện hiện số "
+        "MB đã tải thay vì một phần trăm không có thật. `estimated: true` nghĩa là tổng "
+        "chỉ xấp xỉ."
+    ),
+)
+def models_progress() -> LoadProgressResponse:
+    return LoadProgressResponse(**progress.snapshot())
 
 
 @router.post(

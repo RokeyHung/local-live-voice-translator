@@ -62,6 +62,30 @@ export interface ConfigResponse {
   historyEnabled: boolean
 }
 
+// Tiến trình nạp model (GET /api/models/progress), hỏi trong lúc lệnh nạp đang chạy.
+export type LoadStageStatus = 'waiting' | 'downloading' | 'loading' | 'done' | 'failed'
+
+export interface StageProgress {
+  stage: Stage
+  model: string
+  status: LoadStageStatus
+  // Số byte ĐO ĐƯỢC trên đĩa. `totalBytes`/`percent` là null khi không biết dung lượng
+  // model — giao diện hiện số MB thay vì phần trăm bịa. `estimated` = tổng chỉ xấp xỉ.
+  doneBytes: number
+  totalBytes: number | null
+  estimated: boolean
+  percent: number | null
+  note: string
+}
+
+export interface LoadProgress {
+  active: boolean
+  currentStage: Stage | null
+  overallPercent: number | null
+  error: string | null
+  stages: StageProgress[]
+}
+
 // Kết quả DELETE /api/models.
 export interface DeletedModels {
   removed: string[]

@@ -12,6 +12,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
 from llvt_ai_service.application.container import Container
+from llvt_ai_service.application.model_manager import ModelLoadError
 from llvt_ai_service.application.session_service import SessionController
 from llvt_ai_service.domain import events as ev
 from llvt_ai_service.domain.enums import PipelineState
@@ -67,7 +68,23 @@ async def _dispatch(controller: SessionController, raw: object, emit) -> None:
         return
 
     if msg.type == "session.start":
-        await controller.start(parse_session_config(msg.payload), parse_session_title(msg.payload))
+        try:
+            await controller.start(
+                parse_session_config(msg.payload), parse_session_title(msg.payload)
+            )
+        except ModelLoadError as exc:
+            # Phiên đầu tiên tự nạp model; mất mạng lúc đó mà để lỗi thoát ra đây thì
+            # vòng nhận message chết và client chỉ thấy socket đóng, không biết vì sao.
+            await emit(
+                ev.PipelineError(
+                    code="model_load_failed",
+                    message=(
+                        f"Không nạp được model cho khâu {exc.stage}. Lần đầu cần mạng để "
+                        f"tải model — kiểm tra kết nối rồi bắt đầu lại. Chi tiết: {exc.cause}"
+                    ),
+                )
+            )
+            await emit(ev.StateChanged(PipelineState.error))
     elif msg.type == "session.stop":
         await controller.stop()
     elif msg.type == "control.ptt":

@@ -3,13 +3,14 @@
 
 import { useMemo, useState, type JSX } from 'react'
 import { formatBytes } from '../../application/format'
-import { format } from '../../application/i18n'
+import { format, type Dict } from '../../application/i18n'
 import { MODEL_CATALOG, PRESET_META, STAGE_COLORS } from '../../application/presets'
 import type { Preset } from '../../domain/enums'
-import { PRESETS } from '../../domain/models'
+import { PRESETS, type LoadProgress, type LoadStageStatus } from '../../domain/models'
 import {
   useInstalledModels,
   useLoadModels,
+  useLoadProgress,
   useServiceConfig,
   useSetPreset,
   useUnloadModels
@@ -19,13 +20,87 @@ import { useCompute, useDict } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
-import { Badge, DisabledButton, Notice, ScreenHeader } from '../components/primitives'
+import { Badge, DisabledButton, Meter, Notice, ScreenHeader } from '../components/primitives'
 import { GHOST_BUTTON, INPUT, PRIMARY_BUTTON, SCREEN } from '../styles'
 
 const PRESET_ICON: Record<Preset, IconName> = {
   fast: 'bolt',
   balanced: 'scale',
   quality: 'star'
+}
+
+// Tiến trình nạp model: một dòng cho mỗi khâu + thanh tổng.
+//
+// Con số hiển thị đều là số service ĐO ĐƯỢC (byte đã nằm trên đĩa). Khâu nào không
+// biết dung lượng model thì `percent` là null — hiện số MB đã tải chứ không bịa phần
+// trăm; `estimated` thì kèm dấu ≈ để người đọc biết tổng chỉ là xấp xỉ.
+function LoadProgressPanel({ progress, L }: { progress: LoadProgress; L: Dict }): JSX.Element {
+  const overall = progress.overallPercent ?? 0
+  const statusText: Record<LoadStageStatus, string> = {
+    waiting: L.lpWaiting,
+    downloading: L.lpDownloading,
+    loading: L.lpLoading,
+    done: L.lpDone,
+    failed: L.lpFailed
+  }
+
+  return (
+    <div className="rounded-2xl border border-line bg-(image:--panel) p-4.25 backdrop-blur-xl">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-bold text-fg-2">{L.lpTitle}</div>
+        <div className="font-mono text-sm font-bold text-fg-2">{Math.round(overall)}%</div>
+      </div>
+      <div className="mt-2.5 flex">
+        <Meter value={overall / 100} color="#a855f7" height={10} />
+      </div>
+
+      <div className="mt-3.5 flex flex-col gap-1.5">
+        {progress.stages.map((stage) => {
+          const running = stage.status === 'downloading' || stage.status === 'loading'
+          const color = stage.status === 'failed' ? '#f87171' : STAGE_COLORS[stage.stage]
+          // Byte: "412 MB / ≈2.5 GB" khi biết tổng, ngược lại chỉ "412 MB".
+          const bytes = stage.doneBytes
+            ? stage.totalBytes
+              ? `${formatBytes(stage.doneBytes)} / ${stage.estimated ? '≈' : ''}${formatBytes(stage.totalBytes)}`
+              : formatBytes(stage.doneBytes)
+            : ''
+          return (
+            <div key={stage.stage} className="flex items-center gap-2.5 text-sm">
+              <span
+                className="flex size-5 shrink-0 items-center justify-center"
+                style={{ color: stage.status === 'waiting' ? 'var(--text5)' : color }}
+              >
+                <Icon
+                  name={
+                    stage.status === 'done'
+                      ? 'check-circle'
+                      : stage.status === 'failed'
+                        ? 'warning'
+                        : running
+                          ? 'spinner'
+                          : 'box'
+                  }
+                  size={14}
+                />
+              </span>
+              <span className="w-10 shrink-0 font-mono text-xs font-bold" style={{ color }}>
+                {stage.stage}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-fg-3">{stage.model}</span>
+              {bytes && <span className="shrink-0 font-mono text-xs text-fg-4">{bytes}</span>}
+              <span className="w-24 shrink-0 text-right text-xs text-fg-4">
+                {stage.percent !== null && running
+                  ? `${stage.estimated ? '≈' : ''}${Math.round(stage.percent)}%`
+                  : (stage.note ?? '') || statusText[stage.status]}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="mt-3 text-xs leading-relaxed text-fg-5">{L.lpHint}</div>
+    </div>
+  )
 }
 
 const STAGE_ICON: Record<string, IconName> = {
@@ -73,6 +148,8 @@ export function ModelsScreen(): JSX.Element {
 
   const loadModels = useLoadModels()
   const unloadModels = useUnloadModels()
+  // Chỉ hỏi tiến trình khi đang nạp; hỏi thêm một nhịp sau khi xong để thanh kịp đầy.
+  const loadProgress = useLoadProgress(loadModels.isPending || setPreset.isPending)
 
   const current = config.data?.preset ?? null
   const meta = current ? PRESET_META[current] : null
@@ -184,6 +261,11 @@ export function ModelsScreen(): JSX.Element {
       )}
       {loadModels.isError && (
         <Notice tone="error" icon="warning" title={L.loadFailed} body={loadModels.error.message} />
+      )}
+      {/* Giữ lại bảng sau khi nạp xong để thấy kết quả; giải phóng model thì bỏ đi
+          vì lúc đó nó mô tả một thứ không còn nằm trong bộ nhớ nữa. */}
+      {loadProgress.data && loadProgress.data.stages.length > 0 && (busy || modelsLoaded) && (
+        <LoadProgressPanel progress={loadProgress.data} L={L} />
       )}
 
       {/* preset */}

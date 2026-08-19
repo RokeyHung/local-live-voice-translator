@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 
 from llvt_ai_service.adapters.asr.faster_whisper import FasterWhisperAsr
 from llvt_ai_service.adapters.asr.whisper_cpp import WhisperCppAsr
@@ -16,6 +16,7 @@ from llvt_ai_service.adapters.mt.nllb import NllbTranslator
 from llvt_ai_service.adapters.tts.kokoro_ja import KokoroJaTts
 from llvt_ai_service.adapters.tts.sherpa_onnx import SherpaOnnxTts
 from llvt_ai_service.adapters.vad.silero import SileroVad
+from llvt_ai_service.application.load_progress import progress
 from llvt_ai_service.application.tts_router import LanguageRoutedTts
 from llvt_ai_service.config.presets import PresetConfig, get_preset_config
 from llvt_ai_service.config.settings import get_settings
@@ -61,6 +62,19 @@ TTS_REGISTRY: dict[str, Callable[[PresetConfig], TextToSpeechProvider]] = {
         {Language.ja: KokoroJaTts(models_dir=str(get_settings().models_dir))},
     ),
 }
+
+
+class ModelLoadError(RuntimeError):
+    """Một khâu không nạp được (thường là tải model hỏng vì mất mạng).
+
+    Có kiểu riêng để transport phân biệt được với lỗi lập trình: REST trả 503 và WS
+    gửi event ``error`` kèm lời giải thích, thay vì ném traceback ra ngoài.
+    """
+
+    def __init__(self, stage: str, cause: Exception) -> None:
+        self.stage = stage
+        self.cause = cause
+        super().__init__(f"Không nạp được model cho khâu {stage}: {cause}")
 
 
 @dataclass
@@ -146,8 +160,36 @@ class ModelManager:
             mt=MT_REGISTRY[cfg.mt_adapter](cfg),
             tts=TTS_REGISTRY[cfg.tts_adapter](cfg),
         )
-        for provider in (providers.vad, providers.asr, providers.mt, providers.tts):
-            await provider.load()
+        models_dir = get_settings().models_dir
+        # (khâu, provider, tên model để tra dung lượng, thư mục để đo byte đã tải)
+        plan = (
+            ("VAD", providers.vad, "silero-vad", None, "nằm trong gói cài đặt"),
+            ("ASR", providers.asr, cfg.asr_model, models_dir / "whisper-cpp", ""),
+            ("MT", providers.mt, cfg.mt_model, models_dir / "nllb", ""),
+            # TTS nạp voice lười theo ngôn ngữ (lúc đọc câu đầu tiên), nên khâu này
+            # xong ngay và phần tải voice không nằm trong lượt nạp này.
+            ("TTS", providers.tts, cfg.tts_adapter, None, "voice tải khi đọc câu đầu"),
+        )
+        progress.begin([(stage, model) for stage, _p, model, _d, _n in plan])
+
+        # Nạp lần lượt và nhớ những khâu đã xong: nếu khâu sau hỏng (hay gặp nhất là
+        # mất mạng giữa lúc tải model), phải giải phóng những khâu trước đó. Không thì
+        # chúng nằm lại trong RAM mà không ai tham chiếu tới — whisper.cpp còn giữ cả
+        # context Metal — và lần bấm "Khởi động model" tiếp theo lại nạp thêm một bộ.
+        loaded: list[Any] = []
+        for stage, provider, _model, watch_dir, note in plan:
+            progress.stage_begin(stage, watch_dir)
+            try:
+                await provider.load()
+            except Exception as exc:
+                logger.warning("Nạp khâu %s thất bại: %s", stage, exc)
+                progress.stage_failed(stage, str(exc))
+                for done in loaded:
+                    await done.unload()
+                raise ModelLoadError(stage, exc) from exc
+            progress.stage_done(stage, note)
+            loaded.append(provider)
+        progress.finish()
         self._providers = providers
         self._preset = preset
         logger.info("Loaded preset=%s", preset.value)

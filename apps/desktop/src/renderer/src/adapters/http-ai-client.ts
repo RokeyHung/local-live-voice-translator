@@ -10,6 +10,7 @@ import type {
   HistorySession,
   HistorySessionDetail,
   InstalledModel,
+  LoadProgress,
   ResourceResponse
 } from '../domain/models'
 import type { AiClient } from '../ports/ai-client'
@@ -64,8 +65,19 @@ export class HttpAiClient implements AiClient {
 
   async loadModels(reload = false): Promise<ConfigResponse> {
     const res = await fetch(`${AI_BASE_URL}/api/models/load?reload=${reload}`, { method: 'POST' })
-    if (!res.ok) throw new Error(`Nạp model thất bại: HTTP ${res.status}`)
+    if (!res.ok) {
+      // 503 mang theo khâu nào hỏng và vì sao (hay gặp: mất mạng lúc tải model) —
+      // "HTTP 503" trơ trọi thì người dùng không biết phải làm gì.
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Nạp model thất bại: HTTP ${res.status}`)
+    }
     return (await res.json()) as ConfigResponse
+  }
+
+  async fetchLoadProgress(): Promise<LoadProgress> {
+    const res = await fetch(`${AI_BASE_URL}/api/models/progress`)
+    if (!res.ok) throw new Error(`Không lấy được tiến trình nạp: HTTP ${res.status}`)
+    return (await res.json()) as LoadProgress
   }
 
   async unloadModels(): Promise<ConfigResponse> {

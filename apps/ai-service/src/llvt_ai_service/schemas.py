@@ -49,6 +49,32 @@ class InstalledModelSchema(BaseModel):
     sizeBytes: int
 
 
+class StageProgressSchema(BaseModel):
+    """Tiến trình nạp của một khâu.
+
+    `doneBytes` là số byte ĐO ĐƯỢC trên đĩa. `totalBytes` có thể là `None` khi không
+    biết dung lượng model — lúc đó `percent` cũng `None` và giao diện chỉ hiện số MB,
+    không bịa ra phần trăm. `estimated` = tổng là số xấp xỉ (hiện kèm dấu ≈).
+    """
+
+    stage: str
+    model: str
+    status: str  # waiting | downloading | loading | done | failed
+    doneBytes: int
+    totalBytes: int | None
+    estimated: bool
+    percent: float | None
+    note: str
+
+
+class LoadProgressResponse(BaseModel):
+    active: bool
+    currentStage: str | None
+    overallPercent: float | None
+    error: str | None
+    stages: list[StageProgressSchema]
+
+
 class ConfigUpdate(BaseModel):
     preset: Preset
     # None = giữ nguyên; bật/tắt lưu lịch sử không cần nạp lại model.
