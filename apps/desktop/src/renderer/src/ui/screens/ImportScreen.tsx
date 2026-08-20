@@ -12,10 +12,10 @@
 // pipeline không có khâu diarization, và bịa ra tên người nói thì tệ hơn là không có.
 
 import { useEffect, useRef, useState, type DragEvent, type JSX } from 'react'
-import { AudioFileDecodeError, decodeAudioFile } from '../../adapters/audio-file-decode'
+import { decodeMediaAudio, isVideoFile, MediaDecodeError } from '../../adapters/media-decode'
 import { downloadText, transcriptToSrt, transcriptToTxt } from '../../application/export'
 import { formatBytes, formatDuration } from '../../application/format'
-import { languageName } from '../../application/i18n'
+import { languageName, type Dict } from '../../application/i18n'
 import type { Language } from '../../domain/enums'
 import { LANGUAGES, type TranscriptionResult } from '../../domain/models'
 import { useServiceConfig } from '../../hooks/use-config'
@@ -37,6 +37,7 @@ type JobStatus = 'pending' | 'decoding' | 'running' | 'done' | 'failed' | 'cance
 interface ImportJob {
   id: string
   file: File
+  video: boolean // tệp video → hiện nhãn VIDEO và pha "đang tách audio"
   status: JobStatus
   error?: string
   durationMs?: number // biết được sau khi giải mã
@@ -59,6 +60,16 @@ const STATUS_ICON: Record<JobStatus, IconName> = {
   done: 'check-circle',
   failed: 'warning',
   cancelled: 'x'
+}
+
+/** Lỗi giải mã có nguyên nhân rõ ràng thì nói thẳng phải làm gì, không nói chung chung. */
+function describeError(error: unknown, L: Dict): string {
+  if (error instanceof MediaDecodeError) {
+    if (error.reason === 'unsupported-container') return L.impBadContainer
+    if (error.reason === 'too-large') return L.impTooLarge
+    return L.impDecodeFailed
+  }
+  return (error as Error).message || L.queueError
 }
 
 export function ImportScreen(): JSX.Element {
@@ -113,7 +124,9 @@ export function ImportScreen(): JSX.Element {
     cancelledRef.current = false
     patch(job.id, { status: 'decoding', error: undefined, result: undefined })
     try {
-      const decoded = await decodeAudioFile(job.file)
+      // Với video, bước này là "tách audio": Chromium demux container và chỉ lấy
+      // track tiếng — không cần ffmpeg hay công cụ ngoài nào.
+      const decoded = await decodeMediaAudio(job.file)
       // Giải mã không dừng ngang được; bấm Huỷ trong lúc đó thì dừng trước khi gửi đi.
       if (cancelledRef.current) {
         patch(job.id, { status: 'cancelled' })
@@ -128,13 +141,7 @@ export function ImportScreen(): JSX.Element {
       // Huỷ vẫn trả về phần đã chạy được — giữ nguyên để người dùng đọc/xuất được.
       patch(job.id, { status: result.cancelled ? 'cancelled' : 'done', result })
     } catch (error) {
-      patch(job.id, {
-        status: 'failed',
-        error:
-          error instanceof AudioFileDecodeError
-            ? L.impDecodeFailed
-            : ((error as Error).message ?? L.queueError)
-      })
+      patch(job.id, { status: 'failed', error: describeError(error, L) })
     } finally {
       cancelledRef.current = false
     }
@@ -177,6 +184,7 @@ export function ImportScreen(): JSX.Element {
     const added: ImportJob[] = Array.from(files).map((file) => ({
       id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
       file,
+      video: isVideoFile(file),
       status: 'pending'
     }))
     setJobs((prev) => [...prev, ...added])
@@ -203,6 +211,11 @@ export function ImportScreen(): JSX.Element {
     failed: L.queueError,
     cancelled: L.queueCancelled
   }
+
+  // Với video, pha giải mã chính là lúc tách audio ra khỏi container — gọi đúng tên
+  // để người dùng biết máy đang làm gì (bản thiết kế có nhãn riêng cho pha này).
+  const jobStatusLabel = (job: ImportJob): string =>
+    job.status === 'decoding' && job.video ? L.phaseExtract : statusLabel[job.status]
 
   const transcriptText = (job: ImportJob): string =>
     format === 'srt'
@@ -277,11 +290,13 @@ export function ImportScreen(): JSX.Element {
         {!historyEnabled && <span className="text-sm text-fg-4">{L.impHistoryOff}</span>}
       </div>
 
+      {/* Danh sách theo bản thiết kế, trừ những container Chromium không demux được
+          (avi/flv/wmv/mpeg/ts) — mời chọn rồi mới báo lỗi thì tệ hơn là không mời. */}
       <input
         ref={inputRef}
         type="file"
         multiple
-        accept=".mp3,.wav,.m4a,.flac,.ogg,.webm,.opus"
+        accept=".mp3,.wav,.m4a,.flac,.ogg,.webm,.opus,.mp4,.mov,.mkv,.m4v,.3gp"
         className="hidden"
         onChange={(e) => {
           addFiles(e.target.files)
@@ -367,8 +382,16 @@ export function ImportScreen(): JSX.Element {
                       <Icon name={STATUS_ICON[job.status]} size={16} spin={running} />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate-1 font-mono text-md font-semibold">
-                        {job.file.name}
+                      <div className="flex items-center gap-1.75">
+                        <span className="truncate-1 min-w-0 font-mono text-md font-semibold">
+                          {job.file.name}
+                        </span>
+                        {job.video && (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[rgba(45,212,191,.14)] px-1.5 py-0.5 text-3xs font-bold tracking-[0.4px] text-[#2dd4bf]">
+                            <Icon name="video" size={10} strokeWidth={2.4} />
+                            {L.videoBadge}
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-fg-4">
                         {formatBytes(job.file.size)}
@@ -381,8 +404,8 @@ export function ImportScreen(): JSX.Element {
                     <span className="shrink-0 text-sm font-semibold" style={{ color }}>
                       {/* Đang chạy thì gắn luôn % vào nhãn, như bản thiết kế. */}
                       {job.status === 'running' && progress.data?.percent != null
-                        ? `${statusLabel[job.status]} ${Math.round(progress.data.percent)}%`
-                        : statusLabel[job.status]}
+                        ? `${jobStatusLabel(job)} ${Math.round(progress.data.percent)}%`
+                        : jobStatusLabel(job)}
                     </span>
 
                     {/* Huỷ giữa chừng vẫn có bản ghi dở — vẫn chép/tải được. */}

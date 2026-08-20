@@ -1,4 +1,4 @@
-# Nhập tệp âm thanh — chuyển tệp có sẵn thành văn bản
+# Nhập tệp — chuyển audio/video có sẵn thành văn bản
 
 **Giai đoạn:** ngoài lịch tuần · **Hiện thực:** 20/08/2026
 **Mục tiêu:** trả nốt màn "Nhập tệp" — màn duy nhất trong bản thiết kế còn ở trạng
@@ -29,20 +29,45 @@ kiểu ghi lịch sử. Đổi adapter ASR/MT thì màn này hưởng luôn, kh�
 
 ## 2. Giải mã tệp đặt ở desktop, không đặt ở service
 
-Người dùng thả vào MP3, M4A, WebM… còn pipeline chỉ ăn PCM 16-bit mono 16 kHz. Chỗ
-giải mã có hai lựa chọn:
+Người dùng thả vào MP3, M4A, WebM, **và cả tệp video quay màn hình cuộc họp**, còn
+pipeline chỉ ăn PCM 16-bit mono 16 kHz. Chỗ giải mã có hai lựa chọn:
 
 | Phương án                            | Đánh giá                                                                                                                         |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
 | ffmpeg trong service                 | Phải đóng gói thêm binary cho cả Windows và macOS, hoặc bắt người dùng tự cài — trái với mục tiêu "cài một lần là chạy offline". |
-| **Web Audio của Chromium (đã chọn)** | Electron đã có sẵn bộ giải mã MP3/WAV/M4A/FLAC/OGG/WebM/Opus. Không thêm phụ thuộc nào, vẫn chạy hoàn toàn cục bộ.               |
+| **Web Audio của Chromium (đã chọn)** | Electron có sẵn bộ giải mã cho cả tệp audio lẫn container video thông dụng. Không thêm phụ thuộc nào, vẫn chạy hoàn toàn cục bộ. |
 
-`adapters/audio-file-decode.ts` dùng `OfflineAudioContext(1, 1, 16000)` — `decodeAudioData`
+`adapters/media-decode.ts` dùng `OfflineAudioContext(1, 1, 16000)` — `decodeAudioData`
 resample thẳng về tần số của context, nên chỉ còn phải trộn kênh về mono và đổi
 Float32 → Int16. Body gửi lên vì thế là PCM thô, đúng định dạng nội bộ của pipeline.
 
 Service vẫn nhận được **WAV PCM 16-bit** (trộn mono + resample bằng nội suy tuyến tính)
 để gọi bằng `curl` khi kiểm thử vẫn tiện; định dạng nén thì không, và đó là chủ ý.
+
+### 2.1. Tách audio từ video — không cần thêm công cụ nào
+
+`decodeAudioData` demux luôn cả container video và chỉ lấy track tiếng, nên "tệp video
+→ văn bản" dùng đúng đường đã có. Đo thật trên Electron 39 (macOS arm64) bằng tệp dựng
+sẵn cho từng container, không phỏng đoán theo tài liệu:
+
+| Container                              | Kết quả                            |
+| -------------------------------------- | ---------------------------------- |
+| mp3, m4a, wav, flac, ogg               | ✅ đọc được                        |
+| webm (vp8 + opus)                      | ✅                                 |
+| **mp4 / mov / m4v / 3gp** (h264 + aac) | ✅ tách được tiếng từ tệp có video |
+| **mkv** (h264 + aac, và h264 + opus)   | ✅                                 |
+| avi (mpeg4 + mp3), mpeg-ts, flv, wmv   | ❌ Chromium không có demuxer       |
+| mp4 chỉ có hình, không có track tiếng  | ❌ (báo lỗi riêng)                 |
+
+Nhóm hỏng đều là định dạng cũ, trong khi Google Meet, Zoom và OBS đều xuất ra
+mp4/mkv/webm — nên **không** đóng gói `ffmpeg.wasm` (~30 MB) hay binary ffmpeg chỉ để
+cứu vài định dạng hiếm. Thay vào đó `accept` của hộp chọn tệp chỉ liệt kê những đuôi
+đọc được, và nếu người dùng vẫn kéo thả tệp lạ vào thì lỗi nói thẳng phải làm gì
+("chuyển sang MP4 hoặc MKV"), tách khỏi trường hợp "video không có track tiếng".
+
+Chromium chỉ trả đúng một câu lỗi `Unable to decode audio data` cho mọi trường hợp,
+nên `media-decode.ts` phân loại theo đuôi tệp — cách duy nhất phân biệt được hai
+nguyên nhân mà không phải tự viết bộ đọc container.
 
 ## 3. Tiến trình đo bằng vị trí trong tệp
 
@@ -100,6 +125,8 @@ Màn này lấy nguyên bố cục từ dự án Claude Design của đồ án: 
 icon + nút gradient "Chọn tệp"), rồi **hàng đợi xử lý một cột** — mỗi tệp một dòng có
 tên, dung lượng, thời lượng, trạng thái, thanh tiến trình lúc đang chạy, và bản ghi tự
 mở ngay bên trong dòng khi xong. Thả tệp vào là chạy luôn, không có nút "bắt đầu" riêng.
+Tệp video mang thêm nhãn `VIDEO` và pha giải mã của nó được gọi đúng tên: "Đang tách
+audio".
 
 Bốn chỗ lệch so với mockup, đều có lý do:
 

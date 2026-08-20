@@ -266,6 +266,8 @@ export interface Dict {
   queuePendingN: string
   queuePending: string
   queueDecoding: string
+  phaseExtract: string
+  videoBadge: string
   queueProcessing: string
   queueOk: string
   queueError: string
@@ -289,6 +291,8 @@ export interface Dict {
   impSaved: string
   impHistoryOff: string
   impDecodeFailed: string
+  impBadContainer: string
+  impTooLarge: string
   impNoSpeech: string
   impSegments: string
   impLoadHint: string
@@ -563,15 +567,18 @@ const vi: Dict = {
   aboutBuild: 'AI service',
   aboutPlatform: 'Nền tảng',
 
-  importSub: 'Chuyển tệp âm thanh thành văn bản (transcription).',
-  dropTitle: 'Kéo & Thả tệp âm thanh',
-  dropSub: 'Hỗ trợ MP3, WAV, M4A, FLAC, OGG, WebM, Opus — nhiều tệp cùng lúc',
+  importSub: 'Chuyển tệp audio hoặc video thành văn bản.',
+  dropTitle: 'Kéo & Thả tệp Audio / Video',
+  dropSub:
+    'Hỗ trợ MP3, WAV, M4A, FLAC, OGG, WebM, Opus · và MP4, MOV, MKV, 3GP (tự tách audio) — nhiều tệp cùng lúc',
   browseFiles: 'Chọn tệp',
   queueTitle: 'Hàng đợi xử lý',
   queueDone: 'xong',
   queuePendingN: 'chờ',
   queuePending: 'Trong hàng đợi',
   queueDecoding: 'Đang giải mã…',
+  phaseExtract: 'Đang tách audio',
+  videoBadge: 'VIDEO',
   queueProcessing: 'Đang xử lý…',
   queueOk: 'Hoàn tất',
   queueError: 'Lỗi',
@@ -594,7 +601,11 @@ const vi: Dict = {
   impSave: 'Lưu vào lịch sử',
   impSaved: 'đã lưu vào Lịch sử',
   impHistoryOff: 'Lưu lịch sử đang tắt ở màn Cài đặt.',
-  impDecodeFailed: 'Không giải mã được tệp — định dạng này máy không đọc được.',
+  impDecodeFailed:
+    'Không lấy được tiếng từ tệp — tệp có thể không có track âm thanh, hoặc bị hỏng.',
+  impBadContainer:
+    'Định dạng container này máy không đọc được (AVI, WMV, FLV, MPEG-TS). Hãy chuyển sang MP4 hoặc MKV rồi thử lại.',
+  impTooLarge: 'Tệp lớn hơn 2 GB — hãy cắt ngắn hoặc nén lại trước khi nhập.',
   impNoSpeech: 'Không tìm thấy giọng nói nào trong tệp.',
   impSegments: 'đoạn',
   impLoadHint: 'Model được nạp trước khi chạy tệp đầu tiên; lần đầu có thể mất vài phút.',
@@ -873,15 +884,18 @@ const en: Dict = {
   aboutBuild: 'AI service',
   aboutPlatform: 'Platform',
 
-  importSub: 'Turn audio files into text transcriptions.',
-  dropTitle: 'Drag & drop audio files',
-  dropSub: 'Supports MP3, WAV, M4A, FLAC, OGG, WebM, Opus — multiple files OK',
+  importSub: 'Turn audio or video files into text.',
+  dropTitle: 'Drag & drop audio / video',
+  dropSub:
+    'Supports MP3, WAV, M4A, FLAC, OGG, WebM, Opus · and MP4, MOV, MKV, 3GP (audio extracted automatically) — multiple files OK',
   browseFiles: 'Choose files',
   queueTitle: 'Processing queue',
   queueDone: 'done',
   queuePendingN: 'queued',
   queuePending: 'In queue',
   queueDecoding: 'Decoding…',
+  phaseExtract: 'Extracting audio',
+  videoBadge: 'VIDEO',
   queueProcessing: 'Processing…',
   queueOk: 'Completed',
   queueError: 'Failed',
@@ -904,7 +918,11 @@ const en: Dict = {
   impSave: 'Save to history',
   impSaved: 'saved to History',
   impHistoryOff: 'History saving is off in Settings.',
-  impDecodeFailed: 'Could not decode this file — the format is not readable on this machine.',
+  impDecodeFailed:
+    'Could not get audio out of this file — it may have no audio track, or be corrupt.',
+  impBadContainer:
+    'This container is not readable on this machine (AVI, WMV, FLV, MPEG-TS). Convert it to MP4 or MKV and try again.',
+  impTooLarge: 'The file is larger than 2 GB — trim or re-encode it before importing.',
   impNoSpeech: 'No speech found in this file.',
   impSegments: 'segments',
   impLoadHint: 'Models load before the first file; the first run can take a few minutes.',

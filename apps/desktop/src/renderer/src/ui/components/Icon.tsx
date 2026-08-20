@@ -18,6 +18,7 @@ export type IconName =
   | 'upload'
   | 'download'
   | 'copy'
+  | 'video'
   | 'swap'
   | 'play'
   | 'pause'
@@ -127,6 +128,12 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />
+    </>
+  ),
+  video: (
+    <>
+      <polygon points="23 7 16 12 23 17 23 7" />
+      <rect x="1" y="5" width="15" height="14" rx="2" />
     </>
   ),
   copy: (
