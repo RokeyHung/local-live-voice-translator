@@ -1,0 +1,5 @@
+# Áp dụng cho tài liệu Markdown ngoài apps/ (docs/, README.md…).
+# apps/desktop có .prettierrc.yaml riêng và được ưu tiên cho mã nguồn.
+printWidth: 100
+singleQuote: true
+proseWrap: preserve

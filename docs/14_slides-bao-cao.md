@@ -1,0 +1,268 @@
+---
+marp: true
+theme: default
+paginate: true
+size: 16:9
+header: 'Dịch giọng nói gần thời gian thực bằng AI chạy cục bộ'
+footer: 'Ngô Mạnh Hùng – 24410300 · CBHD: ThS. Nguyễn Thành Luân'
+---
+
+<!-- Xuất file: npx @marp-team/marp-cli docs/14_slides-bao-cao.md -o slides.pdf (thêm --pptx nếu cần PowerPoint) -->
+
+<!-- _paginate: false -->
+<!-- _header: '' -->
+
+# Xây dựng hệ thống dịch giọng nói đa ngôn ngữ gần thời gian thực bằng mô hình AI chạy cục bộ
+
+**Sinh viên:** Ngô Mạnh Hùng – 24410300 (Đào tạo từ xa)
+**CBHD:** ThS. Nguyễn Thành Luân
+**Thời gian:** 16/07/2026 – 23/09/2026
+
+Báo cáo ý tưởng · hiện trạng · các điểm cần thầy cho ý kiến
+
+---
+
+## 1. Vấn đề
+
+- Họp/học trực tuyến xuyên ngôn ngữ ngày càng phổ biến (Meet, Teams, Zoom).
+- Giải pháp dịch giọng nói hiện nay **chủ yếu chạy trên cloud**:
+  - phụ thuộc Internet ổn định,
+  - phát sinh chi phí theo phút,
+  - **toàn bộ nội dung cuộc họp phải rời khỏi máy người dùng** → rủi ro riêng tư với họp nội bộ, y tế, pháp lý.
+- Câu hỏi của đề tài: **một chiếc laptop cá nhân hiện nay có đủ sức chạy trọn pipeline dịch giọng nói không, và độ trễ có chấp nhận được để nói chuyện không?**
+
+---
+
+## 2. Ý tưởng
+
+Ứng dụng desktop demo, **dịch giọng nói hai chiều ngay trong Google Meet**, mọi xử lý AI chạy **cục bộ trên máy** — không gọi API cloud trong lúc phiên dịch.
+
+| Chiều               | Luồng                                                 | Đầu ra                                                   |
+| ------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
+| **Nghe** (incoming) | Âm thanh hệ thống (tiếng đối phương) → VAD → ASR → MT | **Phụ đề song ngữ** trên màn hình                        |
+| **Nói** (outgoing)  | Microphone → VAD → ASR → MT → TTS                     | Giọng đã dịch đẩy vào **microphone ảo** → Meet nghe thấy |
+
+Ngôn ngữ: **tiếng Việt ↔ Anh / Nhật / Trung** (6 chiều dịch).
+Nền tảng: **Windows 11 x64** và **macOS 13+ Apple Silicon**.
+
+---
+
+## 3. Phạm vi — và những gì cố ý **không** làm
+
+**Có làm**
+
+- Pipeline VAD → ASR → MT → TTS → định tuyến âm thanh, chạy hoàn toàn local.
+- Thu đồng thời mic + âm thanh hệ thống, chống vòng lặp âm thanh.
+- Ứng dụng desktop có màn thiết lập thiết bị, phụ đề, lịch sử, chẩn đoán.
+
+**Không làm** (đã chốt trong đề cương)
+
+- Không đề xuất mô hình/thuật toán AI mới — đề tài là **tích hợp hệ thống**.
+- Không dịch đồng thời theo từng từ; đơn vị xử lý là **một đoạn phát ngôn** sau khi người nói ngắt câu.
+- Không voice cloning, không giữ giọng người nói, không tách nhiều người nói (diarization).
+- Không tự viết driver âm thanh — dùng **BlackHole** (macOS) / **VB-CABLE** (Windows).
+- **Không đọc bản dịch ra loa cho chính người dùng nghe** — người dùng đọc phụ đề; TTS
+  chỉ dùng để đưa giọng đã dịch vào cuộc họp qua microphone ảo.
+
+---
+
+## 4. Pipeline xử lý
+
+```
+Chiều NÓI — mình nói, phía bên kia nghe thấy bản dịch
+  Microphone ─► VAD ─► ASR ─► MT ─► TTS ─► Microphone ảo ─► Google Meet
+                Silero  whisper  NLLB  sherpa-onnx
+                        .cpp     -200   / Kokoro
+                          │       │
+                          └───────┴──► Phụ đề (UI)
+
+Chiều NGHE — đối phương nói, mình đọc phụ đề
+  Âm thanh hệ thống ─► VAD ─► ASR ─► MT ─► Phụ đề song ngữ (UI)
+```
+
+- **VAD** cắt câu theo khoảng lặng → quyết định khi nào một "utterance" kết thúc.
+- **Đầu ra cho người dùng là văn bản.** Ứng dụng **không phát tiếng ra loa/tai nghe** —
+  người dùng vẫn nghe giọng gốc từ Meet và **đọc phụ đề song ngữ**.
+- TTS chỉ xuất hiện ở **một chỗ duy nhất**: đẩy giọng đã dịch vào **microphone ảo** cho
+  phía bên kia nghe. Người nói không cần nghe lại bản dịch của chính mình.
+- Không phát ra loa còn tránh một lỗi thật: tiếng TTS ra loa sẽ bị **loopback thu ngược**
+  vào chiều nghe → hệ thống tự dịch lại chính mình.
+
+---
+
+## 5. Lựa chọn mô hình và lý do
+
+| Khâu | Mô hình / runtime                                 | Vì sao chọn                                                                                                   |
+| ---- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| VAD  | **Silero VAD**                                    | Nhẹ (~1 MB), chạy CPU, độ trễ vài chục ms                                                                     |
+| ASR  | **Whisper large-v3-turbo q5** qua **whisper.cpp** | Đa ngôn ngữ sẵn, bản lượng tử hoá chạy được trên máy cá nhân, tăng tốc Metal/CUDA                             |
+| MT   | **NLLB-200 distilled 600M**                       | Phủ đủ 6 chiều dịch trong **một** mô hình duy nhất                                                            |
+| TTS  | **sherpa-onnx** (vi/en/zh) + **Kokoro ONNX** (ja) | Chạy ONNX offline; sherpa-onnx **không có front-end tiếng Nhật dùng được** → phải ghép Kokoro + G2P OpenJTalk |
+
+> Bài học rút ra: khâu tưởng dễ nhất (TTS) lại là khâu duy nhất phải đổi kiến trúc giữa chừng.
+
+---
+
+## 6. Kiến trúc tổng thể — hai tiến trình
+
+```
+┌──────────────────────────┐                      ┌──────────────────────────┐
+│ apps/desktop  (Electron) │  REST — cấu hình,    │ apps/ai-service (Python) │
+│ React + TypeScript       │◄─── model, lịch sử,─►│ FastAPI + SQLite         │
+│                          │      đo đạc          │                          │
+│ • Giao diện, phụ đề      │                      │ • VAD / ASR / MT / TTS   │
+│ • Thu mic + system audio │  WebSocket /ws       │ • Vòng đời model         │
+│ • Định tuyến ra mic ảo   │◄─── audio.chunk ────►│ • Lịch sử + đo đạc       │
+│                          │     asr / mt / tts   │                          │
+└──────────────────────────┘                      └──────────────────────────┘
+              chỉ lắng nghe trên 127.0.0.1 — không mở ra LAN
+```
+
+**Vì sao tách làm hai tiến trình thay vì gói hết vào Electron:**
+
+- Hệ sinh thái model AI (pywhispercpp, transformers, sherpa-onnx, Silero) **chỉ có ở Python**; còn thu âm thanh hệ thống, chọn thiết bị và đẩy ra mic ảo lại là thứ **Electron/Chromium làm sẵn**.
+- Model chiếm ~2 GB RAM và chặn CPU hàng giây — để chung tiến trình thì **giao diện đơ** mỗi lần dịch một câu.
+- Service chết thì cửa sổ ứng dụng vẫn sống để báo lỗi, và khởi động lại được.
+
+**Giá phải trả (nói thẳng trong báo cáo):** đóng gói hai runtime, và **hợp đồng giao tiếp bị định nghĩa hai lần** (Python + bản sao TypeScript) → phải giữ đồng bộ thủ công.
+
+---
+
+## 7. Cả hai app dùng Hexagonal (Ports & Adapters)
+
+```
+        adapters ──────► ports ◄────── application ──────► domain
+       (hạ tầng:        (interface     (pipeline,          (dataclass
+     whisper.cpp,        ABC cho        ModelManager,       thuần, không
+     NLLB, sherpa,       4 khâu +       SessionService)     import gì)
+     SQLite)             repository)          ▲
+                                              │
+                              transport ──────┘
+                             (REST + WebSocket, rất mỏng)
+```
+
+**Một quy tắc duy nhất: phụ thuộc luôn hướng vào trong.**
+`domain` không import gì · `application` chỉ biết `ports` + `domain` · `adapters` và `transport` là vòng ngoài, thay được.
+
+| Tầng           | Vai trò                                       | Ví dụ trong đề tài                          |
+| -------------- | --------------------------------------------- | ------------------------------------------- |
+| `domain/`      | Dữ liệu + sự kiện thuần                       | `Utterance`, `PipelineEvent`                |
+| `ports/`       | Hợp đồng trừu tượng                           | `SpeechToTextProvider`, `SessionRepository` |
+| `application/` | Nghiệp vụ, **không biết model nào đang chạy** | `TranslationPipeline`, `ModelManager`       |
+| `adapters/`    | Bản hiện thực cụ thể                          | `asr/whisper_cpp.py`, `tts/kokoro_ja.py`    |
+
+---
+
+## 8. Kiến trúc này đã "trả lãi" ở đâu
+
+Không phải vẽ cho đẹp — ba tình huống có thật trong quá trình làm:
+
+1. **TTS tiếng Nhật hỏng giữa Tuần 5.** sherpa-onnx không có front-end tiếng Nhật dùng được → viết thêm adapter Kokoro, rồi đặt một `LanguageRoutedTts` (cũng hiện thực đúng port TTS) để chọn engine theo ngôn ngữ đích. **Pipeline không sửa một dòng** — nó vẫn chỉ thấy một provider.
+
+2. **Yêu cầu riêng tư "tắt lưu lịch sử".** Hiện thực bằng `HistoryPolicy` bọc quanh repository thật: tắt thì lệnh ghi thành no-op, đọc/xoá vẫn chạy. Chính sách nằm ở `application` vì **adapter biết _cách_ lưu, không có quyền biết _có được phép_ lưu**.
+
+3. **Kiểm thử không cần model thật.** Test thay adapter bằng provider giả → **88 test chạy vài giây**, máy CI không phải tải 4 GB model.
+
+→ Đổi backend (ví dụ sang MLX Whisper cho nhanh hơn trên Apple Silicon): **1 adapter mới + 1 dòng đăng ký + 1 dòng preset**. Không đụng pipeline, không đụng UI. Đây là điểm em muốn nhấn trong báo cáo, vì nó chính là phần "đóng góp kỹ thuật" của một đề tài tích hợp hệ thống.
+
+---
+
+## 9. Hiện trạng (1/2) — pipeline và âm thanh
+
+**Pipeline dịch — chạy bằng model thật, không có mock**
+
+- ✅ Cắt câu bằng **Silero VAD** theo khoảng lặng, có giới hạn độ dài tối đa một câu.
+- ✅ **ASR** whisper.cpp `large-v3-turbo-q5`, tăng tốc Metal; nhận cả 4 ngôn ngữ.
+- ✅ **MT** NLLB-200 distilled 600M — chạy được **đủ 6 chiều** vi ↔ en / ja / zh.
+- ✅ **TTS** 4 ngôn ngữ: sherpa-onnx (vi/en/zh) + Kokoro & OpenJTalk (ja).
+- ✅ Ba **preset Fast / Balanced / Quality**, đổi được ngay lúc đang chạy.
+
+**Âm thanh hai chiều**
+
+- ✅ Thu **đồng thời** microphone và âm thanh hệ thống (ScreenCaptureKit trên macOS, WASAPI loopback trên Windows).
+- ✅ Đẩy giọng đã dịch vào **microphone ảo** (BlackHole / VB-CABLE) để Meet nhận như một micro.
+- ✅ **Push-to-talk** + mute; nhả phím giữa câu thì câu đang nói dở vẫn được chốt và dịch nốt.
+- ✅ **Chặn vòng lặp âm thanh**: trong lúc TTS đang phát thì khung âm thanh hệ thống bị bỏ qua.
+- ⬜ Chạy thật trong một cuộc Google Meet có người thứ hai — **việc duy nhất còn thiếu ở phần này**.
+
+---
+
+## 10. Hiện trạng (2/2) — ứng dụng và công cụ đo
+
+**Ứng dụng desktop — 6 màn hình hoạt động**
+
+> Thiết lập thiết bị · Phiên dịch + phụ đề song ngữ · Quản lý model · Lịch sử · Chẩn đoán · Cài đặt
+
+- ✅ **Nạp model theo yêu cầu**: mở ứng dụng mất **0,4 s** thay vì 45 s; có thanh tiến trình đo bằng **số byte thật trên đĩa** trong lúc tải.
+- ✅ **Lịch sử phiên** lưu SQLite: tìm kiếm theo tiêu đề và nội dung câu, đổi tên, xoá từng phiên hoặc xoá sạch; **tắt được việc lưu** (quyền riêng tư).
+- ✅ **Đổi thư mục lưu model** và **xoá model đã tải** ngay trong ứng dụng.
+- ✅ Giao diện **song ngữ Việt/Anh**, chạy được trên cả macOS và Windows.
+
+**Công cụ đo đạc và kiểm thử**
+
+- ✅ API đo **độ trễ từng khâu** VAD/ASR/MT/TTS + **CPU/RAM** của tiến trình service.
+- ✅ Script đo **WER (ASR)** và **chrF (MT)**; script **chạy liên tục nhiều giờ**; script **cắt đoạn** từ bản ghi dài để làm bộ câu kiểm thử.
+- ✅ **88 test tự động** (4 skipped), typecheck và lint sạch trên cả hai app.
+
+---
+
+## 11. Số đo thực tế (MacBook Apple Silicon, preset Balanced, audio vào 3 giây)
+
+| Chiều dịch | VAD | ASR  | MT  | TTS | **Tổng**    |
+| ---------- | --- | ---- | --- | --- | ----------- |
+| vi → en    | 46  | 1060 | 569 | 141 | **1819 ms** |
+| en → vi    | 46  | 991  | 579 | 148 | **1766 ms** |
+| vi → ja    | 48  | 1056 | 460 | 772 | **2338 ms** |
+| vi → zh    | 46  | 1038 | 558 | 969 | **2613 ms** |
+
+- vi→en: **1,8 s cho 3 giây tiếng nói ≈ 0,6× thời gian thực** → pipeline theo kịp người nói.
+- **ASR là khâu nặng nhất**; TTS ja/zh đắt gấp 5–7 lần Piper → chỗ tối ưu đầu tiên.
+- RAM: **~2 GB RSS** khi đã nạp đủ whisper + NLLB + 4 giọng.
+- Mọi số đều đo **sau warm-up**; đo nguội cho 34,7 s (gồm cả thời gian nạp model).
+
+---
+
+## 12. Nguyên tắc đã giữ xuyên suốt
+
+- **Không hiển thị số bịa.** Thà để trống hoặc ghi "chưa hỗ trợ" còn hơn hiện giá trị chép tay — mọi ô trên màn Chẩn đoán đều đến từ một endpoint đo thật.
+- **Tách nguồn số liệu.** WER đo trên câu tham chiếu do người gõ; bản dịch sinh từ câu gốc chứ không từ transcript, để lỗi ASR không cộng dồn vào điểm MT.
+- **Offline là offline thật.** Trang tài liệu API cũng phải nhúng sẵn asset, vì bản mặc định tải từ CDN sẽ trắng trang trên máy không mạng.
+- **Riêng tư mặc định.** Chỉ lưu văn bản + số đo, **không lưu file âm thanh**; có công tắc tắt hẳn việc lưu lịch sử.
+
+---
+
+## 13. Còn lại phải làm
+
+| Việc                                                          | Cản trở                                                                              |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Chạy thật trong **Google Meet** (2 người, mic ảo, chống loop) | Cần máy thật + người thứ hai                                                         |
+| Đo lại toàn bộ trên **Windows 11**                            | Chưa có máy Windows để đo                                                            |
+| **Soak 60 phút** với model thật                               | Cần một máy rảnh 1 giờ (script đã sẵn)                                               |
+| **Bộ câu giọng người thật** để WER dùng được cho báo cáo      | Đã cắt sẵn 115 đoạn từ bản ghi 8 phút; phần **gõ lời tham chiếu không tự động được** |
+| **T9**: báo cáo, đóng gói cài đặt, video demo                 | Tuần 10/09 – 23/09                                                                   |
+
+> Số WER 12,5% / chrF 53,4% hiện có là chế độ **round-trip qua TTS** — em chủ động **không** đưa vào báo cáo như kết quả chính, vì giọng máy sạch nên WER lạc quan hơn thực tế.
+
+---
+
+## 14. Câu hỏi cần thầy hỗ trợ
+
+1. **Đánh giá đến đâu là đủ?** Quy mô bộ câu kiểm thử, có bắt buộc BLEU/COMET và MOS không?
+2. **Nguồn giọng thật:** tự thu / nhờ người quen / dùng Common Voice — thầy khuyên hướng nào?
+3. **Máy Windows 11** để đo đối chứng — có mượn được từ khoa/lab không?
+4. **Ngưỡng "đạt"** cho độ trễ gần thời gian thực: ~1,8–2,6 s/câu có được xem là đạt?
+5. **Demo bảo vệ:** chạy live trong Meet hay video quay sẵn?
+6. **Giấy phép NLLB-200 (CC-BY-NC-4.0)** — dùng cho đồ án học thuật cần ghi chú thế nào?
+7. **Trọng tâm báo cáo:** nghiêng về kiến trúc hệ thống hay về phần mô hình AI?
+8. **Cách trích dẫn TranscriptionSuite** (nguồn tham khảo kiến trúc) cho đúng mực.
+
+→ Chi tiết từng câu kèm phương án em đề xuất: `docs/15_cau-hoi-can-thay-ho-tro.md`
+
+---
+
+<!-- _paginate: false -->
+
+## Em xin cảm ơn thầy
+
+**Ngô Mạnh Hùng** – 24410300
+Mã nguồn, tài liệu tuần và hướng dẫn cài đặt: `docs/00` → `docs/13`

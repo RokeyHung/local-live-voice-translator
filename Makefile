@@ -6,6 +6,8 @@ AI_DIR      := apps/ai-service
 DESKTOP_DIR := apps/desktop
 UV          ?= uv
 NPM         ?= npm
+# Prettier dùng chung cho Markdown (đến từ node_modules của desktop)
+PRETTIER    := $(DESKTOP_DIR)/node_modules/.bin/prettier
 # Thời lượng của `make soak` (đổi bằng: make soak MINUTES=5)
 MINUTES     ?= 60
 # Tiền tố tên file của `make segment` (make segment MEDIA=x.mov PREFIX=vlog)
@@ -14,7 +16,7 @@ PREFIX      ?= rec
 .DEFAULT_GOAL := help
 
 .PHONY: help setup setup-service setup-desktop dev service desktop \
-        build typecheck lint format health docs test bench accuracy soak segment clean
+        build typecheck lint format format-docs health docs test bench accuracy soak segment clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -52,9 +54,13 @@ lint: ## Lint desktop (eslint) + service (ruff)
 	cd $(DESKTOP_DIR) && $(NPM) run lint
 	cd $(AI_DIR) && $(UV) run ruff check .
 
-format: ## Sort imports + format cả hai app
+format: format-docs ## Sort imports + format cả hai app và tài liệu Markdown
 	cd $(DESKTOP_DIR) && $(NPM) run format
 	cd $(AI_DIR) && $(UV) run ruff check --select I --fix . && $(UV) run ruff format .
+
+format-docs: ## Format Markdown ở docs/ và thư mục gốc (prettier, cấu hình .prettierrc.yaml)
+	@test -x $(PRETTIER) || { echo "Chưa có prettier — chạy 'make setup-desktop' trước."; exit 1; }
+	$(PRETTIER) --write "docs/**/*.md" "*.md"
 
 health: ## Gọi thử endpoint /health của AI service
 	@curl -s http://127.0.0.1:8756/health && echo
