@@ -148,6 +148,43 @@ class BenchmarkResponse(BaseModel):
     preset: Preset | None = None
 
 
+class TranscriptSegmentSchema(BaseModel):
+    """Một đoạn giọng nói trong tệp; mốc thời gian tính từ đầu tệp."""
+
+    startedAtMs: int
+    endedAtMs: int
+    text: str
+    translatedText: str | None = None
+    asrMs: int | None = None
+    mtMs: int | None = None
+
+
+class TranscriptionResponse(BaseModel):
+    source: Language
+    target: Language | None = None  # None = chỉ nhận dạng chữ, không dịch
+    audioMs: int
+    processingMs: int
+    segments: list[TranscriptSegmentSchema] = []
+    # Phiên tương ứng trong lịch sử; rỗng khi không lưu (hoặc lưu lịch sử đang tắt).
+    sessionId: str = ""
+    # True = dừng giữa chừng theo yêu cầu; `segments` chỉ là phần đã chạy được.
+    cancelled: bool = False
+
+
+class TranscribeProgressResponse(BaseModel):
+    """Tiến trình của tệp đang xử lý — đo theo vị trí đã chạy qua, không ước lượng."""
+
+    active: bool
+    fileName: str
+    audioMs: int
+    doneMs: int
+    segments: int
+    percent: float | None
+    error: str | None
+    # Đã xin dừng nhưng khúc đang chạy chưa xong.
+    cancelling: bool = False
+
+
 class ResourceResponse(BaseModel):
     """Tài nguyên của chính tiến trình AI service (renderer không tự đọc được)."""
 

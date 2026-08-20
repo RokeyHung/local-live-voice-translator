@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from llvt_ai_service import __version__
 from llvt_ai_service.adapters.persistence.sqlite import SqliteSessionRepository
 from llvt_ai_service.api import config as config_api
-from llvt_ai_service.api import diagnostics, health, sessions
+from llvt_ai_service.api import diagnostics, health, sessions, transcribe
 from llvt_ai_service.api.docs import mount_docs
 from llvt_ai_service.api.openapi_meta import DESCRIPTION, TAGS_METADATA
 from llvt_ai_service.application.container import Container
@@ -89,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(config_api.router)
     app.include_router(sessions.router)
     app.include_router(diagnostics.router)
+    app.include_router(transcribe.router)
     app.include_router(ws_session.router)
     mount_docs(app)
     return app

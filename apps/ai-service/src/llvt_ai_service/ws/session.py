@@ -92,6 +92,13 @@ async def _dispatch(controller: SessionController, raw: object, emit) -> None:
     elif msg.type == "control.mute":
         await controller.on_mute(bool(msg.payload.get("muted")))
     elif msg.type == "audio.chunk":
-        await controller.on_audio(parse_audio_chunk("", msg.payload))
+        try:
+            chunk = parse_audio_chunk("", msg.payload)
+        except ValueError as exc:
+            # Nguồn/payload sai thì báo lại cho client; ném ra ngoài sẽ giết luôn vòng
+            # nhận message và client chỉ thấy socket đóng mà không biết vì sao.
+            await emit(ev.PipelineError(code="bad_message", message=str(exc)))
+            return
+        await controller.on_audio(chunk)
     else:
         await emit(ev.PipelineError(code="unknown_type", message=f"Unsupported type: {msg.type}"))

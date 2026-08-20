@@ -244,7 +244,10 @@ export function HistoryScreen(): JSX.Element {
                 ) : (
                   rows.map((row) => {
                     const side = rowSide(row)
-                    const color = side === 'me' ? '#22d3ee' : '#d946ef'
+                    // Câu nhập từ tệp không thuộc bên nào trong cuộc họp — ghi rõ FILE
+                    // thay vì gán bừa cho phía remote.
+                    const fromFile = row.source === 'file'
+                    const color = fromFile ? '#2dd4bf' : side === 'me' ? '#22d3ee' : '#d946ef'
                     const latency = [row.asrMs, row.mtMs, row.ttsMs]
                       .filter((v): v is number => v != null)
                       .join('·')
@@ -266,7 +269,7 @@ export function HistoryScreen(): JSX.Element {
                           }}
                         >
                           <Dot color={color} size={5} glow={false} />
-                          {side === 'me' ? 'ME' : 'REMOTE'}
+                          {fromFile ? 'FILE' : side === 'me' ? 'ME' : 'REMOTE'}
                         </span>
                         <span className="text-base leading-snug text-fg-3">
                           {row.sourceText ?? ''}

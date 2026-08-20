@@ -100,6 +100,40 @@ export interface InstalledModel {
   sizeBytes: number
 }
 
+// --- Nhập tệp (mirror schemas.py: TranscriptSegmentSchema / TranscriptionResponse) ---
+
+export interface TranscriptSegment {
+  startedAtMs: number // mốc tính từ ĐẦU TỆP, không phải giờ đồng hồ
+  endedAtMs: number
+  text: string
+  translatedText: string | null // null khi chỉ nhận dạng chữ, không dịch
+  asrMs: number | null
+  mtMs: number | null
+}
+
+export interface TranscriptionResult {
+  source: Language
+  target: Language | null
+  audioMs: number
+  processingMs: number
+  segments: TranscriptSegment[]
+  sessionId: string // rỗng = không lưu vào lịch sử
+  // true = dừng giữa chừng theo yêu cầu; `segments` chỉ là phần đã chạy được.
+  cancelled: boolean
+}
+
+// Tiến trình tệp đang chạy (GET /api/transcribe/progress), hỏi trong lúc POST còn chặn.
+export interface TranscribeProgress {
+  active: boolean
+  fileName: string
+  audioMs: number
+  doneMs: number
+  segments: number
+  percent: number | null
+  error: string | null
+  cancelling: boolean // đã xin dừng, đang chờ khúc hiện tại chạy nốt
+}
+
 export interface LanguagePair {
   source: Language
   target: Language

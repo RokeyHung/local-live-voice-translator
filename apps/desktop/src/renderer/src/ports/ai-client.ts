@@ -10,8 +10,19 @@ import type {
   HistorySessionDetail,
   InstalledModel,
   LoadProgress,
-  ResourceResponse
+  ResourceResponse,
+  TranscribeProgress,
+  TranscriptionResult
 } from '../domain/models'
+
+// Một tệp đã giải mã sẵn thành PCM 16-bit mono 16 kHz, kèm tên để đặt tên phiên.
+export interface TranscribeRequest {
+  pcm: ArrayBuffer
+  name: string
+  source: Language
+  target: Language | null // null = chỉ nhận dạng chữ, không dịch
+  save: boolean // lưu kết quả thành một phiên trong lịch sử
+}
 
 export interface AiClient {
   fetchHealth(): Promise<HealthResponse>
@@ -33,6 +44,14 @@ export interface AiClient {
   fetchResources(): Promise<ResourceResponse>
   // Model đã tải thật trên đĩa của máy.
   fetchInstalledModels(): Promise<InstalledModel[]>
+
+  // --- Nhập tệp (xử lý theo lô, không phải luồng realtime) ---
+  // Chặn tới khi chạy xong cả tệp; hỏi song song fetchTranscribeProgress() để hiện tiến trình.
+  transcribeFile(request: TranscribeRequest): Promise<TranscriptionResult>
+  fetchTranscribeProgress(): Promise<TranscribeProgress>
+  // Xin dừng tệp đang chạy: `transcribeFile` vẫn trả về bình thường, với phần đã
+  // chạy được và `cancelled: true` — huỷ không có nghĩa là vứt kết quả dở dang đi.
+  cancelTranscribe(): Promise<void>
 
   // --- Lịch sử phiên (lưu trong SQLite của service) ---
   fetchSessions(query?: string): Promise<HistorySession[]>

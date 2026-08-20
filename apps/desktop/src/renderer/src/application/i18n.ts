@@ -258,9 +258,41 @@ export interface Dict {
   aboutPlatform: string
   // nhập tệp
   importSub: string
-  importDisabledT: string
-  importDisabledS: string
+  dropTitle: string
   dropSub: string
+  browseFiles: string
+  queueTitle: string
+  queueDone: string
+  queuePendingN: string
+  queuePending: string
+  queueDecoding: string
+  queueProcessing: string
+  queueOk: string
+  queueError: string
+  queueCancelled: string
+  cancelBtn: string
+  cancelling: string
+  transcriptFmt: string
+  copyBtn: string
+  copied: string
+  downloadBtn: string
+  clearDone: string
+  retryTip: string
+  removeTip: string
+  durationLbl: string
+  diarizeLbl: string
+  diarizeOff: string
+  impFileLang: string
+  impTargetLang: string
+  impNoTranslate: string
+  impSave: string
+  impSaved: string
+  impHistoryOff: string
+  impDecodeFailed: string
+  impNoSpeech: string
+  impSegments: string
+  impLoadHint: string
+  impBusySession: string
   // trạng thái utterance
   stRecognizing: string
   stTranslating: string
@@ -532,10 +564,42 @@ const vi: Dict = {
   aboutPlatform: 'Nền tảng',
 
   importSub: 'Chuyển tệp âm thanh thành văn bản (transcription).',
-  importDisabledT: 'Nhập tệp chưa khả dụng',
-  importDisabledS:
-    'Cần endpoint transcribe theo lô bên AI service. Hiện tại chỉ có pipeline realtime qua WebSocket.',
+  dropTitle: 'Kéo & Thả tệp âm thanh',
   dropSub: 'Hỗ trợ MP3, WAV, M4A, FLAC, OGG, WebM, Opus — nhiều tệp cùng lúc',
+  browseFiles: 'Chọn tệp',
+  queueTitle: 'Hàng đợi xử lý',
+  queueDone: 'xong',
+  queuePendingN: 'chờ',
+  queuePending: 'Trong hàng đợi',
+  queueDecoding: 'Đang giải mã…',
+  queueProcessing: 'Đang xử lý…',
+  queueOk: 'Hoàn tất',
+  queueError: 'Lỗi',
+  queueCancelled: 'Đã huỷ',
+  cancelBtn: 'Huỷ',
+  cancelling: 'Đang dừng…',
+  transcriptFmt: 'Định dạng',
+  copyBtn: 'Sao chép',
+  copied: 'Đã chép',
+  downloadBtn: 'Tải về',
+  clearDone: 'Xóa mục xong',
+  retryTip: 'Chạy lại',
+  removeTip: 'Bỏ khỏi hàng đợi',
+  durationLbl: 'Thời lượng',
+  diarizeLbl: 'Phân biệt người nói',
+  diarizeOff: 'Pipeline chưa có khâu phân biệt người nói (diarization).',
+  impFileLang: 'Ngôn ngữ trong tệp',
+  impTargetLang: 'Dịch sang',
+  impNoTranslate: 'Không dịch',
+  impSave: 'Lưu vào lịch sử',
+  impSaved: 'đã lưu vào Lịch sử',
+  impHistoryOff: 'Lưu lịch sử đang tắt ở màn Cài đặt.',
+  impDecodeFailed: 'Không giải mã được tệp — định dạng này máy không đọc được.',
+  impNoSpeech: 'Không tìm thấy giọng nói nào trong tệp.',
+  impSegments: 'đoạn',
+  impLoadHint: 'Model được nạp trước khi chạy tệp đầu tiên; lần đầu có thể mất vài phút.',
+  impBusySession:
+    'Đang có phiên dịch chạy — dừng phiên trước khi nhập tệp, vì cả hai dùng chung model.',
 
   stRecognizing: 'Nhận diện',
   stTranslating: 'Đang dịch',
@@ -810,10 +874,42 @@ const en: Dict = {
   aboutPlatform: 'Platform',
 
   importSub: 'Turn audio files into text transcriptions.',
-  importDisabledT: 'Import is not available',
-  importDisabledS:
-    'It needs a batch transcribe endpoint on the AI service. Only the realtime WebSocket pipeline exists today.',
+  dropTitle: 'Drag & drop audio files',
   dropSub: 'Supports MP3, WAV, M4A, FLAC, OGG, WebM, Opus — multiple files OK',
+  browseFiles: 'Choose files',
+  queueTitle: 'Processing queue',
+  queueDone: 'done',
+  queuePendingN: 'queued',
+  queuePending: 'In queue',
+  queueDecoding: 'Decoding…',
+  queueProcessing: 'Processing…',
+  queueOk: 'Completed',
+  queueError: 'Failed',
+  queueCancelled: 'Cancelled',
+  cancelBtn: 'Cancel',
+  cancelling: 'Stopping…',
+  transcriptFmt: 'Format',
+  copyBtn: 'Copy',
+  copied: 'Copied',
+  downloadBtn: 'Download',
+  clearDone: 'Clear finished',
+  retryTip: 'Run again',
+  removeTip: 'Remove from queue',
+  durationLbl: 'Duration',
+  diarizeLbl: 'Speaker labels',
+  diarizeOff: 'The pipeline has no speaker diarization stage.',
+  impFileLang: 'Language in the file',
+  impTargetLang: 'Translate to',
+  impNoTranslate: "Don't translate",
+  impSave: 'Save to history',
+  impSaved: 'saved to History',
+  impHistoryOff: 'History saving is off in Settings.',
+  impDecodeFailed: 'Could not decode this file — the format is not readable on this machine.',
+  impNoSpeech: 'No speech found in this file.',
+  impSegments: 'segments',
+  impLoadHint: 'Models load before the first file; the first run can take a few minutes.',
+  impBusySession:
+    'A translation session is running — stop it before importing, both share the same models.',
 
   stRecognizing: 'Recognizing',
   stTranslating: 'Translating',

@@ -11,9 +11,11 @@ import type {
   HistorySessionDetail,
   InstalledModel,
   LoadProgress,
-  ResourceResponse
+  ResourceResponse,
+  TranscribeProgress,
+  TranscriptionResult
 } from '../domain/models'
-import type { AiClient } from '../ports/ai-client'
+import type { AiClient, TranscribeRequest } from '../ports/ai-client'
 
 export class HttpAiClient implements AiClient {
   async fetchHealth(): Promise<HealthResponse> {
@@ -112,6 +114,41 @@ export class HttpAiClient implements AiClient {
     const res = await fetch(`${AI_BASE_URL}/api/models`)
     if (!res.ok) throw new Error(`Đọc danh sách model thất bại: HTTP ${res.status}`)
     return (await res.json()) as InstalledModel[]
+  }
+
+  async transcribeFile({
+    pcm,
+    name,
+    source,
+    target,
+    save
+  }: TranscribeRequest): Promise<TranscriptionResult> {
+    // Gửi thẳng PCM thô: tệp đã được giải mã ở renderer (Chromium có sẵn bộ giải mã
+    // MP3/M4A/FLAC/OGG/WebM), nên service không phải kèm ffmpeg trong bản cài.
+    const params = new URLSearchParams({ source, name, save: String(save) })
+    if (target) params.set('target', target)
+    const res = await fetch(`${AI_BASE_URL}/api/transcribe?${params}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: pcm
+    })
+    if (!res.ok) {
+      // Service nói rõ lý do (tệp hỏng, model không nạp được, đang bận tệp khác).
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Chuyển tệp thành văn bản thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as TranscriptionResult
+  }
+
+  async cancelTranscribe(): Promise<void> {
+    const res = await fetch(`${AI_BASE_URL}/api/transcribe/cancel`, { method: 'POST' })
+    if (!res.ok) throw new Error(`Không dừng được lượt nhập tệp: HTTP ${res.status}`)
+  }
+
+  async fetchTranscribeProgress(): Promise<TranscribeProgress> {
+    const res = await fetch(`${AI_BASE_URL}/api/transcribe/progress`)
+    if (!res.ok) throw new Error(`Không lấy được tiến trình nhập tệp: HTTP ${res.status}`)
+    return (await res.json()) as TranscribeProgress
   }
 
   async fetchSessions(query?: string): Promise<HistorySession[]> {

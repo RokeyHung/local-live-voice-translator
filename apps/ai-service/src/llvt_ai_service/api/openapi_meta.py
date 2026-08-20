@@ -72,6 +72,15 @@ TAGS_METADATA = [
         ),
     },
     {
+        "name": "transcribe",
+        "description": (
+            "Nhập một tệp âm thanh có sẵn và chuyển thành văn bản (kèm bản dịch nếu "
+            "có `target`). Khác luồng realtime ở `/ws`: xử lý theo lô, không tổng hợp "
+            "giọng, và mốc thời gian của từng đoạn tính từ đầu tệp. Desktop giải mã "
+            "MP3/M4A/FLAC/OGG/WebM ngay trên máy rồi gửi lên PCM 16 kHz mono."
+        ),
+    },
+    {
         "name": "sessions",
         "description": (
             "Lịch sử phiên: mỗi câu lưu kèm cặp ngôn ngữ, câu gốc, bản dịch, thời gian "

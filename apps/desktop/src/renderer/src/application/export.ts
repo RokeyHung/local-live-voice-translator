@@ -1,6 +1,7 @@
 // Xuất bản ghi một phiên ra .txt / .srt và tải xuống (Blob URL — không rời khỏi máy).
 
-import { rowSide, type HistorySessionDetail } from '../domain/models'
+import { rowSide, type HistorySessionDetail, type TranscriptSegment } from '../domain/models'
+import { formatDuration } from './format'
 import { formatClock, formatDateTime } from './utterances'
 
 function pad(n: number): string {
@@ -33,6 +34,28 @@ export function sessionToSrt(session: HistorySessionDetail): string {
       const who = rowSide(row) === 'me' ? '[Me]' : '[Remote]'
       return `${i + 1}\n${srtTime(start)} --> ${srtTime(end)}\n${who} ${row.translatedText ?? ''}\n`
     })
+    .join('\n')
+}
+
+// --- Nhập tệp: mốc thời gian là vị trí trong tệp, nên .srt khớp thẳng với bản ghi gốc ---
+
+export function transcriptToTxt(name: string, segments: TranscriptSegment[]): string {
+  const body = segments
+    .map((s) =>
+      s.translatedText
+        ? `[${formatDuration(s.startedAtMs)}] ${s.text}\n  → ${s.translatedText}`
+        : `[${formatDuration(s.startedAtMs)}] ${s.text}`
+    )
+    .join('\n\n')
+  return `${name}\n\n${body}\n`
+}
+
+export function transcriptToSrt(segments: TranscriptSegment[]): string {
+  return segments
+    .map(
+      (s, i) =>
+        `${i + 1}\n${srtTime(s.startedAtMs)} --> ${srtTime(s.endedAtMs)}\n${s.translatedText ?? s.text}\n`
+    )
     .join('\n')
 }
 

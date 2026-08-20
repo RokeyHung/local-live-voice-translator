@@ -103,10 +103,18 @@ def parse_session_title(payload: dict[str, Any]) -> str:
     return title.strip()[:120] if isinstance(title, str) else ""
 
 
+# Chỉ hai nguồn này chảy qua WebSocket. `AudioSource.file` là của luồng nhập tệp
+# (REST) — lọt vào đây thì SessionController sẽ tưởng là mic và đem đi tổng hợp giọng.
+LIVE_SOURCES = frozenset({AudioSource.microphone, AudioSource.system})
+
+
 def parse_audio_chunk(session_id: str, payload: dict[str, Any]) -> AudioChunk:
+    source = AudioSource(payload.get("source", "microphone"))
+    if source not in LIVE_SOURCES:
+        raise ValueError(f"audio.chunk chỉ nhận microphone|system, nhận {source.value}")
     return AudioChunk(
         session_id=session_id,
-        source=AudioSource(payload.get("source", "microphone")),
+        source=source,
         pcm=base64.b64decode(payload["pcm"]) if payload.get("pcm") else b"",
         seq=int(payload.get("seq", 0)),
         sample_rate=int(payload.get("sampleRate", 16000)),

@@ -23,6 +23,9 @@ class PipelineState(str, Enum):
 class AudioSource(str, Enum):
     microphone = "microphone"
     system = "system"
+    # Tệp âm thanh người dùng nhập vào (màn "Nhập tệp") — không phải audio thu trực
+    # tiếp, nên tách riêng thay vì mượn tạm `system`.
+    file = "file"
 
 
 class Language(str, Enum):

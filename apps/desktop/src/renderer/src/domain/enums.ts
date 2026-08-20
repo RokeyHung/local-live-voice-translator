@@ -14,7 +14,8 @@ export type PipelineState =
   | 'Error'
   | 'Stopped'
 
-export type AudioSource = 'microphone' | 'system'
+// 'file' = câu đến từ một tệp người dùng nhập ở màn Nhập tệp (không phải audio thu).
+export type AudioSource = 'microphone' | 'system' | 'file'
 
 export type Language = 'vi' | 'en' | 'ja' | 'zh'
 
