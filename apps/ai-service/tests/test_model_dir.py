@@ -14,7 +14,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from llvt_ai_service.app import app
-from llvt_ai_service.application.installed_models import MANAGED_DIRS, purge, scan
+from llvt_ai_service.application.installed_models import (
+    MANAGED_DIRS,
+    file_bytes,
+    managed_bytes,
+    purge,
+    scan,
+)
 from llvt_ai_service.config import runtime_config
 from llvt_ai_service.config.settings import Settings, get_settings
 
@@ -116,6 +122,47 @@ def test_delete_models_endpoint(monkeypatch: pytest.MonkeyPatch, tmp_path):
         assert client.get("/api/models").json() == []
         # Xoá model = giải phóng luôn bộ nhớ.
         assert client.get("/api/config").json()["stages"] == []
+
+
+def test_managed_bytes_ignores_foreign_files(tmp_path):
+    """Chỉ đếm thư mục do app tạo — đúng bằng số byte mà purge() sẽ giải phóng."""
+    for name in MANAGED_DIRS:
+        (tmp_path / name).mkdir(parents=True)
+        (tmp_path / name / "model.bin").write_bytes(b"0" * 500)
+    (tmp_path / "anh-cuoi.jpg").write_bytes(b"0" * 9999)
+
+    assert managed_bytes(tmp_path) == 500 * len(MANAGED_DIRS)
+    assert managed_bytes(tmp_path) == purge(tmp_path)[1]
+
+
+def test_file_bytes_counts_sqlite_sidecars(tmp_path):
+    db = tmp_path / "history.db"
+    db.write_bytes(b"0" * 100)
+    db.with_name("history.db-wal").write_bytes(b"0" * 20)
+
+    assert file_bytes(db) == 120
+    assert file_bytes(tmp_path / "chua-co.db") == 0
+
+
+def test_storage_endpoint_reports_real_sizes(monkeypatch: pytest.MonkeyPatch, tmp_path):
+    models = tmp_path / "models"
+    (models / "whisper-cpp").mkdir(parents=True)
+    (models / "whisper-cpp" / "ggml-tiny.bin").write_bytes(b"0" * 4096)
+    # DB để service tự tạo: nhét một file giả vào đây thì SQLite mở không nổi.
+    db = tmp_path / "history.db"
+    monkeypatch.setenv("LLVT_MODELS_DIR", str(models))
+    monkeypatch.setenv("LLVT_DB_PATH", str(db))
+    get_settings.cache_clear()
+
+    with TestClient(app) as client:
+        body = client.get("/api/storage").json()
+
+    items = {item["key"]: item for item in body["items"]}
+    assert items["models"]["sizeBytes"] == 4096
+    assert items["models"]["path"] == str(models)
+    # Số của lịch sử là dung lượng thật của file service vừa tạo, không phải hằng số.
+    assert items["history"]["sizeBytes"] == file_bytes(db) > 0
+    assert body["totalBytes"] == 4096 + items["history"]["sizeBytes"]
 
 
 def _voiced_pcm(seconds: float) -> np.ndarray:

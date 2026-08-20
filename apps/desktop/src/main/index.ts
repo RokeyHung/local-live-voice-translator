@@ -81,6 +81,12 @@ app.whenReady().then(() => {
     return result.canceled ? '' : (result.filePaths[0] ?? '')
   })
 
+  // Cache của Chromium trong thư mục userData (HTTP cache, GPU shader cache…). Đây là
+  // kho dữ liệu trên đĩa duy nhất thuộc về phía desktop — model và lịch sử là của AI
+  // service, hỏi qua REST. Renderer không đọc được đĩa nên phải đi qua main.
+  ipcMain.handle('app:cacheBytes', () => session.defaultSession.getCacheSize())
+  ipcMain.handle('app:clearCache', () => session.defaultSession.clearCache())
+
   // Cấp quyền thu audio cho renderer (getUserMedia). Chỉ localhost/desktop nên an toàn.
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
     callback(permission === 'media')

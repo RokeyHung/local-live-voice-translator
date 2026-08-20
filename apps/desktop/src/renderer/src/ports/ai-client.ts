@@ -11,6 +11,7 @@ import type {
   InstalledModel,
   LoadProgress,
   ResourceResponse,
+  StorageUsage,
   TranscribeProgress,
   TranscriptionResult
 } from '../domain/models'
@@ -44,6 +45,8 @@ export interface AiClient {
   fetchResources(): Promise<ResourceResponse>
   // Model đã tải thật trên đĩa của máy.
   fetchInstalledModels(): Promise<InstalledModel[]>
+  // Dung lượng đĩa service đang chiếm, tách theo từng kho (model, lịch sử).
+  fetchStorage(): Promise<StorageUsage>
 
   // --- Nhập tệp (xử lý theo lô, không phải luồng realtime) ---
   // Chặn tới khi chạy xong cả tệp; hỏi song song fetchTranscribeProgress() để hiện tiến trình.

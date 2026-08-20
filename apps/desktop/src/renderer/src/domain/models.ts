@@ -102,6 +102,19 @@ export interface InstalledModel {
   sizeBytes: number
 }
 
+// Dung lượng đĩa service đang chiếm (GET /api/storage). `key` mở rộng được nên để
+// string: giao diện chỉ biết những key nó vẽ được và bỏ qua phần còn lại.
+export interface StorageItem {
+  key: string
+  path: string
+  sizeBytes: number
+}
+
+export interface StorageUsage {
+  items: StorageItem[]
+  totalBytes: number
+}
+
 // --- Nhập tệp (mirror schemas.py: TranscriptSegmentSchema / TranscriptionResponse) ---
 
 export interface TranscriptSegment {

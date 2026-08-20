@@ -8,7 +8,10 @@ const llvt = {
   platform: process.platform,
   // Mở hộp thoại chọn thư mục của hệ điều hành; '' nghĩa là người dùng huỷ.
   chooseDirectory: (current?: string): Promise<string> =>
-    ipcRenderer.invoke('dialog:chooseDirectory', current)
+    ipcRenderer.invoke('dialog:chooseDirectory', current),
+  // Cache của Chromium trong thư mục userData — đo và dọn được.
+  cacheBytes: (): Promise<number> => ipcRenderer.invoke('app:cacheBytes'),
+  clearCache: (): Promise<void> => ipcRenderer.invoke('app:clearCache')
 }
 
 if (process.contextIsolated) {

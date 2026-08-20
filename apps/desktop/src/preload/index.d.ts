@@ -8,6 +8,8 @@ declare global {
       aiWsUrl: string
       platform: string
       chooseDirectory: (current?: string) => Promise<string>
+      cacheBytes: () => Promise<number>
+      clearCache: () => Promise<void>
     }
   }
 }

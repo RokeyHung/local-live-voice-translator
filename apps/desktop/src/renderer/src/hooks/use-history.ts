@@ -85,6 +85,8 @@ export function useDeleteAllSessions(): UseMutationResult<void, Error, void> {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['sessions'] })
       queryClient.removeQueries({ queryKey: ['session'] })
+      // Xoá lịch sử làm file SQLite nhỏ lại → khối dung lượng ở màn Cài đặt phải đo lại.
+      void queryClient.invalidateQueries({ queryKey: ['storage'] })
     }
   })
 }

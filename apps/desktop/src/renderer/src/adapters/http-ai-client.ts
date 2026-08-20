@@ -12,6 +12,7 @@ import type {
   InstalledModel,
   LoadProgress,
   ResourceResponse,
+  StorageUsage,
   TranscribeProgress,
   TranscriptionResult
 } from '../domain/models'
@@ -114,6 +115,12 @@ export class HttpAiClient implements AiClient {
     const res = await fetch(`${AI_BASE_URL}/api/models`)
     if (!res.ok) throw new Error(`Đọc danh sách model thất bại: HTTP ${res.status}`)
     return (await res.json()) as InstalledModel[]
+  }
+
+  async fetchStorage(): Promise<StorageUsage> {
+    const res = await fetch(`${AI_BASE_URL}/api/storage`)
+    if (!res.ok) throw new Error(`Đọc dung lượng đĩa thất bại: HTTP ${res.status}`)
+    return (await res.json()) as StorageUsage
   }
 
   async transcribeFile({

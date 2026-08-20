@@ -90,6 +90,22 @@ class DeletedModels(BaseModel):
     freedBytes: int
 
 
+class StorageItemSchema(BaseModel):
+    """Một kho dữ liệu trên đĩa của service."""
+
+    # "models" = thư mục model, "history" = file SQLite lịch sử.
+    key: str
+    path: str
+    sizeBytes: int
+
+
+class StorageResponse(BaseModel):
+    """Dung lượng đĩa mà service đang chiếm, tính theo từng kho."""
+
+    items: list[StorageItemSchema]
+    totalBytes: int
+
+
 class SessionSummary(BaseModel):
     id: str
     title: str = ""

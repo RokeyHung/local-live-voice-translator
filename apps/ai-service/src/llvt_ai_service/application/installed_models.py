@@ -111,6 +111,31 @@ def scan(models_dir: Path) -> list[InstalledModel]:
     return found
 
 
+def managed_bytes(models_dir: Path) -> int:
+    """Tổng dung lượng của các thư mục do app quản lý.
+
+    Đây là con số đúng cho câu hỏi "xoá model thì lấy lại được bao nhiêu đĩa", vì nó
+    đo đúng những thư mục mà :func:`purge` sẽ xoá. Nó lớn hơn tổng của :func:`scan`
+    một chút: cache HuggingFace còn có ``refs``/``.locks`` nằm ngoài các thư mục
+    ``models--*`` mà bảng model không liệt kê.
+    """
+    return sum(
+        _dir_size(models_dir / name) for name in MANAGED_DIRS if (models_dir / name).is_dir()
+    )
+
+
+def file_bytes(path: Path) -> int:
+    """Dung lượng một file; SQLite tính kèm ``-wal``/``-shm`` đi cùng nó."""
+    total = 0
+    for candidate in (path, path.with_name(f"{path.name}-wal"), path.with_name(f"{path.name}-shm")):
+        try:
+            if candidate.is_file():
+                total += candidate.stat().st_size
+        except OSError:
+            continue
+    return total
+
+
 def purge(models_dir: Path) -> tuple[list[str], int]:
     """Xoá model đã tải; trả (tên thư mục đã xoá, số byte giải phóng).
 

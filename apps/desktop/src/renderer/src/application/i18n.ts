@@ -235,7 +235,7 @@ export interface Dict {
   meetingPrefix: string
   historyUnavailable: string
   rowFailed: string
-  // thư mục lưu model
+  // thư mục dữ liệu ứng dụng
   dirTitle: string
   dirDesc: string
   dirBrowse: string
@@ -248,6 +248,16 @@ export interface Dict {
   dirConfirmClear: string
   dirCleared: string
   dirNothingToClear: string
+  // phân rã dung lượng đĩa
+  stModels: string
+  stHistory: string
+  stCache: string
+  cleanBtn: string
+  emptyDir: string
+  cleanHint: string
+  cleanNoLogs: string
+  confirmClearHistory: string
+  logCacheCleared: string
   // quyền riêng tư / lưu lịch sử
   privacyT: string
   privacyDesc: string
@@ -579,10 +589,11 @@ const vi: Dict = {
   historyUnavailable: 'Không đọc được lịch sử — AI service chưa chạy?',
   rowFailed: 'Câu này chạy lỗi',
 
-  dirTitle: 'Thư mục lưu model',
-  dirDesc: 'Chọn nơi tải về và nạp model. Đặt sang ổ đĩa khác nếu ổ cục bộ sắp đầy.',
+  dirTitle: 'Thư mục dữ liệu ứng dụng',
+  dirDesc:
+    'Đường dẫn bên dưới là nơi tải về và nạp model — đặt sang ổ đĩa khác nếu ổ cục bộ sắp đầy. Danh sách phía dưới là toàn bộ những gì ứng dụng ghi ra đĩa.',
   dirBrowse: 'Chọn thư mục…',
-  dirUsed: 'Đang dùng',
+  dirUsed: 'Tổng',
   dirPh: '/đường/dẫn/model',
   dirClear: 'Xóa toàn bộ model',
   dirApply: 'Áp dụng',
@@ -593,6 +604,16 @@ const vi: Dict = {
     'Xóa toàn bộ model đã tải trong thư mục này? Lần bắt đầu phiên sau sẽ phải tải lại.',
   dirCleared: 'Đã xóa model, giải phóng',
   dirNothingToClear: 'Không có model nào để xóa.',
+  stModels: 'Model',
+  stHistory: 'Lịch sử',
+  stCache: 'Cache',
+  cleanBtn: 'Dọn',
+  emptyDir: 'trống',
+  cleanHint: 'Cache dọn lúc nào cũng được; xóa model và lịch sử là mất dữ liệu.',
+  cleanNoLogs:
+    'Không có mục Log vì ứng dụng không ghi file log nào: AI service in ra stdout, còn nhật ký của giao diện chỉ nằm trong bộ nhớ.',
+  confirmClearHistory: 'Xóa toàn bộ lịch sử phiên dịch? Không khôi phục lại được.',
+  logCacheCleared: 'Đã dọn cache của ứng dụng',
 
   privacyT: 'Quyền riêng tư',
   privacyDesc:
@@ -931,11 +952,11 @@ const en: Dict = {
   historyUnavailable: 'Cannot read history — is the AI service running?',
   rowFailed: 'This line failed',
 
-  dirTitle: 'Model storage folder',
+  dirTitle: 'Application data folder',
   dirDesc:
-    'Choose where models are downloaded and loaded from. Point to another drive if your local disk is full.',
+    'The path below is where models are downloaded to and loaded from — point it at another drive if your local disk is full. The list underneath is everything the app writes to disk.',
   dirBrowse: 'Choose folder…',
-  dirUsed: 'In use',
+  dirUsed: 'Total',
   dirPh: '/path/to/models',
   dirClear: 'Delete all models',
   dirApply: 'Apply',
@@ -946,6 +967,16 @@ const en: Dict = {
     'Delete every downloaded model in this folder? They will be downloaded again the next time a session starts.',
   dirCleared: 'Models deleted, freed',
   dirNothingToClear: 'No models to delete.',
+  stModels: 'Models',
+  stHistory: 'History',
+  stCache: 'Cache',
+  cleanBtn: 'Clean',
+  emptyDir: 'empty',
+  cleanHint: 'Clearing the cache is always safe; deleting models or history loses data.',
+  cleanNoLogs:
+    'There is no Log row because the app writes no log files: the AI service prints to stdout and the UI log lives in memory only.',
+  confirmClearHistory: 'Delete the entire translation history? This cannot be undone.',
+  logCacheCleared: 'Application cache cleared',
 
   privacyT: 'Privacy',
   privacyDesc:

@@ -82,6 +82,7 @@ export function useLoadModels(): UseMutationResult<ConfigResponse, Error, boolea
     onSuccess: (data) => {
       queryClient.setQueryData(['config'], data)
       void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+      void queryClient.invalidateQueries({ queryKey: ['storage'] })
       logInfo('models', (L) => L.logModelsReady)
     },
     onError: (error) => logWarn('models', (L) => format(L.logModelsFailed, { msg: error.message })),
@@ -127,6 +128,7 @@ export function useSetModelsDir(): UseMutationResult<
     onSuccess: (data) => {
       queryClient.setQueryData(['config'], data)
       void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+      void queryClient.invalidateQueries({ queryKey: ['storage'] })
       logInfo('storage', (L) => format(L.logModelsDirChanged, { dir: data.modelsDir }))
     }
   })
@@ -139,6 +141,7 @@ export function useDeleteInstalledModels(): UseMutationResult<DeletedModels, Err
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
       void queryClient.invalidateQueries({ queryKey: ['config'] })
+      void queryClient.invalidateQueries({ queryKey: ['storage'] })
       logWarn('storage', (L) => format(L.logModelsDeleted, { size: formatBytes(data.freedBytes) }))
     }
   })

@@ -7,16 +7,61 @@ import { formatBytes } from '../../application/format'
 import type { ThemeMode } from '../../domain/enums'
 import {
   useDeleteInstalledModels,
-  useInstalledModels,
   useServiceConfig,
   useSetHistoryEnabled,
   useSetModelsDir
 } from '../../hooks/use-config'
-import { useDict } from '../../hooks/use-ui'
+import { useDeleteAllSessions } from '../../hooks/use-history'
+import { useCacheBytes, useClearCache, useStorageUsage } from '../../hooks/use-storage'
+import { useDict, useIsScreen } from '../../hooks/use-ui'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
-import { ScreenHeader, Segmented } from '../components/primitives'
-import { DANGER_BUTTON, GHOST_BUTTON, INPUT, PRIMARY_BUTTON, SCREEN } from '../styles'
+import { Meter, ScreenHeader, Segmented } from '../components/primitives'
+import { GHOST_BUTTON, INPUT, PRIMARY_BUTTON, SCREEN } from '../styles'
+
+/** Một kho dữ liệu trên đĩa: nhãn · thanh tỉ lệ · dung lượng · nút dọn. */
+function StorageRow({
+  label,
+  color,
+  bytes,
+  total,
+  cleanLabel,
+  onClean,
+  busy,
+  emptyLabel
+}: {
+  label: string
+  color: string
+  bytes: number
+  total: number
+  cleanLabel: string
+  onClean: () => void
+  busy: boolean
+  emptyLabel: string
+}): JSX.Element {
+  // Kho rỗng thì để thanh trống hẳn; kho có dữ liệu nhưng bé quá thì vẫn chừa 2% để
+  // nhìn thấy là nó tồn tại.
+  const percent = total > 0 && bytes > 0 ? Math.max(2, Math.round((bytes / total) * 100)) : 0
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-16 shrink-0 text-base font-semibold text-fg-2">{label}</span>
+      <Meter value={percent / 100} color={color} to={color} height={8} />
+      <span className="w-18.5 shrink-0 text-right font-mono text-sm text-fg-3">
+        {bytes > 0 ? formatBytes(bytes) : emptyLabel}
+      </span>
+      <div className="flex w-16.5 shrink-0 justify-end">
+        <button
+          onClick={onClean}
+          disabled={bytes === 0 || busy}
+          className="inline-flex h-7 cursor-pointer items-center gap-1.25 rounded-sm border border-line-strong bg-surface px-2.75 text-xs font-semibold text-fg-3 transition-colors hover:border-[rgba(239,68,68,.4)] hover:text-[#f87171] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line-strong disabled:hover:text-fg-3"
+        >
+          <Icon name="trash" size={12} />
+          {cleanLabel}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function Section({
   icon,
@@ -68,7 +113,15 @@ export function SettingsScreen(): JSX.Element {
   const setHistoryEnabled = useSetHistoryEnabled()
   const setModelsDir = useSetModelsDir()
   const deleteModels = useDeleteInstalledModels()
-  const installed = useInstalledModels(true)
+
+  // Dung lượng đĩa: model + lịch sử do service đo (nó mới là bên ghi đĩa), cache là
+  // của chính Electron. Chỉ hỏi khi đang mở màn này — quét thư mục model là rglob
+  // trên vài GB, không nên chạy nền.
+  const visible = useIsScreen('settings')
+  const storage = useStorageUsage(visible)
+  const cache = useCacheBytes(visible)
+  const clearCache = useClearCache()
+  const deleteSessions = useDeleteAllSessions()
 
   const serverDir = config.data?.modelsDir ?? ''
   const dirEditable = config.data?.modelsDirEditable !== false
@@ -76,7 +129,10 @@ export function SettingsScreen(): JSX.Element {
   const [dirDraft, setDirDraft] = useState<string | null>(null)
   const dirValue = dirDraft ?? serverDir
 
-  const usedBytes = (installed.data ?? []).reduce((sum, m) => sum + m.sizeBytes, 0)
+  const sizeOf = (key: string): number =>
+    (storage.data?.items ?? []).find((item) => item.key === key)?.sizeBytes ?? 0
+  const cacheUsed = cache.data ?? 0
+  const usedBytes = (storage.data?.totalBytes ?? 0) + cacheUsed
   const dirDirty = dirValue.trim() !== '' && dirValue.trim() !== serverDir
 
   const applyDir = (dir: string): void => {
@@ -96,6 +152,11 @@ export function SettingsScreen(): JSX.Element {
   const clearModels = (): void => {
     if (!window.confirm(L.dirConfirmClear)) return
     deleteModels.mutate()
+  }
+
+  const clearHistory = (): void => {
+    if (!window.confirm(L.confirmClearHistory)) return
+    deleteSessions.mutate()
   }
 
   const submitTerm = (): void => {
@@ -166,7 +227,7 @@ export function SettingsScreen(): JSX.Element {
         title={L.dirTitle}
         desc={L.dirDesc}
         right={
-          installed.data ? (
+          storage.data ? (
             <span className="font-mono text-xs text-fg-4">
               {L.dirUsed}: {formatBytes(usedBytes)}
             </span>
@@ -201,24 +262,56 @@ export function SettingsScreen(): JSX.Element {
               <Icon name="folder" size={15} />
               {L.dirBrowse}
             </button>
-            <button
-              className={DANGER_BUTTON}
-              disabled={deleteModels.isPending || usedBytes === 0}
-              onClick={clearModels}
-            >
-              <span className="inline-flex items-center gap-1.75">
-                <Icon name="trash" size={15} />
-                {L.dirClear}
-              </span>
-            </button>
           </div>
 
+          {/* Phân rã dung lượng. Ba kho này là TẤT CẢ những gì app ghi ra đĩa; con số
+              đều đo thật (service rglob thư mục model + stat file SQLite, cache lấy từ
+              chính Chromium). Thiết kế còn có dòng "Log" nhưng app không ghi file log
+              nào nên không dựng một dòng luôn bằng 0. */}
+          <div className="mt-4 flex flex-col gap-2.25">
+            <StorageRow
+              label={L.stModels}
+              color="#a855f7"
+              bytes={sizeOf('models')}
+              total={usedBytes}
+              cleanLabel={L.cleanBtn}
+              onClean={clearModels}
+              busy={deleteModels.isPending}
+              emptyLabel={L.emptyDir}
+            />
+            <StorageRow
+              label={L.stHistory}
+              color="#d946ef"
+              bytes={sizeOf('history')}
+              total={usedBytes}
+              cleanLabel={L.cleanBtn}
+              onClean={clearHistory}
+              busy={deleteSessions.isPending}
+              emptyLabel={L.emptyDir}
+            />
+            <StorageRow
+              label={L.stCache}
+              color="#22d3ee"
+              bytes={cacheUsed}
+              total={usedBytes}
+              cleanLabel={L.cleanBtn}
+              onClean={() => clearCache.mutate()}
+              busy={clearCache.isPending}
+              emptyLabel={L.emptyDir}
+            />
+          </div>
+
+          <div className="mt-3 text-sm text-fg-4">{L.cleanHint}</div>
+          <div className="mt-1 text-xs leading-normal text-fg-5">{L.cleanNoLogs}</div>
           <div className="mt-2.5 text-sm text-fg-4">{dirEditable ? L.dirNote : L.dirLocked}</div>
           {setModelsDir.isError && (
             <div className="mt-1 text-sm text-ac-red">{setModelsDir.error.message}</div>
           )}
           {deleteModels.isError && (
             <div className="mt-1 text-sm text-ac-red">{deleteModels.error.message}</div>
+          )}
+          {deleteSessions.isError && (
+            <div className="mt-1 text-sm text-ac-red">{deleteSessions.error.message}</div>
           )}
           {deleteModels.isSuccess && (
             <div className="mt-1 text-sm text-fg-4">

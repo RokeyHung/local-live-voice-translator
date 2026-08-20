@@ -10,3 +10,13 @@ export const PLATFORM = window.llvt?.platform ?? 'web'
 export function chooseDirectory(current?: string): Promise<string> {
   return window.llvt?.chooseDirectory?.(current) ?? Promise.resolve('')
 }
+
+// Cache của Chromium (thư mục userData). Ngoài Electron thì không có gì để đo/dọn,
+// nên trả 0 và không làm gì — nơi gọi cứ hiển thị "trống".
+export function cacheBytes(): Promise<number> {
+  return window.llvt?.cacheBytes?.() ?? Promise.resolve(0)
+}
+
+export function clearCache(): Promise<void> {
+  return window.llvt?.clearCache?.() ?? Promise.resolve()
+}

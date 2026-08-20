@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from llvt_ai_service.api.deps import get_container
 from llvt_ai_service.application.container import Container
-from llvt_ai_service.application.installed_models import purge, scan
+from llvt_ai_service.application.installed_models import file_bytes, managed_bytes, purge, scan
 from llvt_ai_service.application.load_progress import progress
 from llvt_ai_service.application.model_manager import ModelLoadError
 from llvt_ai_service.config import runtime_config
@@ -22,6 +22,8 @@ from llvt_ai_service.schemas import (
     InstalledModelSchema,
     LoadProgressResponse,
     StageInfoSchema,
+    StorageItemSchema,
+    StorageResponse,
 )
 
 logger = logging.getLogger("llvt.api.config")
@@ -133,6 +135,36 @@ def installed_models() -> list[InstalledModelSchema]:
         InstalledModelSchema(name=m.name, stage=m.stage, path=m.path, sizeBytes=m.size_bytes)
         for m in scan(get_settings().models_dir)
     ]
+
+
+@router.get(
+    "/storage",
+    response_model=StorageResponse,
+    summary="Dung lượng đĩa service đang chiếm",
+    description=(
+        "Đo THẬT trên đĩa, không ước lượng: `models` là tổng các thư mục do app tạo "
+        "trong `modelsDir` (đúng những thư mục `DELETE /api/models` sẽ xoá), `history` "
+        "là file SQLite lịch sử kèm `-wal`/`-shm` đi cùng nó.\n\n"
+        "`models` nhỉnh hơn tổng của `GET /api/models` một chút vì cache HuggingFace "
+        "còn có `refs`/`.locks` nằm ngoài các thư mục model được liệt kê. Service không "
+        "có thư mục cache hay file log riêng nào khác."
+    ),
+)
+def storage() -> StorageResponse:
+    settings = get_settings()
+    items = [
+        StorageItemSchema(
+            key="models",
+            path=str(settings.models_dir),
+            sizeBytes=managed_bytes(settings.models_dir),
+        ),
+        StorageItemSchema(
+            key="history",
+            path=str(settings.db_path),
+            sizeBytes=file_bytes(settings.db_path),
+        ),
+    ]
+    return StorageResponse(items=items, totalBytes=sum(item.sizeBytes for item in items))
 
 
 @router.post(
