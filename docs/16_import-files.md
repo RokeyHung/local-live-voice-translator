@@ -140,6 +140,25 @@ Bốn chỗ lệch so với mockup, đều có lý do:
 Hàng đợi thật nằm trong một `ref` chứ không suy ra từ state: vòng chạy sống lâu hơn một
 lần render, đọc state trong đó sẽ bỏ sót tệp vừa thả vào giữa chừng.
 
+### 5.1. Đổi tab không được mất việc đang làm
+
+Router cũ tháo bỏ màn cũ mỗi lần đổi tab (`{screen === 'import' && <ImportScreen/>}`).
+Với màn Nhập tệp thì đó không chỉ là mất ô tìm kiếm: **vòng chạy vẫn tiếp tục ngầm**
+(service vẫn nghiền tệp) nhưng kết quả đổ vào một component đã bị tháo, nên quay lại
+tab thì hàng đợi trống trơn như chưa từng chạy gì.
+
+Sửa ở `App.tsx`: mọi màn được dựng một lần và **giữ nguyên**, đổi tab chỉ ẩn/hiện
+(`display:none`; màn đang mở dùng `display:contents` để không phá layout flex của
+`<main>`). Vị trí cuộn của từng màn được nhớ lại vì khung cuộn là dùng chung.
+
+Đánh đổi: màn bị ẩn vẫn chạy hook của nó, nên mọi query có `refetchInterval` phải tự
+tắt khi khuất — `useIsScreen(id)` làm việc đó cho `useResources` (Chẩn đoán, Thiết bị)
+và `useSessions`/`useSessionDetail` (Lịch sử).
+
+Kiểm chứng bằng cách lái app đã build qua DevTools Protocol: đổi "Ngôn ngữ trong tệp"
+sang tiếng Nhật ở màn Nhập tệp, gõ từ khoá ở màn Lịch sử, đi qua hai màn khác rồi quay
+lại — cả hai giá trị còn nguyên, và màn Nhập tệp vẫn nằm trong DOM ở trạng thái ẩn.
+
 ## 6. Kiểm thử
 
 `tests/test_transcribe.py` (15 test):

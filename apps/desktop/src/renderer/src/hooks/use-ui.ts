@@ -6,6 +6,7 @@ import { listInputDevices, listOutputDevices, type AudioDevice } from '../adapte
 import { probeCompute } from '../adapters/compute-probe'
 import { LevelMeter } from '../adapters/level-meter'
 import { dict, type Dict } from '../application/i18n'
+import type { ScreenId } from '../domain/enums'
 import type { ComputeInfo } from '../domain/models'
 import { useUiStore } from '../stores/ui-store'
 
@@ -59,6 +60,16 @@ export function useStickyBottom<T extends HTMLElement>(signature: string): RefOb
   }, [signature])
 
   return ref
+}
+
+/** Màn này có đang được nhìn thấy không.
+ *
+ * Mọi màn đều được giữ lại (chỉ ẩn đi) để không mất việc đang làm khi đổi tab, nên
+ * những query hỏi lại theo nhịp phải tự tắt lúc màn bị ẩn — nếu không, app sẽ gõ cửa
+ * service liên tục cho một cái không ai nhìn.
+ */
+export function useIsScreen(id: ScreenId): boolean {
+  return useUiStore((s) => s.screen === id)
 }
 
 export function useCompute(): ComputeInfo | null {

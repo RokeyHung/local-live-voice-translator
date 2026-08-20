@@ -14,7 +14,7 @@ import type { Dict } from '../../application/i18n'
 import { PRESET_META } from '../../application/presets'
 import { useResources, useServiceConfig } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
-import { useAudioDevices, useCompute, useDict, useMicLevel } from '../../hooks/use-ui'
+import { useAudioDevices, useCompute, useDict, useIsScreen, useMicLevel } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
@@ -346,7 +346,8 @@ export function SetupScreen(): JSX.Element {
   const { inputs, outputs } = useAudioDevices()
   const health = useHealth()
   const serviceConfig = useServiceConfig()
-  const resources = useResources(health.isSuccess)
+  const visible = useIsScreen('setup')
+  const resources = useResources(health.isSuccess && visible)
   const active = useSessionStore((s) => s.active)
   const sessionMicLevel = useSessionStore((s) => s.micLevel)
   const systemLevel = useSessionStore((s) => s.systemLevel)

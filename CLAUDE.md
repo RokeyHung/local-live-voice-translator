@@ -73,7 +73,9 @@ Models are loaded **on demand**, never at startup (startup is ~0.4s instead of ~
 
 ### desktop renderer (`src/renderer/src/`)
 
-Same layering: `domain/` (enums/events/models), `ports/` (`AiClient`, `SessionChannel`), `adapters/` (`HttpAiClient` REST, `WsSessionChannel` WebSocket), `application/` (`config.ts`, `SessionController`), `stores/` (Zustand `session-store`), `hooks/` (`use-health`, `use-session` — bridge React↔application), `ui/` (presentational `App` + components). UI/hooks/application depend on **ports**, not concrete adapters. Electron `main/` + `preload/` are minimal; preload exposes `window.llvt` (AI service URLs + platform), consumed by `application/config.ts`.
+Same layering: `domain/` (enums/events/models), `ports/` (`AiClient`, `SessionChannel`), `adapters/` (`HttpAiClient` REST, `WsSessionChannel` WebSocket), `application/` (`config.ts`, `SessionController`), `stores/` (Zustand `session-store`), `hooks/` (`use-health`, `use-session` — bridge React↔application), `ui/` (presentational `App` + components).
+
+`App.tsx` mounts **every screen once and keeps it mounted**, switching tabs only toggles `display:none` (`<Screen show>`); screen-local state (the import queue and its in-flight run, search boxes, drafts) must survive tab switches. The cost is that hidden screens keep running their hooks, so any query with a `refetchInterval` has to gate on `useIsScreen('<id>')` — see `useResources` in Diagnostics/Setup and `useSessions` in History. UI/hooks/application depend on **ports**, not concrete adapters. Electron `main/` + `preload/` are minimal; preload exposes `window.llvt` (AI service URLs + platform), consumed by `application/config.ts`.
 
 ## Contract sync (important)
 

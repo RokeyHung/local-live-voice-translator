@@ -6,7 +6,7 @@ import { prettyGpuName } from '../../adapters/compute-probe'
 import { FRAME_SAMPLES, TARGET_SAMPLE_RATE } from '../../adapters/pcm16-stream'
 import { useBenchmark, useResources } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
-import { useCompute, useDict } from '../../hooks/use-ui'
+import { useCompute, useDict, useIsScreen } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { Icon } from '../components/Icon'
 import { Badge, EmptyState, Notice, ScreenHeader } from '../components/primitives'
@@ -81,7 +81,10 @@ export function DiagnosticsScreen(): JSX.Element {
   const compute = useCompute()
   const health = useHealth()
   const benchmark = useBenchmark()
-  const resources = useResources(health.isSuccess)
+  // Màn bị ẩn (người dùng đang ở tab khác) thì ngừng hỏi tài nguyên: nhịp 2 giây
+  // cho một biểu đồ không ai nhìn là lãng phí.
+  const visible = useIsScreen('diagnostics')
+  const resources = useResources(health.isSuccess && visible)
   const config = useSessionStore((s) => s.config)
   const metrics = useSessionStore((s) => s.metrics)
   const log = useSessionStore((s) => s.log)

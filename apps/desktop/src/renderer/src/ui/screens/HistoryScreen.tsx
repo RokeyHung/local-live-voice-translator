@@ -17,7 +17,7 @@ import {
   useSessionDetail,
   useSessions
 } from '../../hooks/use-history'
-import { useDict } from '../../hooks/use-ui'
+import { useDict, useIsScreen } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { Icon } from '../components/Icon'
 import { Dot, EmptyState, ScreenHeader } from '../components/primitives'
@@ -31,6 +31,7 @@ const REC_BADGE =
 
 export function HistoryScreen(): JSX.Element {
   const L = useDict()
+  const visible = useIsScreen('history')
   const active = useSessionStore((s) => s.active)
   const currentId = useSessionStore((s) => s.historySessionId)
 
@@ -40,7 +41,8 @@ export function HistoryScreen(): JSX.Element {
   const [draftTitle, setDraftTitle] = useState('')
 
   // Đang có phiên chạy thì service ghi thêm câu liên tục → hỏi lại theo nhịp ngắn.
-  const sessionsQuery = useSessions(query, active)
+  // Chỉ khi đang nhìn màn này: màn bị ẩn vẫn còn đó nhưng không cần cập nhật.
+  const sessionsQuery = useSessions(query, active && visible)
   const sessions = sessionsQuery.data ?? []
   const rename = useRenameSession()
   const removeSession = useDeleteSession()
@@ -49,7 +51,10 @@ export function HistoryScreen(): JSX.Element {
   // Phiên đã chọn có thể vừa bị xoá hoặc bị bộ lọc loại ra → lùi về phiên đầu danh sách.
   const selected =
     sessions.find((s) => s.id === selectedId) ?? (sessions.length > 0 ? sessions[0] : null)
-  const detailQuery = useSessionDetail(selected?.id ?? null, active && selected?.id === currentId)
+  const detailQuery = useSessionDetail(
+    selected?.id ?? null,
+    active && visible && selected?.id === currentId
+  )
   const detail = detailQuery.data ?? null
   const rows = detail?.utterances ?? []
 
