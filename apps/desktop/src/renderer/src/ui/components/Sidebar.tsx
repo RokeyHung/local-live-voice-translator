@@ -21,7 +21,8 @@ const NAV: NavItem[] = [
   { id: 'diagnostics', icon: 'bolt', color: 'var(--ac-grn2)' },
   { id: 'history', icon: 'clock', color: 'var(--ac-mag)' },
   { id: 'settings', icon: 'gear', color: 'var(--ac-sky)' },
-  { id: 'about', icon: 'info', color: '#818cf8' }
+  { id: 'about', icon: 'info', color: '#818cf8' },
+  { id: 'logs', icon: 'terminal', color: '#94a3b8' }
 ]
 
 // `idle` = service sống nhưng model chưa nạp (service không nạp lúc khởi động).
@@ -41,7 +42,8 @@ export function Sidebar({ status }: { status: ServiceStatus }): JSX.Element {
     diagnostics: L.diagnostics,
     history: L.history,
     settings: L.settings,
-    about: L.about
+    about: L.about,
+    logs: L.logs
   }
 
   const footer = {

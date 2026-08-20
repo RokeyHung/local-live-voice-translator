@@ -5,6 +5,8 @@ import type {
   ComputeBackend,
   ComputeKind,
   Language,
+  LogLevel,
+  LogSource,
   PipelineState,
   Preset,
   SessionMode,
@@ -207,6 +209,17 @@ export interface GlossaryEntry {
   id: string
   source: string
   target: string
+}
+
+// Một dòng trong màn Nhật ký. `message` đã là câu hoàn chỉnh theo ngôn ngữ giao diện
+// tại lúc ghi — nhật ký là biên bản của việc đã xảy ra, đổi ngôn ngữ sau đó không
+// viết lại quá khứ.
+export interface LogEntry {
+  id: string
+  at: number // epoch ms
+  level: LogLevel
+  source: LogSource
+  message: string
 }
 
 // Phần cứng phát hiện được từ renderer (navigator + WebGL). Không có API hệ thống

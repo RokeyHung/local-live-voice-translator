@@ -7,6 +7,7 @@
 
 import { useEffect, useLayoutEffect, useRef, type JSX, type ReactNode } from 'react'
 import type { ScreenId } from '../domain/enums'
+import { useAppEventLog } from '../hooks/use-app-log'
 import { useServiceConfig } from '../hooks/use-config'
 import { useHealth } from '../hooks/use-health'
 import { useSession } from '../hooks/use-session'
@@ -19,6 +20,7 @@ import { AboutScreen } from './screens/AboutScreen'
 import { DiagnosticsScreen } from './screens/DiagnosticsScreen'
 import { HistoryScreen } from './screens/HistoryScreen'
 import { ImportScreen } from './screens/ImportScreen'
+import { LogsScreen } from './screens/LogsScreen'
 import { ModelsScreen } from './screens/ModelsScreen'
 import { SessionScreen } from './screens/SessionScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
@@ -39,6 +41,7 @@ export default function App(): JSX.Element {
   const theme = useResolvedTheme()
   const health = useHealth()
   const L = useDict()
+  useAppEventLog()
 
   // Vùng nội dung là một khung cuộn dùng chung, nên phải nhớ vị trí cuộn của từng màn:
   // không nhớ thì quay lại màn dài sẽ rơi vào một chỗ ngẫu nhiên do màn kia để lại.
@@ -108,6 +111,9 @@ export default function App(): JSX.Element {
           </Screen>
           <Screen show={screen === 'about'}>
             <AboutScreen />
+          </Screen>
+          <Screen show={screen === 'logs'}>
+            <LogsScreen />
           </Screen>
         </main>
       </div>

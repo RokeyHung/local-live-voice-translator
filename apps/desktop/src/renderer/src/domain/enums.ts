@@ -38,7 +38,23 @@ export type Side = 'me' | 'remote'
 export type Stage = 'VAD' | 'ASR' | 'MT' | 'TTS'
 
 export type ScreenId =
-  'session' | 'import' | 'setup' | 'models' | 'diagnostics' | 'history' | 'settings' | 'about'
+  | 'session'
+  | 'import'
+  | 'setup'
+  | 'models'
+  | 'diagnostics'
+  | 'history'
+  | 'settings'
+  | 'about'
+  | 'logs'
+
+// Nhật ký sự kiện của ỨNG DỤNG (màn Nhật ký) — khác với `log` trong session-store,
+// chỗ đó giữ nguyên văn message WebSocket để soi giao thức ở màn Chẩn đoán.
+export type LogLevel = 'info' | 'warn' | 'error'
+
+// Nơi phát ra sự kiện; hiện đúng ở cột thứ ba của màn Nhật ký.
+export type LogSource =
+  'app' | 'system' | 'service' | 'session' | 'models' | 'import' | 'benchmark' | 'storage'
 
 export type ThemeMode = 'system' | 'light' | 'dark'
 

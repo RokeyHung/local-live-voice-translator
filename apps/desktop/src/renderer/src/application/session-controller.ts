@@ -1,14 +1,15 @@
 // Use-case: điều phối kênh phiên, thu mic và phát TTS; cập nhật store.
 // Chỉ phụ thuộc PORT (SessionChannel, AudioCapture, AudioOutput), không phụ thuộc adapter.
 
-import type { WsMessage } from '../domain/events'
+import type { ErrorPayload, WsMessage } from '../domain/events'
 import type { SessionConfig } from '../domain/models'
 import type { AudioCapture, AudioFrame } from '../ports/audio-capture'
 import type { AudioOutput } from '../ports/audio-output'
 import type { SessionChannel } from '../ports/session-channel'
 import { useSessionStore } from '../stores/session-store'
 import { useUiStore } from '../stores/ui-store'
-import { dict } from './i18n'
+import { dict, format } from './i18n'
+import { logError, logInfo, logWarn } from './logger'
 
 function toBase64(pcm: Int16Array): string {
   const bytes = new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength)
@@ -72,15 +73,27 @@ export class SessionController {
     const store = useSessionStore.getState()
     store.setWsStatus('connecting')
     this.channel.connect({
-      onOpen: () => useSessionStore.getState().setWsStatus('connected'),
+      onOpen: () => {
+        useSessionStore.getState().setWsStatus('connected')
+        logInfo('session', (L) => L.logWsOpen)
+      },
       onEvent: (msg) => this.onEvent(msg),
-      onClose: () => useSessionStore.getState().setWsStatus('disconnected'),
+      onClose: () => {
+        useSessionStore.getState().setWsStatus('disconnected')
+        logWarn('session', (L) => L.logWsClosed)
+      },
       onError: () => useSessionStore.getState().setWsStatus('disconnected')
     })
   }
 
   private onEvent(msg: WsMessage): void {
     useSessionStore.getState().applyMessage(msg)
+    // Lỗi từ service đi thẳng vào nhật ký nguyên mã lỗi: đó là thứ cần khi gỡ rối,
+    // và mã lỗi thì không dịch được sang tiếng người theo cách có ích hơn.
+    if (msg.type === 'error') {
+      const e = msg.payload as unknown as ErrorPayload
+      logError('session', () => `${e.code}: ${e.message}`)
+    }
     if (msg.type === 'tts.audio' && this.output) {
       const p = msg.payload as { pcm?: string; sampleRate?: number }
       if (p.pcm)
@@ -105,6 +118,7 @@ export class SessionController {
     const title = defaultTitle(dict(ui.uiLanguage).meetingPrefix, new Date())
     this.channel.send('session.start', sessionStartPayload(config, title))
     store.setActive(true)
+    logInfo('session', (L) => format(L.logSessionStart, { title }))
 
     // Chiều outgoing: mic của mình (bị gate bởi PTT/mute).
     if (this.mic && config.mode !== 'listen') {
@@ -128,11 +142,12 @@ export class SessionController {
   }
 
   private reportError(code: string, err: unknown): void {
-    useSessionStore.getState().applyMessage({
-      type: 'error',
-      ts: Date.now(),
-      payload: { code, message: err instanceof Error ? err.message : String(err) }
-    })
+    const message = err instanceof Error ? err.message : String(err)
+    // Lỗi dựng ở client nên không đi qua onEvent — phải tự ghi vào nhật ký.
+    logError('session', () => `${code}: ${message}`)
+    useSessionStore
+      .getState()
+      .applyMessage({ type: 'error', ts: Date.now(), payload: { code, message } })
   }
 
   private sendMic(frame: AudioFrame): void {
@@ -195,6 +210,7 @@ export class SessionController {
     store.setSystemLevel(0)
     store.setSystemCapturing(false)
     store.setDucking(false)
+    logInfo('session', (L) => L.logSessionStop)
   }
 
   dispose(): void {

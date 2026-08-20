@@ -3,6 +3,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient, UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { HttpAiClient } from '../adapters/http-ai-client'
+import { formatBytes } from '../application/format'
+import { format } from '../application/i18n'
+import { logInfo, logWarn } from '../application/logger'
 import type { Language, Preset } from '../domain/enums'
 import type {
   BenchmarkResponse,
@@ -47,7 +50,11 @@ export function useSetPreset(): UseMutationResult<ConfigResponse, Error, Preset>
   return useMutation({
     // Đổi preset khiến service nạp lại model — có thể mất vài giây.
     mutationFn: (preset: Preset) => client.updatePreset(preset),
-    onSuccess: (data) => queryClient.setQueryData(['config'], data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['config'], data)
+      logInfo('models', (L) => format(L.logPresetChanged, { preset: data.preset }))
+    },
+    onError: (error) => logWarn('models', (L) => format(L.logModelsFailed, { msg: error.message })),
     onSettled: () => refreshProgress(queryClient)
   })
 }
@@ -71,10 +78,13 @@ export function useLoadModels(): UseMutationResult<ConfigResponse, Error, boolea
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (reload) => client.loadModels(reload === true),
+    onMutate: () => logInfo('models', (L) => L.logModelsLoading),
     onSuccess: (data) => {
       queryClient.setQueryData(['config'], data)
       void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+      logInfo('models', (L) => L.logModelsReady)
     },
+    onError: (error) => logWarn('models', (L) => format(L.logModelsFailed, { msg: error.message })),
     // Cả khi hỏng cũng phải cập nhật: bảng tiến trình là chỗ chỉ ra khâu nào chết.
     onSettled: () => refreshProgress(queryClient)
   })
@@ -97,7 +107,10 @@ export function useUnloadModels(): UseMutationResult<ConfigResponse, Error, void
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: () => client.unloadModels(),
-    onSuccess: (data) => queryClient.setQueryData(['config'], data)
+    onSuccess: (data) => {
+      queryClient.setQueryData(['config'], data)
+      logInfo('models', (L) => L.logModelsUnloaded)
+    }
   })
 }
 
@@ -114,6 +127,7 @@ export function useSetModelsDir(): UseMutationResult<
     onSuccess: (data) => {
       queryClient.setQueryData(['config'], data)
       void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+      logInfo('storage', (L) => format(L.logModelsDirChanged, { dir: data.modelsDir }))
     }
   })
 }
@@ -122,9 +136,10 @@ export function useDeleteInstalledModels(): UseMutationResult<DeletedModels, Err
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: () => client.deleteInstalledModels(),
-    onSuccess: () => {
+    onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
       void queryClient.invalidateQueries({ queryKey: ['config'] })
+      logWarn('storage', (L) => format(L.logModelsDeleted, { size: formatBytes(data.freedBytes) }))
     }
   })
 }
@@ -136,7 +151,11 @@ export function useBenchmark(): UseMutationResult<
   { source: Language; target: Language }
 > {
   return useMutation({
-    mutationFn: ({ source, target }) => client.runBenchmark(source, target)
+    mutationFn: ({ source, target }) => client.runBenchmark(source, target),
+    onSuccess: (data) =>
+      logInfo('benchmark', (L) => format(L.logBenchDone, { total: Math.round(data.totalMs) })),
+    onError: (error) =>
+      logWarn('benchmark', (L) => format(L.logBenchFailed, { msg: error.message }))
   })
 }
 

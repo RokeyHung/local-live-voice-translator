@@ -183,6 +183,38 @@ export interface Dict {
   diagEmptyT: string
   diagEmptyS: string
   endToEnd: string
+  // nhật ký ứng dụng
+  logs: string
+  logsSub: string
+  logAll: string
+  logInfo: string
+  logWarn: string
+  logError: string
+  logClear: string
+  logExport: string
+  logEmpty: string
+  // nội dung các dòng nhật ký
+  logAppStarted: string
+  logUnhandled: string
+  logServiceUp: string
+  logServiceDown: string
+  logWsOpen: string
+  logWsClosed: string
+  logSessionStart: string
+  logSessionStop: string
+  logModelsLoading: string
+  logModelsReady: string
+  logModelsFailed: string
+  logModelsUnloaded: string
+  logPresetChanged: string
+  logModelsDeleted: string
+  logModelsDirChanged: string
+  logImportStart: string
+  logImportDone: string
+  logImportCancelled: string
+  logImportFailed: string
+  logBenchDone: string
+  logBenchFailed: string
   // lịch sử
   historySub: string
   clearAll: string
@@ -494,6 +526,38 @@ const vi: Dict = {
   diagEmptyT: 'Chưa có dữ liệu chẩn đoán',
   diagEmptyS: 'Bắt đầu một phiên phiên dịch để xem độ trễ theo thời gian thực.',
   endToEnd: 'Tổng đầu-cuối',
+
+  logs: 'Nhật ký',
+  logsSub: 'Theo dõi sự kiện và lỗi của ứng dụng để gỡ rối.',
+  logAll: 'Tất cả',
+  logInfo: 'Thông tin',
+  logWarn: 'Cảnh báo',
+  logError: 'Lỗi',
+  logClear: 'Xóa',
+  logExport: 'Xuất log',
+  logEmpty: 'Chưa có nhật ký nào.',
+
+  logAppStarted: 'Ứng dụng khởi động',
+  logUnhandled: 'Lỗi không bắt được: {msg}',
+  logServiceUp: 'Kết nối được AI service',
+  logServiceDown: 'Mất kết nối AI service',
+  logWsOpen: 'Kênh phiên đã mở (WebSocket)',
+  logWsClosed: 'Kênh phiên đã đóng',
+  logSessionStart: 'Bắt đầu phiên · {title}',
+  logSessionStop: 'Đã dừng phiên',
+  logModelsLoading: 'Bắt đầu nạp model',
+  logModelsReady: 'Model đã sẵn sàng trong bộ nhớ',
+  logModelsFailed: 'Nạp model thất bại: {msg}',
+  logModelsUnloaded: 'Đã giải phóng model khỏi bộ nhớ',
+  logPresetChanged: 'Đổi preset sang {preset}',
+  logModelsDeleted: 'Đã xóa model trên đĩa, giải phóng {size}',
+  logModelsDirChanged: 'Đổi thư mục lưu model sang {dir}',
+  logImportStart: 'Bắt đầu xử lý tệp {name}',
+  logImportDone: 'Xong {name} · {count} đoạn',
+  logImportCancelled: 'Đã huỷ tệp đang xử lý',
+  logImportFailed: 'Lỗi khi xử lý {name}: {msg}',
+  logBenchDone: 'Đo độ trễ xong · tổng {total} ms',
+  logBenchFailed: 'Đo độ trễ thất bại: {msg}',
 
   historySub: 'Mỗi cuộc họp được ghi lại riêng khi bạn nhấn Bắt đầu.',
   clearAll: 'Xóa tất cả',
@@ -814,6 +878,38 @@ const en: Dict = {
   diagEmptyT: 'No diagnostics data yet',
   diagEmptyS: 'Start a translation session to see real-time latency.',
   endToEnd: 'End-to-end total',
+
+  logs: 'Logs',
+  logsSub: 'Follow app events and errors while troubleshooting.',
+  logAll: 'All',
+  logInfo: 'Info',
+  logWarn: 'Warning',
+  logError: 'Error',
+  logClear: 'Clear',
+  logExport: 'Export log',
+  logEmpty: 'No log entries yet.',
+
+  logAppStarted: 'Application started',
+  logUnhandled: 'Unhandled error: {msg}',
+  logServiceUp: 'Connected to the AI service',
+  logServiceDown: 'Lost the connection to the AI service',
+  logWsOpen: 'Session channel open (WebSocket)',
+  logWsClosed: 'Session channel closed',
+  logSessionStart: 'Session started · {title}',
+  logSessionStop: 'Session stopped',
+  logModelsLoading: 'Loading models',
+  logModelsReady: 'Models are ready in memory',
+  logModelsFailed: 'Loading models failed: {msg}',
+  logModelsUnloaded: 'Models freed from memory',
+  logPresetChanged: 'Preset changed to {preset}',
+  logModelsDeleted: 'Models deleted from disk, freed {size}',
+  logModelsDirChanged: 'Model folder changed to {dir}',
+  logImportStart: 'Started processing {name}',
+  logImportDone: 'Finished {name} · {count} segments',
+  logImportCancelled: 'Cancelled the running file',
+  logImportFailed: 'Failed to process {name}: {msg}',
+  logBenchDone: 'Latency run finished · {total} ms total',
+  logBenchFailed: 'Latency run failed: {msg}',
 
   historySub: 'Each meeting is recorded separately when you press Start.',
   clearAll: 'Clear all',

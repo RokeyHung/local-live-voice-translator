@@ -45,6 +45,7 @@ export type IconName =
   | 'moon'
   | 'refresh'
   | 'arrow-right'
+  | 'terminal'
 
 const PATHS: Record<IconName, JSX.Element> = {
   wave: <path d="M2 12h4l3-9 4 18 3-9h6" />,
@@ -277,6 +278,12 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <line x1="5" y1="12" x2="19" y2="12" />
       <polyline points="12 5 19 12 12 19" />
+    </>
+  ),
+  terminal: (
+    <>
+      <polyline points="4 17 10 11 4 5" />
+      <line x1="12" y1="19" x2="20" y2="19" />
     </>
   )
 }
