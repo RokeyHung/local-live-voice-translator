@@ -108,9 +108,14 @@ export interface Dict {
   loopUnknown: string
   // model
   modelSub: string
+  chooseProfile: string
   presetActive: string
+  presetCustom: string
   installed: string
   onDisk: string
+  clearModelsBtn: string
+  cancelLoad: string
+  dldOk: string
   noModelsOnDisk: string
   loadIdle: string
   loadedLbl: string
@@ -413,9 +418,14 @@ const vi: Dict = {
   loopUnknown: 'Chưa chọn thiết bị đầu ra — không xác định được nguy cơ vọng âm.',
 
   modelSub: 'Chọn preset hiệu năng cho pipeline chạy trên máy.',
+  chooseProfile: 'Chọn cấu hình hiệu năng',
   presetActive: 'ĐANG DÙNG',
+  presetCustom: 'Tự chọn',
   installed: 'Khâu pipeline đang chạy',
-  onDisk: 'Model đã tải trên máy',
+  onDisk: 'Model đã cài',
+  clearModelsBtn: 'Xóa tất cả',
+  cancelLoad: 'Hủy nạp',
+  dldOk: 'Đã tải',
   noModelsOnDisk: 'Chưa có model nào trên đĩa — service sẽ tự tải khi nạp preset.',
   loadIdle: 'Chưa nạp',
   loadedLbl: 'Đã nạp',
@@ -728,9 +738,14 @@ const en: Dict = {
   loopUnknown: 'No output device selected — echo risk unknown.',
 
   modelSub: 'Pick the performance preset the local pipeline runs with.',
+  chooseProfile: 'Performance profile',
   presetActive: 'ACTIVE',
+  presetCustom: 'Custom',
   installed: 'Active pipeline stages',
-  onDisk: 'Models on disk',
+  onDisk: 'Installed models',
+  clearModelsBtn: 'Delete all',
+  cancelLoad: 'Cancel load',
+  dldOk: 'Downloaded',
   noModelsOnDisk: 'No model files yet — the service downloads them when a preset loads.',
   loadIdle: 'Not loaded',
   loadedLbl: 'Loaded',

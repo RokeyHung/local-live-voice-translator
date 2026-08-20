@@ -1,13 +1,18 @@
-// Màn Quản lý Model: đổi preset (GET/PUT /api/config), xem khâu pipeline đang chạy
-// và model đã tải trên đĩa. Tải model từ Hugging Face chưa có API nên chỉ tra cứu.
+// Màn Quản lý Model: dải trạng thái lớn (khởi động / nạp lại / giải phóng), bộ chọn
+// cấu hình hiệu năng, tiến trình nạp theo khâu, và hai cột "model đã cài" + "danh mục".
+//
+// Bố cục bám bản thiết kế mới. Những gì AI service chưa có API — hủy giữa chừng, cấu
+// hình tự chọn từng khâu, tải model từ danh mục, xoá lẻ một model — vẫn hiện đúng chỗ
+// thiết kế đặt nhưng ở trạng thái vô hiệu kèm tooltip, không giả lập bằng dữ liệu bịa.
 
-import { useMemo, useState, type JSX } from 'react'
+import { useMemo, useState, type JSX, type ReactNode } from 'react'
 import { formatBytes } from '../../application/format'
 import { format, type Dict } from '../../application/i18n'
 import { MODEL_CATALOG, PRESET_META, STAGE_COLORS } from '../../application/presets'
 import type { Preset } from '../../domain/enums'
 import { PRESETS, type LoadProgress, type LoadStageStatus } from '../../domain/models'
 import {
+  useDeleteInstalledModels,
   useInstalledModels,
   useLoadModels,
   useLoadProgress,
@@ -20,8 +25,8 @@ import { useCompute, useDict } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
-import { Badge, DisabledButton, Meter, Notice, ScreenHeader } from '../components/primitives'
-import { GHOST_BUTTON, INPUT, PRIMARY_BUTTON, SCREEN } from '../styles'
+import { Badge, DisabledButton, Dot, Meter, Notice, ScreenHeader } from '../components/primitives'
+import { DANGER_BUTTON, GHOST_BUTTON, INPUT, SCREEN } from '../styles'
 
 const PRESET_ICON: Record<Preset, IconName> = {
   fast: 'bolt',
@@ -120,16 +125,31 @@ function StageTag({ stage, width }: { stage: string; width: string }): JSX.Eleme
   )
 }
 
-function StageIcon({ stage }: { stage: string }): JSX.Element {
+function StageIcon({ stage, size = 30 }: { stage: string; size?: number }): JSX.Element {
   const color = STAGE_COLORS[stage] ?? 'var(--text3)'
   return (
     <span
-      className="flex size-7.5 shrink-0 items-center justify-center rounded-sm"
-      style={{ background: `${color}1a`, color }}
+      className="flex shrink-0 items-center justify-center rounded-sm"
+      style={{ width: size, height: size, background: `${color}1a`, color }}
     >
-      <Icon name={STAGE_ICON[stage] ?? 'box'} size={16} />
+      <Icon name={STAGE_ICON[stage] ?? 'box'} size={size > 28 ? 16 : 15} />
     </span>
   )
+}
+
+/** Tiêu đề của một tấm trong lưới hai cột. */
+function PanelHeader({ children }: { children: ReactNode }): JSX.Element {
+  return <div className="border-b border-line bg-surface px-4 py-3.25">{children}</div>
+}
+
+// Tên model trên đĩa và tên service báo về không giống nhau: đĩa là tên file/thư mục
+// (`ggml-large-v3-turbo-q5_0`, `facebook/nllb-200-distilled-600M`), còn service trả id
+// của adapter (`large-v3-turbo-q5_0`, hoặc danh sách voice ngăn bằng dấu phẩy với TTS).
+// Chuẩn hoá rồi so chứa nhau; không khớp thì coi như CHƯA nạp — báo thiếu còn hơn báo
+// nhầm một model không nằm trong bộ nhớ là đã nạp.
+function normalizeModelName(name: string): string {
+  const last = name.split('/').pop() ?? name
+  return last.replace(/^ggml-/, '').toLowerCase()
 }
 
 export function ModelsScreen(): JSX.Element {
@@ -140,6 +160,7 @@ export function ModelsScreen(): JSX.Element {
   const config = useServiceConfig()
   const setPreset = useSetPreset()
   const installed = useInstalledModels(health.isSuccess)
+  const deleteModels = useDeleteInstalledModels()
   const setSessionConfig = useSessionStore((s) => s.setConfig)
   const active = useSessionStore((s) => s.active)
   const [query, setQuery] = useState('')
@@ -156,10 +177,17 @@ export function ModelsScreen(): JSX.Element {
   // Service không nạp model lúc khởi động: `stages` rỗng nghĩa là chưa có gì trong RAM.
   const modelsLoaded = stages.length > 0
   const loading = loadModels.isPending || setPreset.isPending
-  const busy = loading || unloadModels.isPending
-  const installedNames = new Set((installed.data ?? []).map((m) => m.name))
-  const totalBytes = (installed.data ?? []).reduce((sum, m) => sum + m.sizeBytes, 0)
+  const busy = loading || unloadModels.isPending || deleteModels.isPending
+  const installedList = installed.data ?? []
+  const installedNames = new Set(installedList.map((m) => m.name))
+  const totalBytes = installedList.reduce((sum, m) => sum + m.sizeBytes, 0)
   const serviceUp = health.isSuccess
+
+  const loadedModels = stages.filter((s) => s.loaded).map((s) => s.model.toLowerCase())
+  const isLoadedOnDisk = (name: string): boolean => {
+    const needle = normalizeModelName(name)
+    return needle.length > 2 && loadedModels.some((m) => m.includes(needle))
+  }
 
   const applyPreset = (preset: Preset): void => {
     setPreset.mutate(preset, {
@@ -168,54 +196,53 @@ export function ModelsScreen(): JSX.Element {
     })
   }
 
-  const banner = !serviceUp
-    ? { tone: 'warn' as const, icon: 'warning' as IconName, title: L.mbDownT, body: L.mbDownS }
+  const clearModels = (): void => {
+    if (!window.confirm(L.dirConfirmClear)) return
+    deleteModels.mutate()
+  }
+
+  // Dải trạng thái lớn đầu màn: bốn trạng thái (service chết / đang nạp / đã nạp /
+  // chưa nạp) đổi cả màu viền, icon lẫn nút bên phải. Lúc chưa nạp thì tiêu đề để màu
+  // chữ thường — chưa nạp model không phải là một tình trạng bất thường.
+  const hero = !serviceUp
+    ? {
+        icon: 'warning' as IconName,
+        color: '#fb923c',
+        title: L.mbDownT,
+        titleColor: '#fb923c',
+        border: 'rgba(251,146,60,.3)',
+        bg: 'rgba(251,146,60,.07)',
+        body: L.mbDownS
+      }
     : loading
       ? {
-          tone: 'info' as const,
           icon: 'spinner' as IconName,
+          color: '#22d3ee',
           title: setPreset.isPending ? L.applyingPreset : L.mbLoadT,
+          titleColor: '#22d3ee',
+          border: 'rgba(34,211,238,.3)',
+          bg: 'rgba(34,211,238,.07)',
           body: L.mbLoadS
         }
       : modelsLoaded
         ? {
-            tone: 'ok' as const,
             icon: 'check-circle' as IconName,
+            color: '#22c55e',
             title: L.mbReadyT,
+            titleColor: 'var(--ac-grn)',
+            border: 'rgba(34,197,94,.3)',
+            bg: 'rgba(34,197,94,.07)',
             body: L.mbReadyS
           }
-        : { tone: 'info' as const, icon: 'box' as IconName, title: L.mbIdleT, body: L.mbIdleS }
-
-  // Bên phải dải trạng thái: đang nạp → phần trăm tổng (bảng tiến trình ở dưới nói rõ
-  // từng khâu); chưa nạp → khởi động; đã nạp → nạp lại + giải phóng.
-  const bannerAction = !serviceUp ? null : loading ? (
-    <span className="font-mono text-[14px] font-bold text-[#22d3ee]">
-      {Math.round(overallPercent)}%
-    </span>
-  ) : modelsLoaded ? (
-    <div className="flex gap-2">
-      <button
-        className={GHOST_BUTTON}
-        disabled={busy || active}
-        onClick={() => loadModels.mutate(true)}
-      >
-        <Icon name="refresh" size={14} />
-        {L.reloadModels}
-      </button>
-      <button
-        className={GHOST_BUTTON}
-        disabled={busy || active}
-        onClick={() => unloadModels.mutate()}
-      >
-        {L.unloadModels}
-      </button>
-    </div>
-  ) : (
-    <button className={PRIMARY_BUTTON} disabled={busy} onClick={() => loadModels.mutate(false)}>
-      <Icon name="play" size={14} />
-      {L.startModels}
-    </button>
-  )
+        : {
+            icon: 'box' as IconName,
+            color: 'var(--text3)',
+            title: L.mbIdleT,
+            titleColor: 'var(--text)',
+            border: 'var(--line)',
+            bg: 'var(--surface)',
+            body: L.mbIdleS
+          }
 
   // Cảnh báo bộ nhớ: deviceMemory bị chặn trần 8 GB nên chỉ cảnh báo mềm khi chạm trần.
   const ramWarning = useMemo(() => {
@@ -249,13 +276,83 @@ export function ModelsScreen(): JSX.Element {
         tint="rgba(168,85,247,.12)"
       />
 
-      <Notice
-        tone={banner.tone}
-        icon={banner.icon}
-        title={banner.title}
-        body={banner.body}
-        right={bannerAction}
-      />
+      {/* dải trạng thái lớn */}
+      <div
+        className="flex flex-wrap items-center gap-4.5 rounded-3xl border px-5.5 py-5 backdrop-blur-xl"
+        style={{ borderColor: hero.border, background: hero.bg }}
+      >
+        <span className="inline-flex size-13 shrink-0 items-center justify-center rounded-xl border border-line bg-surface">
+          <span className="flex" style={{ color: hero.color }}>
+            <Icon
+              name={hero.icon}
+              size={20}
+              spin={hero.icon === 'spinner'}
+              strokeWidth={hero.icon === 'spinner' ? 2.6 : 2.2}
+            />
+          </span>
+        </span>
+        <div className="min-w-45 flex-1">
+          <div className="text-xl font-extrabold" style={{ color: hero.titleColor }}>
+            {hero.title}
+          </div>
+          <div className="mt-0.75 text-base text-fg-3">{hero.body}</div>
+          {loading && (
+            <div className="mt-3 flex max-w-105">
+              <Meter value={overallPercent / 100} color="#a855f7" to="#6366f1" height={6} />
+            </div>
+          )}
+        </div>
+
+        {serviceUp && (
+          <div className="flex items-center gap-2.5">
+            {loading ? (
+              <>
+                <span className="font-mono text-2xl font-extrabold text-[#22d3ee]">
+                  {Math.round(overallPercent)}%
+                </span>
+                {/* Hủy giữa chừng cần API bên service (POST /api/models/load chặn tới
+                    khi xong), nên nút giữ đúng chỗ thiết kế nhưng không bấm được. */}
+                <button
+                  disabled
+                  title={L.notSupportedYet}
+                  className={`${DANGER_BUTTON} inline-flex items-center gap-1.5`}
+                >
+                  <Icon name="x" size={12} strokeWidth={2.4} />
+                  {L.cancelLoad}
+                </button>
+              </>
+            ) : modelsLoaded ? (
+              <>
+                <button
+                  className={GHOST_BUTTON}
+                  disabled={busy || active}
+                  onClick={() => loadModels.mutate(true)}
+                >
+                  <Icon name="refresh" size={14} />
+                  {L.reloadModels}
+                </button>
+                <button
+                  className={GHOST_BUTTON}
+                  disabled={busy || active}
+                  onClick={() => unloadModels.mutate()}
+                >
+                  {L.unloadModels}
+                </button>
+              </>
+            ) : (
+              <button
+                disabled={busy}
+                onClick={() => loadModels.mutate(false)}
+                className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border-none bg-linear-[135deg,#22d3ee,#3b82f6] px-5.5 text-md font-extrabold text-[#04121a] shadow-[0_6px_20px_rgba(34,211,238,.32)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Icon name="play" size={16} />
+                {L.startModels}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {setPreset.isError && (
         <Notice
           tone="error"
@@ -267,61 +364,91 @@ export function ModelsScreen(): JSX.Element {
       {loadModels.isError && (
         <Notice tone="error" icon="warning" title={L.loadFailed} body={loadModels.error.message} />
       )}
+      {deleteModels.isError && (
+        <Notice tone="error" icon="warning" title={L.dirClear} body={deleteModels.error.message} />
+      )}
 
-      {/* preset */}
-      <div className="grid grid-cols-3 gap-3.5">
-        {PRESETS.map((preset) => {
-          const p = PRESET_META[preset]
-          const on = current === preset
-          const disabled = !serviceUp || active || setPreset.isPending
-          return (
-            <button
-              key={preset}
-              onClick={() => applyPreset(preset)}
-              disabled={disabled}
-              title={active ? L.notSupportedYet : undefined}
-              className={[
-                'flex flex-col items-start rounded-2xl border p-4.25 text-left text-fg transition-all',
-                'disabled:cursor-not-allowed',
-                on
-                  ? 'border-line-strong bg-line-soft shadow-[0_0_20px_var(--line-soft)]'
-                  : 'border-line bg-(image:--panel) backdrop-blur-xl hover:border-line-strong',
-                disabled && !on ? 'opacity-55' : ''
-              ].join(' ')}
-            >
-              <div className="flex w-full items-center justify-between">
+      {/* bộ chọn cấu hình hiệu năng */}
+      <div className="panel px-4.5 py-4">
+        <div className="label-caps mb-2.75">{L.chooseProfile}</div>
+        <div className="grid grid-cols-4 gap-2.25">
+          {PRESETS.map((preset) => {
+            const p = PRESET_META[preset]
+            const on = current === preset
+            const disabled = !serviceUp || active || setPreset.isPending
+            return (
+              <button
+                key={preset}
+                onClick={() => applyPreset(preset)}
+                disabled={disabled}
+                title={active ? L.notSupportedYet : undefined}
+                className={[
+                  'flex items-center gap-2.25 rounded-lg border px-3.25 py-2.75 text-left text-fg transition-all',
+                  'disabled:cursor-not-allowed',
+                  disabled && !on ? 'opacity-55' : ''
+                ].join(' ')}
+                // `p.color` có thể là biến CSS (`var(--ac-grn2)`) nên không nối thêm
+                // alpha vào được — nền/viền sáng dùng `p.tint` đã là rgba sẵn.
+                style={{
+                  borderColor: on ? p.color : 'var(--line)',
+                  background: on ? p.tint : 'var(--surface)',
+                  boxShadow: on ? `0 0 12px ${p.tint}` : undefined
+                }}
+              >
                 <span
-                  className="flex size-9 items-center justify-center rounded-md"
+                  className="inline-flex size-7.5 shrink-0 items-center justify-center rounded-sm"
                   style={{ background: p.tint, color: p.color }}
                 >
                   <Icon name={PRESET_ICON[preset]} size={18} />
                 </span>
-                {on && (
-                  <span
-                    className="rounded-full px-2 py-0.75 text-xs font-bold text-[#04121a]"
-                    style={{ background: p.color }}
-                  >
-                    {L.presetActive}
-                  </span>
-                )}
-              </div>
-              <div className="mt-3 text-lg font-extrabold">{p.name}</div>
-              <div className="mt-1.25 text-sm leading-snug text-fg-3">
-                {uiLanguage === 'vi' ? p.descVi : p.descEn}
-              </div>
-              <div className="mt-3 font-mono text-xs text-fg-4">~{p.ramGb} GB RAM</div>
-            </button>
-          )
-        })}
-      </div>
+                <div className="min-w-0">
+                  <div className="text-md font-bold">{p.name}</div>
+                  <div className="font-mono text-xs text-fg-4">~{p.ramGb} GB RAM</div>
+                </div>
+              </button>
+            )
+          })}
 
-      {ramWarning && (
-        <Notice
-          tone={ramWarning.level === 'error' ? 'error' : 'warn'}
-          icon="warning"
-          title={ramWarning.text}
-        />
-      )}
+          {/* Ô thứ tư của thiết kế: chọn model riêng cho từng khâu. Cần API model bên
+              AI service nên để vô hiệu thay vì mở ra một bảng không lưu được gì. */}
+          <button
+            disabled
+            title={L.customSub}
+            className="flex cursor-not-allowed items-center gap-2.25 rounded-lg border border-line bg-surface px-3.25 py-2.75 text-left text-fg opacity-55"
+          >
+            <span
+              className="inline-flex size-7.5 shrink-0 items-center justify-center rounded-sm"
+              style={{ background: 'rgba(244,114,182,.12)', color: '#f472b6' }}
+            >
+              <Icon name="sliders" size={18} />
+            </span>
+            <div className="min-w-0">
+              <div className="text-md font-bold">{L.presetCustom}</div>
+              <div className="text-xs text-fg-4">{L.notSupported}</div>
+            </div>
+          </button>
+        </div>
+
+        {meta && (
+          <div className="mt-3 flex items-center gap-2 rounded-md bg-surface px-3.25 py-2.5 text-base leading-snug text-fg-3">
+            <Dot color={meta.color} glow={false} />
+            <span>
+              <b className="font-bold text-fg-2">{meta.name}</b> —{' '}
+              {uiLanguage === 'vi' ? meta.descVi : meta.descEn}
+            </span>
+          </div>
+        )}
+
+        {ramWarning && (
+          <div className="mt-2.75">
+            <Notice
+              tone={ramWarning.level === 'error' ? 'error' : 'warn'}
+              icon="warning"
+              title={ramWarning.text}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Giữ lại bảng sau khi nạp xong để thấy kết quả; giải phóng model thì bỏ đi
           vì lúc đó nó mô tả một thứ không còn nằm trong bộ nhớ nữa. */}
@@ -365,115 +492,166 @@ export function ModelsScreen(): JSX.Element {
         )}
       </div>
 
-      {/* model đã tải trên đĩa — dung lượng thật */}
-      <div className="panel overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4.5 py-3.25">
-          <span className="text-base font-bold">{L.onDisk}</span>
-          <span className="font-mono text-sm text-fg-4">
-            {installed.data ? formatBytes(totalBytes) : ''}
-          </span>
-        </div>
-        {(installed.data ?? []).map((model) => (
-          <div
-            key={model.path}
-            className="flex items-center gap-3.25 border-b border-line-soft px-4.5 py-3"
-          >
-            <StageTag stage={model.stage} width="w-10" />
-            <div className="min-w-0 flex-1">
-              <div className="font-mono text-base font-semibold">{model.name}</div>
-              <div className="truncate-1 text-xs text-fg-4" title={model.path}>
-                {model.path}
+      {/* thư viện model: đã cài trên đĩa | danh mục tra cứu */}
+      <div className="grid grid-cols-2 items-start gap-3.5">
+        {/* model đã tải trên đĩa — dung lượng thật */}
+        <div className="panel overflow-hidden">
+          <PanelHeader>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-base font-bold">{L.onDisk}</span>
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono text-sm text-fg-4">
+                  {installed.data ? formatBytes(totalBytes) : ''}
+                </span>
+                {totalBytes > 0 && (
+                  <button
+                    className="inline-flex h-6.5 cursor-pointer items-center gap-1.25 rounded-xs border border-[rgba(239,68,68,.22)] bg-[rgba(239,68,68,.1)] px-2.5 text-xs font-semibold text-[#f87171] disabled:cursor-not-allowed disabled:opacity-45"
+                    disabled={busy || active}
+                    onClick={clearModels}
+                  >
+                    <Icon name="trash" size={11} />
+                    {L.clearModelsBtn}
+                  </button>
+                )}
               </div>
             </div>
-            <span className="font-mono text-sm text-fg-3">{formatBytes(model.sizeBytes)}</span>
-          </div>
-        ))}
-        {installed.data && installed.data.length === 0 && (
-          <div className="px-5 py-7.5 text-center text-base text-fg-5">{L.noModelsOnDisk}</div>
-        )}
-        {config.data?.modelsDir && (
-          <div className="px-4.5 py-2.5 font-mono text-xs text-fg-5">{config.data.modelsDir}</div>
-        )}
-      </div>
+          </PanelHeader>
 
-      {/* cấu hình tự chọn — cần API model */}
-      <div className="rounded-2xl border border-dashed border-line-strong bg-surface px-5 py-4">
-        <div className="flex items-center gap-2.25">
-          <span className="flex text-[#f472b6]">
-            <Icon name="sliders" size={16} />
-          </span>
-          <div className="text-md font-bold text-[#f472b6]">{L.customTitle}</div>
-          <Badge color="var(--text4)">{L.notSupported}</Badge>
-        </div>
-        <div className="mt-1.25 text-sm text-fg-3">{L.customSub}</div>
-      </div>
-
-      {/* danh mục tham khảo */}
-      <div className="panel overflow-hidden">
-        <div className="border-b border-line bg-surface px-4.5 py-3.5">
-          <div className="flex items-center gap-2.25">
-            <span className="flex text-[#f59e0b]">
-              <Icon name="search" size={16} />
-            </span>
-            <span className="text-base font-bold">{L.browseTitle}</span>
-            <Badge color="var(--text4)">{L.notSupported}</Badge>
-          </div>
-          <div className="mt-0.75 text-sm text-fg-3">{L.browseSub}</div>
-          <div className="relative mt-3">
-            <span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-fg-4">
-              <Icon name="search" size={15} />
-            </span>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={L.searchPh}
-              className={`${INPUT} pl-9`}
-            />
-          </div>
-        </div>
-        <div className="cs max-h-70 overflow-y-auto">
-          {catalog.length === 0 && (
-            <div className="px-5 py-7 text-center text-base text-fg-5">{L.noCatalogResults}</div>
-          )}
-          {catalog.map((entry) => {
-            // Khớp với danh sách trên đĩa thật, không khớp với bảng chép tay.
-            const inUse = [...installedNames].some(
-              (name) => name === entry.name || name.endsWith(`/${entry.name}`)
-            )
-            return (
-              <div
-                key={entry.name}
-                className="flex items-center gap-3.25 border-b border-line-soft px-4.5 py-3"
-              >
-                <StageIcon stage={entry.stage} />
-                <StageTag stage={entry.stage} width="w-10" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-mono text-base font-semibold">{entry.name}</div>
-                  <div className="text-xs text-fg-4">{entry.detail}</div>
+          <div className="cs max-h-85 overflow-y-auto">
+            {installedList.map((model) => {
+              const loaded = isLoadedOnDisk(model.name)
+              return (
+                <div
+                  key={model.path}
+                  className="flex items-center gap-2.75 border-b border-line-soft px-4 py-2.75"
+                >
+                  <StageIcon stage={model.stage} size={28} />
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className="truncate-1 font-mono text-base font-semibold"
+                      title={model.path}
+                    >
+                      {model.name}
+                    </div>
+                    <div className="flex gap-1.75 text-xs text-fg-4">
+                      <span
+                        className="font-bold"
+                        style={{ color: STAGE_COLORS[model.stage] ?? 'var(--text3)' }}
+                      >
+                        {model.stage}
+                      </span>
+                      <span>{formatBytes(model.sizeBytes)}</span>
+                    </div>
+                  </div>
+                  <span
+                    className={`inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold ${
+                      loaded ? 'text-ac-grn' : 'text-fg-4'
+                    }`}
+                  >
+                    {loaded ? (
+                      <Icon name="check" size={13} strokeWidth={2.6} />
+                    ) : (
+                      <Dot color="var(--text5)" size={7} glow={false} />
+                    )}
+                    {loaded ? L.loadedLbl : L.loadIdle}
+                  </span>
+                  {/* Xoá lẻ một model cần API riêng — service mới chỉ xoá được tất cả. */}
+                  <button
+                    disabled
+                    title={L.notSupportedYet}
+                    className="flex size-7 shrink-0 cursor-not-allowed items-center justify-center rounded-sm border border-line bg-transparent text-fg-4 opacity-45"
+                  >
+                    <Icon name="trash" size={13} />
+                  </button>
                 </div>
-                <span className="w-17.5 text-right font-mono text-sm text-fg-3">{entry.size}</span>
-                <div className="flex w-32 justify-end">
-                  {inUse ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ac-grn">
-                      <Icon name="check" size={14} strokeWidth={2.4} />
-                      {L.loadedLbl}
-                    </span>
-                  ) : (
-                    <DisabledButton
-                      label={L.dlBtn}
-                      hint={L.browseDisabled}
-                      icon="download"
-                      className="h-7.5 text-sm"
-                    />
-                  )}
-                </div>
+              )
+            })}
+            {installed.data && installedList.length === 0 && (
+              <div className="px-5 py-8.5 text-center text-base leading-relaxed text-fg-5">
+                {L.noModelsOnDisk}
               </div>
-            )
-          })}
+            )}
+          </div>
+
+          {config.data?.modelsDir && (
+            <div className="truncate-1 px-4 py-2.5 font-mono text-xs text-fg-5">
+              {config.data.modelsDir}
+            </div>
+          )}
+        </div>
+
+        {/* danh mục tham khảo — tải về chưa nối với service */}
+        <div className="panel overflow-hidden">
+          <PanelHeader>
+            <div className="flex items-center gap-2.25">
+              <span className="flex text-[#f59e0b]">
+                <Icon name="search" size={15} />
+              </span>
+              <span className="text-base font-bold">{L.browseTitle}</span>
+              <Badge color="var(--text4)">{L.notSupported}</Badge>
+            </div>
+            <div className="relative mt-2.75">
+              <span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-fg-4">
+                <Icon name="search" size={15} />
+              </span>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={L.searchPh}
+                className={`${INPUT} pl-9`}
+              />
+            </div>
+          </PanelHeader>
+
+          <div className="cs max-h-76 overflow-y-auto">
+            {catalog.length === 0 && (
+              <div className="px-5 py-7 text-center text-base text-fg-5">{L.noCatalogResults}</div>
+            )}
+            {catalog.map((entry) => {
+              // Khớp với danh sách trên đĩa thật, không khớp với bảng chép tay.
+              const onDisk = [...installedNames].some(
+                (name) => name === entry.name || name.endsWith(`/${entry.name}`)
+              )
+              return (
+                <div
+                  key={entry.name}
+                  className="flex items-center gap-2.75 border-b border-line-soft px-4 py-2.75"
+                >
+                  <StageIcon stage={entry.stage} size={28} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate-1 font-mono text-base font-semibold">{entry.name}</div>
+                    <div className="flex gap-1.75 text-xs text-fg-4">
+                      <span
+                        className="font-bold"
+                        style={{ color: STAGE_COLORS[entry.stage] ?? 'var(--text3)' }}
+                      >
+                        {entry.stage}
+                      </span>
+                      <span>{entry.size}</span>
+                      <span className="truncate-1">{entry.detail}</span>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 justify-end">
+                    {onDisk ? (
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ac-grn">
+                        <Icon name="check" size={13} strokeWidth={2.4} />
+                        {L.dldOk}
+                      </span>
+                    ) : (
+                      <DisabledButton
+                        label={L.dlBtn}
+                        hint={L.browseDisabled}
+                        icon="download"
+                        className="h-7 text-sm"
+                      />
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
-
-      <div className="text-xs leading-normal text-fg-4">{L.notSupportedYet}</div>
     </div>
   )
 }
