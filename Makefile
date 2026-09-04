@@ -17,7 +17,7 @@ PREFIX      ?= rec
 
 .PHONY: help setup setup-service setup-desktop dev service desktop \
         build typecheck lint format format-docs health docs test bench accuracy soak segment \
-        endpointing clean
+        endpointing setup-eval eval-asr eval-mt eval-comet eval-latency clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -27,6 +27,9 @@ setup: setup-service setup-desktop ## Cài phụ thuộc cho cả hai app
 
 setup-service: ## Cài phụ thuộc Python (uv sync)
 	cd $(AI_DIR) && $(UV) sync
+
+setup-eval: ## Cài thêm phụ thuộc cho bộ đánh giá FLEURS (datasets, sacrebleu, jiwer)
+	cd $(AI_DIR) && $(UV) sync --group eval
 
 setup-desktop: ## Cài phụ thuộc desktop (npm install)
 	cd $(DESKTOP_DIR) && $(NPM) install
@@ -86,6 +89,18 @@ soak: ## Chạy liên tục 60 phút kiểm tra ổn định (cần AI service �
 segment: ## Cắt bản ghi dài thành bộ câu để đo WER (make segment MEDIA=file.mov)
 	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make segment MEDIA=ban-ghi.mov [PREFIX=vlog]"; exit 1; }
 	cd $(AI_DIR) && $(UV) run python scripts/segment_audio.py $(abspath $(MEDIA)) --prefix $(PREFIX)
+
+eval-asr: ## WER/CER của ASR trên FLEURS, mục 3a (make eval-asr LIMIT=20 để chạy thử)
+	cd $(AI_DIR) && $(UV) run python scripts/eval_asr.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-asr.json
+
+eval-mt: ## spBLEU/chrF++ trên 6 chiều dịch, mục 3b (make eval-mt LIMIT=30)
+	cd $(AI_DIR) && $(UV) run python scripts/eval_mt.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-mt.json
+
+eval-comet: ## Chấm COMET cho eval-mt.json — chạy ở môi trường riêng, mục 3b
+	cd $(AI_DIR) && $(UV) run --no-project scripts/eval_comet.py eval-mt.json
+
+eval-latency: ## Total Inference Time + RTF toàn hệ thống, mục 3c (make eval-latency LIMIT=20)
+	cd $(AI_DIR) && $(UV) run python scripts/eval_latency.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-latency.json
 
 endpointing: ## So ngưỡng tách câu của VAD trên một bản ghi (make endpointing MEDIA=file.mov)
 	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make endpointing MEDIA=ban-ghi.mov"; exit 1; }

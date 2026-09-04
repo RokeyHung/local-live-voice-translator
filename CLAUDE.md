@@ -8,7 +8,7 @@ Near-real-time, **fully local** speech translation desktop app (đồ án tốt 
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
 
-The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models, each with a note in `docs/` (`04`–`10`); `11` covers the post-T8 batch (history, settings, model lifecycle) and `16` the file-import screen. End-user docs: `12` install, `13` virtual mic + Google Meet. Remaining: real Google Meet + Windows 11 runs, a 60-minute soak with real models, a human-voice accuracy corpus, and T9 (report, packaging, demo).
+The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models, each with a note in `docs/` (`04`–`10`); `11` covers the post-T8 batch (history, settings, model lifecycle), `16` the file-import screen, and `17` the FLEURS evaluation suite. Meeting minutes live in `docs/meetings/`. End-user docs: `12` install, `13` virtual mic + Google Meet. Remaining: running the `docs/17` evaluation suite end-to-end on real hardware, real Google Meet + Windows 11 runs, a 60-minute soak with real models, and T9 (report, packaging, demo).
 
 ## Repository layout
 
@@ -36,6 +36,8 @@ make bench     # per-stage latency (service must be running)
 make accuracy  # WER/chrF over scripts/accuracy_corpus.json
 make soak MINUTES=60  # long-run stability check (service must be running)
 make endpointing MEDIA=rec.mov  # compare VAD sentence-splitting thresholds on a real recording
+make setup-eval    # install the FLEURS evaluation deps (datasets, sacrebleu, jiwer)
+make eval-asr / eval-mt / eval-comet / eval-latency  # the GVHD evaluation suite (docs/17)
 make clean     # remove .venv, node_modules, build output
 ```
 

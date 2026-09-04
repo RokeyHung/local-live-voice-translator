@@ -44,6 +44,12 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.15.22",
 ]
+eval = [
+    "datasets>=4.0",
+    "jiwer>=3.0",
+    "sacrebleu>=2.4",
+    "soundfile>=0.12",
+]
 
 [tool.ruff]
 line-length = 100
