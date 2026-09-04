@@ -25,7 +25,7 @@ import subprocess
 import wave
 from pathlib import Path
 
-from llvt_ai_service.adapters.vad.silero import SileroVad
+from llvt_ai_service.adapters.vad.silero import SileroVad, VadParams
 
 SAMPLE_RATE = 16000
 AUDIO_DIR = Path(__file__).parent / "audio"
@@ -34,6 +34,17 @@ AUDIO_DIR = Path(__file__).parent / "audio"
 # thì gõ lại mệt và một lỗi nhỏ cũng khó soi.
 MIN_SECONDS = 1.5
 MAX_SECONDS = 12.0
+
+# Cắt để LÀM BỘ ĐO chứ không phải để dịch trực tiếp, nên dùng ngưỡng riêng thay vì
+# ngưỡng của preset: ở đây không có áp lực độ trễ, chờ hết hẳn câu mới chốt (tắt chế
+# độ "chốt sớm" bằng cách cho soft == hard) và cho phép câu dài tới MAX_SECONDS. Dùng
+# ngưỡng live (6 s) sẽ băm câu giữa chừng — câu tham chiếu gõ tay sẽ cụt.
+OFFLINE_VAD = VadParams(
+    min_silence_ms=500,
+    soft_silence_ms=500,
+    soft_max_ms=int(MAX_SECONDS * 1000),
+    max_speech_ms=int(MAX_SECONDS * 1000),
+)
 
 
 def media_to_pcm(path: Path) -> bytes:
@@ -64,7 +75,7 @@ def write_wav(path: Path, pcm: bytes) -> None:
 
 async def segment(pcm: bytes) -> list[tuple[int, int, bytes]]:
     """Trả các đoạn có tiếng nói: (bắt đầu ms, kết thúc ms, pcm)."""
-    vad = SileroVad()
+    vad = SileroVad(OFFLINE_VAD)
     await vad.load()
     stream = vad.open_stream()
     out: list[tuple[int, int, bytes]] = []

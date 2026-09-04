@@ -52,6 +52,23 @@ class Settings(BaseSettings):
     # dữ liệu cũ vẫn xem và xoá được.
     history_enabled: bool = True
 
+    # Đè từng ngưỡng endpointing của preset đang chạy, ví dụ để dò tham số lúc đo:
+    #   LLVT_VAD_OVERRIDES='{"max_speech_ms": 4000, "soft_max_ms": 2000}'
+    # Khoá phải trùng tên trường của config.presets.VadTuning; khoá lạ bị bỏ qua kèm
+    # cảnh báo trong log (xem application/model_manager.py).
+    vad_overrides: dict[str, float] = {}
+
+    # Dưới ngưỡng này thì coi câu ASR là rác và bỏ hẳn (không dịch, không đọc, không
+    # ghi lịch sử). Whisper hay "sáng tác" trên đoạn chỉ có tiếng ồn — biên bản GVHD
+    # 19/08 mục 4.1. Đặt 0 để tắt hoàn toàn bộ lọc.
+    asr_min_confidence: float = 0.35
+
+    # Rút ngắn ngữ cảnh encoder của whisper.cpp (mặc định 1500 ≈ 30 s). Đoạn VAD chỉ
+    # vài giây nên phần lớn cửa sổ là padding — đặt ~768 nhanh hơn rõ rệt nhưng ĐỔI
+    # LẠI ĐỘ CHÍNH XÁC, nên mặc định 0 (tắt). Là một điểm đo cho bảng độ trễ ↔ chất
+    # lượng mà GVHD yêu cầu; đừng bật khi chưa có số WER tương ứng.
+    asr_audio_ctx: int = 0
+
     # Sau khi model đã cài, service hoạt động offline.
     offline_ready: bool = True
 

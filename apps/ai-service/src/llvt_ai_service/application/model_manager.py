@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
 from llvt_ai_service.adapters.asr.faster_whisper import FasterWhisperAsr
@@ -15,7 +15,7 @@ from llvt_ai_service.adapters.asr.whisper_cpp import WhisperCppAsr
 from llvt_ai_service.adapters.mt.nllb import NllbTranslator
 from llvt_ai_service.adapters.tts.kokoro_ja import KokoroJaTts
 from llvt_ai_service.adapters.tts.sherpa_onnx import SherpaOnnxTts
-from llvt_ai_service.adapters.vad.silero import SileroVad
+from llvt_ai_service.adapters.vad.silero import SileroVad, VadParams
 from llvt_ai_service.application.load_progress import progress
 from llvt_ai_service.application.tts_router import LanguageRoutedTts
 from llvt_ai_service.config.presets import PresetConfig, get_preset_config
@@ -37,14 +37,31 @@ class ProviderSet:
     tts: TextToSpeechProvider
 
 
+def vad_params(cfg: PresetConfig) -> VadParams:
+    """Ngưỡng endpointing của preset, cho phép ``LLVT_VAD_OVERRIDES`` đè từng khoá.
+
+    Chuyển đổi ở đây (chứ không trong config) vì đây là chỗ duy nhất được phép biết cả
+    tầng config lẫn adapter cụ thể.
+    """
+    values = asdict(cfg.vad)
+    for key, value in get_settings().vad_overrides.items():
+        if key not in values:
+            logger.warning("LLVT_VAD_OVERRIDES: bỏ qua khoá không có thật %r", key)
+            continue
+        values[key] = float(value) if key == "threshold" else int(value)
+    return VadParams(**values)
+
+
 # Registry: tên adapter -> factory. Thêm backend mới = thêm 1 dòng ở đây.
 VAD_REGISTRY: dict[str, Callable[[PresetConfig], VoiceActivityDetector]] = {
-    "silero": lambda _cfg: SileroVad(),
+    "silero": lambda cfg: SileroVad(vad_params(cfg)),
 }
 ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
     "whisper_cpp": lambda cfg: WhisperCppAsr(
         cfg.asr_model,
         models_dir=str(get_settings().models_dir / "whisper-cpp"),
+        min_confidence=get_settings().asr_min_confidence,
+        audio_ctx=get_settings().asr_audio_ctx,
     ),
     "faster_whisper": lambda cfg: FasterWhisperAsr(cfg.asr_model),
 }

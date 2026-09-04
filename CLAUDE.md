@@ -35,6 +35,7 @@ make health    # curl GET /health
 make bench     # per-stage latency (service must be running)
 make accuracy  # WER/chrF over scripts/accuracy_corpus.json
 make soak MINUTES=60  # long-run stability check (service must be running)
+make endpointing MEDIA=rec.mov  # compare VAD sentence-splitting thresholds on a real recording
 make clean     # remove .venv, node_modules, build output
 ```
 
@@ -60,9 +61,9 @@ The core discipline everywhere: **dependencies point inward** — `adapters → 
 
 - `domain/` — pure `enums`, `models`, `events` (dataclasses; no framework imports).
 - `ports/` — ABCs: `SpeechToTextProvider`, `TranslationProvider`, `TextToSpeechProvider`, `VoiceActivityDetector`, `SessionRepository`. All AI providers extend `Provider` (async `load()`/`unload()`).
-- `adapters/` — real impls: `asr/whisper_cpp.py` (pywhispercpp), `mt/nllb.py` (transformers), `tts/sherpa_onnx.py` (vi/en/zh), `tts/kokoro_ja.py` (Japanese — sherpa-onnx has no working Japanese front-end, so this one pairs the Kokoro ONNX model with misaki/OpenJTalk G2P), `vad/silero.py`, `persistence/sqlite.py` (session history, SQLAlchemy Core) + `persistence/memory.py` (in-memory, used by tests). `asr/faster_whisper.py` is the only remaining stub (optimization phase).
+- `adapters/` — real impls: `asr/whisper_cpp.py` (pywhispercpp), `mt/nllb.py` (transformers), `tts/sherpa_onnx.py` (vi/en/zh), `tts/kokoro_ja.py` (Japanese — sherpa-onnx has no working Japanese front-end, so this one pairs the Kokoro ONNX model with misaki/OpenJTalk G2P), `vad/silero.py` (Silero + the endpointing state machine), `asr/hallucination.py` (pure filter for Whisper's phantom sentences, shared by every ASR adapter), `persistence/sqlite.py` (session history, SQLAlchemy Core) + `persistence/memory.py` (in-memory, used by tests). `asr/faster_whisper.py` is the only remaining stub (optimization phase).
 - `application/` — `TranslationPipeline` (VAD→ASR→MT→TTS, calls only ports; also persists each finished utterance), `transcribe.py` (batch file import: VAD→ASR→MT over a whole file, no TTS — a separate use case, not a mode of the pipeline), `ModelManager` (registry mapping adapter-name→factory, `load_preset()`), `SessionService`/`SessionController` (per-connection), `HistoryPolicy` (port-implementing decorator that turns history writes off — SPEC 14.4 privacy opt-out), `LanguageRoutedTts` (picks the TTS engine per target language; policy, so it lives here rather than in an adapter), `SerialExecutor` (runs blocking model calls in a thread + lock, since whisper.cpp contexts are not thread-safe), `Container` (DI holder).
-- `config/` — `settings.py` (pydantic-settings, `LLVT_` env prefix), `presets.py` (Fast/Balanced/Quality → adapter+model choices).
+- `config/` — `settings.py` (pydantic-settings, `LLVT_` env prefix), `presets.py` (Fast/Balanced/Quality → adapter+model choices **and** a `VadTuning` per preset).
 - `api/` + `ws/` — thin transport. `app.py` builds the `Container` in the FastAPI **lifespan** and attaches it to `app.state`; routes get it via `api/deps.py`.
 
 Key flow: lifespan → `ModelManager.select_preset(default)` (records the preset, loads **nothing**) → WS `/ws` creates a `SessionController` per connection → messages drive `TranslationPipeline` → domain `PipelineEvent`s are converted to JSON by `ws/protocol.py` and streamed back.

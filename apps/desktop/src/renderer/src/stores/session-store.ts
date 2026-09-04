@@ -96,6 +96,15 @@ function upsert(list: Utterance[], id: string, patch: Partial<Utterance>): Utter
   return next
 }
 
+// Câu mà VAD cắt trúng đoạn chỉ có tiếng ồn: service chạy ASR, không ra chữ nào (hoặc
+// ra câu ma và đã bị lọc) rồi báo thẳng Completed. Không có gì để hiện → bỏ hàng thay
+// vì để lại một dòng phụ đề trống.
+function dropIfEmpty(list: Utterance[], id: string): Utterance[] {
+  const u = list.find((x) => x.id === id)
+  if (!u || u.sourceText?.trim() || u.translatedText?.trim()) return list
+  return list.filter((x) => x.id !== id)
+}
+
 export const useSessionStore = create<SessionState>((set) => ({
   wsStatus: 'disconnected',
   active: false,
@@ -169,8 +178,18 @@ export const useSessionStore = create<SessionState>((set) => ({
               patch.totalMs = now - mark.recognizing
               metrics = { ...metrics, lastTotalMs: patch.totalMs }
             }
-            metrics = { ...metrics, utteranceCount: metrics.utteranceCount + 1 }
             marks.delete(utteranceId)
+          }
+
+          let utterances = upsert(s.utterances, utteranceId, patch)
+          if (state === 'Completed') {
+            const kept = dropIfEmpty(utterances, utteranceId)
+            // Chỉ đếm những câu thật sự ra chữ — không thì mỗi khoảng lặng cũng làm
+            // tăng số câu trên màn Chẩn đoán.
+            if (kept.length === utterances.length) {
+              metrics = { ...metrics, utteranceCount: metrics.utteranceCount + 1 }
+            }
+            utterances = kept
           }
 
           return {
@@ -178,7 +197,7 @@ export const useSessionStore = create<SessionState>((set) => ({
             pipelineState: state,
             historySessionId,
             partial: state === 'Completed' ? null : s.partial,
-            utterances: upsert(s.utterances, utteranceId, patch),
+            utterances,
             metrics
           }
         }

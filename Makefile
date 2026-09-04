@@ -16,7 +16,8 @@ PREFIX      ?= rec
 .DEFAULT_GOAL := help
 
 .PHONY: help setup setup-service setup-desktop dev service desktop \
-        build typecheck lint format format-docs health docs test bench accuracy soak segment clean
+        build typecheck lint format format-docs health docs test bench accuracy soak segment \
+        endpointing clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -85,6 +86,10 @@ soak: ## Chạy liên tục 60 phút kiểm tra ổn định (cần AI service �
 segment: ## Cắt bản ghi dài thành bộ câu để đo WER (make segment MEDIA=file.mov)
 	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make segment MEDIA=ban-ghi.mov [PREFIX=vlog]"; exit 1; }
 	cd $(AI_DIR) && $(UV) run python scripts/segment_audio.py $(abspath $(MEDIA)) --prefix $(PREFIX)
+
+endpointing: ## So ngưỡng tách câu của VAD trên một bản ghi (make endpointing MEDIA=file.mov)
+	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make endpointing MEDIA=ban-ghi.mov"; exit 1; }
+	cd $(AI_DIR) && $(UV) run python scripts/endpointing.py $(abspath $(MEDIA))
 
 clean: ## Xóa venv, node_modules và build output
 	rm -rf $(AI_DIR)/.venv

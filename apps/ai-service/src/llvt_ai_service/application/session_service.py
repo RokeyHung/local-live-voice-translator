@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 from typing import Awaitable, Callable
 
-from llvt_ai_service.application.inference import SerialExecutor
 from llvt_ai_service.application.model_manager import ModelManager
 from llvt_ai_service.application.pipeline import TranslationPipeline
 from llvt_ai_service.domain import events as ev
@@ -26,7 +25,6 @@ class SessionController:
         self._session: Session | None = None
         self._incoming: TranslationPipeline | None = None
         self._outgoing: TranslationPipeline | None = None
-        self._executor = SerialExecutor()
         # Push-to-talk là chế độ mặc định: mic chỉ được xử lý khi đang GIỮ nút.
         self._ptt_active = False
         self._muted = False
@@ -48,7 +46,6 @@ class SessionController:
                 self._emit,
                 synthesize=False,
                 session_id=session_id,
-                executor=self._executor,
                 repository=self._repo,
             )
         if config.outgoing is not None:
@@ -59,7 +56,6 @@ class SessionController:
                 self._emit,
                 synthesize=True,
                 session_id=session_id,
-                executor=self._executor,
                 repository=self._repo,
             )
         # Kèm sessionId để client biết phiên nào trong lịch sử ứng với phiên đang chạy.

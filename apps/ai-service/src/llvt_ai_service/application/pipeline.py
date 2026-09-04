@@ -11,7 +11,6 @@ import time
 from contextlib import contextmanager
 from typing import Awaitable, Callable, Iterator
 
-from llvt_ai_service.application.inference import SerialExecutor
 from llvt_ai_service.application.model_manager import ProviderSet
 from llvt_ai_service.domain import events as ev
 from llvt_ai_service.domain.enums import AudioSource, PipelineState, UtteranceStatus
@@ -49,7 +48,6 @@ class TranslationPipeline:
         *,
         synthesize: bool,
         session_id: str = "",
-        executor: SerialExecutor | None = None,
         repository: SessionRepository | None = None,
     ) -> None:
         self._p = providers
@@ -58,8 +56,10 @@ class TranslationPipeline:
         self._emit = emit
         self._synthesize = synthesize
         self._session_id = session_id
-        self._executor = executor or SerialExecutor()
         self._repo = repository
+        # Đếm số câu bị cắt cứng vì người nói không dừng lại: tần suất cao nghĩa
+        # là max_speech_ms đang quá ngắn cho cách nói của người dùng.
+        self._forced_cuts = 0
         # Mỗi pipeline có stream VAD riêng (state độc lập cho nguồn audio của mình).
         self._vad = providers.vad.open_stream()
 
@@ -83,6 +83,14 @@ class TranslationPipeline:
         self._vad.reset()
 
     async def _process(self, segment: VadSegment) -> None:
+        if segment.forced:
+            self._forced_cuts += 1
+            logger.info(
+                "Cắt cứng câu %s (lần thứ %d): người nói chưa dừng sau %d ms",
+                self._source.value,
+                self._forced_cuts,
+                segment.ended_at_ms - segment.started_at_ms,
+            )
         utt = Utterance(
             session_id=self._session_id,
             source=self._source,
@@ -95,6 +103,15 @@ class TranslationPipeline:
                 transcript = await self._p.asr.transcribe(segment.pcm, self._dir.source)
             asr_ms = utt.asr_ms = asr_timer.ms
             utt.source_text = transcript.text
+
+            if not transcript.text.strip():
+                # VAD cắt trúng đoạn chỉ có tiếng ồn, hoặc ASR sinh câu ma và đã bị
+                # adapter lọc bỏ. Dừng ở đây: dịch và đọc một chuỗi rỗng chỉ tốn thêm
+                # vài trăm ms cho mỗi khoảng lặng, còn TTS thì phát ra tiếng lạ.
+                await self._emit(ev.Metrics(asr_ms=asr_ms))
+                await self._emit(ev.StateChanged(PipelineState.completed, utt.id))
+                return
+
             await self._emit(
                 ev.AsrFinal(
                     utt.id,

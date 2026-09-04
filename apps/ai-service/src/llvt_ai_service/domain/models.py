@@ -64,6 +64,10 @@ class VadSegment:
     started_at_ms: int
     ended_at_ms: int
     sample_rate: int = 16000
+    # True khi đoạn bị cắt vì chạm trần độ dài chứ không phải vì người nói dừng lại —
+    # tức là câu VẪN đang tiếp diễn. Dùng để không phạt nhầm ASR/MT khi đánh giá và
+    # để lịch sử biết một câu dài đã bị chia làm mấy mảnh.
+    forced: bool = False
 
 
 @dataclass
