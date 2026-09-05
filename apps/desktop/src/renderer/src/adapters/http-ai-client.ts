@@ -128,11 +128,17 @@ export class HttpAiClient implements AiClient {
     name,
     source,
     target,
-    save
+    save,
+    diarize
   }: TranscribeRequest): Promise<TranscriptionResult> {
     // Gửi thẳng PCM thô: tệp đã được giải mã ở renderer (Chromium có sẵn bộ giải mã
     // MP3/M4A/FLAC/OGG/WebM), nên service không phải kèm ffmpeg trong bản cài.
-    const params = new URLSearchParams({ source, name, save: String(save) })
+    const params = new URLSearchParams({
+      source,
+      name,
+      save: String(save),
+      diarize: String(diarize)
+    })
     if (target) params.set('target', target)
     const res = await fetch(`${AI_BASE_URL}/api/transcribe?${params}`, {
       method: 'POST',

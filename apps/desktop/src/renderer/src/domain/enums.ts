@@ -34,8 +34,9 @@ export type WsStatus = 'disconnected' | 'connecting' | 'connected'
 // Bên phát ra một utterance: giọng của mình (mic) hay của phía cuộc họp.
 export type Side = 'me' | 'remote'
 
-// Khâu trong pipeline — dùng cho danh sách model và biểu đồ độ trễ.
-export type Stage = 'VAD' | 'ASR' | 'MT' | 'TTS'
+// Khâu trong pipeline — dùng cho danh sách model và biểu đồ độ trễ. 'DIA' (tách
+// người nói) chỉ xuất hiện khi bật diarization, và chỉ chạy ở màn Nhập tệp.
+export type Stage = 'VAD' | 'ASR' | 'MT' | 'TTS' | 'DIA'
 
 export type ScreenId =
   | 'session'

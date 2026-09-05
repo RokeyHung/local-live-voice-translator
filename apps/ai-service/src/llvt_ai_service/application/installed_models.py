@@ -3,11 +3,13 @@
 Mỗi adapter tự tải model theo kiểu riêng nên bố cục thư mục khác nhau:
 
 - ``whisper-cpp/``  : file ``.bin`` phẳng do pywhispercpp tải về.
+- ``mlx-whisper/``  : cache HuggingFace của backend MLX (``models--mlx-community--…``).
 - ``nllb/``         : cache của HuggingFace (``models--facebook--nllb-...``).
 - ``sherpa-tts/``   : mỗi voice một thư mục đã giải nén.
 - ``kokoro-ja/``    : model + bộ giọng tiếng Nhật (hai file .onnx/.bin rời).
+- ``pyannote/``     : cache HuggingFace của model tách người nói (tùy chọn).
 
-Hàm ở đây quét đúng bốn bố cục đó và trả dung lượng thật để giao diện khỏi phải
+Hàm ở đây quét đúng những bố cục đó và trả dung lượng thật để giao diện khỏi phải
 bịa số. Thư mục nào chưa tồn tại thì bỏ qua — nghĩa là khâu đó chưa tải model.
 """
 
@@ -20,15 +22,22 @@ from pathlib import Path
 
 logger = logging.getLogger("llvt.installed_models")
 
-# Chỉ bốn thư mục này là do app tạo ra. Xoá model nghĩa là xoá đúng chúng, KHÔNG phải
-# xoá sạch `models_dir` — người dùng có thể trỏ nó vào một thư mục có sẵn thứ khác.
-MANAGED_DIRS = ("whisper-cpp", "nllb", "sherpa-tts", "kokoro-ja")
+# Chỉ những thư mục này là do app tạo ra. Xoá model nghĩa là xoá đúng chúng, KHÔNG
+# phải xoá sạch `models_dir` — người dùng có thể trỏ nó vào một thư mục có sẵn thứ khác.
+MANAGED_DIRS = ("whisper-cpp", "mlx-whisper", "nllb", "sherpa-tts", "kokoro-ja", "pyannote")
+
+# Thư mục dùng bố cục cache HuggingFace (`models--<org>--<repo>/`) -> khâu tương ứng.
+HF_CACHE_DIRS: tuple[tuple[str, str], ...] = (
+    ("mlx-whisper", "ASR"),
+    ("nllb", "MT"),
+    ("pyannote", "DIA"),
+)
 
 
 @dataclass
 class InstalledModel:
     name: str
-    stage: str  # ASR | MT | TTS
+    stage: str  # ASR | MT | TTS | DIA
     path: str
     size_bytes: int
 
@@ -70,14 +79,16 @@ def scan(models_dir: Path) -> list[InstalledModel]:
             except OSError:
                 continue
 
-    nllb_dir = models_dir / "nllb"
-    if nllb_dir.is_dir():
-        for entry in sorted(nllb_dir.iterdir()):
+    for dir_name, stage in HF_CACHE_DIRS:
+        cache_dir = models_dir / dir_name
+        if not cache_dir.is_dir():
+            continue
+        for entry in sorted(cache_dir.iterdir()):
             if entry.is_dir() and entry.name.startswith("models--"):
                 found.append(
                     InstalledModel(
                         name=_hf_repo_name(entry.name),
-                        stage="MT",
+                        stage=stage,
                         path=str(entry),
                         size_bytes=_dir_size(entry),
                     )
@@ -97,7 +108,7 @@ def scan(models_dir: Path) -> list[InstalledModel]:
                 )
 
     # Voice tiếng Nhật không nằm chung với sherpa-onnx vì dùng runtime khác.
-    kokoro_dir = models_dir / MANAGED_DIRS[3]
+    kokoro_dir = models_dir / "kokoro-ja"
     if kokoro_dir.is_dir():
         found.append(
             InstalledModel(

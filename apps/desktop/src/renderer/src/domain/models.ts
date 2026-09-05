@@ -62,6 +62,8 @@ export interface ConfigResponse {
   modelsDirEditable: boolean // false khi LLVT_MODELS_DIR đang quyết định
   historyDbPath: string
   historyEnabled: boolean
+  // Tách người nói có bật không (LLVT_DIARIZATION_ENABLED). Chỉ ảnh hưởng màn Nhập tệp.
+  diarizationEnabled: boolean
 }
 
 // Tiến trình nạp model (GET /api/models/progress), hỏi trong lúc lệnh nạp đang chạy.
@@ -124,6 +126,9 @@ export interface TranscriptSegment {
   translatedText: string | null // null khi chỉ nhận dạng chữ, không dịch
   asrMs: number | null
   mtMs: number | null
+  // Mã người nói (`speaker-1`, `speaker-2`…) khi bật diarization; null = không bật,
+  // hoặc đoạn rơi vào chỗ chuyển lượt nên không ai chiếm đủ đa số thời lượng.
+  speaker: string | null
 }
 
 export interface TranscriptionResult {
@@ -135,6 +140,7 @@ export interface TranscriptionResult {
   sessionId: string // rỗng = không lưu vào lịch sử
   // true = dừng giữa chừng theo yêu cầu; `segments` chỉ là phần đã chạy được.
   cancelled: boolean
+  speakerCount: number // 0 = không chạy diarization cho tệp này
 }
 
 // Tiến trình tệp đang chạy (GET /api/transcribe/progress), hỏi trong lúc POST còn chặn.
@@ -147,6 +153,9 @@ export interface TranscribeProgress {
   percent: number | null
   error: string | null
   cancelling: boolean // đã xin dừng, đang chờ khúc hiện tại chạy nốt
+  // 'diarizing' = đang gom cụm giọng trên CẢ tệp (percent còn 0), 'transcribing' =
+  // đang nhận dạng + dịch theo từng đoạn.
+  phase: 'diarizing' | 'transcribing'
 }
 
 export interface LanguagePair {
@@ -207,6 +216,9 @@ export interface HistoryRow {
   error?: string | null
   startedAtMs: number
   endedAtMs?: number | null
+  // Mã người nói với phiên là tệp nhập có bật diarization; null với phiên trực tiếp
+  // (ở đó `source` đã cho biết ai nói).
+  speaker?: string | null
 }
 
 export interface HistorySessionDetail extends HistorySession {

@@ -151,6 +151,7 @@ export interface Dict {
   browseTitle: string
   browseSub: string
   browseDisabled: string
+  catalogWrongPlatform: string
   searchPh: string
   dlBtn: string
   noCatalogResults: string
@@ -331,6 +332,7 @@ export interface Dict {
   durationLbl: string
   diarizeLbl: string
   diarizeOff: string
+  diarizeHint: string
   impFileLang: string
   impTargetLang: string
   impNoTranslate: string
@@ -344,6 +346,11 @@ export interface Dict {
   impSegments: string
   impLoadHint: string
   impBusySession: string
+  // tách người nói (diarization) — chỉ có ở màn Nhập tệp
+  impDiarizing: string
+  impSpeakers: string
+  speakerN: string
+  speakerUnknown: string
   // trạng thái utterance
   stRecognizing: string
   stTranslating: string
@@ -503,6 +510,7 @@ const vi: Dict = {
   browseTitle: 'Tìm & tải model từ Hugging Face',
   browseSub: 'Danh mục tham khảo theo docs/02 — tải về chưa nối với AI service.',
   browseDisabled: 'Tải model từ giao diện chưa hỗ trợ.',
+  catalogWrongPlatform: 'Model này không chạy trên hệ điều hành hiện tại.',
   searchPh: 'Lọc danh mục (whisper, nllb, piper…)',
   dlBtn: 'Tải về',
   noCatalogResults: 'Không có model nào khớp từ khóa.',
@@ -689,7 +697,10 @@ const vi: Dict = {
   removeTip: 'Bỏ khỏi hàng đợi',
   durationLbl: 'Thời lượng',
   diarizeLbl: 'Phân biệt người nói',
-  diarizeOff: 'Pipeline chưa có khâu phân biệt người nói (diarization).',
+  diarizeOff:
+    'Service chưa bật tách người nói. Cài `uv sync --extra diarization` rồi đặt LLVT_DIARIZATION_ENABLED=true.',
+  diarizeHint:
+    'Gắn nhãn người nói cho từng đoạn. Tốn thêm một lượt quét cả tệp trước khi nhận dạng chữ.',
   impFileLang: 'Ngôn ngữ trong tệp',
   impTargetLang: 'Dịch sang',
   impNoTranslate: 'Không dịch',
@@ -706,6 +717,10 @@ const vi: Dict = {
   impLoadHint: 'Model được nạp trước khi chạy tệp đầu tiên; lần đầu có thể mất vài phút.',
   impBusySession:
     'Đang có phiên dịch chạy — dừng phiên trước khi nhập tệp, vì cả hai dùng chung model.',
+  impDiarizing: 'Đang tách người nói…',
+  impSpeakers: 'người nói',
+  speakerN: 'Người nói {n}',
+  speakerUnknown: 'Không rõ người nói',
 
   stRecognizing: 'Nhận diện',
   stTranslating: 'Đang dịch',
@@ -866,6 +881,7 @@ const en: Dict = {
   browseTitle: 'Search & download from Hugging Face',
   browseSub: 'Reference catalog from docs/02 — downloading is not wired to the AI service.',
   browseDisabled: 'Downloading models from the UI is not supported.',
+  catalogWrongPlatform: 'This model does not run on the current operating system.',
   searchPh: 'Filter catalog (whisper, nllb, piper…)',
   dlBtn: 'Download',
   noCatalogResults: 'No model matches that keyword.',
@@ -1053,7 +1069,10 @@ const en: Dict = {
   removeTip: 'Remove from queue',
   durationLbl: 'Duration',
   diarizeLbl: 'Speaker labels',
-  diarizeOff: 'The pipeline has no speaker diarization stage.',
+  diarizeOff:
+    'Speaker separation is off in the service. Install `uv sync --extra diarization` and set LLVT_DIARIZATION_ENABLED=true.',
+  diarizeHint:
+    'Label each segment with who spoke. Costs one extra pass over the whole file before transcription.',
   impFileLang: 'Language in the file',
   impTargetLang: 'Translate to',
   impNoTranslate: "Don't translate",
@@ -1070,6 +1089,10 @@ const en: Dict = {
   impLoadHint: 'Models load before the first file; the first run can take a few minutes.',
   impBusySession:
     'A translation session is running — stop it before importing, both share the same models.',
+  impDiarizing: 'Separating speakers…',
+  impSpeakers: 'speakers',
+  speakerN: 'Speaker {n}',
+  speakerUnknown: 'Unknown speaker',
 
   stRecognizing: 'Recognizing',
   stTranslating: 'Translating',

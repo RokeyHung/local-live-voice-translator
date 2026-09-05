@@ -76,8 +76,29 @@ def _supported(params: dict[str, Any]) -> dict[str, Any]:
 
 # Tên model logic trong preset -> id GGML mà pywhispercpp hiểu (dựng tên file
 # ggml-<id>.bin). Xem constants.AVAILABLE_MODELS của pywhispercpp.
+#
+# Bảng này chỉ là lớp ĐẶT TÊN: tên nào không có ở đây được truyền thẳng xuống
+# pywhispercpp, nên mọi id trong AVAILABLE_MODELS vẫn dùng được. Có bảng để preset và
+# danh mục trong giao diện gọi model bằng một tên thống nhất (`whisper-<cỡ>-q<n>`)
+# thay vì dán id thô của từng runtime.
+#
+# CỐ TÌNH không liệt kê các biến thể `.en` (small.en, medium.en…) dù whisper.cpp có:
+# ứng dụng luôn phải nhận cả vi/ja/zh, model English-only sẽ trả rác cho ba thứ tiếng
+# đó. Ai muốn đo riêng chiều en→vi vẫn đặt thẳng `small.en` vào preset được.
 MODEL_MAP: dict[str, str] = {
+    "whisper-tiny-q5": "tiny-q5_1",
+    "whisper-tiny-q8": "tiny-q8_0",
+    "whisper-base-q5": "base-q5_1",
+    "whisper-base-q8": "base-q8_0",
+    "whisper-small": "small",
     "whisper-small-q5": "small-q5_1",
+    "whisper-small-q8": "small-q8_0",
+    "whisper-medium": "medium",
+    "whisper-medium-q5": "medium-q5_0",
+    "whisper-medium-q8": "medium-q8_0",
+    "whisper-large-v3": "large-v3",
+    "whisper-large-v3-q5": "large-v3-q5_0",
+    "whisper-large-v3-turbo": "large-v3-turbo",
     "whisper-large-v3-turbo-q5": "large-v3-turbo-q5_0",
     "whisper-large-v3-turbo-q8": "large-v3-turbo-q8_0",
 }

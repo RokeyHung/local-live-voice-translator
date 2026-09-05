@@ -132,13 +132,21 @@ class LoadProgress:
             current.status = DONE
             current.note = note or current.note
 
-    def stage_failed(self, stage: str, message: str) -> None:
+    def stage_failed(self, stage: str, message: str, *, fatal: bool = True) -> None:
+        """Đánh dấu một khâu hỏng.
+
+        ``fatal=False`` cho khâu không bắt buộc (DIA): ghi lý do để giao diện hiện
+        được, nhưng KHÔNG tắt cờ "đang nạp" — lượt nạp vẫn chạy tiếp với những khâu
+        còn lại, và báo là đã xong trong lúc còn đang nạp thì thanh tiến trình sẽ
+        đứng im giữa chừng.
+        """
         self._stop_watcher()
         with self._lock:
             current = self._find(stage)
             if current is not None:
                 current.status = FAILED
-            self._active = False
+            if fatal:
+                self._active = False
             self._error = message
 
     def finish(self) -> None:

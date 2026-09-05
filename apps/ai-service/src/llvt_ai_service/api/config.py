@@ -46,6 +46,7 @@ def _describe(container: Container, preset: Preset) -> ConfigResponse:
         modelsDirEditable=not runtime_config.env_overrides("models_dir"),
         historyDbPath=str(settings.db_path),
         historyEnabled=container.repository.enabled,
+        diarizationEnabled=settings.diarization_enabled,
     )
 
 

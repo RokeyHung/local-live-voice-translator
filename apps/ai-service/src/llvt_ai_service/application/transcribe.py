@@ -30,8 +30,9 @@ from typing import Any, Awaitable, Callable
 import numpy as np
 
 from llvt_ai_service.application.model_manager import ProviderSet
+from llvt_ai_service.application.speaker_labels import label_for, rename_by_first_appearance
 from llvt_ai_service.domain.enums import AudioSource, Language, UtteranceStatus
-from llvt_ai_service.domain.models import Utterance, VadSegment
+from llvt_ai_service.domain.models import SpeakerTurn, Utterance, VadSegment
 from llvt_ai_service.ports.repository import SessionRepository
 
 logger = logging.getLogger("llvt.transcribe")
@@ -110,6 +111,9 @@ class TranscriptSegment:
     translated_text: str | None = None
     asr_ms: int | None = None
     mt_ms: int | None = None
+    # Mã người nói (`speaker-1`, `speaker-2`…) khi bật diarization. None = không bật,
+    # hoặc đoạn rơi đúng chỗ chuyển lượt nên không ai chiếm đủ đa số (speaker_labels).
+    speaker: str | None = None
 
 
 @dataclass
@@ -119,6 +123,8 @@ class TranscriptionResult:
     audio_ms: int
     processing_ms: int
     segments: list[TranscriptSegment] = field(default_factory=list)
+    # Số người nói diarization tìm được; 0 khi không chạy diarization.
+    speaker_count: int = 0
     # Phiên trong lịch sử (rỗng khi người dùng không lưu, hoặc khi lưu lịch sử đang tắt).
     session_id: str = ""
     # Dừng giữa chừng theo yêu cầu: `segments` là phần chạy được tới lúc đó, không phải
@@ -143,6 +149,7 @@ class TranscribeProgress:
         self._segments = 0
         self._error: str | None = None
         self._cancel = False
+        self._phase = "transcribing"
 
     @property
     def active(self) -> bool:
@@ -173,6 +180,7 @@ class TranscribeProgress:
             self._segments = 0
             self._error = None
             self._cancel = False
+            self._phase = "transcribing"
 
     def begin(self, name: str, audio_ms: int) -> None:
         with self._lock:
@@ -185,6 +193,16 @@ class TranscribeProgress:
                 self._active = True
                 self._error = None
                 self._cancel = False
+
+    def set_phase(self, phase: str) -> None:
+        """Đổi giai đoạn đang chạy: ``diarizing`` (gom cụm giọng) hay ``transcribing``.
+
+        Diarization chạy trên CẢ tệp trước khi nhận dạng chữ nên trong lúc đó
+        ``percent`` còn đứng im ở 0. Không nói rõ giai đoạn thì giao diện trông như
+        bị treo với một tệp dài.
+        """
+        with self._lock:
+            self._phase = phase
 
     def advance(self, done_ms: int, segments: int) -> None:
         with self._lock:
@@ -219,6 +237,7 @@ class TranscribeProgress:
                 "error": self._error,
                 # Đã xin dừng nhưng khúc đang chạy chưa xong — giao diện hiện "đang dừng…".
                 "cancelling": self._cancel and self._active,
+                "phase": self._phase,
             }
 
 
@@ -231,6 +250,40 @@ async def _cut_segments(stream: Any, pcm: bytes) -> list[VadSegment]:
     return await asyncio.to_thread(stream.accept, pcm, SAMPLE_RATE)
 
 
+async def _diarize(providers: ProviderSet, pcm: bytes, enabled: bool) -> list[SpeakerTurn]:
+    """Gom cụm giọng trên CẢ tệp, trước khi nhận dạng chữ.
+
+    Phải chạy trên toàn bộ tệp chứ không trên từng đoạn VAD: model cần nghe hết mới
+    biết có mấy người và giọng nào là giọng nào. Đó cũng là lý do khâu này chỉ có ở
+    đường nhập tệp — xem ``ports/diarization.py``.
+
+    Hỏng thì bỏ nhãn người nói và chạy tiếp: bản ghi không có nhãn vẫn dùng được,
+    còn không có bản ghi thì không.
+    """
+    diarizer = providers.diarizer
+    if not enabled or diarizer is None or not diarizer.loaded:
+        return []
+    progress.set_phase("diarizing")
+    try:
+        turns = await diarizer.diarize(pcm, SAMPLE_RATE)
+    except Exception as exc:  # noqa: BLE001 — chỉ mất nhãn, không được làm hỏng cả lượt
+        logger.warning("Diarization thất bại, bỏ nhãn người nói: %s", exc)
+        return []
+    finally:
+        progress.set_phase("transcribing")
+
+    # Đổi SPEAKER_xx của model thành speaker-1/2/… theo thứ tự ai nói trước.
+    renamed = rename_by_first_appearance(turns)
+    return [
+        SpeakerTurn(
+            speaker=renamed[turn.speaker],
+            started_at_ms=turn.started_at_ms,
+            ended_at_ms=turn.ended_at_ms,
+        )
+        for turn in turns
+    ]
+
+
 async def transcribe_audio(
     providers: ProviderSet,
     pcm: bytes,
@@ -241,11 +294,16 @@ async def transcribe_audio(
     session_id: str = "",
     session_started_at_ms: int = 0,
     file_name: str = "",
+    diarize: bool = True,
     should_stop: Callable[[], Awaitable[bool]] | None = None,
 ) -> TranscriptionResult:
     """VAD → ASR → (MT) cho cả tệp; ghi lịch sử nếu được đưa repository.
 
     ``target=None`` nghĩa là chỉ nhận dạng chữ, không dịch.
+
+    ``diarize=False`` bỏ qua khâu tách người nói cho riêng tệp này, kể cả khi model
+    đã nạp sẵn — nó tốn thêm một lượt chạy qua cả tệp, mà không phải bản ghi nào
+    cũng cần nhãn người nói.
 
     ``should_stop`` được hỏi ở ranh giới mỗi khúc: trả True thì dừng và trả về phần đã
     chạy được (``cancelled=True``). Dùng cho nút Huỷ và cho trường hợp client bỏ đi.
@@ -256,6 +314,9 @@ async def transcribe_audio(
     stream = providers.vad.open_stream()
     segments: list[TranscriptSegment] = []
     chunk_bytes = int(CHUNK_SECONDS * SAMPLE_RATE) * 2
+    # Điền ở đầu khối try bên dưới (diarization nằm trong đó để lỗi/huỷ đi chung một
+    # đường dọn dẹp); rỗng nghĩa là không bật diarization → mọi đoạn không có nhãn.
+    turns: list[SpeakerTurn] = []
 
     async def handle(segment: VadSegment) -> None:
         result = await _process_segment(
@@ -263,6 +324,7 @@ async def transcribe_audio(
             segment,
             source,
             target,
+            turns=turns,
             repository=repository,
             session_id=session_id,
             session_started_at_ms=session_started_at_ms,
@@ -272,6 +334,10 @@ async def transcribe_audio(
 
     cancelled = False
     try:
+        # Gom cụm giọng TRƯỚC, để mỗi đoạn VAD tra được ngay nhãn người nói lúc nó
+        # chạy xong (và ghi luôn vào lịch sử) thay vì phải quay lại vá sau.
+        turns = await _diarize(providers, pcm, diarize)
+
         for offset in range(0, len(pcm), chunk_bytes):
             if should_stop is not None and await should_stop():
                 cancelled = True
@@ -308,6 +374,7 @@ async def transcribe_audio(
         segments=segments,
         session_id=session_id,
         cancelled=cancelled,
+        speaker_count=len({turn.speaker for turn in turns}),
     )
 
 
@@ -317,6 +384,7 @@ async def _process_segment(
     source: Language,
     target: Language | None,
     *,
+    turns: list[SpeakerTurn],
     repository: SessionRepository | None,
     session_id: str,
     session_started_at_ms: int,
@@ -343,6 +411,7 @@ async def _process_segment(
         translated_text=translated,
         asr_ms=transcript.processing_ms,
         mt_ms=mt_ms,
+        speaker=label_for(segment.started_at_ms, segment.ended_at_ms, turns),
     )
     if repository is not None and session_id:
         await _save(
@@ -361,6 +430,7 @@ async def _process_segment(
                 # đúng thứ tự và người đọc thấy được câu nằm ở phút thứ mấy của tệp.
                 started_at_ms=session_started_at_ms + segment.started_at_ms,
                 ended_at_ms=session_started_at_ms + segment.ended_at_ms,
+                speaker=result.speaker,
             ),
         )
     return result

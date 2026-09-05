@@ -8,6 +8,7 @@
 
 import { useState, type JSX } from 'react'
 import { downloadText, sessionToSrt, sessionToTxt } from '../../application/export'
+import { speakerColor, speakerLabel } from '../../application/speakers'
 import { formatClock, formatDateTime } from '../../application/utterances'
 import { rowSide } from '../../domain/models'
 import {
@@ -252,7 +253,17 @@ export function HistoryScreen(): JSX.Element {
                     // Câu nhập từ tệp không thuộc bên nào trong cuộc họp — ghi rõ FILE
                     // thay vì gán bừa cho phía remote.
                     const fromFile = row.source === 'file'
-                    const color = fromFile ? '#2dd4bf' : side === 'me' ? '#22d3ee' : '#d946ef'
+                    // Tệp có bật tách người nói thì ô nhãn nói được điều cụ thể hơn
+                    // "FILE": ai đang nói. Dùng đúng ô đó chứ không thêm cột mới —
+                    // "FILE" chỉ có nghĩa khi không biết gì hơn.
+                    const who = fromFile ? speakerLabel(row.speaker, L) : null
+                    const color = who
+                      ? speakerColor(row.speaker)
+                      : fromFile
+                        ? '#2dd4bf'
+                        : side === 'me'
+                          ? '#22d3ee'
+                          : '#d946ef'
                     const latency = [row.asrMs, row.mtMs, row.ttsMs]
                       .filter((v): v is number => v != null)
                       .join('·')
@@ -274,7 +285,7 @@ export function HistoryScreen(): JSX.Element {
                           }}
                         >
                           <Dot color={color} size={5} glow={false} />
-                          {fromFile ? 'FILE' : side === 'me' ? 'ME' : 'REMOTE'}
+                          {who ?? (fromFile ? 'FILE' : side === 'me' ? 'ME' : 'REMOTE')}
                         </span>
                         <span className="text-base leading-snug text-fg-3">
                           {row.sourceText ?? ''}

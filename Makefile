@@ -17,7 +17,8 @@ PREFIX      ?= rec
 
 .PHONY: help setup setup-service setup-desktop dev service desktop preview \
         build typecheck lint format format-docs health docs test bench accuracy soak segment \
-        endpointing setup-eval eval-asr eval-mt eval-comet eval-latency clean
+        endpointing setup-eval setup-mlx setup-diarization \
+        eval-asr eval-mt eval-comet eval-latency clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -30,6 +31,12 @@ setup-service: ## Cài phụ thuộc Python (uv sync)
 
 setup-eval: ## Cài thêm phụ thuộc cho bộ đánh giá FLEURS (datasets, sacrebleu, jiwer)
 	cd $(AI_DIR) && $(UV) sync --group eval
+
+setup-mlx: ## Cài backend ASR chạy trên MLX (mlx-audio) — chỉ macOS + Apple Silicon
+	cd $(AI_DIR) && $(UV) sync --extra mlx
+
+setup-diarization: ## Cài khâu tách người nói (pyannote.audio) cho màn Nhập tệp
+	cd $(AI_DIR) && $(UV) sync --extra diarization
 
 setup-desktop: ## Cài phụ thuộc desktop (npm install)
 	cd $(DESKTOP_DIR) && $(NPM) install

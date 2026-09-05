@@ -152,6 +152,23 @@ script độc lập chạy ở môi trường riêng (`uv run --no-project scrip
 
 ---
 
+## 7. Đợt 05/09 — backend ASR thứ hai + tách người nói
+
+Chi tiết ở [`19_backend-asr-va-tach-nguoi-noi.md`](19_backend-asr-va-tach-nguoi-noi.md).
+Code đã xong và test sạch, phần **chạy thật thì chưa**:
+
+- [ ] **Đo MLX so với whisper.cpp trên máy Apple Silicon.** Đây mới là lý do thêm backend
+      thứ hai — thêm một cột vào bảng của [`17`](17_bo-danh-gia-fleurs.md):
+      `make setup-mlx && LLVT_ASR_ADAPTER=mlx_whisper make eval-asr`.
+- [ ] **Chạy thử diarization trên một bản ghi họp nhiều người thật**, xem nhãn có khớp
+      người nói không. Cần `make setup-diarization`, `LLVT_HF_TOKEN` và đồng ý điều khoản
+      repo pyannote trên huggingface.co (chỉ cần cho lần tải đầu).
+- [ ] **Quyết có đóng gói `--extra mlx` / `--extra diarization` vào bản cài không.** Hiện
+      cả hai là phần cài thêm; nếu đưa vào bản phát hành thì phải cập nhật
+      [`12_install-guide.md`](12_install-guide.md) và tính lại dung lượng bản cài.
+
+---
+
 ## Phụ lục — đã làm gì trong đợt 04/09
 
 | Commit    | Nội dung                                                                                                          |

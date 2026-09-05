@@ -2,6 +2,8 @@
 
 import { rowSide, type HistorySessionDetail, type TranscriptSegment } from '../domain/models'
 import { formatDuration } from './format'
+import type { Dict } from './i18n'
+import { speakerLabel } from './speakers'
 import { formatClock, formatDateTime } from './utterances'
 
 function pad(n: number): string {
@@ -39,23 +41,28 @@ export function sessionToSrt(session: HistorySessionDetail): string {
 
 // --- Nhập tệp: mốc thời gian là vị trí trong tệp, nên .srt khớp thẳng với bản ghi gốc ---
 
-export function transcriptToTxt(name: string, segments: TranscriptSegment[]): string {
+// `L` chỉ dùng để dịch mã người nói (`speaker-1` → "Người nói 1"). Tệp không bật
+// diarization thì không có nhãn nào và bản xuất giống hệt như trước.
+export function transcriptToTxt(name: string, segments: TranscriptSegment[], L: Dict): string {
   const body = segments
-    .map((s) =>
-      s.translatedText
-        ? `[${formatDuration(s.startedAtMs)}] ${s.text}\n  → ${s.translatedText}`
-        : `[${formatDuration(s.startedAtMs)}] ${s.text}`
-    )
+    .map((s) => {
+      const who = speakerLabel(s.speaker, L)
+      const head = `[${formatDuration(s.startedAtMs)}]${who ? ` ${who}:` : ''} ${s.text}`
+      return s.translatedText ? `${head}\n  → ${s.translatedText}` : head
+    })
     .join('\n\n')
   return `${name}\n\n${body}\n`
 }
 
-export function transcriptToSrt(segments: TranscriptSegment[]): string {
+export function transcriptToSrt(segments: TranscriptSegment[], L: Dict): string {
   return segments
-    .map(
-      (s, i) =>
-        `${i + 1}\n${srtTime(s.startedAtMs)} --> ${srtTime(s.endedAtMs)}\n${s.translatedText ?? s.text}\n`
-    )
+    .map((s, i) => {
+      const who = speakerLabel(s.speaker, L)
+      // Quy ước chung của phụ đề có nhiều người nói: tên đặt trong ngoặc vuông ở
+      // đầu dòng, đúng kiểu `sessionToSrt` đang dùng cho [Me]/[Remote].
+      const line = `${who ? `[${who}] ` : ''}${s.translatedText ?? s.text}`
+      return `${i + 1}\n${srtTime(s.startedAtMs)} --> ${srtTime(s.endedAtMs)}\n${line}\n`
+    })
     .join('\n')
 }
 

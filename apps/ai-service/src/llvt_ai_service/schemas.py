@@ -40,6 +40,10 @@ class ConfigResponse(BaseModel):
     # Nơi lưu lịch sử + có đang lưu hay không (SPEC 14.4 yêu cầu hiện rõ cho người dùng).
     historyDbPath: str = ""
     historyEnabled: bool = True
+    # Tách người nói có đang bật không (LLVT_DIARIZATION_ENABLED). Chỉ có tác dụng ở
+    # màn Nhập tệp; giao diện dùng nó để biết có chỗ nào hiện nhãn người nói hay
+    # không, thay vì đoán theo việc `stages` có khâu DIA.
+    diarizationEnabled: bool = False
 
 
 class InstalledModelSchema(BaseModel):
@@ -132,6 +136,10 @@ class UtteranceSchema(BaseModel):
     error: str | None = None
     startedAtMs: int
     endedAtMs: int | None = None
+    # Mã người nói (`speaker-1`, `speaker-2`…) khi phiên là một tệp nhập có bật
+    # diarization. null với phiên trực tiếp — ở đó `source` đã cho biết ai nói.
+    # Giao diện tự dựng câu chữ hiển thị theo ngôn ngữ đang chọn.
+    speaker: str | None = None
 
 
 class SessionDetail(SessionSummary):
@@ -173,6 +181,9 @@ class TranscriptSegmentSchema(BaseModel):
     translatedText: str | None = None
     asrMs: int | None = None
     mtMs: int | None = None
+    # Mã người nói khi bật diarization; null = không bật, hoặc đoạn rơi vào chỗ
+    # chuyển lượt nên không ai chiếm đủ đa số thời lượng.
+    speaker: str | None = None
 
 
 class TranscriptionResponse(BaseModel):
@@ -181,6 +192,8 @@ class TranscriptionResponse(BaseModel):
     audioMs: int
     processingMs: int
     segments: list[TranscriptSegmentSchema] = []
+    # Số người nói diarization tìm được; 0 = không chạy diarization cho tệp này.
+    speakerCount: int = 0
     # Phiên tương ứng trong lịch sử; rỗng khi không lưu (hoặc lưu lịch sử đang tắt).
     sessionId: str = ""
     # True = dừng giữa chừng theo yêu cầu; `segments` chỉ là phần đã chạy được.
@@ -199,6 +212,9 @@ class TranscribeProgressResponse(BaseModel):
     error: str | None
     # Đã xin dừng nhưng khúc đang chạy chưa xong.
     cancelling: bool = False
+    # Giai đoạn đang chạy: "diarizing" (gom cụm giọng trên cả tệp, `percent` còn 0)
+    # hay "transcribing" (nhận dạng + dịch theo từng đoạn).
+    phase: str = "transcribing"
 
 
 class ResourceResponse(BaseModel):

@@ -44,6 +44,13 @@ class PresetConfig:
     mt_model: str
     tts_adapter: str
     vad: VadTuning = field(default_factory=VadTuning)
+    # Model TƯƠNG ĐƯƠNG ở các runtime ASR khác, khoá = tên adapter trong ASR_REGISTRY.
+    #
+    # Preset là một mức "nhanh ↔ chất lượng", không phải một model cụ thể: đổi runtime
+    # (``LLVT_ASR_ADAPTER=mlx_whisper``) thì phải giữ nguyên mức đó, chứ không rơi về
+    # một model mặc định chẳng liên quan. Bảng này nằm ở config vì nó là *lựa chọn*,
+    # còn cách nạp là việc của adapter.
+    asr_alternatives: dict[str, str] = field(default_factory=dict)
 
 
 PRESETS: dict[Preset, PresetConfig] = {
@@ -56,6 +63,7 @@ PRESETS: dict[Preset, PresetConfig] = {
         tts_adapter="sherpa_onnx",
         # small-q5 giải mã rất nhanh → cắt sớm, ưu tiên độ trễ thấp.
         vad=VadTuning(soft_max_ms=2200, max_speech_ms=4500, min_silence_ms=280),
+        asr_alternatives={"mlx_whisper": "mlx-whisper-small-q8"},
     ),
     Preset.balanced: PresetConfig(
         vad_adapter="silero",
@@ -65,6 +73,7 @@ PRESETS: dict[Preset, PresetConfig] = {
         mt_model="nllb-200-distilled-600M",
         tts_adapter="sherpa_onnx",
         vad=VadTuning(),
+        asr_alternatives={"mlx_whisper": "mlx-whisper-large-v3-turbo-q8"},
     ),
     Preset.quality: PresetConfig(
         vad_adapter="silero",
@@ -75,6 +84,7 @@ PRESETS: dict[Preset, PresetConfig] = {
         tts_adapter="sherpa_onnx",
         # Đoạn dài hơn cho whisper nhiều ngữ cảnh hơn, đổi lại chờ lâu hơn.
         vad=VadTuning(soft_max_ms=4500, max_speech_ms=8000, min_silence_ms=380),
+        asr_alternatives={"mlx_whisper": "mlx-whisper-large-v3-turbo"},
     ),
 }
 

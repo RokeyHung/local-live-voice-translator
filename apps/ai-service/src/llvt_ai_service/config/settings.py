@@ -69,6 +69,31 @@ class Settings(BaseSettings):
     # lượng mà GVHD yêu cầu; đừng bật khi chưa có số WER tương ứng.
     asr_audio_ctx: int = 0
 
+    # Đổi runtime ASR mà không đổi preset, ví dụ để so whisper.cpp với MLX trên cùng
+    # một mức chất lượng: LLVT_ASR_ADAPTER=mlx_whisper. Rỗng = dùng adapter của preset.
+    # Model tương ứng lấy từ `PresetConfig.asr_alternatives` nên vẫn đúng mức đã chọn.
+    asr_adapter: str = ""
+
+    # --- Tách người nói (diarization) — chỉ dùng cho màn Nhập tệp ---------------
+    #
+    # Mặc định TẮT vì hai lẽ: model pyannote là repo *gated* (lần tải đầu cần access
+    # token của HuggingFace, xem `hf_token` bên dưới), và gói pyannote.audio là phần
+    # cài thêm (`uv sync --extra diarization`). Bật lên thì mỗi tệp nhập vào sẽ được
+    # chạy thêm một lượt gom cụm giọng trước khi nhận dạng chữ.
+    diarization_enabled: bool = False
+    diarization_adapter: str = "pyannote"
+    diarization_model: str = "pyannote/speaker-diarization-community-1"
+
+    # Chặn trên/dưới số người nói. Để trống thì model tự quyết; đặt khi đã biết trước
+    # (họp hai người) vì gom cụm đúng số người cho kết quả ổn hơn hẳn.
+    diarization_min_speakers: int | None = None
+    diarization_max_speakers: int | None = None
+
+    # Access token HuggingFace, CHỈ dùng cho lần tải model gated đầu tiên. Không ghi
+    # vào ~/.llvt/settings.json và không bao giờ trả ra REST — đặt qua biến môi
+    # trường LLVT_HF_TOKEN. Tải xong thì service chạy offline như thường.
+    hf_token: str = ""
+
     # Sau khi model đã cài, service hoạt động offline.
     offline_ready: bool = True
 

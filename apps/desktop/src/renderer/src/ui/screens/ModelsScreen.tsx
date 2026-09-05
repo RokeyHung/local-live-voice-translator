@@ -6,6 +6,7 @@
 // thiết kế đặt nhưng ở trạng thái vô hiệu kèm tooltip, không giả lập bằng dữ liệu bịa.
 
 import { useMemo, useState, type JSX, type ReactNode } from 'react'
+import { PLATFORM } from '../../application/config'
 import { formatBytes } from '../../application/format'
 import { format, type Dict } from '../../application/i18n'
 import { MODEL_CATALOG, PRESET_META, STAGE_COLORS } from '../../application/presets'
@@ -612,10 +613,17 @@ export function ModelsScreen(): JSX.Element {
               const onDisk = [...installedNames].some(
                 (name) => name === entry.name || name.endsWith(`/${entry.name}`)
               )
+              // Model MLX chỉ chạy trên Metal của Apple Silicon. Làm mờ (thay vì ẩn)
+              // để danh mục vẫn là bảng tra cứu đầy đủ, nhưng người dùng Windows
+              // không mất công thử một thứ máy họ không chạy được.
+              const usable = !entry.platform || entry.platform === PLATFORM
               return (
                 <div
                   key={entry.name}
-                  className="flex items-center gap-2.75 border-b border-line-soft px-4 py-2.75"
+                  className={`flex items-center gap-2.75 border-b border-line-soft px-4 py-2.75 ${
+                    usable ? '' : 'opacity-45'
+                  }`}
+                  title={usable ? undefined : L.catalogWrongPlatform}
                 >
                   <StageIcon stage={entry.stage} size={28} />
                   <div className="min-w-0 flex-1">

@@ -23,6 +23,9 @@ export interface TranscribeRequest {
   source: Language
   target: Language | null // null = chỉ nhận dạng chữ, không dịch
   save: boolean // lưu kết quả thành một phiên trong lịch sử
+  // Gắn nhãn người nói. Service bỏ qua nếu chưa bật diarization; đặt false để không
+  // chạy khâu này cho riêng tệp đang gửi (nó tốn thêm một lượt quét cả tệp).
+  diarize: boolean
 }
 
 export interface AiClient {

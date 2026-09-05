@@ -86,12 +86,13 @@ class FakeMt:
         )
 
 
-def _fake_providers(asr: object | None = None) -> SimpleNamespace:
+def _fake_providers(asr: object | None = None, diarizer: object | None = None) -> SimpleNamespace:
     return SimpleNamespace(
         vad=SimpleNamespace(open_stream=OneSegmentVadStream),
         asr=asr or FakeAsr(),
         mt=FakeMt(),
         tts=None,
+        diarizer=diarizer,
     )
 
 
