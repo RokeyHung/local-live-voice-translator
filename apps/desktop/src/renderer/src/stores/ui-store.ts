@@ -15,7 +15,6 @@ interface UiState {
   theme: ThemeMode
   uiLanguage: UiLanguage
   layout: SessionLayout
-  hfToken: string
   glossary: GlossaryEntry[]
   inputDeviceId: string
   outputDeviceId: string
@@ -25,7 +24,6 @@ interface UiState {
   setTheme: (theme: ThemeMode) => void
   setUiLanguage: (uiLanguage: UiLanguage) => void
   setLayout: (layout: SessionLayout) => void
-  setHfToken: (hfToken: string) => void
   addGlossary: (source: string, target: string) => void
   removeGlossary: (id: string) => void
   setInputDeviceId: (id: string) => void
@@ -41,7 +39,6 @@ export const useUiStore = create<UiState>((set, get) => {
       theme: s.theme,
       uiLanguage: s.uiLanguage,
       layout: s.layout,
-      hfToken: s.hfToken,
       glossary: s.glossary,
       inputDeviceId: s.inputDeviceId,
       outputDeviceId: s.outputDeviceId,
@@ -58,7 +55,6 @@ export const useUiStore = create<UiState>((set, get) => {
     theme: stored.theme ?? 'system',
     uiLanguage: stored.uiLanguage ?? 'vi',
     layout: stored.layout ?? 'split',
-    hfToken: stored.hfToken ?? '',
     glossary: stored.glossary ?? [],
     inputDeviceId: stored.inputDeviceId ?? '',
     outputDeviceId: stored.outputDeviceId ?? '',
@@ -68,7 +64,6 @@ export const useUiStore = create<UiState>((set, get) => {
     setTheme: (theme): void => update({ theme }),
     setUiLanguage: (uiLanguage): void => update({ uiLanguage }),
     setLayout: (layout): void => update({ layout }),
-    setHfToken: (hfToken): void => update({ hfToken }),
     addGlossary: (source, target): void => {
       const src = source.trim()
       const dst = target.trim()

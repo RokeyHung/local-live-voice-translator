@@ -7,6 +7,7 @@ import type {
   ConfigResponse,
   DeletedModels,
   HealthResponse,
+  HfVerifyResult,
   HistorySession,
   HistorySessionDetail,
   InstalledModel,
@@ -50,6 +51,32 @@ export class HttpAiClient implements AiClient {
     })
     if (!res.ok) throw new Error(`Đổi chế độ lưu lịch sử thất bại: HTTP ${res.status}`)
     return (await res.json()) as ConfigResponse
+  }
+
+  async setHfToken(preset: Preset, token: string): Promise<ConfigResponse> {
+    // Chuỗi rỗng = gỡ token đã lưu. Service không trả token về nên phần hiển thị
+    // sau đó chỉ dựa vào `hfTokenSet`/`hfTokenHint`.
+    const res = await fetch(`${AI_BASE_URL}/api/config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preset, hfToken: token })
+    })
+    if (!res.ok) {
+      // 409 khi LLVT_HF_TOKEN đang khoá — hiện nguyên văn lý do của service.
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Lưu token thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as ConfigResponse
+  }
+
+  async verifyHfToken(token: string): Promise<HfVerifyResult> {
+    const res = await fetch(`${AI_BASE_URL}/api/hf/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    })
+    if (!res.ok) throw new Error(`Kiểm tra token thất bại: HTTP ${res.status}`)
+    return (await res.json()) as HfVerifyResult
   }
 
   async setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse> {

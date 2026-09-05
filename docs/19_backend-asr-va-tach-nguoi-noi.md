@@ -166,17 +166,56 @@ Mặc định **TẮT**, và đây là lý do:
 
 ```bash
 make setup-diarization
-export LLVT_HF_TOKEN=hf_xxx          # chỉ cần cho lần tải đầu
 export LLVT_DIARIZATION_ENABLED=true
 make service
+# rồi dán access token vào màn Cài đặt → mục "Hugging Face Token" (mục 3.4)
 ```
+
+Cách cũ vẫn dùng được và **ưu tiên cao hơn** ô nhập trong app:
+`LLVT_HF_TOKEN=hf_xxx make service`.
 
 Bật rồi thì nút "Phân biệt người nói" ở màn Nhập tệp mới bấm được (bật/tắt cho từng
 lượt nhập, vì khâu này tốn thêm một lượt quét cả tệp). Chưa bật thì nút giữ nguyên chỗ
 nhưng vô hiệu kèm lý do — đúng nguyên tắc "không giả lập bằng dữ liệu bịa" của
 [`08_week6-desktop.md`](08_week6-desktop.md).
 
-### 3.4. Hỏng thì xuống nước, không kéo cả ứng dụng theo
+### 3.4. Nhập token ngay trong app
+
+Màn Cài đặt vốn đã có ô "Hugging Face Token" từ bản thiết kế, nhưng là placeholder:
+token nằm trong `localStorage` của renderer và **không đi đâu cả** (nhãn cũ ghi thẳng
+"chức năng tải model chưa nối với AI service"). Diarization là tính năng đầu tiên thật
+sự cần nó, nên ô đó được nối vào service — và nhân tiện sửa một vấn đề bảo mật có sẵn:
+`localStorage` lưu văn bản thường, mọi script trong renderer đọc được, mà đây là **bí
+mật duy nhất của cả ứng dụng**.
+
+Token giờ do service giữ trong `~/.llvt/settings.json` **quyền 0600**, và không bao giờ
+đi ngược lại renderer: `GET /api/config` chỉ trả `hfTokenSet`, `hfTokenSource` và một
+đoạn che (`hf_AbC…2345`). Log cũng chỉ ghi việc đã đổi chứ không ghi giá trị.
+`LocalPreferences.load()` **chủ động xoá** khoá `hfToken` còn sót trong localStorage của
+bản cũ — ai đã lỡ gõ token vào đó thì nó không được nằm lại sau khi cập nhật.
+
+Ba nguồn token, ưu tiên giảm dần:
+
+| Nguồn                               | `hfTokenSource` | Sửa trong app? |
+| ----------------------------------- | --------------- | -------------- |
+| `LLVT_HF_TOKEN`                     | `env`           | Không (409)    |
+| Ô nhập ở màn Cài đặt                | `saved`         | Có             |
+| `HF_TOKEN` người dùng tự export sẵn | `inherited`     | Không cần      |
+
+Mấu chốt để "hỗ trợ HF" không chỉ dừng ở pyannote: `publish_hf_token()` chép token
+đang có hiệu lực vào biến `HF_TOKEN`. Ba đường tải model của đồ án — transformers
+(NLLB), `snapshot_download` (MLX) và pyannote — đều gọi `huggingface_hub.get_token()`,
+mà hàm đó đọc `os.environ` **tại thời điểm gọi**. Nên đặt một biến là đủ cho cả ba,
+thay vì luồn tham số `token=` qua từng adapter. Xoá token trong app thì biến được trả
+về đúng giá trị lúc service khởi động, không xoá nhầm thứ người dùng tự export.
+
+`POST /api/hf/verify` hỏi `whoami` của huggingface.co để biết token có dùng được không.
+Có nó vì cách còn lại để phát hiện token sai là **chờ hết một lượt tải model vài phút**
+rồi mới thấy 401. Đây là lệnh duy nhất chủ động gọi ra Internet ngoài lúc tải model, và
+chỉ chạy khi người dùng bấm. Token sai trả **200 kèm `ok: false`** chứ không phải lỗi
+HTTP: đó là kết quả bình thường của việc kiểm tra, không phải request hỏng.
+
+### 3.5. Hỏng thì xuống nước, không kéo cả ứng dụng theo
 
 Hai chỗ cố tình không ném lỗi ra ngoài:
 
@@ -202,7 +241,7 @@ Hai chỗ cố tình không ném lỗi ra ngoài:
 
 ## 5. Kiểm thử
 
-43 test mới, không test nào cần tải model về:
+61 test mới, không test nào cần tải model về:
 
 | File                         | Số  | Kiểm gì                                                                        |
 | ---------------------------- | --- | ------------------------------------------------------------------------------ |
@@ -212,14 +251,18 @@ Hai chỗ cố tình không ném lỗi ra ngoài:
 | `test_diarization.py`        | 6   | Gắn nhãn end-to-end, xuống nước khi hỏng, đọc kết quả pyannote, `phase`        |
 | `test_history_migration.py`  | 4   | Mở file SQLite schema v1 → bơm cột, giữ nguyên dữ liệu, mở lại nhiều lần       |
 | `test_model_load_failure.py` | +1  | Khâu DIA hỏng vẫn nạp đủ bốn khâu dịch, và lý do vẫn hiện được                 |
+| `test_hf_token.py`           | 18  | Token không rò ra REST/log, file 0600, thứ tự ba nguồn, kiểm tra token         |
 
-Tổng: **184 passed, 4 skipped**.
+Tổng: **202 passed, 4 skipped**.
 
 Ngoài test, đã chạy thử service thật với `LLVT_DIARIZATION_ENABLED=true` mà **không** có
 token: HuggingFace trả 401 cho repo gated, khâu `DIA` bị đánh dấu `failed` kèm nguyên
 văn hướng dẫn của pyannote trong `error`, và `POST /api/models/load` vẫn trả **200** với
 đủ bốn khâu VAD/ASR/MT/TTS đã nạp (thiết bị thật: Metal cho whisper.cpp, mps cho NLLB).
-Đúng hành vi mong muốn ở mục 3.4.
+Đúng hành vi mong muốn ở mục 3.5. Phần token cũng đã chạy thật đầu-cuối: lưu → file
+`~/.llvt/settings.json` ra `-rw-------` và REST chỉ trả `hf_AbC…2345`; bấm kiểm tra →
+gọi thật `whoami` của huggingface.co, token sai trả 200 kèm lý do; gỡ → khoá biến mất
+khỏi file. Grep cả file log: **0** lần xuất hiện giá trị token.
 
 ## 6. Còn lại
 

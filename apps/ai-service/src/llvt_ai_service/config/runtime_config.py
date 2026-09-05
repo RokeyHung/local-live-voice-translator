@@ -9,6 +9,11 @@ chạy service thì đó là chủ ý rõ ràng, giao diện không được ghi
 
 File nằm cạnh dữ liệu khác của app (``~/.llvt/settings.json``) và cố tình KHÔNG nằm
 trong thư mục model — nếu không, đổi thư mục model xong là mất luôn chỗ ghi nhớ.
+
+File này chứa **access token HuggingFace** nên được ghi với quyền ``0600`` (chỉ chủ
+sở hữu đọc được). Token nằm ở dạng thường, giống hệt cách ``huggingface_hub`` lưu
+``~/.cache/huggingface/token``; đây là máy cá nhân một người dùng, và chỗ duy nhất
+chặt hơn được là keychain của hệ điều hành — ghi vào `docs/18` để cân nhắc sau.
 """
 
 from __future__ import annotations
@@ -24,7 +29,10 @@ logger = logging.getLogger("llvt.runtime_config")
 CONFIG_PATH = Path.home() / ".llvt" / "settings.json"
 
 # Chỉ những khoá này được phép ghi từ API; tránh biến file thành nơi đặt bất cứ thứ gì.
-WRITABLE_KEYS = frozenset({"models_dir"})
+WRITABLE_KEYS = frozenset({"models_dir", "hf_token"})
+
+# Khoá là bí mật: không được log ra, không được trả về nguyên văn qua REST.
+SECRET_KEYS = frozenset({"hf_token"})
 
 
 def load() -> dict[str, Any]:
@@ -42,17 +50,41 @@ def load() -> dict[str, Any]:
 
 
 def save(**values: Any) -> dict[str, Any]:
-    """Ghi đè các khoá được truyền, giữ nguyên phần còn lại. Trả cấu hình sau khi ghi."""
+    """Ghi đè các khoá được truyền, giữ nguyên phần còn lại. Trả cấu hình sau khi ghi.
+
+    Truyền chuỗi rỗng cho một khoá nghĩa là **xoá** nó khỏi file, chứ không phải lưu
+    một chuỗi rỗng — dùng để gỡ token đã lưu.
+    """
     unknown = set(values) - WRITABLE_KEYS
     if unknown:
         raise ValueError(f"Khoá không được phép ghi: {', '.join(sorted(unknown))}")
-    merged = {**load(), **{k: str(v) for k, v in values.items()}}
+    merged = {**load()}
+    for key, value in values.items():
+        text = str(value)
+        if text:
+            merged[key] = text
+        else:
+            merged.pop(key, None)
+
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     # Ghi ra file tạm rồi đổi tên: mất điện giữa chừng không để lại file JSON cụt.
     tmp = CONFIG_PATH.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+    # Siết quyền TRƯỚC khi đổi tên, và siết trên file tạm: đặt quyền sau `replace`
+    # để lại một khe thời gian file bí mật đọc được bởi mọi người trên máy.
+    _restrict(tmp)
     tmp.replace(CONFIG_PATH)
     return merged
+
+
+def _restrict(path: Path) -> None:
+    """Chỉ chủ sở hữu đọc/ghi được (0600). Không làm được thì cảnh báo, không chết."""
+    try:
+        path.chmod(0o600)
+    except OSError:
+        # Windows không có quyền POSIX; NTFS thừa kế ACL của thư mục người dùng nên
+        # vẫn kín, chỉ là không siết thêm được từ đây.
+        logger.debug("Không đặt được quyền 0600 cho %s", path, exc_info=True)
 
 
 def env_overrides(key: str) -> bool:

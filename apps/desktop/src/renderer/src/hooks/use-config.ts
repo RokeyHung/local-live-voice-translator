@@ -11,6 +11,7 @@ import type {
   BenchmarkResponse,
   ConfigResponse,
   DeletedModels,
+  HfVerifyResult,
   InstalledModel,
   LoadProgress,
   ResourceResponse
@@ -131,6 +132,33 @@ export function useSetModelsDir(): UseMutationResult<
       void queryClient.invalidateQueries({ queryKey: ['storage'] })
       logInfo('storage', (L) => format(L.logModelsDirChanged, { dir: data.modelsDir }))
     }
+  })
+}
+
+// Lưu / gỡ access token HuggingFace. Không đụng tới model đang nạp: token chỉ có
+// tác dụng cho lần *tải* kế tiếp.
+export function useSetHfToken(): UseMutationResult<
+  ConfigResponse,
+  Error,
+  { preset: Preset; token: string }
+> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ preset, token }) => client.setHfToken(preset, token),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['config'], data)
+      // Nhật ký chỉ ghi việc đã đổi, KHÔNG ghi giá trị token.
+      logInfo('app', (L) => (data.hfTokenSet ? L.logHfTokenSaved : L.logHfTokenCleared))
+    }
+  })
+}
+
+// Hỏi huggingface.co xem token dùng được không. Không cache: người dùng bấm là muốn
+// hỏi lại thật, và token có thể vừa bị thu hồi.
+export function useVerifyHfToken(): UseMutationResult<HfVerifyResult, Error, string> {
+  return useMutation({
+    mutationFn: (token: string) => client.verifyHfToken(token),
+    retry: false
   })
 }
 

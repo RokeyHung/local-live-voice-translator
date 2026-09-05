@@ -161,8 +161,15 @@ Code đã xong và test sạch, phần **chạy thật thì chưa**:
       thứ hai — thêm một cột vào bảng của [`17`](17_bo-danh-gia-fleurs.md):
       `make setup-mlx && LLVT_ASR_ADAPTER=mlx_whisper make eval-asr`.
 - [ ] **Chạy thử diarization trên một bản ghi họp nhiều người thật**, xem nhãn có khớp
-      người nói không. Cần `make setup-diarization`, `LLVT_HF_TOKEN` và đồng ý điều khoản
-      repo pyannote trên huggingface.co (chỉ cần cho lần tải đầu).
+      người nói không. Cần `make setup-diarization`, một access token HuggingFace (dán ở
+      màn Cài đặt) và đồng ý điều khoản repo pyannote trên huggingface.co — cả hai chỉ
+      cần cho lần tải đầu.
+- [ ] **Cân nhắc đưa token vào keychain hệ điều hành.** Hiện token nằm ở
+      `~/.llvt/settings.json` dạng văn bản thường, quyền 0600 — giống hệt cách
+      `huggingface_hub` lưu `~/.cache/huggingface/token`, và đủ cho máy cá nhân một
+      người dùng. Chặt hơn được thì phải qua `safeStorage` của Electron (Keychain trên
+      macOS, DPAPI trên Windows), đổi lại desktop phải gửi token sang service mỗi lần
+      khởi động thay vì service tự đọc.
 - [ ] **Quyết có đóng gói `--extra mlx` / `--extra diarization` vào bản cài không.** Hiện
       cả hai là phần cài thêm; nếu đưa vào bản phát hành thì phải cập nhật
       [`12_install-guide.md`](12_install-guide.md) và tính lại dung lượng bản cài.

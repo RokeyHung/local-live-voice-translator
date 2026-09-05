@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -13,12 +15,20 @@ from llvt_ai_service.application.installed_models import file_bytes, managed_byt
 from llvt_ai_service.application.load_progress import progress
 from llvt_ai_service.application.model_manager import ModelLoadError
 from llvt_ai_service.config import runtime_config
-from llvt_ai_service.config.settings import get_settings, reload_settings
+from llvt_ai_service.config.settings import (
+    effective_hf_token,
+    get_settings,
+    hf_token_source,
+    mask_token,
+    reload_settings,
+)
 from llvt_ai_service.domain.enums import Preset
 from llvt_ai_service.schemas import (
     ConfigResponse,
     ConfigUpdate,
     DeletedModels,
+    HfVerifyRequest,
+    HfVerifyResponse,
     InstalledModelSchema,
     LoadProgressResponse,
     StageInfoSchema,
@@ -47,6 +57,10 @@ def _describe(container: Container, preset: Preset) -> ConfigResponse:
         historyDbPath=str(settings.db_path),
         historyEnabled=container.repository.enabled,
         diarizationEnabled=settings.diarization_enabled,
+        hfTokenSet=bool(effective_hf_token(settings)),
+        hfTokenSource=hf_token_source(settings),
+        hfTokenHint=mask_token(effective_hf_token(settings)),
+        hfTokenEditable=not runtime_config.env_overrides("hf_token"),
     )
 
 
@@ -94,6 +108,62 @@ async def _apply_models_dir(container: Container, raw: str) -> None:
     logger.info("Đổi thư mục model sang %s; đã giải phóng provider", target)
 
 
+def _apply_hf_token(raw: str) -> None:
+    """Lưu (hoặc xoá) access token HuggingFace.
+
+    Chuỗi rỗng = gỡ token đã lưu. Không nạp lại model: token chỉ có tác dụng cho lần
+    **tải** model kế tiếp, còn model đang nằm trong RAM thì đã tải xong rồi. Ai vừa
+    thêm token để sửa một khâu tải hỏng thì bấm "Nạp lại" ở màn Quản lý model.
+    """
+    if runtime_config.env_overrides("hf_token"):
+        raise HTTPException(
+            status_code=409,
+            detail="Token đang do biến môi trường LLVT_HF_TOKEN quyết định.",
+        )
+    token = raw.strip()
+    runtime_config.save(hf_token=token)
+    # `reload_settings` gọi luôn `publish_hf_token`, nên biến HF_TOKEN được cập nhật
+    # ngay và mọi thư viện HuggingFace thấy token mới ở lần tải sau.
+    reload_settings()
+    # KHÔNG log giá trị token — chỉ log việc đã đổi (SPEC 14: log không chứa bí mật).
+    logger.info("Đã %s access token HuggingFace", "lưu" if token else "gỡ")
+
+
+@router.post(
+    "/hf/verify",
+    response_model=HfVerifyResponse,
+    summary="Kiểm tra access token HuggingFace",
+    description=(
+        "Hỏi `huggingface.co` xem token có dùng được không và trả về tên tài khoản. "
+        "Gửi `token` để thử một token **chưa lưu** (ô nhập vừa dán), bỏ trống để kiểm "
+        "tra token đang có hiệu lực.\n\n"
+        "Đây là lệnh **duy nhất** chủ động gọi ra Internet, và chỉ khi người dùng bấm. "
+        "Có nó vì cách còn lại để biết token sai là chờ hết một lượt tải model vài "
+        "phút rồi mới thấy lỗi 401.\n\n"
+        "Token sai **không phải lỗi của request**: trả 200 với `ok: false` kèm lý do, "
+        "để giao diện hiện được thông báo thay vì phải bắt mã lỗi HTTP."
+    ),
+)
+async def verify_hf_token(body: HfVerifyRequest) -> HfVerifyResponse:
+    token = body.token.strip() or effective_hf_token()
+    if not token:
+        return HfVerifyResponse(ok=False, error="Chưa có token nào để kiểm tra.")
+
+    def _whoami() -> dict[str, Any]:
+        from huggingface_hub import whoami
+
+        return whoami(token=token)
+
+    try:
+        # Blocking (gọi HTTP) → đẩy ra khỏi event loop.
+        identity = await asyncio.to_thread(_whoami)
+    except Exception as exc:  # noqa: BLE001 — token sai và mất mạng đều về một cửa
+        # str(exc) của huggingface_hub có thể kèm URL nhưng KHÔNG kèm token.
+        logger.info("Kiểm tra token HuggingFace thất bại: %s", type(exc).__name__)
+        return HfVerifyResponse(ok=False, error=str(exc))
+    return HfVerifyResponse(ok=True, user=str(identity.get("name") or ""))
+
+
 @router.put(
     "/config",
     response_model=ConfigResponse,
@@ -103,6 +173,10 @@ async def _apply_models_dir(container: Container, raw: str) -> None:
         "vài giây và sẽ tải model nếu máy chưa có. Gửi lại đúng preset đang chạy thì "
         "không nạp lại gì cả, nên có thể dùng để chỉ đổi `historyEnabled` hoặc "
         "`modelsDir`.\n\n"
+        "`hfToken` lưu access token HuggingFace để tải model gated (pyannote); gửi "
+        "chuỗi rỗng để gỡ token đã lưu. Token **không bao giờ** được trả về nguyên "
+        "văn — xem `hfTokenSet`/`hfTokenHint`. Đổi token không nạp lại model (token "
+        "chỉ dùng cho lần *tải* kế tiếp); trả 409 nếu `LLVT_HF_TOKEN` đang được đặt.\n\n"
         "`modelsDir` được lưu vào `~/.llvt/settings.json` nên còn nguyên ở lần mở sau. "
         "Model **đã tải không được di chuyển** — thư mục mới rỗng thì lần nạp kế tiếp sẽ "
         "tải lại. Đổi xong, model đang nằm trong RAM được giải phóng và sẽ nạp lại từ "
@@ -114,6 +188,8 @@ async def update_config(
 ) -> ConfigResponse:
     if body.historyEnabled is not None:
         container.repository.enabled = body.historyEnabled
+    if body.hfToken is not None:
+        _apply_hf_token(body.hfToken)
     if body.modelsDir is not None:
         await _apply_models_dir(container, body.modelsDir)
     current = container.model_manager.preset

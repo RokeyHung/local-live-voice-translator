@@ -27,7 +27,16 @@ function write(key: string, value: unknown): void {
 
 export class LocalPreferences implements PreferencesRepository {
   load(): Partial<StoredPreferences> {
-    return read<Partial<StoredPreferences>>(PREFS_KEY, {})
+    const prefs = read<Partial<StoredPreferences> & { hfToken?: string }>(PREFS_KEY, {})
+    if ('hfToken' in prefs) {
+      // Bản trước lưu access token HuggingFace ở đây. localStorage là văn bản thường
+      // và mọi script trong renderer đọc được, nên token đã chuyển hẳn sang AI service
+      // (`~/.llvt/settings.json`, quyền 0600). Xoá ngay khi gặp — người dùng đã gõ
+      // token vào bản cũ thì nó không được nằm lại đây sau khi cập nhật.
+      delete prefs.hfToken
+      write(PREFS_KEY, prefs)
+    }
+    return prefs
   }
 
   save(prefs: StoredPreferences): void {

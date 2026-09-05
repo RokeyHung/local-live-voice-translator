@@ -45,6 +45,18 @@ class ConfigResponse(BaseModel):
     # không, thay vì đoán theo việc `stages` có khâu DIA.
     diarizationEnabled: bool = False
 
+    # --- Token HuggingFace (tải model gated) ---
+    #
+    # KHÔNG bao giờ trả nguyên văn token. Giao diện chỉ cần biết đã có hay chưa, nó
+    # đến từ đâu, và một đoạn che đủ để nhận ra đang dùng token nào.
+    hfTokenSet: bool = False
+    # "env" = LLVT_HF_TOKEN (app không sửa được) · "saved" = ô nhập trong app ·
+    # "inherited" = biến HF_TOKEN người dùng tự export · "none" = chưa có.
+    hfTokenSource: str = "none"
+    hfTokenHint: str = ""
+    # False khi LLVT_HF_TOKEN đang quyết định → giao diện khoá ô nhập lại.
+    hfTokenEditable: bool = True
+
 
 class InstalledModelSchema(BaseModel):
     name: str
@@ -85,6 +97,25 @@ class ConfigUpdate(BaseModel):
     historyEnabled: bool | None = None
     # None = giữ nguyên. Đổi thư mục model sẽ giải phóng provider đang nạp.
     modelsDir: str | None = None
+    # None = giữ nguyên, chuỗi rỗng = XOÁ token đã lưu. Trả 409 nếu LLVT_HF_TOKEN
+    # đang quyết định.
+    hfToken: str | None = None
+
+
+class HfVerifyRequest(BaseModel):
+    # Bỏ trống = kiểm tra token đang có hiệu lực (đã lưu hoặc từ môi trường). Có giá
+    # trị = thử token này mà KHÔNG lưu, để người dùng dán vào rồi bấm kiểm tra trước.
+    token: str = ""
+
+
+class HfVerifyResponse(BaseModel):
+    """Kết quả hỏi huggingface.co xem token có dùng được không."""
+
+    ok: bool
+    # Tên tài khoản HF khi token hợp lệ; rỗng khi không.
+    user: str = ""
+    # Lý do khi không hợp lệ (hết hạn, sai, hoặc không có mạng).
+    error: str = ""
 
 
 class DeletedModels(BaseModel):

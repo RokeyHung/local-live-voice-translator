@@ -64,6 +64,22 @@ export interface ConfigResponse {
   historyEnabled: boolean
   // Tách người nói có bật không (LLVT_DIARIZATION_ENABLED). Chỉ ảnh hưởng màn Nhập tệp.
   diarizationEnabled: boolean
+  // Token HuggingFace: service KHÔNG BAO GIỜ trả nguyên văn, chỉ cờ + đoạn che.
+  hfTokenSet: boolean
+  hfTokenSource: HfTokenSource
+  hfTokenHint: string
+  hfTokenEditable: boolean // false khi LLVT_HF_TOKEN đang quyết định
+}
+
+// 'env' = LLVT_HF_TOKEN (app không sửa được) · 'saved' = ô nhập trong app ·
+// 'inherited' = biến HF_TOKEN người dùng tự export · 'none' = chưa có.
+export type HfTokenSource = 'env' | 'saved' | 'inherited' | 'none'
+
+// Kết quả hỏi huggingface.co xem token có dùng được không (POST /api/hf/verify).
+export interface HfVerifyResult {
+  ok: boolean
+  user: string
+  error: string
 }
 
 // Tiến trình nạp model (GET /api/models/progress), hỏi trong lúc lệnh nạp đang chạy.

@@ -6,6 +6,7 @@ import type {
   ConfigResponse,
   DeletedModels,
   HealthResponse,
+  HfVerifyResult,
   HistorySession,
   HistorySessionDetail,
   InstalledModel,
@@ -36,6 +37,12 @@ export interface AiClient {
   setHistoryEnabled(preset: Preset, enabled: boolean): Promise<ConfigResponse>
   // Đổi thư mục lưu model; service lưu lại và giải phóng model đang nạp.
   setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse>
+  // Lưu access token HuggingFace ở phía service (chuỗi rỗng = gỡ token đã lưu).
+  // Token không bao giờ đi ngược lại về renderer.
+  setHfToken(preset: Preset, token: string): Promise<ConfigResponse>
+  // Hỏi huggingface.co xem token có dùng được không. Bỏ trống `token` để kiểm tra
+  // cái đang có hiệu lực; truyền giá trị để thử trước khi lưu.
+  verifyHfToken(token: string): Promise<HfVerifyResult>
   // Nạp model vào bộ nhớ (service không nạp lúc khởi động). Có thể mất vài phút lần đầu.
   loadModels(reload?: boolean): Promise<ConfigResponse>
   // Tiến trình của lượt nạp đang chạy (hỏi song song với loadModels).

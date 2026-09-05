@@ -22,7 +22,7 @@ from llvt_ai_service.adapters.vad.silero import SileroVad, VadParams
 from llvt_ai_service.application.load_progress import progress
 from llvt_ai_service.application.tts_router import LanguageRoutedTts
 from llvt_ai_service.config.presets import PresetConfig, get_preset_config
-from llvt_ai_service.config.settings import get_settings
+from llvt_ai_service.config.settings import effective_hf_token, get_settings
 from llvt_ai_service.domain.enums import Language, Preset
 from llvt_ai_service.ports.asr import SpeechToTextProvider
 from llvt_ai_service.ports.diarization import SpeakerDiarizer
@@ -114,7 +114,9 @@ ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
 DIARIZATION_REGISTRY: dict[str, Callable[[], SpeakerDiarizer]] = {
     "pyannote": lambda: PyannoteDiarizer(
         get_settings().diarization_model,
-        token=get_settings().hf_token,
+        # `effective_hf_token` chứ không phải `settings.hf_token`: người dùng có thể
+        # đã export sẵn `HF_TOKEN` chuẩn của huggingface_hub từ trước.
+        token=effective_hf_token(),
         models_dir=str(get_settings().models_dir / "pyannote"),
         min_speakers=get_settings().diarization_min_speakers,
         max_speakers=get_settings().diarization_max_speakers,

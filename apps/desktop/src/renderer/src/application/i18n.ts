@@ -210,6 +210,8 @@ export interface Dict {
   logPresetChanged: string
   logModelsDeleted: string
   logModelsDirChanged: string
+  logHfTokenSaved: string
+  logHfTokenCleared: string
   logImportStart: string
   logImportDone: string
   logImportCancelled: string
@@ -282,7 +284,19 @@ export interface Dict {
   hfTitle: string
   hfDesc: string
   hfPh: string
-  hfUnused: string
+  hfSave: string
+  hfClear: string
+  hfVerify: string
+  hfVerifying: string
+  hfSaved: string
+  hfNone: string
+  hfFromEnv: string
+  hfInherited: string
+  hfLocked: string
+  hfOkUser: string
+  hfBadToken: string
+  hfWhy: string
+  hfReloadHint: string
   glossTitle: string
   glossDesc: string
   glossSrcPh: string
@@ -570,6 +584,8 @@ const vi: Dict = {
   logPresetChanged: 'Đổi preset sang {preset}',
   logModelsDeleted: 'Đã xóa model trên đĩa, giải phóng {size}',
   logModelsDirChanged: 'Đổi thư mục lưu model sang {dir}',
+  logHfTokenSaved: 'Đã lưu access token HuggingFace',
+  logHfTokenCleared: 'Đã gỡ access token HuggingFace',
   logImportStart: 'Bắt đầu xử lý tệp {name}',
   logImportDone: 'Xong {name} · {count} đoạn',
   logImportCancelled: 'Đã huỷ tệp đang xử lý',
@@ -644,9 +660,23 @@ const vi: Dict = {
   tLightSub: 'Luôn sáng',
   tDarkSub: 'Luôn tối',
   hfTitle: 'Hugging Face Token',
-  hfDesc: 'Lưu token để tải model cần quyền truy cập (gated).',
+  hfDesc:
+    'Token để tải model cần quyền truy cập (gated). AI service giữ, không nằm trong trình duyệt.',
   hfPh: 'hf_xxxxxxxxxxxxxxxxxxxx',
-  hfUnused: 'Token chỉ được lưu cục bộ; chức năng tải model chưa nối với AI service.',
+  hfSave: 'Lưu token',
+  hfClear: 'Gỡ token',
+  hfVerify: 'Kiểm tra',
+  hfVerifying: 'Đang hỏi huggingface.co…',
+  hfSaved: 'Đã lưu token {hint} — AI service giữ, không nằm trong trình duyệt.',
+  hfNone: 'Chưa có token. Chỉ cần khi tải model gated (pyannote cho phần tách người nói).',
+  hfFromEnv: 'Đang dùng token từ biến môi trường LLVT_HF_TOKEN ({hint}).',
+  hfInherited: 'Đang dùng biến HF_TOKEN có sẵn trong môi trường ({hint}).',
+  hfLocked: 'LLVT_HF_TOKEN đang quyết định — bỏ biến đó đi nếu muốn đổi trong app.',
+  hfOkUser: 'Token hợp lệ — tài khoản {user}.',
+  hfBadToken: 'Token không dùng được: {error}',
+  hfWhy:
+    'Token chỉ cần cho LẦN TẢI ĐẦU của model gated; tải xong service chạy offline như thường. Đây là lần duy nhất ứng dụng chủ động gọi ra Internet ngoài lúc tải model.',
+  hfReloadHint: 'Vừa thêm token để sửa một khâu tải hỏng? Bấm "Nạp lại" ở màn Quản lý model.',
   glossTitle: 'Thuật ngữ tùy chỉnh (Glossary)',
   glossDesc: 'Thay thế tên riêng và thuật ngữ trong bản dịch hiển thị.',
   glossSrcPh: 'Từ gốc / thuật ngữ',
@@ -941,6 +971,8 @@ const en: Dict = {
   logPresetChanged: 'Preset changed to {preset}',
   logModelsDeleted: 'Models deleted from disk, freed {size}',
   logModelsDirChanged: 'Model folder changed to {dir}',
+  logHfTokenSaved: 'Hugging Face access token saved',
+  logHfTokenCleared: 'Hugging Face access token removed',
   logImportStart: 'Started processing {name}',
   logImportDone: 'Finished {name} · {count} segments',
   logImportCancelled: 'Cancelled the running file',
@@ -1016,9 +1048,22 @@ const en: Dict = {
   tLightSub: 'Always light',
   tDarkSub: 'Always dark',
   hfTitle: 'Hugging Face Token',
-  hfDesc: 'Store a token for gated / private model downloads.',
+  hfDesc: 'Token for downloading gated models. Held by the AI service, never by the browser.',
   hfPh: 'hf_xxxxxxxxxxxxxxxxxxxx',
-  hfUnused: 'The token is stored locally only; model download is not wired to the AI service.',
+  hfSave: 'Save token',
+  hfClear: 'Remove token',
+  hfVerify: 'Check',
+  hfVerifying: 'Asking huggingface.co…',
+  hfSaved: 'Token {hint} saved — held by the AI service, not by the browser.',
+  hfNone: 'No token yet. Only needed for gated models (pyannote, for speaker separation).',
+  hfFromEnv: 'Using the token from the LLVT_HF_TOKEN environment variable ({hint}).',
+  hfInherited: 'Using the HF_TOKEN variable already set in the environment ({hint}).',
+  hfLocked: 'LLVT_HF_TOKEN is in charge — unset it to change the token from the app.',
+  hfOkUser: 'Token works — account {user}.',
+  hfBadToken: 'Token rejected: {error}',
+  hfWhy:
+    'The token is only needed for the FIRST download of a gated model; after that the service runs offline as usual. This is the only time the app reaches the Internet outside model downloads.',
+  hfReloadHint: 'Added a token to fix a failed download? Hit "Reload" on the Models screen.',
   glossTitle: 'Custom glossary',
   glossDesc: 'Replace names and industry terms in the translation shown.',
   glossSrcPh: 'Source term',
