@@ -141,10 +141,11 @@ script độc lập chạy ở môi trường riêng (`uv run --no-project scrip
 - [ ] **Push nhánh lên GitHub.** Hai commit `d0e700a` và `e0b3180` đang nằm local trên
       `feat/gvhd-2026-08-19`, chưa đẩy lên `origin`. Cũng cần quyết merge vào `main` hay
       giữ nhánh (repo vốn commit thẳng `main` — xem `CLAUDE.md`).
-- [ ] **Sửa 9072 cảnh báo CRLF của `make lint`** (0 lỗi, chỉ là cảnh báo, có từ trước đợt
-      này). Repo không có `.gitattributes`, prettier mặc định `endOfLine: lf` trong khi
-      Git checkout ra CRLF trên Windows. Sửa bằng một dòng `endOfLine: auto` trong
-      `.prettierrc.yaml` và `apps/desktop/.prettierrc.yaml`.
+- [x] ~~Sửa 9072 cảnh báo CRLF của `make lint`~~ — đã thêm `.gitattributes`
+      (`* text=auto eol=lf`) ở đợt 05/09. Chọn cách này thay vì nới `endOfLine: auto`
+      cho prettier: chỗ sai là kết thúc dòng trong thư mục làm việc, không phải quy
+      tắc format. **Máy Windows đã clone từ trước phải chạy lại**
+      `git rm --cached -r . && git reset --hard` để checkout lại theo quy tắc mới.
 - [ ] **Cân nhắc `LLVT_ASR_AUDIO_CTX`.** Rút ngắn ngữ cảnh encoder của whisper.cpp (~768
       thay vì 1500) làm ASR nhanh lên rõ rệt vì đoạn VAD chỉ vài giây chứ không phải 30
       giây. Đang mặc định **tắt** vì nó ảnh hưởng độ chính xác — chỉ bật sau khi đo được

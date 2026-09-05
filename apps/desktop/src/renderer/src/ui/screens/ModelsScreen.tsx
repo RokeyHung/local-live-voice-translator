@@ -697,7 +697,7 @@ export function ModelsScreen(): JSX.Element {
           )}
         </div>
 
-        {/* danh mục tham khảo — tải về chưa nối với service */}
+        {/* danh mục model: bấm Tải là service tải thật về modelsDir, không nạp vào bộ nhớ */}
         <div className="panel overflow-hidden">
           <PanelHeader>
             <div className="flex items-center gap-2.25">

@@ -1,0 +1,19 @@
+# Chuẩn hoá kết thúc dòng: repo lưu LF, checkout ra LF trên mọi máy.
+#
+# Không có file này thì Git trên Windows checkout ra CRLF, còn prettier mặc định
+# `endOfLine: lf` — `make lint` sẽ báo hàng nghìn cảnh báo trên máy Windows trong khi
+# trên macOS thì sạch. Đặt ở đây thay vì nới lỏng prettier: chỗ sai là kết thúc dòng
+# trong thư mục làm việc, không phải quy tắc format.
+* text=auto eol=lf
+
+# Nhị phân: không được đụng vào byte nào.
+*.bin  binary
+*.onnx binary
+*.wav  binary
+*.mp3  binary
+*.m4a  binary
+*.mov  binary
+*.mp4  binary
+*.png  binary
+*.ico  binary
+*.icns binary

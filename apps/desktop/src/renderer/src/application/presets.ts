@@ -58,8 +58,9 @@ export const PRESET_META: Record<Preset, PresetMeta> = {
   }
 }
 
-// Danh mục model tham khảo (docs/02_spec-addendum-os-stack-models.md). Chỉ để tra
-// cứu — tải model vẫn làm thủ công, giao diện chưa nối với AI service.
+// Danh mục model (docs/02_spec-addendum-os-stack-models.md). Bấm Tải ở màn Quản lý
+// model là service tải thật về `modelsDir` (POST /api/models/download) — bảng này chỉ
+// còn là phần TRÌNH BÀY: tên, mô tả, dung lượng, nền tảng chạy được.
 //
 // `name` là tên LOGIC mà AI service hiểu: đặt được thẳng vào preset
 // (`config/presets.py`) hoặc vào `LLVT_ASR_ADAPTER`/`LLVT_DIARIZATION_MODEL`. Không
@@ -79,7 +80,7 @@ export interface CatalogEntry {
   // không mất công thử một thứ máy họ không chạy được.
   platform?: 'darwin' | 'win32'
   // Cần cài thêm gói tùy chọn của AI service (`uv sync --extra <tên>`).
-  extra?: 'mlx' | 'diarization'
+  extra?: 'mlx' | 'diarization' | 'ctranslate2'
 }
 
 export const MODEL_CATALOG: CatalogEntry[] = [
@@ -239,6 +240,53 @@ export const MODEL_CATALOG: CatalogEntry[] = [
     size: '26 MB',
     platform: 'darwin',
     extra: 'mlx'
+  },
+
+  // --- ASR · faster-whisper (CTranslate2) — LLVT_ASR_ADAPTER=faster_whisper ---
+  //
+  // Chạy được cả hai nền tảng nên KHÔNG khoá `platform`, nhưng chỗ nó ăn điểm là
+  // Windows + NVIDIA (fp16 trên nhân CUDA riêng); trên CPU thì chạy int8.
+  {
+    stage: 'ASR',
+    name: 'fw-whisper-large-v3-turbo',
+    detail: 'deepdml · CTranslate2 · preset Balanced',
+    size: '1.62 GB',
+    extra: 'ctranslate2'
+  },
+  {
+    stage: 'ASR',
+    name: 'fw-whisper-large-v3',
+    detail: 'Systran · CTranslate2 · chính xác nhất',
+    size: '3.09 GB',
+    extra: 'ctranslate2'
+  },
+  {
+    stage: 'ASR',
+    name: 'fw-whisper-medium',
+    detail: 'Systran · CTranslate2',
+    size: '1.53 GB',
+    extra: 'ctranslate2'
+  },
+  {
+    stage: 'ASR',
+    name: 'fw-whisper-small',
+    detail: 'Systran · CTranslate2 · preset Fast',
+    size: '486 MB',
+    extra: 'ctranslate2'
+  },
+  {
+    stage: 'ASR',
+    name: 'fw-whisper-base',
+    detail: 'Systran · CTranslate2',
+    size: '148 MB',
+    extra: 'ctranslate2'
+  },
+  {
+    stage: 'ASR',
+    name: 'fw-whisper-tiny',
+    detail: 'Systran · CTranslate2',
+    size: '78 MB',
+    extra: 'ctranslate2'
   },
 
   // --- MT ---
