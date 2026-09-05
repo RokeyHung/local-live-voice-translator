@@ -79,9 +79,7 @@ export function LogsScreen(): JSX.Element {
         }
       />
 
-      <div className="self-start">
-        <Segmented value={filter} options={filters} onChange={setFilter} />
-      </div>
+      <Segmented value={filter} options={filters} onChange={setFilter} />
 
       <div className="cs min-h-65 flex-1 overflow-y-auto rounded-2xl border border-line bg-inset-2 p-2 font-mono backdrop-blur-xl">
         {shown.length === 0 ? (

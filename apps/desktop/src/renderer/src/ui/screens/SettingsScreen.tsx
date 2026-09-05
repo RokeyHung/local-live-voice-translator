@@ -240,17 +240,15 @@ export function SettingsScreen(): JSX.Element {
       </Section>
 
       <Section icon="globe" color="#22d3ee" title={L.uiLang} desc={L.langDesc}>
-        <div className="max-w-70">
-          <Segmented
-            size="lg"
-            value={uiLanguage}
-            onChange={setUiLanguage}
-            options={[
-              { value: 'vi', label: 'Tiếng Việt' },
-              { value: 'en', label: 'English' }
-            ]}
-          />
-        </div>
+        <Segmented
+          size="lg"
+          value={uiLanguage}
+          onChange={setUiLanguage}
+          options={[
+            { value: 'vi', label: 'Tiếng Việt' },
+            { value: 'en', label: 'English' }
+          ]}
+        />
       </Section>
 
       <Section
@@ -357,21 +355,19 @@ export function SettingsScreen(): JSX.Element {
 
       <Section icon="shield" color="#22c55e" title={L.privacyT} desc={L.privacyDesc}>
         <div>
-          <div className="max-w-70">
-            <Segmented
-              size="lg"
-              value={config.data?.historyEnabled === false ? 'off' : 'on'}
-              onChange={(value) => {
-                const preset = config.data?.preset
-                if (!preset) return
-                setHistoryEnabled.mutate({ preset, enabled: value === 'on' })
-              }}
-              options={[
-                { value: 'on', label: L.historyOn },
-                { value: 'off', label: L.historyOff }
-              ]}
-            />
-          </div>
+          <Segmented
+            size="lg"
+            value={config.data?.historyEnabled === false ? 'off' : 'on'}
+            onChange={(value) => {
+              const preset = config.data?.preset
+              if (!preset) return
+              setHistoryEnabled.mutate({ preset, enabled: value === 'on' })
+            }}
+            options={[
+              { value: 'on', label: L.historyOn },
+              { value: 'off', label: L.historyOff }
+            ]}
+          />
           <div className="mt-2.5 text-sm text-fg-4">
             {config.data ? (
               <>

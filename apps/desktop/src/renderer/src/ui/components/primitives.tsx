@@ -119,7 +119,10 @@ export function Segmented<T extends string>({
 }): JSX.Element {
   const large = size === 'lg'
   return (
-    <div className="flex gap-1 rounded-md border border-line bg-inset-2 p-0.75">
+    // `w-fit`: khung bo phải ôm sát các nút. Là thẻ div nên mặc định nó giãn hết bề
+    // ngang của cha (hoặc bị stretch trong flex-column), để lại một mảng nền thừa
+    // bên phải nút cuối cùng.
+    <div className="flex w-fit gap-1 rounded-md border border-line bg-inset-2 p-0.75">
       {options.map((option) => {
         const on = option.value === value
         const active = large
