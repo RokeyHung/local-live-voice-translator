@@ -112,6 +112,34 @@ def test_download_endpoint_rejects_an_unknown_name_with_400(client: TestClient):
     assert "danh mục" in response.json()["detail"]
 
 
+def test_a_gated_repo_is_403_not_503(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    """Token hợp lệ nhưng chưa được cấp quyền — người dùng phải xin quyền trên web.
+
+    503 hàm ý "thử lại sau" nên người dùng sẽ bấm lại mãi mà không bao giờ được; đây
+    là điều kiện họ phải tự xử lý, nên 403 kèm đúng đường link.
+    """
+    import httpx
+    from huggingface_hub.errors import GatedRepoError
+
+    def gated(_name: str, _dir: Path) -> Path:
+        # Dựng đúng như thư viện dựng: nó cần `response`, thiếu thì chính hàm khởi tạo
+        # ném TypeError và test lại đi kiểm nhánh "lỗi bất kỳ" thay vì nhánh gated.
+        raise GatedRepoError(
+            "403 Client Error. Cannot access gated repo",
+            response=httpx.Response(403, request=httpx.Request("GET", "https://hf.co")),
+        )
+
+    monkeypatch.setattr(model_download, "download", gated)
+    response = client.post(
+        "/api/models/download", json={"name": "pyannote/speaker-diarization-community-1"}
+    )
+
+    assert response.status_code == 403
+    detail = response.json()["detail"]
+    assert "huggingface.co/pyannote/speaker-diarization-community-1" in detail
+    assert "không cần đổi token" in detail
+
+
 def test_download_failure_is_503_not_500(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     # Mất mạng là lỗi môi trường, không phải lỗi của request.
     def boom(_name: str, _dir: Path) -> Path:

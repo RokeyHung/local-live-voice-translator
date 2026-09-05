@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from huggingface_hub.errors import GatedRepoError
 
 from llvt_ai_service.adapters.asr.faster_whisper import MODEL_MAP as FW_MODELS
 from llvt_ai_service.adapters.asr.mlx_whisper import MODEL_MAP as MLX_MODELS
@@ -300,8 +301,9 @@ def installed_models() -> list[InstalledModelSchema]:
         "`vits-piper-vi_VN-vais1000-medium`, `pyannote/...`. Model đã có sẵn thì lệnh "
         "trả về ngay.\n\n"
         "**Chặn tới khi tải xong** — hàng GB nên có thể mất vài phút. Trả 400 nếu tên "
-        "không có trong danh mục, 503 nếu tải hỏng (thường là mất mạng, hoặc thiếu "
-        "token cho model gated)."
+        "không có trong danh mục, **403** nếu đó là repo *gated* mà tài khoản chưa "
+        "được cấp quyền (token vẫn hợp lệ — phải xin quyền trên web), 503 nếu tải "
+        "hỏng vì lý do khác (thường là mất mạng)."
     ),
 )
 async def download_model(
@@ -317,7 +319,20 @@ async def download_model(
         # Tải là I/O mạng blocking → đẩy ra khỏi event loop, nếu không cả service
         # đứng hình (kể cả /health) suốt lúc tải.
         path = await asyncio.to_thread(model_download.download, body.name, settings.models_dir)
-    except Exception as exc:  # noqa: BLE001 — mất mạng, hết đĩa, thiếu quyền: cùng một cửa
+    except GatedRepoError as exc:
+        # Repo gated: token hợp lệ nhưng tài khoản CHƯA được cấp quyền. Đây là việc
+        # người dùng phải làm trên web, không phải sự cố tạm thời — trả 403 chứ không
+        # phải 503, vì 503 hàm ý "thử lại sau" và người dùng sẽ bấm lại mãi.
+        logger.warning("Model %s là repo gated, tài khoản chưa được cấp quyền", body.name)
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"{body.name} là repo *gated*: token của bạn hợp lệ nhưng tài khoản "
+                f"chưa được cấp quyền. Mở https://huggingface.co/{body.name} , điền "
+                "biểu mẫu xin quyền rồi bấm lại — không cần đổi token."
+            ),
+        ) from exc
+    except Exception as exc:  # noqa: BLE001 — mất mạng, hết đĩa: cùng một cửa
         logger.warning("Tải model %s thất bại: %s", body.name, exc)
         raise HTTPException(
             status_code=503,
