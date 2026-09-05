@@ -25,6 +25,7 @@ export interface Dict {
   settings: string
   about: string
   importFiles: string
+  evaluate: string
   // phiên dịch
   layout: string
   vSplit: string
@@ -140,6 +141,7 @@ export interface Dict {
   lpLoading: string
   lpDone: string
   lpFailed: string
+  lpCancelled: string
   modelsIdleBadge: string
   mbIdleHint: string
   applyingPreset: string
@@ -147,10 +149,19 @@ export interface Dict {
   stageLbl: string
   adapterLbl: string
   customTitle: string
+  customAsrAdapter: string
+  customAsrModel: string
+  customMtModel: string
+  customApply: string
+  customNote: string
+  dlWorking: string
+  delOneTip: string
+  confirmDeleteOne: string
   customSub: string
   browseTitle: string
   browseSub: string
   browseDisabled: string
+  catalogWrongPlatform: string
   searchPh: string
   dlBtn: string
   noCatalogResults: string
@@ -208,13 +219,46 @@ export interface Dict {
   logModelsUnloaded: string
   logPresetChanged: string
   logModelsDeleted: string
+  logModelDownloaded: string
+  logModelDeleted: string
   logModelsDirChanged: string
+  logHfTokenSaved: string
+  logHfTokenCleared: string
   logImportStart: string
   logImportDone: string
   logImportCancelled: string
   logImportFailed: string
   logBenchDone: string
   logBenchFailed: string
+  logEvalStart: string
+  logEvalDone: string
+  logEvalFailed: string
+  // đánh giá
+  evalSub: string
+  evalBundledSet: string
+  evalCustomSet: string
+  evalSetSummary: string
+  evalPickFile: string
+  evalUseBundled: string
+  evalQuick: string
+  evalRun: string
+  evalRunning: string
+  evalFailed: string
+  evalBadFile: string
+  evalEmptyFile: string
+  evalSyntheticT: string
+  evalSyntheticB: string
+  evalSyntheticBadge: string
+  evalCancelledNote: string
+  evalScriptNote: string
+  evalLowerBetter: string
+  evalHigherBetter: string
+  evalAsrP50: string
+  evalAsrP90: string
+  evalMtP90: string
+  evalRtfP90: string
+  evalRtfOk: string
+  evalRtfSlow: string
   // lịch sử
   historySub: string
   clearAll: string
@@ -278,10 +322,34 @@ export interface Dict {
   tSystemSub: string
   tLightSub: string
   tDarkSub: string
+  reviewTitle: string
+  reviewSend: string
+  reviewDiscard: string
+  reviewAutoIn: string
+  reviewHint: string
+  reviewSectionTitle: string
+  reviewSectionDesc: string
+  reviewOn: string
+  reviewOff: string
+  reviewCountdownLbl: string
+  reviewCountdownOff: string
+  reviewMidSession: string
   hfTitle: string
   hfDesc: string
   hfPh: string
-  hfUnused: string
+  hfSave: string
+  hfClear: string
+  hfVerify: string
+  hfVerifying: string
+  hfSaved: string
+  hfNone: string
+  hfFromEnv: string
+  hfInherited: string
+  hfLocked: string
+  hfOkUser: string
+  hfBadToken: string
+  hfWhy: string
+  hfReloadHint: string
   glossTitle: string
   glossDesc: string
   glossSrcPh: string
@@ -331,6 +399,7 @@ export interface Dict {
   durationLbl: string
   diarizeLbl: string
   diarizeOff: string
+  diarizeHint: string
   impFileLang: string
   impTargetLang: string
   impNoTranslate: string
@@ -344,6 +413,11 @@ export interface Dict {
   impSegments: string
   impLoadHint: string
   impBusySession: string
+  // tách người nói (diarization) — chỉ có ở màn Nhập tệp
+  impDiarizing: string
+  impSpeakers: string
+  speakerN: string
+  speakerUnknown: string
   // trạng thái utterance
   stRecognizing: string
   stTranslating: string
@@ -374,6 +448,7 @@ const vi: Dict = {
   settings: 'Cài đặt',
   about: 'Về ứng dụng',
   importFiles: 'Nhập tệp',
+  evaluate: 'Đánh giá',
 
   layout: 'Bố cục',
   vSplit: 'Chia đôi',
@@ -492,6 +567,7 @@ const vi: Dict = {
   lpLoading: 'đang nạp…',
   lpDone: 'xong',
   lpFailed: 'lỗi',
+  lpCancelled: 'đã dừng',
   modelsIdleBadge: 'Chưa nạp model',
   mbIdleHint: 'Bấm Bắt đầu để nạp',
   applyingPreset: 'Đang nạp preset…',
@@ -499,10 +575,19 @@ const vi: Dict = {
   stageLbl: 'Khâu',
   adapterLbl: 'Adapter',
   customTitle: 'Cấu hình tự chọn',
-  customSub: 'Chọn model riêng cho từng khâu — cần API model bên AI service.',
+  customSub: 'Chọn model riêng cho từng khâu.',
+  customAsrAdapter: 'Runtime ASR',
+  customAsrModel: 'Model ASR',
+  customMtModel: 'Model dịch',
+  customApply: 'Lưu lựa chọn',
+  customNote: 'Lưu xong bấm "Tự chọn" ở trên để chạy bộ này. Khâu VAD và TTS vẫn theo Balanced.',
+  dlWorking: 'Đang tải…',
+  delOneTip: 'Xoá model này',
+  confirmDeleteOne: 'Xoá model này khỏi đĩa? Lần nạp sau sẽ phải tải lại.',
   browseTitle: 'Tìm & tải model từ Hugging Face',
   browseSub: 'Danh mục tham khảo theo docs/02 — tải về chưa nối với AI service.',
   browseDisabled: 'Tải model từ giao diện chưa hỗ trợ.',
+  catalogWrongPlatform: 'Model này không chạy trên hệ điều hành hiện tại.',
   searchPh: 'Lọc danh mục (whisper, nllb, piper…)',
   dlBtn: 'Tải về',
   noCatalogResults: 'Không có model nào khớp từ khóa.',
@@ -561,14 +646,48 @@ const vi: Dict = {
   logModelsUnloaded: 'Đã giải phóng model khỏi bộ nhớ',
   logPresetChanged: 'Đổi preset sang {preset}',
   logModelsDeleted: 'Đã xóa model trên đĩa, giải phóng {size}',
+  logModelDownloaded: 'Đã tải model {name}',
+  logModelDeleted: 'Đã xoá một model, giải phóng {size}',
   logModelsDirChanged: 'Đổi thư mục lưu model sang {dir}',
+  logHfTokenSaved: 'Đã lưu access token HuggingFace',
+  logHfTokenCleared: 'Đã gỡ access token HuggingFace',
   logImportStart: 'Bắt đầu xử lý tệp {name}',
   logImportDone: 'Xong {name} · {count} đoạn',
   logImportCancelled: 'Đã huỷ tệp đang xử lý',
   logImportFailed: 'Lỗi khi xử lý {name}: {msg}',
   logBenchDone: 'Đo độ trễ xong · tổng {total} ms',
   logBenchFailed: 'Đo độ trễ thất bại: {msg}',
+  logEvalStart: 'Bắt đầu đánh giá {n} câu',
+  logEvalDone: 'Đánh giá xong {n} câu — lỗi {err}, chrF {chrf}',
+  logEvalFailed: 'Đánh giá thất bại: {msg}',
 
+  evalSub: 'Chạy bộ câu mẫu qua hệ thống và tự chấm điểm.',
+  evalBundledSet: 'Bộ câu mẫu đi kèm',
+  evalCustomSet: 'Bộ câu của bạn',
+  evalSetSummary: '{n} câu · {recorded} có bản ghi thật · {synthetic} dùng giọng tổng hợp',
+  evalPickFile: 'Nạp file JSON',
+  evalUseBundled: 'Dùng bộ mẫu',
+  evalQuick: 'Chạy thử 3 câu',
+  evalRun: 'Chạy đánh giá',
+  evalRunning: 'Đang chấm {id}…',
+  evalFailed: 'Chạy đánh giá thất bại',
+  evalBadFile: 'Không đọc được file',
+  evalEmptyFile: 'File không có câu nào.',
+  evalSyntheticT: 'Có câu chạy bằng giọng tổng hợp',
+  evalSyntheticB:
+    'Câu không có bản ghi thì máy tự đọc rồi tự nghe lại. Giọng tổng hợp sạch và đều nên số sẽ LẠC QUAN hơn thực tế — muốn số dùng được cho báo cáo thì thu âm giọng người và điền đường dẫn vào trường `audio`.',
+  evalSyntheticBadge: 'giọng máy',
+  evalCancelledNote: 'Đã dừng giữa chừng — bảng dưới chỉ gồm những câu đã chấm xong.',
+  evalScriptNote:
+    'Số ở đây để thử nhanh và so các cấu hình với nhau. Bảng đưa vào báo cáo lấy từ `make eval-asr` / `make eval-mt` (dùng jiwer + spBLEU nên so được với số công bố của NLLB-200).',
+  evalLowerBetter: 'càng thấp càng tốt',
+  evalHigherBetter: 'càng cao càng tốt',
+  evalAsrP50: 'ASR p50',
+  evalAsrP90: 'ASR p90',
+  evalMtP90: 'Dịch p90',
+  evalRtfP90: 'RTF p90',
+  evalRtfOk: 'nhanh hơn thời gian thực',
+  evalRtfSlow: 'chậm hơn thời gian thực',
   historySub: 'Mỗi cuộc họp được ghi lại riêng khi bạn nhấn Bắt đầu.',
   clearAll: 'Xóa tất cả',
   meetingsTitle: 'Cuộc họp',
@@ -635,10 +754,37 @@ const vi: Dict = {
   tSystemSub: 'Theo máy',
   tLightSub: 'Luôn sáng',
   tDarkSub: 'Luôn tối',
+  reviewTitle: 'Duyệt trước khi gửi',
+  reviewSend: 'Gửi',
+  reviewDiscard: 'Bỏ',
+  reviewAutoIn: 'tự gửi sau',
+  reviewHint: 'Enter để gửi · Esc để bỏ',
+  reviewSectionTitle: 'Duyệt trước khi gửi',
+  reviewSectionDesc:
+    'Dừng lại cho bạn sửa bản dịch trước khi đọc vào cuộc họp. Chính xác hơn, đổi lại mỗi câu phải chờ bạn bấm.',
+  reviewOn: 'Bật',
+  reviewOff: 'Tắt',
+  reviewCountdownLbl: 'Tự gửi sau',
+  reviewCountdownOff: 'Không tự gửi',
+  reviewMidSession: 'Đổi lúc đang có phiên chạy thì phải bắt đầu lại phiên mới có tác dụng.',
   hfTitle: 'Hugging Face Token',
-  hfDesc: 'Lưu token để tải model cần quyền truy cập (gated).',
+  hfDesc:
+    'Token để tải model cần quyền truy cập (gated). AI service giữ, không nằm trong trình duyệt.',
   hfPh: 'hf_xxxxxxxxxxxxxxxxxxxx',
-  hfUnused: 'Token chỉ được lưu cục bộ; chức năng tải model chưa nối với AI service.',
+  hfSave: 'Lưu token',
+  hfClear: 'Gỡ token',
+  hfVerify: 'Kiểm tra',
+  hfVerifying: 'Đang hỏi huggingface.co…',
+  hfSaved: 'Đã lưu token {hint} — AI service giữ, không nằm trong trình duyệt.',
+  hfNone: 'Chưa có token. Chỉ cần khi tải model gated (pyannote cho phần tách người nói).',
+  hfFromEnv: 'Đang dùng token từ biến môi trường LLVT_HF_TOKEN ({hint}).',
+  hfInherited: 'Đang dùng biến HF_TOKEN có sẵn trong môi trường ({hint}).',
+  hfLocked: 'LLVT_HF_TOKEN đang quyết định — bỏ biến đó đi nếu muốn đổi trong app.',
+  hfOkUser: 'Token hợp lệ — tài khoản {user}.',
+  hfBadToken: 'Token không dùng được: {error}',
+  hfWhy:
+    'Token chỉ cần cho LẦN TẢI ĐẦU của model gated; tải xong service chạy offline như thường. Đây là lần duy nhất ứng dụng chủ động gọi ra Internet ngoài lúc tải model.',
+  hfReloadHint: 'Vừa thêm token để sửa một khâu tải hỏng? Bấm "Nạp lại" ở màn Quản lý model.',
   glossTitle: 'Thuật ngữ tùy chỉnh (Glossary)',
   glossDesc: 'Thay thế tên riêng và thuật ngữ trong bản dịch hiển thị.',
   glossSrcPh: 'Từ gốc / thuật ngữ',
@@ -689,7 +835,10 @@ const vi: Dict = {
   removeTip: 'Bỏ khỏi hàng đợi',
   durationLbl: 'Thời lượng',
   diarizeLbl: 'Phân biệt người nói',
-  diarizeOff: 'Pipeline chưa có khâu phân biệt người nói (diarization).',
+  diarizeOff:
+    'Service chưa bật tách người nói. Cài `uv sync --extra diarization` rồi đặt LLVT_DIARIZATION_ENABLED=true.',
+  diarizeHint:
+    'Gắn nhãn người nói cho từng đoạn. Tốn thêm một lượt quét cả tệp trước khi nhận dạng chữ.',
   impFileLang: 'Ngôn ngữ trong tệp',
   impTargetLang: 'Dịch sang',
   impNoTranslate: 'Không dịch',
@@ -706,6 +855,10 @@ const vi: Dict = {
   impLoadHint: 'Model được nạp trước khi chạy tệp đầu tiên; lần đầu có thể mất vài phút.',
   impBusySession:
     'Đang có phiên dịch chạy — dừng phiên trước khi nhập tệp, vì cả hai dùng chung model.',
+  impDiarizing: 'Đang tách người nói…',
+  impSpeakers: 'người nói',
+  speakerN: 'Người nói {n}',
+  speakerUnknown: 'Không rõ người nói',
 
   stRecognizing: 'Nhận diện',
   stTranslating: 'Đang dịch',
@@ -736,6 +889,7 @@ const en: Dict = {
   settings: 'Settings',
   about: 'About',
   importFiles: 'Import Files',
+  evaluate: 'Evaluation',
 
   layout: 'Layout',
   vSplit: 'Split',
@@ -855,6 +1009,7 @@ const en: Dict = {
   lpLoading: 'loading…',
   lpDone: 'done',
   lpFailed: 'failed',
+  lpCancelled: 'stopped',
   modelsIdleBadge: 'Models not loaded',
   mbIdleHint: 'Press Start to load',
   applyingPreset: 'Loading preset…',
@@ -862,10 +1017,19 @@ const en: Dict = {
   stageLbl: 'Stage',
   adapterLbl: 'Adapter',
   customTitle: 'Custom configuration',
-  customSub: 'Pick a model per stage — needs a model API on the AI service.',
+  customSub: 'Pick a model per stage.',
+  customAsrAdapter: 'ASR runtime',
+  customAsrModel: 'ASR model',
+  customMtModel: 'Translation model',
+  customApply: 'Save choices',
+  customNote: 'After saving, hit "Custom" above to run it. VAD and TTS still follow Balanced.',
+  dlWorking: 'Downloading…',
+  delOneTip: 'Remove this model',
+  confirmDeleteOne: 'Remove this model from disk? The next load will re-download it.',
   browseTitle: 'Search & download from Hugging Face',
   browseSub: 'Reference catalog from docs/02 — downloading is not wired to the AI service.',
   browseDisabled: 'Downloading models from the UI is not supported.',
+  catalogWrongPlatform: 'This model does not run on the current operating system.',
   searchPh: 'Filter catalog (whisper, nllb, piper…)',
   dlBtn: 'Download',
   noCatalogResults: 'No model matches that keyword.',
@@ -924,14 +1088,49 @@ const en: Dict = {
   logModelsUnloaded: 'Models freed from memory',
   logPresetChanged: 'Preset changed to {preset}',
   logModelsDeleted: 'Models deleted from disk, freed {size}',
+  logModelDownloaded: 'Downloaded model {name}',
+  logModelDeleted: 'Removed one model, freed {size}',
   logModelsDirChanged: 'Model folder changed to {dir}',
+  logHfTokenSaved: 'Hugging Face access token saved',
+  logHfTokenCleared: 'Hugging Face access token removed',
   logImportStart: 'Started processing {name}',
   logImportDone: 'Finished {name} · {count} segments',
   logImportCancelled: 'Cancelled the running file',
   logImportFailed: 'Failed to process {name}: {msg}',
   logBenchDone: 'Latency run finished · {total} ms total',
   logBenchFailed: 'Latency run failed: {msg}',
+  logEvalStart: 'Evaluating {n} cases',
+  logEvalDone: 'Evaluated {n} cases — error {err}, chrF {chrf}',
+  logEvalFailed: 'Evaluation failed: {msg}',
 
+  evalSub: 'Run a sample set through the system and score it.',
+  evalBundledSet: 'Bundled sample set',
+  evalCustomSet: 'Your own set',
+  evalSetSummary:
+    '{n} cases · {recorded} with real recordings · {synthetic} using synthetic speech',
+  evalPickFile: 'Load JSON file',
+  evalUseBundled: 'Use bundled set',
+  evalQuick: 'Quick run (3 cases)',
+  evalRun: 'Run evaluation',
+  evalRunning: 'Scoring {id}…',
+  evalFailed: 'Evaluation failed',
+  evalBadFile: 'Could not read the file',
+  evalEmptyFile: 'The file has no cases.',
+  evalSyntheticT: 'Some cases ran on synthetic speech',
+  evalSyntheticB:
+    'Cases without a recording are spoken by the app and fed back to ASR. Synthetic speech is clean and even, so the numbers are OPTIMISTIC — for report-grade numbers, record real speech and point the `audio` field at it.',
+  evalSyntheticBadge: 'synthetic',
+  evalCancelledNote: 'Stopped early — the table below only covers the cases already scored.',
+  evalScriptNote:
+    'These numbers are for quick checks and comparing configurations. Report tables come from `make eval-asr` / `make eval-mt`, which use jiwer + spBLEU so they line up with the published NLLB-200 figures.',
+  evalLowerBetter: 'lower is better',
+  evalHigherBetter: 'higher is better',
+  evalAsrP50: 'ASR p50',
+  evalAsrP90: 'ASR p90',
+  evalMtP90: 'MT p90',
+  evalRtfP90: 'RTF p90',
+  evalRtfOk: 'faster than real time',
+  evalRtfSlow: 'slower than real time',
   historySub: 'Each meeting is recorded separately when you press Start.',
   clearAll: 'Clear all',
   meetingsTitle: 'Meetings',
@@ -999,10 +1198,36 @@ const en: Dict = {
   tSystemSub: 'Match OS',
   tLightSub: 'Always light',
   tDarkSub: 'Always dark',
+  reviewTitle: 'Review before speaking',
+  reviewSend: 'Send',
+  reviewDiscard: 'Discard',
+  reviewAutoIn: 'auto-send in',
+  reviewHint: 'Enter to send · Esc to discard',
+  reviewSectionTitle: 'Review before speaking',
+  reviewSectionDesc:
+    'Pause so you can edit the translation before it is spoken into the meeting. More accurate, but every sentence waits for you.',
+  reviewOn: 'On',
+  reviewOff: 'Off',
+  reviewCountdownLbl: 'Auto-send after',
+  reviewCountdownOff: 'Never auto-send',
+  reviewMidSession: 'Changing this during a running session takes effect on the next session.',
   hfTitle: 'Hugging Face Token',
-  hfDesc: 'Store a token for gated / private model downloads.',
+  hfDesc: 'Token for downloading gated models. Held by the AI service, never by the browser.',
   hfPh: 'hf_xxxxxxxxxxxxxxxxxxxx',
-  hfUnused: 'The token is stored locally only; model download is not wired to the AI service.',
+  hfSave: 'Save token',
+  hfClear: 'Remove token',
+  hfVerify: 'Check',
+  hfVerifying: 'Asking huggingface.co…',
+  hfSaved: 'Token {hint} saved — held by the AI service, not by the browser.',
+  hfNone: 'No token yet. Only needed for gated models (pyannote, for speaker separation).',
+  hfFromEnv: 'Using the token from the LLVT_HF_TOKEN environment variable ({hint}).',
+  hfInherited: 'Using the HF_TOKEN variable already set in the environment ({hint}).',
+  hfLocked: 'LLVT_HF_TOKEN is in charge — unset it to change the token from the app.',
+  hfOkUser: 'Token works — account {user}.',
+  hfBadToken: 'Token rejected: {error}',
+  hfWhy:
+    'The token is only needed for the FIRST download of a gated model; after that the service runs offline as usual. This is the only time the app reaches the Internet outside model downloads.',
+  hfReloadHint: 'Added a token to fix a failed download? Hit "Reload" on the Models screen.',
   glossTitle: 'Custom glossary',
   glossDesc: 'Replace names and industry terms in the translation shown.',
   glossSrcPh: 'Source term',
@@ -1053,7 +1278,10 @@ const en: Dict = {
   removeTip: 'Remove from queue',
   durationLbl: 'Duration',
   diarizeLbl: 'Speaker labels',
-  diarizeOff: 'The pipeline has no speaker diarization stage.',
+  diarizeOff:
+    'Speaker separation is off in the service. Install `uv sync --extra diarization` and set LLVT_DIARIZATION_ENABLED=true.',
+  diarizeHint:
+    'Label each segment with who spoke. Costs one extra pass over the whole file before transcription.',
   impFileLang: 'Language in the file',
   impTargetLang: 'Translate to',
   impNoTranslate: "Don't translate",
@@ -1070,6 +1298,10 @@ const en: Dict = {
   impLoadHint: 'Models load before the first file; the first run can take a few minutes.',
   impBusySession:
     'A translation session is running — stop it before importing, both share the same models.',
+  impDiarizing: 'Separating speakers…',
+  impSpeakers: 'speakers',
+  speakerN: 'Speaker {n}',
+  speakerUnknown: 'Unknown speaker',
 
   stRecognizing: 'Recognizing',
   stTranslating: 'Translating',

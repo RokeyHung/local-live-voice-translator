@@ -1,22 +1,26 @@
 // Màn Quản lý Model: dải trạng thái lớn (khởi động / nạp lại / giải phóng), bộ chọn
 // cấu hình hiệu năng, tiến trình nạp theo khâu, và hai cột "model đã cài" + "danh mục".
 //
-// Bố cục bám bản thiết kế mới. Những gì AI service chưa có API — hủy giữa chừng, cấu
-// hình tự chọn từng khâu, tải model từ danh mục, xoá lẻ một model — vẫn hiện đúng chỗ
-// thiết kế đặt nhưng ở trạng thái vô hiệu kèm tooltip, không giả lập bằng dữ liệu bịa.
+// Bốn thao tác từng phải để vô hiệu vì thiếu API — huỷ giữa chừng, cấu hình tự chọn
+// từng khâu, tải model từ danh mục, xoá lẻ một model — nay đã nối thẳng vào service.
 
 import { useMemo, useState, type JSX, type ReactNode } from 'react'
+import { PLATFORM } from '../../application/config'
 import { formatBytes } from '../../application/format'
 import { format, type Dict } from '../../application/i18n'
 import { MODEL_CATALOG, PRESET_META, STAGE_COLORS } from '../../application/presets'
 import type { Preset } from '../../domain/enums'
 import { PRESETS, type LoadProgress, type LoadStageStatus } from '../../domain/models'
 import {
+  useCancelLoadModels,
+  useDeleteInstalledModel,
   useDeleteInstalledModels,
+  useDownloadModel,
   useInstalledModels,
   useLoadModels,
   useLoadProgress,
   useServiceConfig,
+  useSetCustomModels,
   useSetPreset,
   useUnloadModels
 } from '../../hooks/use-config'
@@ -26,12 +30,13 @@ import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
 import { Badge, DisabledButton, Dot, Meter, Notice, ScreenHeader } from '../components/primitives'
-import { DANGER_BUTTON, GHOST_BUTTON, INPUT, SCREEN } from '../styles'
+import { DANGER_BUTTON, GHOST_BUTTON, INPUT, SCREEN, SELECT, SELECT_ARROW } from '../styles'
 
 const PRESET_ICON: Record<Preset, IconName> = {
   fast: 'bolt',
   balanced: 'scale',
-  quality: 'star'
+  quality: 'star',
+  custom: 'sliders'
 }
 
 // Tiến trình nạp model: một dòng cho mỗi khâu + thanh tổng.
@@ -46,7 +51,8 @@ function LoadProgressPanel({ progress, L }: { progress: LoadProgress; L: Dict })
     downloading: L.lpDownloading,
     loading: L.lpLoading,
     done: L.lpDone,
-    failed: L.lpFailed
+    failed: L.lpFailed,
+    cancelled: L.lpCancelled
   }
 
   return (
@@ -137,6 +143,42 @@ function StageIcon({ stage, size = 30 }: { stage: string; size?: number }): JSX.
   )
 }
 
+/** Một ô chọn của bảng "Tự chọn". Danh sách lựa chọn do service cấp, không chép tay. */
+function CustomPicker({
+  label,
+  value,
+  choices,
+  disabled,
+  onChange
+}: {
+  label: string
+  value: string
+  choices: string[]
+  disabled: boolean
+  onChange: (value: string) => void
+}): JSX.Element {
+  return (
+    <label className="flex min-w-0 flex-col gap-1">
+      <span className="label-caps">{label}</span>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className={SELECT}
+        style={SELECT_ARROW}
+      >
+        {/* Giá trị service đang giữ có thể không nằm trong danh sách (model gỡ khỏi
+            registry ở bản sau) — thêm nó vào để ô không tự nhảy sang mục khác. */}
+        {(choices.includes(value) ? choices : [value, ...choices]).map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
 /** Tiêu đề của một tấm trong lưới hai cột. */
 function PanelHeader({ children }: { children: ReactNode }): JSX.Element {
   return <div className="border-b border-line bg-surface px-4 py-3.25">{children}</div>
@@ -167,6 +209,17 @@ export function ModelsScreen(): JSX.Element {
 
   const loadModels = useLoadModels()
   const unloadModels = useUnloadModels()
+  const cancelLoad = useCancelLoadModels()
+  const downloadModel = useDownloadModel()
+  const deleteOneModel = useDeleteInstalledModel()
+  const setCustomModels = useSetCustomModels()
+  // Bản nháp của ô "Tự chọn": chỉ gửi khi bấm Lưu, nên đổi ô chọn không kéo theo một
+  // lượt nạp lại model ngoài ý muốn.
+  const [customDraft, setCustomDraft] = useState<{
+    asrAdapter?: string
+    asrModel?: string
+    mtModel?: string
+  }>({})
   // Chỉ hỏi tiến trình khi đang nạp; hỏi thêm một nhịp sau khi xong để thanh kịp đầy.
   const loadProgress = useLoadProgress(loadModels.isPending || setPreset.isPending)
   const overallPercent = loadProgress.data?.overallPercent ?? 0
@@ -178,6 +231,9 @@ export function ModelsScreen(): JSX.Element {
   const modelsLoaded = stages.length > 0
   const loading = loadModels.isPending || setPreset.isPending
   const busy = loading || unloadModels.isPending || deleteModels.isPending
+  const customChoice = config.data?.custom ?? null
+  // Tên model đang tải, để chỉ ô đó hiện vòng xoay (service chạy một lượt một lúc).
+  const downloadingNow = downloadModel.isPending ? downloadModel.variables : null
   const installedList = installed.data ?? []
   const installedNames = new Set(installedList.map((m) => m.name))
   const totalBytes = installedList.reduce((sum, m) => sum + m.sizeBytes, 0)
@@ -310,15 +366,16 @@ export function ModelsScreen(): JSX.Element {
                 <span className="font-mono text-2xl font-extrabold text-[#22d3ee]">
                   {Math.round(overallPercent)}%
                 </span>
-                {/* Hủy giữa chừng cần API bên service (POST /api/models/load chặn tới
-                    khi xong), nên nút giữ đúng chỗ thiết kế nhưng không bấm được. */}
+                {/* Dừng ở ranh giới khâu kế tiếp: khâu đang tải phải tải nốt (không
+                    giết ngang được worker thread), nhưng những khâu SAU thì cứu được. */}
                 <button
-                  disabled
-                  title={L.notSupportedYet}
-                  className={`${DANGER_BUTTON} inline-flex items-center gap-1.5`}
+                  disabled={loadProgress.data?.cancelling === true || cancelLoad.isPending}
+                  onClick={() => cancelLoad.mutate()}
+                  title={L.cancelLoad}
+                  className={`${DANGER_BUTTON} inline-flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   <Icon name="x" size={12} strokeWidth={2.4} />
-                  {L.cancelLoad}
+                  {loadProgress.data?.cancelling ? L.cancelling : L.cancelLoad}
                 </button>
               </>
             ) : modelsLoaded ? (
@@ -409,22 +466,31 @@ export function ModelsScreen(): JSX.Element {
             )
           })}
 
-          {/* Ô thứ tư của thiết kế: chọn model riêng cho từng khâu. Cần API model bên
-              AI service nên để vô hiệu thay vì mở ra một bảng không lưu được gì. */}
+          {/* Ô thứ tư: chạy bộ model người dùng tự chọn (bảng chọn ngay bên dưới). */}
           <button
-            disabled
-            title={L.customSub}
-            className="flex cursor-not-allowed items-center gap-2.25 rounded-lg border border-line bg-surface px-3.25 py-2.75 text-left text-fg opacity-55"
+            onClick={() => applyPreset('custom')}
+            disabled={!serviceUp || active || setPreset.isPending}
+            title={active ? L.notSupportedYet : L.customSub}
+            className={[
+              'flex items-center gap-2.25 rounded-lg border px-3.25 py-2.75 text-left text-fg transition-all',
+              'disabled:cursor-not-allowed',
+              !serviceUp || active ? 'opacity-55' : ''
+            ].join(' ')}
+            style={{
+              borderColor: current === 'custom' ? PRESET_META.custom.color : 'var(--line)',
+              background: current === 'custom' ? PRESET_META.custom.tint : 'var(--surface)',
+              boxShadow: current === 'custom' ? `0 0 12px ${PRESET_META.custom.tint}` : undefined
+            }}
           >
             <span
               className="inline-flex size-7.5 shrink-0 items-center justify-center rounded-sm"
-              style={{ background: 'rgba(244,114,182,.12)', color: '#f472b6' }}
+              style={{ background: PRESET_META.custom.tint, color: PRESET_META.custom.color }}
             >
               <Icon name="sliders" size={18} />
             </span>
             <div className="min-w-0">
               <div className="text-md font-bold">{L.presetCustom}</div>
-              <div className="text-xs text-fg-4">{L.notSupported}</div>
+              <div className="truncate-1 text-xs text-fg-4">{customChoice?.asrModel ?? '—'}</div>
             </div>
           </button>
         </div>
@@ -436,6 +502,54 @@ export function ModelsScreen(): JSX.Element {
               <b className="font-bold text-fg-2">{meta.name}</b> —{' '}
               {uiLanguage === 'vi' ? meta.descVi : meta.descEn}
             </span>
+          </div>
+        )}
+
+        {/* Bảng chọn model tự chọn — chỉ mở khi đang dùng preset Custom, để ba mức
+            dựng sẵn không bị một bảng cấu hình không liên quan chen vào. */}
+        {current === 'custom' && customChoice && (
+          <div className="mt-3 rounded-lg border border-line bg-surface px-3.25 py-3">
+            <div className="grid grid-cols-3 gap-2.5">
+              <CustomPicker
+                label={L.customAsrAdapter}
+                value={customDraft.asrAdapter ?? customChoice.asrAdapter}
+                choices={customChoice.asrAdapterChoices}
+                disabled={busy || active}
+                onChange={(v) => setCustomDraft((d) => ({ ...d, asrAdapter: v }))}
+              />
+              <CustomPicker
+                label={L.customAsrModel}
+                value={customDraft.asrModel ?? customChoice.asrModel}
+                choices={customChoice.asrModelChoices}
+                disabled={busy || active}
+                onChange={(v) => setCustomDraft((d) => ({ ...d, asrModel: v }))}
+              />
+              <CustomPicker
+                label={L.customMtModel}
+                value={customDraft.mtModel ?? customChoice.mtModel}
+                choices={customChoice.mtModelChoices}
+                disabled={busy || active}
+                onChange={(v) => setCustomDraft((d) => ({ ...d, mtModel: v }))}
+              />
+            </div>
+            <div className="mt-2.5 flex items-center gap-2.5">
+              <button
+                className={GHOST_BUTTON}
+                disabled={busy || active || Object.keys(customDraft).length === 0}
+                onClick={() =>
+                  setCustomModels.mutate(
+                    { preset: 'custom', choice: customDraft },
+                    { onSuccess: () => setCustomDraft({}) }
+                  )
+                }
+              >
+                {L.customApply}
+              </button>
+              <span className="text-xs text-fg-5">{L.customNote}</span>
+            </div>
+            {setCustomModels.isError && (
+              <div className="mt-1.5 text-sm text-ac-red">{setCustomModels.error.message}</div>
+            )}
           </div>
         )}
 
@@ -555,11 +669,14 @@ export function ModelsScreen(): JSX.Element {
                     )}
                     {loaded ? L.loadedLbl : L.loadIdle}
                   </span>
-                  {/* Xoá lẻ một model cần API riêng — service mới chỉ xoá được tất cả. */}
                   <button
-                    disabled
-                    title={L.notSupportedYet}
-                    className="flex size-7 shrink-0 cursor-not-allowed items-center justify-center rounded-sm border border-line bg-transparent text-fg-4 opacity-45"
+                    disabled={busy || active}
+                    title={L.delOneTip}
+                    onClick={() => {
+                      if (!window.confirm(L.confirmDeleteOne)) return
+                      deleteOneModel.mutate(model.path)
+                    }}
+                    className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-line bg-transparent text-fg-4 hover:text-[#f87171] disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     <Icon name="trash" size={13} />
                   </button>
@@ -580,7 +697,7 @@ export function ModelsScreen(): JSX.Element {
           )}
         </div>
 
-        {/* danh mục tham khảo — tải về chưa nối với service */}
+        {/* danh mục model: bấm Tải là service tải thật về modelsDir, không nạp vào bộ nhớ */}
         <div className="panel overflow-hidden">
           <PanelHeader>
             <div className="flex items-center gap-2.25">
@@ -588,7 +705,6 @@ export function ModelsScreen(): JSX.Element {
                 <Icon name="search" size={15} />
               </span>
               <span className="text-base font-bold">{L.browseTitle}</span>
-              <Badge color="var(--text4)">{L.notSupported}</Badge>
             </div>
             <div className="relative mt-2.75">
               <span className="absolute top-1/2 left-3 flex -translate-y-1/2 text-fg-4">
@@ -612,10 +728,17 @@ export function ModelsScreen(): JSX.Element {
               const onDisk = [...installedNames].some(
                 (name) => name === entry.name || name.endsWith(`/${entry.name}`)
               )
+              // Model MLX chỉ chạy trên Metal của Apple Silicon. Làm mờ (thay vì ẩn)
+              // để danh mục vẫn là bảng tra cứu đầy đủ, nhưng người dùng Windows
+              // không mất công thử một thứ máy họ không chạy được.
+              const usable = !entry.platform || entry.platform === PLATFORM
               return (
                 <div
                   key={entry.name}
-                  className="flex items-center gap-2.75 border-b border-line-soft px-4 py-2.75"
+                  className={`flex items-center gap-2.75 border-b border-line-soft px-4 py-2.75 ${
+                    usable ? '' : 'opacity-45'
+                  }`}
+                  title={usable ? undefined : L.catalogWrongPlatform}
                 >
                   <StageIcon stage={entry.stage} size={28} />
                   <div className="min-w-0 flex-1">
@@ -637,10 +760,23 @@ export function ModelsScreen(): JSX.Element {
                         <Icon name="check" size={13} strokeWidth={2.4} />
                         {L.dldOk}
                       </span>
+                    ) : usable ? (
+                      <button
+                        className={`${GHOST_BUTTON} h-7 text-sm`}
+                        disabled={downloadModel.isPending || busy}
+                        onClick={() => downloadModel.mutate(entry.name)}
+                      >
+                        <Icon
+                          name={downloadingNow === entry.name ? 'spinner' : 'download'}
+                          size={13}
+                          spin={downloadingNow === entry.name}
+                        />
+                        {downloadingNow === entry.name ? L.dlWorking : L.dlBtn}
+                      </button>
                     ) : (
                       <DisabledButton
                         label={L.dlBtn}
-                        hint={L.browseDisabled}
+                        hint={L.catalogWrongPlatform}
                         icon="download"
                         className="h-7 text-sm"
                       />

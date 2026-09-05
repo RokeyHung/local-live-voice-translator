@@ -35,6 +35,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.engine import Engine, Row
+from sqlalchemy.exc import OperationalError
 
 from llvt_ai_service.domain.enums import (
     AudioSource,
@@ -76,6 +77,24 @@ utterances_table = Table(
     Column("error", String, nullable=True),
     Column("started_at_ms", Integer, nullable=False, index=True),
     Column("ended_at_ms", Integer, nullable=True),
+    # Nhãn người nói khi bật diarization ở màn Nhập tệp (`speaker-1`…). NULL với mọi
+    # câu của phiên trực tiếp — ở đó "ai nói" đã biết qua `source` (mic hay system).
+    Column("speaker", String, nullable=True),
+)
+
+# Phiên bản schema, ghi vào `PRAGMA user_version` của chính file SQLite.
+#   1 = schema gốc (docs/11)
+#   2 = thêm cột `utterances.speaker` (diarization)
+SCHEMA_VERSION = 2
+
+# Cột bơm thêm cho từng bậc nâng cấp: (phiên bản đích, câu lệnh ALTER).
+#
+# Vẫn không dùng Alembic, vì lý do đã ghi ở đầu file: cơ sở dữ liệu này chỉ nằm trên
+# máy người dùng, không có bản triển khai nào phải migrate ngược. Nhưng nó là dữ
+# liệu THẬT của người ta — lịch sử họp không được mất chỉ vì app lên phiên bản, nên
+# `create_all` (bỏ qua bảng đã tồn tại) là chưa đủ khi có thêm cột.
+_MIGRATIONS: tuple[tuple[int, str], ...] = (
+    (2, "ALTER TABLE utterances ADD COLUMN speaker VARCHAR"),
 )
 
 
@@ -115,7 +134,36 @@ def _row_to_utterance(row: Row[Any]) -> Utterance:
         tts_ms=row.tts_ms,
         status=UtteranceStatus(row.status),
         error=row.error,
+        speaker=row.speaker,
     )
+
+
+def _migrate(engine: Engine) -> None:
+    """Bơm cột cho file SQLite đã có từ phiên bản trước.
+
+    File mới toanh vừa được ``create_all`` dựng thì đã đủ cột, chỉ cần đóng dấu phiên
+    bản. File cũ thì chạy lần lượt các bước còn thiếu. ``PRAGMA user_version`` là chỗ
+    SQLite dành sẵn cho việc này nên không phải thêm bảng phụ nào.
+    """
+    with engine.begin() as conn:
+        current = int(conn.exec_driver_sql("PRAGMA user_version").scalar() or 0)
+        if current == 0:
+            # 0 = chưa đóng dấu bao giờ. Có thể là file mới (create_all vừa dựng đủ
+            # cột) hoặc file của bản trước khi có đánh phiên bản — cả hai đều đang ở
+            # schema v1, nên cứ chạy tiếp các bước từ 2 trở đi.
+            current = 1
+        for version, statement in _MIGRATIONS:
+            if version <= current:
+                continue
+            try:
+                conn.exec_driver_sql(statement)
+            except OperationalError as exc:
+                # Cột đã có sẵn (file vừa do create_all dựng) là trường hợp bình
+                # thường; mọi lỗi khác thì phải nổ ra chứ không nuốt.
+                if "duplicate column name" not in str(exc).lower():
+                    raise
+            current = version
+        conn.exec_driver_sql(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 
 class SqliteSessionRepository(SessionRepository):
@@ -132,6 +180,7 @@ class SqliteSessionRepository(SessionRepository):
             connect_args={"check_same_thread": False},
         )
         metadata.create_all(self._engine)
+        _migrate(self._engine)
 
     def dispose(self) -> None:
         self._engine.dispose()
@@ -178,6 +227,7 @@ class SqliteSessionRepository(SessionRepository):
             "error": utterance.error,
             "started_at_ms": utterance.started_at_ms,
             "ended_at_ms": utterance.ended_at_ms,
+            "speaker": utterance.speaker,
         }
         stmt = sqlite_insert(utterances_table).values(**values)
         stmt = stmt.on_conflict_do_update(

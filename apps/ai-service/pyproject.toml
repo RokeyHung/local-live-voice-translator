@@ -34,6 +34,17 @@ dependencies = [
 [project.scripts]
 llvt-ai-service = "llvt_ai_service:main"
 
+[project.optional-dependencies]
+mlx = [
+    "mlx-audio>=0.4.0",
+]
+diarization = [
+    "pyannote-audio>=3.3",
+]
+ctranslate2 = [
+    "faster-whisper>=1.1",
+]
+
 [build-system]
 requires = ["uv_build>=0.11.29,<0.12.0"]
 build-backend = "uv_build"
@@ -43,6 +54,12 @@ dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
     "ruff>=0.15.22",
+]
+eval = [
+    "datasets>=4.0",
+    "jiwer>=3.0",
+    "sacrebleu>=2.4",
+    "soundfile>=0.12",
 ]
 
 [tool.ruff]

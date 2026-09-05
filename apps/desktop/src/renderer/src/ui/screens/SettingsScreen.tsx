@@ -1,15 +1,22 @@
 // Màn Cài đặt: chủ đề, ngôn ngữ giao diện, token Hugging Face và glossary.
-// Toàn bộ lưu trong localStorage của máy.
+//
+// Chủ đề/ngôn ngữ/glossary là tuỳ chọn giao diện nên nằm ở localStorage. Những thứ
+// AI service mới là nơi ghi đĩa — lưu lịch sử, thư mục model, và **access token
+// HuggingFace** — thì đọc/ghi qua REST. Riêng token còn có lý do bảo mật: nó là bí
+// mật duy nhất của ứng dụng, mà localStorage lưu văn bản thường.
 
 import { useState, type JSX } from 'react'
 import { chooseDirectory } from '../../application/config'
 import { formatBytes } from '../../application/format'
+import { format } from '../../application/i18n'
 import type { ThemeMode } from '../../domain/enums'
 import {
   useDeleteInstalledModels,
   useServiceConfig,
+  useSetHfToken,
   useSetHistoryEnabled,
-  useSetModelsDir
+  useSetModelsDir,
+  useVerifyHfToken
 } from '../../hooks/use-config'
 import { useDeleteAllSessions } from '../../hooks/use-history'
 import { useCacheBytes, useClearCache, useStorageUsage } from '../../hooks/use-storage'
@@ -99,20 +106,27 @@ export function SettingsScreen(): JSX.Element {
   const setTheme = useUiStore((s) => s.setTheme)
   const uiLanguage = useUiStore((s) => s.uiLanguage)
   const setUiLanguage = useUiStore((s) => s.setUiLanguage)
-  const hfToken = useUiStore((s) => s.hfToken)
-  const setHfToken = useUiStore((s) => s.setHfToken)
+  const reviewBeforeSpeaking = useUiStore((s) => s.reviewBeforeSpeaking)
+  const setReviewBeforeSpeaking = useUiStore((s) => s.setReviewBeforeSpeaking)
+  const reviewCountdownSec = useUiStore((s) => s.reviewCountdownSec)
+  const setReviewCountdownSec = useUiStore((s) => s.setReviewCountdownSec)
   const glossary = useUiStore((s) => s.glossary)
   const addGlossary = useUiStore((s) => s.addGlossary)
   const removeGlossary = useUiStore((s) => s.removeGlossary)
 
   const [src, setSrc] = useState('')
   const [dst, setDst] = useState('')
+  // Ô nhập token là bản nháp cục bộ, KHÔNG đọc ngược từ service — service không bao
+  // giờ trả token về, nên không có gì để điền sẵn vào đây.
+  const [tokenDraft, setTokenDraft] = useState('')
 
   // Lưu lịch sử + thư mục model là cấu hình của service (nó mới là nơi ghi đĩa).
   const config = useServiceConfig()
   const setHistoryEnabled = useSetHistoryEnabled()
   const setModelsDir = useSetModelsDir()
   const deleteModels = useDeleteInstalledModels()
+  const setHfToken = useSetHfToken()
+  const verifyHfToken = useVerifyHfToken()
 
   // Dung lượng đĩa: model + lịch sử do service đo (nó mới là bên ghi đĩa), cache là
   // của chính Electron. Chỉ hỏi khi đang mở màn này — quét thư mục model là rglob
@@ -153,6 +167,24 @@ export function SettingsScreen(): JSX.Element {
     if (!window.confirm(L.dirConfirmClear)) return
     deleteModels.mutate()
   }
+
+  // --- token HuggingFace ---
+  //
+  // `PUT /api/config` bắt buộc có `preset`; gửi lại đúng preset đang chạy để service
+  // không nạp lại model (giống cách đổi thư mục model / bật tắt lưu lịch sử).
+  const preset = config.data?.preset ?? 'balanced'
+  const tokenSet = config.data?.hfTokenSet === true
+  const tokenEditable = config.data?.hfTokenEditable !== false
+  const tokenBusy = setHfToken.isPending || verifyHfToken.isPending
+  const tokenHint = config.data?.hfTokenHint ?? ''
+  const tokenStatus =
+    config.data?.hfTokenSource === 'env'
+      ? format(L.hfFromEnv, { hint: tokenHint })
+      : config.data?.hfTokenSource === 'inherited'
+        ? format(L.hfInherited, { hint: tokenHint })
+        : tokenSet
+          ? format(L.hfSaved, { hint: tokenHint })
+          : L.hfNone
 
   const clearHistory = (): void => {
     if (!window.confirm(L.confirmClearHistory)) return
@@ -354,16 +386,106 @@ export function SettingsScreen(): JSX.Element {
         </div>
       </Section>
 
+      <Section
+        icon="pencil"
+        color="#fbbf24"
+        title={L.reviewSectionTitle}
+        desc={L.reviewSectionDesc}
+        right={
+          <Segmented
+            value={reviewBeforeSpeaking ? 'on' : 'off'}
+            onChange={(v) => setReviewBeforeSpeaking(v === 'on')}
+            options={[
+              { value: 'off', label: L.reviewOff },
+              { value: 'on', label: L.reviewOn }
+            ]}
+          />
+        }
+      >
+        <div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-base text-fg-3">{L.reviewCountdownLbl}</span>
+            <Segmented
+              value={String(reviewCountdownSec)}
+              onChange={(v) => setReviewCountdownSec(Number(v))}
+              options={[
+                { value: '0', label: L.reviewCountdownOff },
+                { value: '3', label: '3s' },
+                { value: '5', label: '5s' },
+                { value: '10', label: '10s' }
+              ]}
+            />
+          </div>
+          <div className="mt-2 text-sm text-fg-4">{L.reviewMidSession}</div>
+        </div>
+      </Section>
+
       <Section icon="file" color="#f59e0b" title={L.hfTitle} desc={L.hfDesc}>
         <div>
-          <input
-            type="password"
-            value={hfToken}
-            onChange={(e) => setHfToken(e.target.value)}
-            placeholder={L.hfPh}
-            className={`${INPUT} max-w-105 font-mono`}
-          />
-          <div className="mt-2 text-sm text-fg-4">{L.hfUnused}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="password"
+              value={tokenDraft}
+              onChange={(e) => setTokenDraft(e.target.value)}
+              placeholder={L.hfPh}
+              disabled={!tokenEditable}
+              autoComplete="off"
+              spellCheck={false}
+              className={`${INPUT} max-w-105 flex-1 font-mono disabled:cursor-not-allowed disabled:opacity-55`}
+            />
+            <button
+              className={PRIMARY_BUTTON}
+              disabled={!tokenDraft.trim() || !tokenEditable || tokenBusy}
+              onClick={() => {
+                setHfToken.mutate(
+                  { preset, token: tokenDraft.trim() },
+                  // Xoá bản nháp ngay khi lưu xong: giữ token trong state của React
+                  // lâu hơn mức cần thiết không được lợi gì.
+                  { onSuccess: () => setTokenDraft('') }
+                )
+              }}
+            >
+              {L.hfSave}
+            </button>
+            <button
+              className={GHOST_BUTTON}
+              disabled={tokenBusy || (!tokenDraft.trim() && !tokenSet)}
+              onClick={() => verifyHfToken.mutate(tokenDraft.trim())}
+            >
+              {verifyHfToken.isPending ? L.hfVerifying : L.hfVerify}
+            </button>
+            {tokenSet && tokenEditable && (
+              <button
+                className={GHOST_BUTTON}
+                disabled={tokenBusy}
+                onClick={() => setHfToken.mutate({ preset, token: '' })}
+              >
+                <Icon name="trash" size={13} />
+                {L.hfClear}
+              </button>
+            )}
+          </div>
+
+          {/* Trạng thái đọc từ service, không đoán từ ô nhập: nguồn token có thể là
+              biến môi trường chứ không phải cái người dùng vừa gõ. */}
+          <div className="mt-2 text-sm text-fg-4">{tokenStatus}</div>
+          {!tokenEditable && <div className="mt-1 text-sm text-fg-4">{L.hfLocked}</div>}
+
+          {verifyHfToken.data && (
+            <div
+              className={`mt-1.5 text-sm ${verifyHfToken.data.ok ? 'text-ac-grn' : 'text-ac-red'}`}
+            >
+              {verifyHfToken.data.ok
+                ? format(L.hfOkUser, { user: verifyHfToken.data.user })
+                : format(L.hfBadToken, { error: verifyHfToken.data.error })}
+            </div>
+          )}
+          {setHfToken.isError && (
+            <div className="mt-1.5 text-sm text-ac-red">{setHfToken.error.message}</div>
+          )}
+
+          <div className="mt-2.5 text-sm leading-snug text-fg-5">{L.hfWhy}</div>
+          {tokenSet && <div className="mt-1 text-sm text-fg-5">{L.hfReloadHint}</div>}
         </div>
       </Section>
 

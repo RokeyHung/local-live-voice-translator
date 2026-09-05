@@ -25,11 +25,13 @@ Envelope chung: `{ "type": string, "ts": number, "payload": object }`
 
 | type | payload | ý nghĩa |
 | --- | --- | --- |
-| `session.start` | `mode`, `preset`, `incomingSource/Target`, `outgoingSource/Target`, `title` | mở phiên, dựng pipeline cho từng chiều; `title` là tên phiên trong lịch sử |
+| `session.start` | `mode`, `preset`, `incomingSource/Target`, `outgoingSource/Target`, `title`, `reviewBeforeSpeaking` | mở phiên, dựng pipeline cho từng chiều; `title` là tên phiên trong lịch sử |
 | `session.stop` | — | đóng phiên |
 | `audio.chunk` | `source` (`microphone`\\|`system`), `pcm` (base64 PCM16 mono 16 kHz), `seq`, `sampleRate` | đẩy một khung audio |
 | `control.ptt` | `pressed` | giữ/nhả Push-to-talk; nhả thì chốt câu đang nói dở |
 | `control.mute` | `muted` | tắt/bật mic; bật mute sẽ bỏ đoạn đang nói dở |
+| `control.confirm` | `utteranceId`, `text` (tuỳ chọn) | duyệt một câu đang chờ: tổng hợp giọng bản đã sửa rồi phát ra micro ảo |
+| `control.discard` | `utteranceId` | bỏ một câu đang chờ: không đọc ra, nhưng vẫn giữ trong lịch sử |
 
 **Server → client**
 
@@ -47,6 +49,16 @@ Ghi chú về hai chiều dịch: chiều **outgoing** (mic của người dùng
 giọng và bị chặn bởi Push-to-talk; chiều **incoming** (âm thanh hệ thống, giọng
 phía cuộc họp) chạy liên tục và **không** tổng hợp giọng — nếu tổng hợp thì bản
 dịch sẽ nói đè lên người thật đang nói.
+
+Duyệt trước khi đọc (SPEC 7.10): bật `reviewBeforeSpeaking` thì chiều outgoing
+**dừng sau khâu MT** ở trạng thái `WaitingForConfirmation` thay vì đọc luôn. Câu
+được ghi vào lịch sử ngay lúc đó (app tắt giữa chừng thì bản dịch vẫn còn), và chỉ
+tổng hợp giọng khi client gửi `control.confirm`. Bản `text` gửi kèm sẽ **ghi đè**
+bản dịch trong lịch sử — cái được gửi đi mới là cái đáng lưu. `control.discard` bỏ
+câu đó, dấu hiệu nhận biết trong lịch sử là `ttsMs` rỗng. Xác nhận một câu không
+còn chờ nữa (bấm hai lần, hoặc phiên đã dừng) trả về `error` mã `review_expired`.
+Chiều incoming không bao giờ dừng để duyệt: câu của phía bên kia không phải của
+mình mà sửa.
 """
 
 TAGS_METADATA = [

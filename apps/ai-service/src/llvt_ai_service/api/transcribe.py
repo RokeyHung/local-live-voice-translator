@@ -46,6 +46,11 @@ MAX_BODY_BYTES = 400 * 1024 * 1024
         "giải mã sẵn có của Chromium rồi gửi lên PCM, nên service không cần ffmpeg.\n\n"
         "Bỏ trống `target` thì chỉ nhận dạng chữ, không dịch. `save=true` ghi kết quả "
         "thành một phiên trong lịch sử (bỏ qua nếu người dùng đã tắt lưu lịch sử).\n\n"
+        "Bật `LLVT_DIARIZATION_ENABLED` thì mỗi đoạn còn kèm `speaker` "
+        "(`speaker-1`, `speaker-2`…, đánh số theo thứ tự ai lên tiếng trước) và "
+        "`speakerCount` là số người nói tìm được. Khâu này chạy trên **cả tệp trước "
+        "khi nhận dạng chữ**, nên trong lúc đó `GET /api/transcribe/progress` báo "
+        '`phase: "diarizing"` và `percent` còn đứng ở 0.\n\n'
         "Lệnh **chặn tới khi xong** — hỏi `GET /api/transcribe/progress` song song để "
         "biết đang chạy tới đâu. Mỗi lần chỉ xử lý được một tệp (409 nếu đang bận)."
     ),
@@ -56,6 +61,14 @@ async def transcribe_file(
     target: Language | None = Query(default=None, description="Dịch sang; bỏ trống = không dịch"),
     name: str = Query(default="", description="Tên tệp — hiển thị và đặt tên phiên lịch sử"),
     save: bool = Query(default=True, description="Lưu kết quả thành một phiên trong lịch sử"),
+    diarize: bool = Query(
+        default=True,
+        description=(
+            "Gắn nhãn người nói cho từng đoạn. Chỉ có tác dụng khi service đã bật "
+            "diarization (`diarizationEnabled` của GET /api/config); đặt false để bỏ "
+            "qua khâu này cho riêng tệp đang gửi."
+        ),
+    ),
     container: Container = Depends(get_container),
 ) -> TranscriptionResponse:
     if progress.active:
@@ -127,6 +140,7 @@ async def transcribe_file(
             session_id=session_id,
             session_started_at_ms=started_at_ms,
             file_name=name,
+            diarize=diarize,
             should_stop=should_stop,
         )
     finally:
@@ -152,6 +166,7 @@ async def transcribe_file(
         processingMs=result.processing_ms,
         sessionId=result.session_id,
         cancelled=result.cancelled,
+        speakerCount=result.speaker_count,
         segments=[
             TranscriptSegmentSchema(
                 startedAtMs=s.started_at_ms,
@@ -160,6 +175,7 @@ async def transcribe_file(
                 translatedText=s.translated_text,
                 asrMs=s.asr_ms,
                 mtMs=s.mt_ms,
+                speaker=s.speaker,
             )
             for s in result.segments
         ],

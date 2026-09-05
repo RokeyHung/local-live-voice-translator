@@ -20,6 +20,7 @@ const NAV: NavItem[] = [
   { id: 'models', icon: 'box', color: '#a855f7' },
   { id: 'diagnostics', icon: 'bolt', color: 'var(--ac-grn2)' },
   { id: 'history', icon: 'clock', color: 'var(--ac-mag)' },
+  { id: 'evaluate', icon: 'scale', color: 'var(--ac-grn2)' },
   { id: 'settings', icon: 'gear', color: 'var(--ac-sky)' },
   { id: 'about', icon: 'info', color: '#818cf8' },
   { id: 'logs', icon: 'terminal', color: '#94a3b8' }
@@ -41,6 +42,7 @@ export function Sidebar({ status }: { status: ServiceStatus }): JSX.Element {
     models: L.modelMgr,
     diagnostics: L.diagnostics,
     history: L.history,
+    evaluate: L.evaluate,
     settings: L.settings,
     about: L.about,
     logs: L.logs

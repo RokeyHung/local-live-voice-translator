@@ -6,7 +6,12 @@ import type {
   BenchmarkResponse,
   ConfigResponse,
   DeletedModels,
+  DownloadedModel,
+  EvaluationCase,
+  EvaluationProgress,
+  EvaluationResult,
   HealthResponse,
+  HfVerifyResult,
   HistorySession,
   HistorySessionDetail,
   InstalledModel,
@@ -50,6 +55,82 @@ export class HttpAiClient implements AiClient {
     })
     if (!res.ok) throw new Error(`Đổi chế độ lưu lịch sử thất bại: HTTP ${res.status}`)
     return (await res.json()) as ConfigResponse
+  }
+
+  async setHfToken(preset: Preset, token: string): Promise<ConfigResponse> {
+    // Chuỗi rỗng = gỡ token đã lưu. Service không trả token về nên phần hiển thị
+    // sau đó chỉ dựa vào `hfTokenSet`/`hfTokenHint`.
+    const res = await fetch(`${AI_BASE_URL}/api/config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preset, hfToken: token })
+    })
+    if (!res.ok) {
+      // 409 khi LLVT_HF_TOKEN đang khoá — hiện nguyên văn lý do của service.
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Lưu token thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as ConfigResponse
+  }
+
+  async verifyHfToken(token: string): Promise<HfVerifyResult> {
+    const res = await fetch(`${AI_BASE_URL}/api/hf/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    })
+    if (!res.ok) throw new Error(`Kiểm tra token thất bại: HTTP ${res.status}`)
+    return (await res.json()) as HfVerifyResult
+  }
+
+  async setCustomModels(
+    preset: Preset,
+    choice: { asrAdapter?: string; asrModel?: string; mtModel?: string }
+  ): Promise<ConfigResponse> {
+    const res = await fetch(`${AI_BASE_URL}/api/config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        preset,
+        customAsrAdapter: choice.asrAdapter,
+        customAsrModel: choice.asrModel,
+        customMtModel: choice.mtModel
+      })
+    })
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Lưu lựa chọn model thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as ConfigResponse
+  }
+
+  async cancelLoadModels(): Promise<void> {
+    const res = await fetch(`${AI_BASE_URL}/api/models/load/cancel`, { method: 'POST' })
+    if (!res.ok) throw new Error(`Dừng nạp model thất bại: HTTP ${res.status}`)
+  }
+
+  async downloadModel(name: string): Promise<DownloadedModel> {
+    const res = await fetch(`${AI_BASE_URL}/api/models/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    })
+    if (!res.ok) {
+      // Service nói rõ lý do (tên lạ, mất mạng, thiếu token cho model gated).
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Tải model thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as DownloadedModel
+  }
+
+  async deleteInstalledModel(path: string): Promise<DeletedModels> {
+    const params = new URLSearchParams({ path })
+    const res = await fetch(`${AI_BASE_URL}/api/models/one?${params}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Xoá model thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as DeletedModels
   }
 
   async setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse> {
@@ -128,11 +209,17 @@ export class HttpAiClient implements AiClient {
     name,
     source,
     target,
-    save
+    save,
+    diarize
   }: TranscribeRequest): Promise<TranscriptionResult> {
     // Gửi thẳng PCM thô: tệp đã được giải mã ở renderer (Chromium có sẵn bộ giải mã
     // MP3/M4A/FLAC/OGG/WebM), nên service không phải kèm ffmpeg trong bản cài.
-    const params = new URLSearchParams({ source, name, save: String(save) })
+    const params = new URLSearchParams({
+      source,
+      name,
+      save: String(save),
+      diarize: String(diarize)
+    })
     if (target) params.set('target', target)
     const res = await fetch(`${AI_BASE_URL}/api/transcribe?${params}`, {
       method: 'POST',
@@ -145,6 +232,39 @@ export class HttpAiClient implements AiClient {
       throw new Error(detail?.detail ?? `Chuyển tệp thành văn bản thất bại: HTTP ${res.status}`)
     }
     return (await res.json()) as TranscriptionResult
+  }
+
+  // --- Đánh giá ---
+
+  async fetchEvaluationCorpus(): Promise<EvaluationCase[]> {
+    const res = await fetch(`${AI_BASE_URL}/api/evaluate/corpus`)
+    if (!res.ok) throw new Error(`Đọc bộ câu mẫu thất bại: HTTP ${res.status}`)
+    return (await res.json()) as EvaluationCase[]
+  }
+
+  async runEvaluation(cases: EvaluationCase[], limit?: number): Promise<EvaluationResult> {
+    const res = await fetch(`${AI_BASE_URL}/api/evaluate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cases, limit })
+    })
+    if (!res.ok) {
+      // Service nói rõ lý do (đường dẫn audio sai, quá nhiều câu, model không nạp được).
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Chạy đánh giá thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as EvaluationResult
+  }
+
+  async fetchEvaluationProgress(): Promise<EvaluationProgress> {
+    const res = await fetch(`${AI_BASE_URL}/api/evaluate/progress`)
+    if (!res.ok) throw new Error(`Không lấy được tiến trình đánh giá: HTTP ${res.status}`)
+    return (await res.json()) as EvaluationProgress
+  }
+
+  async cancelEvaluation(): Promise<void> {
+    const res = await fetch(`${AI_BASE_URL}/api/evaluate/cancel`, { method: 'POST' })
+    if (!res.ok) throw new Error(`Dừng đánh giá thất bại: HTTP ${res.status}`)
   }
 
   async cancelTranscribe(): Promise<void> {

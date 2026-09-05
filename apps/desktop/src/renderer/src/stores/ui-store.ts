@@ -15,7 +15,10 @@ interface UiState {
   theme: ThemeMode
   uiLanguage: UiLanguage
   layout: SessionLayout
-  hfToken: string
+  // SPEC 7.10/7.8 — duyệt bản dịch trước khi đọc ra micro ảo, và số giây tự gửi
+  // nếu người dùng không bấm gì (0 = tắt tự gửi, chờ mãi).
+  reviewBeforeSpeaking: boolean
+  reviewCountdownSec: number
   glossary: GlossaryEntry[]
   inputDeviceId: string
   outputDeviceId: string
@@ -25,7 +28,8 @@ interface UiState {
   setTheme: (theme: ThemeMode) => void
   setUiLanguage: (uiLanguage: UiLanguage) => void
   setLayout: (layout: SessionLayout) => void
-  setHfToken: (hfToken: string) => void
+  setReviewBeforeSpeaking: (on: boolean) => void
+  setReviewCountdownSec: (seconds: number) => void
   addGlossary: (source: string, target: string) => void
   removeGlossary: (id: string) => void
   setInputDeviceId: (id: string) => void
@@ -41,7 +45,8 @@ export const useUiStore = create<UiState>((set, get) => {
       theme: s.theme,
       uiLanguage: s.uiLanguage,
       layout: s.layout,
-      hfToken: s.hfToken,
+      reviewBeforeSpeaking: s.reviewBeforeSpeaking,
+      reviewCountdownSec: s.reviewCountdownSec,
       glossary: s.glossary,
       inputDeviceId: s.inputDeviceId,
       outputDeviceId: s.outputDeviceId,
@@ -58,7 +63,8 @@ export const useUiStore = create<UiState>((set, get) => {
     theme: stored.theme ?? 'system',
     uiLanguage: stored.uiLanguage ?? 'vi',
     layout: stored.layout ?? 'split',
-    hfToken: stored.hfToken ?? '',
+    reviewBeforeSpeaking: stored.reviewBeforeSpeaking ?? false,
+    reviewCountdownSec: stored.reviewCountdownSec ?? 5,
     glossary: stored.glossary ?? [],
     inputDeviceId: stored.inputDeviceId ?? '',
     outputDeviceId: stored.outputDeviceId ?? '',
@@ -68,7 +74,8 @@ export const useUiStore = create<UiState>((set, get) => {
     setTheme: (theme): void => update({ theme }),
     setUiLanguage: (uiLanguage): void => update({ uiLanguage }),
     setLayout: (layout): void => update({ layout }),
-    setHfToken: (hfToken): void => update({ hfToken }),
+    setReviewBeforeSpeaking: (reviewBeforeSpeaking): void => update({ reviewBeforeSpeaking }),
+    setReviewCountdownSec: (reviewCountdownSec): void => update({ reviewCountdownSec }),
     addGlossary: (source, target): void => {
       const src = source.trim()
       const dst = target.trim()

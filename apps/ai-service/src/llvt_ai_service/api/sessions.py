@@ -45,6 +45,7 @@ def _utterance(utterance: Utterance) -> UtteranceSchema:
         error=utterance.error,
         startedAtMs=utterance.started_at_ms,
         endedAtMs=utterance.ended_at_ms,
+        speaker=utterance.speaker,
     )
 
 

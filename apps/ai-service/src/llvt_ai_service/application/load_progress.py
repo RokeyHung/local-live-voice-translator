@@ -53,6 +53,8 @@ DOWNLOADING = "downloading"
 LOADING = "loading"
 DONE = "done"
 FAILED = "failed"
+# Dừng theo yêu cầu người dùng — khác `failed`, không có gì hỏng cả.
+CANCELLED = "cancelled"
 
 
 @dataclass
@@ -101,6 +103,7 @@ class LoadProgress:
         self._active = False
         self._error: str | None = None
         self._watcher: asyncio.Task[None] | None = None
+        self._cancel = False
 
     # --- ghi -------------------------------------------------------------
 
@@ -110,6 +113,7 @@ class LoadProgress:
             self._stages = [StageProgress(stage=s, model=m) for s, m in stages]
             self._active = True
             self._error = None
+            self._cancel = False
 
     def stage_begin(self, stage: str, watch_dir: Path | None = None) -> None:
         with self._lock:
@@ -132,19 +136,57 @@ class LoadProgress:
             current.status = DONE
             current.note = note or current.note
 
-    def stage_failed(self, stage: str, message: str) -> None:
+    def stage_failed(self, stage: str, message: str, *, fatal: bool = True) -> None:
+        """Đánh dấu một khâu hỏng.
+
+        ``fatal=False`` cho khâu không bắt buộc (DIA): ghi lý do để giao diện hiện
+        được, nhưng KHÔNG tắt cờ "đang nạp" — lượt nạp vẫn chạy tiếp với những khâu
+        còn lại, và báo là đã xong trong lúc còn đang nạp thì thanh tiến trình sẽ
+        đứng im giữa chừng.
+        """
         self._stop_watcher()
         with self._lock:
             current = self._find(stage)
             if current is not None:
                 current.status = FAILED
-            self._active = False
+            if fatal:
+                self._active = False
             self._error = message
 
     def finish(self) -> None:
         self._stop_watcher()
         with self._lock:
             self._active = False
+            self._cancel = False
+
+    # --- huỷ giữa chừng ---------------------------------------------------
+
+    @property
+    def cancel_requested(self) -> bool:
+        with self._lock:
+            return self._cancel
+
+    def request_cancel(self) -> None:
+        """Xin dừng lượt nạp; vòng nạp dừng ở ranh giới khâu kế tiếp.
+
+        Không dừng được một lượt tải ĐANG chạy: `huggingface_hub` và pywhispercpp
+        tải trong worker thread, mà thread thì không giết ngang được. Nên khâu đang
+        tải sẽ tải nốt rồi mới dừng — vẫn đáng, vì chỗ tốn nhất là những khâu SAU
+        (bấm huỷ trước khi tới NLLB là tiết kiệm được 2,4 GB).
+        """
+        with self._lock:
+            if self._active:
+                self._cancel = True
+
+    def cancelled(self) -> None:
+        """Đánh dấu lượt nạp đã dừng theo yêu cầu (khác với hỏng)."""
+        self._stop_watcher()
+        with self._lock:
+            for stage in self._stages:
+                if stage.status in (WAITING, LOADING, DOWNLOADING):
+                    stage.status = CANCELLED
+            self._active = False
+            self._cancel = False
 
     # --- đọc -------------------------------------------------------------
 
@@ -157,6 +199,7 @@ class LoadProgress:
         current = next((s for s in stages if s.status in (LOADING, DOWNLOADING)), None)
         return {
             "active": active,
+            "cancelling": self.cancel_requested and active,
             "currentStage": current.stage if current else None,
             "overallPercent": self._overall(stages),
             "error": error,

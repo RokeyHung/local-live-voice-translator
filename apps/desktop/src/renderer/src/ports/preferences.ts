@@ -7,12 +7,18 @@ export interface StoredPreferences {
   theme: ThemeMode
   uiLanguage: UiLanguage
   layout: SessionLayout
-  hfToken: string
+  reviewBeforeSpeaking: boolean
+  reviewCountdownSec: number
   glossary: GlossaryEntry[]
   inputDeviceId: string
   outputDeviceId: string
   virtualMicDeviceId: string
 }
+
+// Access token HuggingFace KHÔNG nằm ở đây. Nó là bí mật duy nhất của ứng dụng, mà
+// localStorage thì lưu văn bản thường và mọi script trong renderer đều đọc được.
+// Token do AI service giữ (`~/.llvt/settings.json`, quyền 0600) và đọc/ghi qua
+// `PUT /api/config`; renderer chỉ thấy cờ "đã có" cùng một đoạn che.
 
 export interface PreferencesRepository {
   load(): Partial<StoredPreferences>

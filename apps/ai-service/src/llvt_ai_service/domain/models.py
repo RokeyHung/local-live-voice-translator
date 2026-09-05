@@ -35,6 +35,10 @@ class SessionConfig:
     incoming: LanguagePair | None = None  # remote -> user (Listen)
     outgoing: LanguagePair | None = None  # user -> remote (Speak)
     preset: Preset = Preset.balanced
+    # SPEC 7.10 "Review before speaking": dừng lại cho người dùng sửa bản dịch trước
+    # khi tổng hợp giọng. Chỉ áp cho chiều **outgoing** — câu của phía bên kia thì
+    # không có gì để sửa, mình đâu phải người nói ra nó.
+    review_before_speaking: bool = False
 
 
 @dataclass
@@ -64,6 +68,23 @@ class VadSegment:
     started_at_ms: int
     ended_at_ms: int
     sample_rate: int = 16000
+    # True khi đoạn bị cắt vì chạm trần độ dài chứ không phải vì người nói dừng lại —
+    # tức là câu VẪN đang tiếp diễn. Dùng để không phạt nhầm ASR/MT khi đánh giá và
+    # để lịch sử biết một câu dài đã bị chia làm mấy mảnh.
+    forced: bool = False
+
+
+@dataclass
+class SpeakerTurn:
+    """Một lượt nói liên tục của MỘT người, do khâu diarization cắt ra.
+
+    ``speaker`` là nhãn do model đặt (``SPEAKER_00``, ``SPEAKER_01``…) — nó chỉ có
+    nghĩa *trong phạm vi một lần chạy*, không phải danh tính thật của ai cả.
+    """
+
+    speaker: str
+    started_at_ms: int
+    ended_at_ms: int
 
 
 @dataclass
@@ -110,3 +131,5 @@ class Utterance:
     status: UtteranceStatus = UtteranceStatus.success
     # Mã lỗi khi status=failed (không chứa nội dung hội thoại).
     error: str | None = None
+    # Nhãn người nói khi bật diarization (chỉ có ở đường nhập tệp; None = không biết).
+    speaker: str | None = None

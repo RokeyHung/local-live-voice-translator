@@ -19,6 +19,7 @@ from typing import Any, Callable, Protocol
 
 import numpy as np
 
+from llvt_ai_service.adapters.asr.hallucination import rejection_reason, strip_non_speech
 from llvt_ai_service.application.inference import SerialExecutor
 from llvt_ai_service.domain.enums import Language
 from llvt_ai_service.domain.models import AsrTranscript
@@ -28,10 +29,76 @@ logger = logging.getLogger("llvt.adapters.asr.whisper_cpp")
 
 SAMPLE_RATE = 16000
 
+# Tham số giải mã dùng cho MỌI lần transcribe. Lý do từng cái (biên bản GVHD 19/08
+# mục 4.1 — hallucination trên đoạn im lặng):
+#
+# * ``no_context`` — không mang ngữ cảnh câu trước sang câu sau. Bật ngữ cảnh thì một
+#   câu ma sinh ra sẽ tự nuôi chính nó ở các câu kế tiếp. pywhispercpp đã mặc định
+#   True nhưng đây là tham số quan trọng nhất, không để nó phụ thuộc mặc định của lib.
+# * ``temperature_inc = 0`` — TẮT fallback nhiệt độ. Whisper giải mã lại ở nhiệt độ
+#   cao hơn khi thấy kết quả "kém", và đó đúng là lúc nó sáng tác nhiều nhất; một câu
+#   xấu còn có thể tốn tới 6 lượt giải mã, phá vỡ ngân sách độ trễ. Mất đường thoát
+#   khỏi vòng lặp lặp từ, nhưng ``hallucination.is_degenerate()`` bắt lại. Thêm một
+#   cái lợi: giải mã tất định → số WER đo trên FLEURS lặp lại được.
+# * ``single_segment`` — đoạn vào đây đã là MỘT câu do VAD cắt (≤ ``max_speech_ms``).
+#   Ép một segment chặn đúng kiểu ma phổ biến nhất: text thật, rồi dính thêm một
+#   segment "Thanks for watching" ở phần im lặng cuối.
+# * ``suppress_nst`` — bỏ token phi-lời-nói ([Music], (applause)…).
+#
+# Cố tình KHÔNG đặt ``no_speech_thold`` / ``entropy_thold`` / ``logprob_thold``:
+# pywhispercpp đánh dấu no_speech_thold là "not implemented", còn hai cái kia chỉ có
+# tác dụng bên trong vòng fallback nhiệt độ vừa bị tắt. Việc lọc thật nằm ở
+# ``adapters/asr/hallucination.py``, nơi kiểm thử được.
+DECODE_PARAMS: dict[str, Any] = {
+    "translate": False,  # task=transcribe, KHÔNG dịch — việc dịch là của module MT
+    "print_progress": False,
+    "print_realtime": False,
+    "no_context": True,
+    "temperature": 0.0,
+    "temperature_inc": 0.0,
+    "single_segment": True,
+    "suppress_blank": True,
+    "suppress_nst": True,
+}
+
+
+def _supported(params: dict[str, Any]) -> dict[str, Any]:
+    """Bỏ tham số mà bản pywhispercpp đang cài không biết (nó raise nếu gặp khoá lạ)."""
+    try:
+        from pywhispercpp.constants import PARAMS_SCHEMA
+    except Exception:  # noqa: BLE001 — không có lib thì cứ truyền nguyên, để nó tự báo
+        return dict(params)
+    known = {key: value for key, value in params.items() if key in PARAMS_SCHEMA}
+    for key in params.keys() - known.keys():
+        logger.warning("pywhispercpp không hỗ trợ tham số %r — bỏ qua", key)
+    return known
+
+
 # Tên model logic trong preset -> id GGML mà pywhispercpp hiểu (dựng tên file
 # ggml-<id>.bin). Xem constants.AVAILABLE_MODELS của pywhispercpp.
+#
+# Bảng này chỉ là lớp ĐẶT TÊN: tên nào không có ở đây được truyền thẳng xuống
+# pywhispercpp, nên mọi id trong AVAILABLE_MODELS vẫn dùng được. Có bảng để preset và
+# danh mục trong giao diện gọi model bằng một tên thống nhất (`whisper-<cỡ>-q<n>`)
+# thay vì dán id thô của từng runtime.
+#
+# CỐ TÌNH không liệt kê các biến thể `.en` (small.en, medium.en…) dù whisper.cpp có:
+# ứng dụng luôn phải nhận cả vi/ja/zh, model English-only sẽ trả rác cho ba thứ tiếng
+# đó. Ai muốn đo riêng chiều en→vi vẫn đặt thẳng `small.en` vào preset được.
 MODEL_MAP: dict[str, str] = {
+    "whisper-tiny-q5": "tiny-q5_1",
+    "whisper-tiny-q8": "tiny-q8_0",
+    "whisper-base-q5": "base-q5_1",
+    "whisper-base-q8": "base-q8_0",
+    "whisper-small": "small",
     "whisper-small-q5": "small-q5_1",
+    "whisper-small-q8": "small-q8_0",
+    "whisper-medium": "medium",
+    "whisper-medium-q5": "medium-q5_0",
+    "whisper-medium-q8": "medium-q8_0",
+    "whisper-large-v3": "large-v3",
+    "whisper-large-v3-q5": "large-v3-q5_0",
+    "whisper-large-v3-turbo": "large-v3-turbo",
     "whisper-large-v3-turbo-q5": "large-v3-turbo-q5_0",
     "whisper-large-v3-turbo-q8": "large-v3-turbo-q8_0",
 }
@@ -85,6 +152,9 @@ class WhisperCppAsr(SpeechToTextProvider):
         model: str,
         models_dir: str | None = None,
         loader: ModelLoader | None = None,
+        *,
+        min_confidence: float = 0.0,
+        audio_ctx: int = 0,
     ) -> None:
         self._model_name = model
         self._model_id = MODEL_MAP.get(model, model)
@@ -93,12 +163,22 @@ class WhisperCppAsr(SpeechToTextProvider):
         self._model: WhisperModel | None = None
         self._exec = SerialExecutor()
         self._system_info = ""
+        self._min_confidence = min_confidence
+        self._audio_ctx = audio_ctx
+        self._params: dict[str, Any] = {}
 
     async def load(self) -> None:
         logger.info("WhisperCppAsr.load(model=%s -> %s)", self._model_name, self._model_id)
         # Tải/nạp model là blocking (I/O + CPU) -> chạy ngoài event loop.
         self._model = await asyncio.to_thread(self._loader, self._model_id, self._models_dir)
         self._system_info = await asyncio.to_thread(_read_system_info)
+        params = dict(DECODE_PARAMS)
+        if self._audio_ctx > 0:
+            # Cắt bớt ngữ cảnh encoder: đoạn VAD chỉ vài giây chứ không phải 30 s nên
+            # phần lớn cửa sổ là padding. Nhanh hơn đáng kể nhưng ẢNH HƯỞNG ĐỘ CHÍNH
+            # XÁC → mặc định tắt, chỉ bật khi đã đo được WER tương ứng.
+            params["audio_ctx"] = self._audio_ctx
+        self._params = _supported(params)
         logger.info("WhisperCppAsr loaded (models_dir=%s)", self._models_dir)
 
     @property
@@ -132,8 +212,20 @@ class WhisperCppAsr(SpeechToTextProvider):
         segments = await self._exec.run(self._decode, audio, language)
         processing_ms = int((time.perf_counter() - started) * 1000)
 
-        text = "".join(seg.text for seg in segments).strip()
+        text = strip_non_speech("".join(seg.text for seg in segments))
         confidence = _mean_probability(segments)
+        reason = rejection_reason(text, confidence, min_confidence=self._min_confidence)
+        if reason is not None:
+            # Không log nội dung câu (SPEC 14: chỉ mã lỗi ra log), chỉ log vì sao bỏ —
+            # đủ để giải thích với hội đồng và để đếm tần suất lúc đo.
+            logger.info(
+                "Bỏ câu ASR: lý do=%s, độ dài=%d, confidence=%s",
+                reason,
+                len(text),
+                f"{confidence:.2f}" if confidence is not None else "—",
+            )
+            text = ""
+
         return AsrTranscript(
             text=text,
             language=language,
@@ -146,10 +238,8 @@ class WhisperCppAsr(SpeechToTextProvider):
         return self._model.transcribe(
             audio,
             language=language.value,  # 'vi'/'en'/'ja'/'zh' khớp mã whisper
-            translate=False,  # task=transcribe, KHÔNG dịch
-            print_progress=False,
-            print_realtime=False,
             extract_probability=True,  # để tính confidence
+            **self._params,
         )
 
 

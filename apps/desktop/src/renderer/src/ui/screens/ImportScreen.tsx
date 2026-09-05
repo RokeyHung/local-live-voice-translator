@@ -8,14 +8,17 @@
 // khỏi máy. Các tệp chạy LẦN LƯỢT: service chỉ nhận một tệp một lúc (model dùng
 // chung, chạy song song chỉ làm chậm cả hai).
 //
-// Nút "Phân biệt người nói" của thiết kế giữ nguyên chỗ nhưng ở trạng thái tắt:
-// pipeline không có khâu diarization, và bịa ra tên người nói thì tệ hơn là không có.
+// Nút "Phân biệt người nói" bật/tắt khâu diarization cho từng lượt nhập. Nó chỉ bấm
+// được khi service báo `diarizationEnabled` — model pyannote là phần cài thêm và cần
+// token HuggingFace cho lần tải đầu, nên không phải máy nào cũng có. Không có thì nút
+// vẫn giữ chỗ nhưng vô hiệu kèm lý do; bịa tên người nói còn tệ hơn là không có nhãn.
 
 import { useEffect, useRef, useState, type DragEvent, type JSX } from 'react'
 import { decodeMediaAudio, isVideoFile, MediaDecodeError } from '../../adapters/media-decode'
 import { downloadText, transcriptToSrt, transcriptToTxt } from '../../application/export'
 import { formatBytes, formatDuration } from '../../application/format'
 import { languageName, type Dict } from '../../application/i18n'
+import { speakerColor, speakerLabel } from '../../application/speakers'
 import type { Language } from '../../domain/enums'
 import { LANGUAGES, type TranscriptionResult } from '../../domain/models'
 import { useServiceConfig } from '../../hooks/use-config'
@@ -88,13 +91,16 @@ export function ImportScreen(): JSX.Element {
   const [source, setSource] = useState<Language>(sessionConfig.incoming.source)
   const [target, setTarget] = useState<Language | null>(sessionConfig.incoming.target)
   const [save, setSave] = useState(true)
+  // Bật sẵn: người đã cấu hình diarization cho service thì hầu như luôn muốn có nhãn.
+  // Service tự bỏ qua khi chưa bật, nên để true ở đây không gây hại gì.
+  const [diarize, setDiarize] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
   // Lượt chạy đọc thẳng từ ref: người dùng đổi ngôn ngữ giữa chừng thì tệp kế tiếp
   // dùng lựa chọn mới, không dùng bản chụp lúc bấm.
-  const optionsRef = useRef({ source, target, save })
+  const optionsRef = useRef({ source, target, save, diarize })
   useEffect(() => {
-    optionsRef.current = { source, target, save }
-  }, [source, target, save])
+    optionsRef.current = { source, target, save, diarize }
+  }, [source, target, save, diarize])
   // Hàng đợi thật nằm ở ref, không suy ra từ `jobs`: vòng chạy sống lâu hơn một lần
   // render, mà state React thì chỉ thấy được ở lần render sau — đọc state ở đây sẽ bỏ
   // sót tệp vừa thêm. `drainingRef` chặn hai vòng cùng chạy (setBusy chưa kịp hiệu lực).
@@ -107,6 +113,7 @@ export function ImportScreen(): JSX.Element {
   const cancelTranscribe = useCancelTranscribe()
   const progress = useTranscribeProgress(busy)
   const historyEnabled = config.data?.historyEnabled !== false
+  const diarizationAvailable = config.data?.diarizationEnabled === true
   const serviceUp = health.isSuccess
   // Phiên dịch đang chạy dùng chung model với lượt nhập tệp; chen vào sẽ làm phụ đề
   // của cuộc họp đứng hình, nên chặn hẳn thay vì để hai bên tranh nhau.
@@ -214,13 +221,19 @@ export function ImportScreen(): JSX.Element {
 
   // Với video, pha giải mã chính là lúc tách audio ra khỏi container — gọi đúng tên
   // để người dùng biết máy đang làm gì (bản thiết kế có nhãn riêng cho pha này).
-  const jobStatusLabel = (job: ImportJob): string =>
-    job.status === 'decoding' && job.video ? L.phaseExtract : statusLabel[job.status]
+  //
+  // Khâu tách người nói cũng vậy: nó chạy trên CẢ tệp trước khi nhận dạng chữ nên
+  // `percent` còn đứng ở 0 suốt quãng đó — không gọi tên ra thì trông như treo máy.
+  const jobStatusLabel = (job: ImportJob): string => {
+    if (job.status === 'decoding' && job.video) return L.phaseExtract
+    if (job.status === 'running' && progress.data?.phase === 'diarizing') return L.impDiarizing
+    return statusLabel[job.status]
+  }
 
   const transcriptText = (job: ImportJob): string =>
     format === 'srt'
-      ? transcriptToSrt(job.result?.segments ?? [])
-      : transcriptToTxt(job.file.name, job.result?.segments ?? [])
+      ? transcriptToSrt(job.result?.segments ?? [], L)
+      : transcriptToTxt(job.file.name, job.result?.segments ?? [], L)
 
   const copyTranscript = (job: ImportJob): void => {
     void navigator.clipboard.writeText(transcriptText(job)).then(() => {
@@ -350,12 +363,26 @@ export function ImportScreen(): JSX.Element {
                   { value: 'srt', label: '.srt' }
                 ]}
               />
-              <DisabledButton
-                label={L.diarizeLbl}
-                hint={L.diarizeOff}
-                icon="mic"
-                className="h-7.5 text-sm"
-              />
+              {/* Tách người nói bật/tắt được ở service (LLVT_DIARIZATION_ENABLED),
+                  nên khi service báo tắt thì nút vô hiệu kèm lý do — bấm được mà
+                  không có tác dụng gì còn khó hiểu hơn là không bấm được. */}
+              {diarizationAvailable ? (
+                <button
+                  onClick={() => setDiarize((on) => !on)}
+                  title={L.diarizeHint}
+                  className={`${GHOST_BUTTON} h-7.5 text-sm ${diarize ? 'text-ac-grn' : ''}`}
+                >
+                  <Icon name={diarize ? 'check' : 'mic'} size={13} />
+                  {L.diarizeLbl}
+                </button>
+              ) : (
+                <DisabledButton
+                  label={L.diarizeLbl}
+                  hint={L.diarizeOff}
+                  icon="mic"
+                  className="h-7.5 text-sm"
+                />
+              )}
               <button
                 className={`${GHOST_BUTTON} h-7.5 text-sm`}
                 disabled={doneCount === 0}
@@ -375,6 +402,7 @@ export function ImportScreen(): JSX.Element {
               // tên sẽ dò nhầm).
               const percent = job.status === 'running' ? (progress.data?.percent ?? 0) : 0
               const segments = job.result?.segments ?? []
+              const hasSpeakers = (job.result?.speakerCount ?? 0) > 0
               return (
                 <div key={job.id} className="border-b border-line-soft px-4.5 py-3.25">
                   <div className="flex items-center gap-3">
@@ -398,12 +426,18 @@ export function ImportScreen(): JSX.Element {
                         {job.durationMs != null &&
                           ` · ${L.durationLbl} ${formatDuration(job.durationMs)}`}
                         {job.result &&
-                          ` · ${segments.length} ${L.impSegments}${job.result.sessionId ? ` · ${L.impSaved}` : ''}`}
+                          ` · ${segments.length} ${L.impSegments}${
+                            hasSpeakers ? ` · ${job.result.speakerCount} ${L.impSpeakers}` : ''
+                          }${job.result.sessionId ? ` · ${L.impSaved}` : ''}`}
                       </div>
                     </div>
                     <span className="shrink-0 text-sm font-semibold" style={{ color }}>
-                      {/* Đang chạy thì gắn luôn % vào nhãn, như bản thiết kế. */}
-                      {job.status === 'running' && progress.data?.percent != null
+                      {/* Đang chạy thì gắn luôn % vào nhãn, như bản thiết kế — trừ lúc
+                          tách người nói, ở đó % chưa nhúc nhích nên "0%" chỉ gây hiểu
+                          nhầm là máy chưa làm gì. */}
+                      {job.status === 'running' &&
+                      progress.data?.percent != null &&
+                      progress.data.phase !== 'diarizing'
                         ? `${jobStatusLabel(job)} ${Math.round(progress.data.percent)}%`
                         : jobStatusLabel(job)}
                     </span>
@@ -493,6 +527,18 @@ export function ImportScreen(): JSX.Element {
                             <span className="shrink-0 font-mono text-xs text-fg-4">
                               {formatDuration(segment.startedAtMs)}
                             </span>
+                            {/* Cột người nói chỉ chiếm chỗ khi tệp này thật sự có
+                                nhãn — không bật diarization thì bản ghi giữ nguyên
+                                bố cục cũ. */}
+                            {hasSpeakers && (
+                              <span
+                                className="w-19 shrink-0 truncate-1 text-xs font-bold"
+                                style={{ color: speakerColor(segment.speaker) }}
+                                title={speakerLabel(segment.speaker, L) ?? L.speakerUnknown}
+                              >
+                                {speakerLabel(segment.speaker, L) ?? '—'}
+                              </span>
+                            )}
                             <span className="min-w-0 flex-1">
                               <span className="text-fg-2">{segment.text}</span>
                               {segment.translatedText && (

@@ -2,23 +2,53 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from llvt_ai_service.adapters.asr.faster_whisper import MODEL_MAP as FW_MODELS
+from llvt_ai_service.adapters.asr.mlx_whisper import MODEL_MAP as MLX_MODELS
+from llvt_ai_service.adapters.asr.whisper_cpp import MODEL_MAP as WHISPER_MODELS
+from llvt_ai_service.adapters.mt.nllb import MODEL_MAP as NLLB_MODELS
 from llvt_ai_service.api.deps import get_container
+from llvt_ai_service.application import model_download
 from llvt_ai_service.application.container import Container
-from llvt_ai_service.application.installed_models import file_bytes, managed_bytes, purge, scan
+from llvt_ai_service.application.installed_models import (
+    NotManagedError,
+    file_bytes,
+    managed_bytes,
+    purge,
+    remove_one,
+    scan,
+)
 from llvt_ai_service.application.load_progress import progress
-from llvt_ai_service.application.model_manager import ModelLoadError
+from llvt_ai_service.application.model_manager import (
+    ASR_REGISTRY,
+    ModelLoadCancelled,
+    ModelLoadError,
+)
 from llvt_ai_service.config import runtime_config
-from llvt_ai_service.config.settings import get_settings, reload_settings
+from llvt_ai_service.config.presets import custom_config
+from llvt_ai_service.config.settings import (
+    effective_hf_token,
+    get_settings,
+    hf_token_source,
+    mask_token,
+    reload_settings,
+)
 from llvt_ai_service.domain.enums import Preset
 from llvt_ai_service.schemas import (
     ConfigResponse,
     ConfigUpdate,
+    CustomChoiceSchema,
     DeletedModels,
+    DownloadedModel,
+    DownloadRequest,
+    HfVerifyRequest,
+    HfVerifyResponse,
     InstalledModelSchema,
     LoadProgressResponse,
     StageInfoSchema,
@@ -46,6 +76,32 @@ def _describe(container: Container, preset: Preset) -> ConfigResponse:
         modelsDirEditable=not runtime_config.env_overrides("models_dir"),
         historyDbPath=str(settings.db_path),
         historyEnabled=container.repository.enabled,
+        diarizationEnabled=settings.diarization_enabled,
+        hfTokenSet=bool(effective_hf_token(settings)),
+        hfTokenSource=hf_token_source(settings),
+        hfTokenHint=mask_token(effective_hf_token(settings)),
+        hfTokenEditable=not runtime_config.env_overrides("hf_token"),
+        custom=_custom_choices(settings),
+    )
+
+
+def _custom_choices(settings) -> CustomChoiceSchema:
+    """Bộ tự chọn hiện tại + những lựa chọn service THẬT SỰ chạy được.
+
+    Danh sách model ASR gộp cả hai runtime: đổi adapter là đổi luôn họ tên model, và
+    lọc sẵn theo adapter ở đây thì giao diện phải hỏi lại service mỗi lần đổi ô. Tên
+    đã mang tiền tố (`whisper-` / `mlx-whisper-`) nên nhìn là biết thuộc runtime nào.
+    """
+    active = custom_config(
+        settings.custom_asr_adapter, settings.custom_asr_model, settings.custom_mt_model
+    )
+    return CustomChoiceSchema(
+        asrAdapter=active.asr_adapter,
+        asrModel=active.asr_model,
+        mtModel=active.mt_model,
+        asrAdapterChoices=list(ASR_REGISTRY),
+        asrModelChoices=[*WHISPER_MODELS, *MLX_MODELS, *FW_MODELS],
+        mtModelChoices=list(NLLB_MODELS),
     )
 
 
@@ -93,6 +149,87 @@ async def _apply_models_dir(container: Container, raw: str) -> None:
     logger.info("Đổi thư mục model sang %s; đã giải phóng provider", target)
 
 
+def _apply_hf_token(raw: str) -> None:
+    """Lưu (hoặc xoá) access token HuggingFace.
+
+    Chuỗi rỗng = gỡ token đã lưu. Không nạp lại model: token chỉ có tác dụng cho lần
+    **tải** model kế tiếp, còn model đang nằm trong RAM thì đã tải xong rồi. Ai vừa
+    thêm token để sửa một khâu tải hỏng thì bấm "Nạp lại" ở màn Quản lý model.
+    """
+    if runtime_config.env_overrides("hf_token"):
+        raise HTTPException(
+            status_code=409,
+            detail="Token đang do biến môi trường LLVT_HF_TOKEN quyết định.",
+        )
+    token = raw.strip()
+    runtime_config.save(hf_token=token)
+    # `reload_settings` gọi luôn `publish_hf_token`, nên biến HF_TOKEN được cập nhật
+    # ngay và mọi thư viện HuggingFace thấy token mới ở lần tải sau.
+    reload_settings()
+    # KHÔNG log giá trị token — chỉ log việc đã đổi (SPEC 14: log không chứa bí mật).
+    logger.info("Đã %s access token HuggingFace", "lưu" if token else "gỡ")
+
+
+@router.post(
+    "/hf/verify",
+    response_model=HfVerifyResponse,
+    summary="Kiểm tra access token HuggingFace",
+    description=(
+        "Hỏi `huggingface.co` xem token có dùng được không và trả về tên tài khoản. "
+        "Gửi `token` để thử một token **chưa lưu** (ô nhập vừa dán), bỏ trống để kiểm "
+        "tra token đang có hiệu lực.\n\n"
+        "Đây là lệnh **duy nhất** chủ động gọi ra Internet, và chỉ khi người dùng bấm. "
+        "Có nó vì cách còn lại để biết token sai là chờ hết một lượt tải model vài "
+        "phút rồi mới thấy lỗi 401.\n\n"
+        "Token sai **không phải lỗi của request**: trả 200 với `ok: false` kèm lý do, "
+        "để giao diện hiện được thông báo thay vì phải bắt mã lỗi HTTP."
+    ),
+)
+async def verify_hf_token(body: HfVerifyRequest) -> HfVerifyResponse:
+    token = body.token.strip() or effective_hf_token()
+    if not token:
+        return HfVerifyResponse(ok=False, error="Chưa có token nào để kiểm tra.")
+
+    def _whoami() -> dict[str, Any]:
+        from huggingface_hub import whoami
+
+        return whoami(token=token)
+
+    try:
+        # Blocking (gọi HTTP) → đẩy ra khỏi event loop.
+        identity = await asyncio.to_thread(_whoami)
+    except Exception as exc:  # noqa: BLE001 — token sai và mất mạng đều về một cửa
+        # str(exc) của huggingface_hub có thể kèm URL nhưng KHÔNG kèm token.
+        logger.info("Kiểm tra token HuggingFace thất bại: %s", type(exc).__name__)
+        return HfVerifyResponse(ok=False, error=str(exc))
+    return HfVerifyResponse(ok=True, user=str(identity.get("name") or ""))
+
+
+def _apply_custom(body: ConfigUpdate) -> bool:
+    """Lưu lựa chọn model tự chọn; trả True nếu có gì đó thật sự đổi."""
+    changes = {
+        "custom_asr_adapter": body.customAsrAdapter,
+        "custom_asr_model": body.customAsrModel,
+        "custom_mt_model": body.customMtModel,
+    }
+    changes = {k: v for k, v in changes.items() if v is not None}
+    if not changes:
+        return False
+    adapter = changes.get("custom_asr_adapter")
+    if adapter and adapter not in ASR_REGISTRY:
+        raise HTTPException(status_code=400, detail=f"Không có adapter ASR tên {adapter!r}.")
+    model = changes.get("custom_asr_model")
+    if model and model not in WHISPER_MODELS | MLX_MODELS | FW_MODELS:
+        raise HTTPException(status_code=400, detail=f"Không có model ASR tên {model!r}.")
+    mt = changes.get("custom_mt_model")
+    if mt and mt not in NLLB_MODELS:
+        raise HTTPException(status_code=400, detail=f"Không có model MT tên {mt!r}.")
+
+    runtime_config.save(**changes)
+    reload_settings()
+    return True
+
+
 @router.put(
     "/config",
     response_model=ConfigResponse,
@@ -102,6 +239,10 @@ async def _apply_models_dir(container: Container, raw: str) -> None:
         "vài giây và sẽ tải model nếu máy chưa có. Gửi lại đúng preset đang chạy thì "
         "không nạp lại gì cả, nên có thể dùng để chỉ đổi `historyEnabled` hoặc "
         "`modelsDir`.\n\n"
+        "`hfToken` lưu access token HuggingFace để tải model gated (pyannote); gửi "
+        "chuỗi rỗng để gỡ token đã lưu. Token **không bao giờ** được trả về nguyên "
+        "văn — xem `hfTokenSet`/`hfTokenHint`. Đổi token không nạp lại model (token "
+        "chỉ dùng cho lần *tải* kế tiếp); trả 409 nếu `LLVT_HF_TOKEN` đang được đặt.\n\n"
         "`modelsDir` được lưu vào `~/.llvt/settings.json` nên còn nguyên ở lần mở sau. "
         "Model **đã tải không được di chuyển** — thư mục mới rỗng thì lần nạp kế tiếp sẽ "
         "tải lại. Đổi xong, model đang nằm trong RAM được giải phóng và sẽ nạp lại từ "
@@ -113,6 +254,13 @@ async def update_config(
 ) -> ConfigResponse:
     if body.historyEnabled is not None:
         container.repository.enabled = body.historyEnabled
+    if body.hfToken is not None:
+        _apply_hf_token(body.hfToken)
+    if _apply_custom(body):
+        # Đổi bộ tự chọn trong lúc đang CHẠY preset custom thì phải nạp lại, không thì
+        # `stages` báo một đằng còn bộ nhớ giữ một nẻo.
+        if container.model_manager.preset is Preset.custom and body.preset is Preset.custom:
+            await container.model_manager.load_preset(Preset.custom)
     if body.modelsDir is not None:
         await _apply_models_dir(container, body.modelsDir)
     current = container.model_manager.preset
@@ -135,6 +283,67 @@ def installed_models() -> list[InstalledModelSchema]:
         InstalledModelSchema(name=m.name, stage=m.stage, path=m.path, sizeBytes=m.size_bytes)
         for m in scan(get_settings().models_dir)
     ]
+
+
+@router.post(
+    "/models/download",
+    response_model=DownloadedModel,
+    summary="Tải một model cụ thể về đĩa",
+    description=(
+        "Tải đúng một model trong danh mục về `modelsDir` mà **không** nạp vào bộ nhớ "
+        "và **không** đổi preset đang chạy — dùng để chuẩn bị trước cho lần dùng "
+        "offline, hoặc để thử một model khác.\n\n"
+        "Tên model lấy từ danh mục ở màn Quản lý model (`whisper-small-q5`, "
+        "`mlx-whisper-large-v3-turbo-q8`, `nllb-200-distilled-600M`, `kokoro-ja`, "
+        "`vits-piper-vi_VN-vais1000-medium`, `pyannote/...`). Model đã có sẵn thì "
+        "lệnh trả về ngay.\n\n"
+        "**Chặn tới khi tải xong** — hàng GB nên có thể mất vài phút. Trả 400 nếu tên "
+        "không có trong danh mục, 503 nếu tải hỏng (thường là mất mạng, hoặc thiếu "
+        "token cho model gated)."
+    ),
+)
+async def download_model(
+    body: DownloadRequest, container: Container = Depends(get_container)
+) -> DownloadedModel:
+    del container  # không đụng tới model đang nạp
+    settings = get_settings()
+    try:
+        stage, _kind = model_download.resolve(body.name)
+    except model_download.UnknownModelError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    try:
+        # Tải là I/O mạng blocking → đẩy ra khỏi event loop, nếu không cả service
+        # đứng hình (kể cả /health) suốt lúc tải.
+        path = await asyncio.to_thread(model_download.download, body.name, settings.models_dir)
+    except Exception as exc:  # noqa: BLE001 — mất mạng, hết đĩa, thiếu quyền: cùng một cửa
+        logger.warning("Tải model %s thất bại: %s", body.name, exc)
+        raise HTTPException(
+            status_code=503,
+            detail=f"Không tải được {body.name}: {exc}",
+        ) from exc
+    return DownloadedModel(name=body.name, stage=stage, path=str(path))
+
+
+@router.delete(
+    "/models/one",
+    response_model=DeletedModels,
+    summary="Xoá một model đã tải",
+    description=(
+        "Xoá đúng một model, theo `path` mà `GET /api/models` trả về. Chỉ xoá được "
+        "thứ nằm trong thư mục do app tạo **và** thật sự có trong danh sách đã tải — "
+        "đường dẫn tuỳ ý bị từ chối bằng 400.\n\n"
+        "Model đang nằm trong bộ nhớ vẫn chạy tiếp (nó đã ở RAM); lần nạp sau mới phải "
+        "tải lại. Trên Windows, xoá file đang mở sẽ hỏng — giải phóng model trước."
+    ),
+)
+def delete_one_model(path: str) -> DeletedModels:
+    try:
+        freed = remove_one(get_settings().models_dir, path)
+    except NotManagedError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except OSError as exc:
+        raise HTTPException(status_code=409, detail=f"Không xoá được: {exc}") from exc
+    return DeletedModels(removed=[path], freedBytes=freed)
 
 
 @router.get(
@@ -176,7 +385,8 @@ def storage() -> StorageResponse:
         "nút bấm tương ứng với 'Khởi động model' ở màn Quản lý model.\n\n"
         "Lệnh này **chặn cho tới khi nạp xong** — lần đầu còn phải tải model về nên có "
         "thể mất vài phút; những lần sau chỉ vài chục giây. Gọi lại khi model đã nạp thì "
-        "không làm gì, trừ khi `reload=true` (nạp lại từ đầu)."
+        "không làm gì, trừ khi `reload=true` (nạp lại từ đầu).\n\n"
+        "Dừng giữa chừng bằng `POST /api/models/load/cancel`; khi đó lệnh này trả **409**."
     ),
 )
 async def load_models(
@@ -189,6 +399,13 @@ async def load_models(
             await manager.load_preset(preset)
         else:
             await manager.ensure_loaded()
+    except ModelLoadCancelled as exc:
+        # Người dùng chủ động dừng — không phải lỗi. 409 để giao diện phân biệt được
+        # với 503 (mất mạng) và không hiện thông báo lỗi đỏ.
+        raise HTTPException(
+            status_code=409,
+            detail=f"Đã dừng lượt nạp model trước khâu {exc.stage} theo yêu cầu.",
+        ) from exc
     except ModelLoadError as exc:
         # Hầu hết trường hợp là mất mạng giữa lúc tải model, hoặc hết chỗ trên đĩa —
         # lỗi của môi trường chứ không phải của request, nên 503 chứ không phải 500.
@@ -200,6 +417,25 @@ async def load_models(
             ),
         ) from exc
     return _describe(container, preset)
+
+
+@router.post(
+    "/models/load/cancel",
+    status_code=204,
+    summary="Dừng lượt nạp model đang chạy",
+    description=(
+        "Xin dừng lượt nạp. Vòng nạp dừng ở **ranh giới khâu kế tiếp**, rồi "
+        "`POST /api/models/load` trả 409 và những khâu đã nạp xong được giải phóng "
+        "(nạp nửa vời còn tệ hơn không nạp).\n\n"
+        "Không dừng được một lượt **tải đang chạy**: huggingface_hub và pywhispercpp "
+        "tải trong worker thread, mà thread thì không giết ngang được — khâu đang tải "
+        "sẽ tải nốt. Vẫn đáng bấm, vì chỗ tốn nhất thường là khâu SAU (bấm huỷ trước "
+        "khi tới NLLB là tiết kiệm ~2,4 GB).\n\n"
+        "Không có gì đang nạp thì lệnh này không làm gì cả (không phải lỗi)."
+    ),
+)
+def cancel_load() -> None:
+    progress.request_cancel()
 
 
 @router.get(

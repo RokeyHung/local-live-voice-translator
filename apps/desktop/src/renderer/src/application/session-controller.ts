@@ -45,7 +45,12 @@ function defaultTitle(prefix: string, at: Date): string {
 }
 
 function sessionStartPayload(config: SessionConfig, title: string): Record<string, unknown> {
-  const payload: Record<string, unknown> = { mode: config.mode, preset: config.preset, title }
+  const payload: Record<string, unknown> = {
+    mode: config.mode,
+    preset: config.preset,
+    title,
+    reviewBeforeSpeaking: config.reviewBeforeSpeaking
+  }
   if (config.mode !== 'listen') {
     payload.outgoingSource = config.outgoing.source
     payload.outgoingTarget = config.outgoing.target
@@ -116,7 +121,12 @@ export class SessionController {
     // Trỏ đầu ra TTS tới thiết bị đã chọn (microphone ảo) trước khi phát.
     await this.output?.setSink(ui.virtualMicDeviceId || ui.outputDeviceId)
     const title = defaultTitle(dict(ui.uiLanguage).meetingPrefix, new Date())
-    this.channel.send('session.start', sessionStartPayload(config, title))
+    // "Duyệt trước khi gửi" là tuỳ chọn người dùng (màn Cài đặt) chứ không phải một
+    // phần của cặp ngôn ngữ, nên nó sống ở ui-store; chốt lại tại đây, lúc mở phiên.
+    // Đổi giữa phiên không có tác dụng — service đã dựng pipeline theo giá trị này.
+    const startConfig = { ...config, reviewBeforeSpeaking: ui.reviewBeforeSpeaking }
+    store.setConfig({ reviewBeforeSpeaking: ui.reviewBeforeSpeaking })
+    this.channel.send('session.start', sessionStartPayload(startConfig, title))
     store.setActive(true)
     logInfo('session', (L) => format(L.logSessionStart, { title }))
 
@@ -185,6 +195,18 @@ export class SessionController {
     this.pttActive = pressed
     this.channel.send('control.ptt', { pressed })
     useSessionStore.getState().setPtt(pressed)
+  }
+
+  /** Duyệt một câu đang chờ (SPEC 7.10): gửi bản đã sửa đi đọc ra micro ảo. */
+  confirm(utteranceId: string, text: string): void {
+    this.channel.send('control.confirm', { utteranceId, text })
+    useSessionStore.getState().resolveReview(utteranceId)
+  }
+
+  /** Bỏ một câu đang chờ: không đọc ra, nhưng vẫn giữ trong lịch sử. */
+  discard(utteranceId: string): void {
+    this.channel.send('control.discard', { utteranceId })
+    useSessionStore.getState().resolveReview(utteranceId)
   }
 
   mute(muted: boolean): void {

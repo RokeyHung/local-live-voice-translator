@@ -30,6 +30,21 @@ class StageInfoSchema(BaseModel):
     loaded: bool
 
 
+class CustomChoiceSchema(BaseModel):
+    """Bộ model người dùng tự chọn cho preset `custom`, kèm những lựa chọn có thật.
+
+    Danh sách lựa chọn lấy từ chính registry của service chứ không chép tay ở giao
+    diện — thêm một adapter mới là ô chọn tự có thêm mục, không phải sửa hai nơi.
+    """
+
+    asrAdapter: str
+    asrModel: str
+    mtModel: str
+    asrAdapterChoices: list[str] = []
+    asrModelChoices: list[str] = []
+    mtModelChoices: list[str] = []
+
+
 class ConfigResponse(BaseModel):
     preset: Preset
     availablePresets: list[Preset]
@@ -40,6 +55,26 @@ class ConfigResponse(BaseModel):
     # Nơi lưu lịch sử + có đang lưu hay không (SPEC 14.4 yêu cầu hiện rõ cho người dùng).
     historyDbPath: str = ""
     historyEnabled: bool = True
+    # Tách người nói có đang bật không (LLVT_DIARIZATION_ENABLED). Chỉ có tác dụng ở
+    # màn Nhập tệp; giao diện dùng nó để biết có chỗ nào hiện nhãn người nói hay
+    # không, thay vì đoán theo việc `stages` có khâu DIA.
+    diarizationEnabled: bool = False
+
+    # --- Token HuggingFace (tải model gated) ---
+    #
+    # KHÔNG bao giờ trả nguyên văn token. Giao diện chỉ cần biết đã có hay chưa, nó
+    # đến từ đâu, và một đoạn che đủ để nhận ra đang dùng token nào.
+    hfTokenSet: bool = False
+    # "env" = LLVT_HF_TOKEN (app không sửa được) · "saved" = ô nhập trong app ·
+    # "inherited" = biến HF_TOKEN người dùng tự export · "none" = chưa có.
+    hfTokenSource: str = "none"
+    hfTokenHint: str = ""
+    # False khi LLVT_HF_TOKEN đang quyết định → giao diện khoá ô nhập lại.
+    hfTokenEditable: bool = True
+
+    # Bộ model của preset `custom` (kể cả khi đang chạy preset khác) — giao diện cần
+    # nó để vẽ sẵn ô "Tự chọn".
+    custom: CustomChoiceSchema | None = None
 
 
 class InstalledModelSchema(BaseModel):
@@ -59,7 +94,7 @@ class StageProgressSchema(BaseModel):
 
     stage: str
     model: str
-    status: str  # waiting | downloading | loading | done | failed
+    status: str  # waiting | downloading | loading | done | failed | cancelled
     doneBytes: int
     totalBytes: int | None
     estimated: bool
@@ -69,6 +104,8 @@ class StageProgressSchema(BaseModel):
 
 class LoadProgressResponse(BaseModel):
     active: bool
+    # Đã bấm Huỷ nhưng khâu đang chạy chưa xong (giống `cancelling` của nhập tệp).
+    cancelling: bool = False
     currentStage: str | None
     overallPercent: float | None
     error: str | None
@@ -81,6 +118,42 @@ class ConfigUpdate(BaseModel):
     historyEnabled: bool | None = None
     # None = giữ nguyên. Đổi thư mục model sẽ giải phóng provider đang nạp.
     modelsDir: str | None = None
+    # None = giữ nguyên, chuỗi rỗng = XOÁ token đã lưu. Trả 409 nếu LLVT_HF_TOKEN
+    # đang quyết định.
+    hfToken: str | None = None
+    # Lựa chọn cho preset `custom`. None = giữ nguyên, chuỗi rỗng = trả khâu đó về
+    # mặc định (theo Balanced). Lưu lại kể cả khi đang chạy preset khác.
+    customAsrAdapter: str | None = None
+    customAsrModel: str | None = None
+    customMtModel: str | None = None
+
+
+class HfVerifyRequest(BaseModel):
+    # Bỏ trống = kiểm tra token đang có hiệu lực (đã lưu hoặc từ môi trường). Có giá
+    # trị = thử token này mà KHÔNG lưu, để người dùng dán vào rồi bấm kiểm tra trước.
+    token: str = ""
+
+
+class HfVerifyResponse(BaseModel):
+    """Kết quả hỏi huggingface.co xem token có dùng được không."""
+
+    ok: bool
+    # Tên tài khoản HF khi token hợp lệ; rỗng khi không.
+    user: str = ""
+    # Lý do khi không hợp lệ (hết hạn, sai, hoặc không có mạng).
+    error: str = ""
+
+
+class DownloadRequest(BaseModel):
+    """Tên model trong danh mục (không phải đường dẫn file)."""
+
+    name: str
+
+
+class DownloadedModel(BaseModel):
+    name: str
+    stage: str  # ASR | MT | TTS | DIA
+    path: str  # nơi model vừa được tải về
 
 
 class DeletedModels(BaseModel):
@@ -132,6 +205,10 @@ class UtteranceSchema(BaseModel):
     error: str | None = None
     startedAtMs: int
     endedAtMs: int | None = None
+    # Mã người nói (`speaker-1`, `speaker-2`…) khi phiên là một tệp nhập có bật
+    # diarization. null với phiên trực tiếp — ở đó `source` đã cho biết ai nói.
+    # Giao diện tự dựng câu chữ hiển thị theo ngôn ngữ đang chọn.
+    speaker: str | None = None
 
 
 class SessionDetail(SessionSummary):
@@ -173,6 +250,9 @@ class TranscriptSegmentSchema(BaseModel):
     translatedText: str | None = None
     asrMs: int | None = None
     mtMs: int | None = None
+    # Mã người nói khi bật diarization; null = không bật, hoặc đoạn rơi vào chỗ
+    # chuyển lượt nên không ai chiếm đủ đa số thời lượng.
+    speaker: str | None = None
 
 
 class TranscriptionResponse(BaseModel):
@@ -181,6 +261,8 @@ class TranscriptionResponse(BaseModel):
     audioMs: int
     processingMs: int
     segments: list[TranscriptSegmentSchema] = []
+    # Số người nói diarization tìm được; 0 = không chạy diarization cho tệp này.
+    speakerCount: int = 0
     # Phiên tương ứng trong lịch sử; rỗng khi không lưu (hoặc lưu lịch sử đang tắt).
     sessionId: str = ""
     # True = dừng giữa chừng theo yêu cầu; `segments` chỉ là phần đã chạy được.
@@ -198,6 +280,75 @@ class TranscribeProgressResponse(BaseModel):
     percent: float | None
     error: str | None
     # Đã xin dừng nhưng khúc đang chạy chưa xong.
+    cancelling: bool = False
+    # Giai đoạn đang chạy: "diarizing" (gom cụm giọng trên cả tệp, `percent` còn 0)
+    # hay "transcribing" (nhận dạng + dịch theo từng đoạn).
+    phase: str = "transcribing"
+
+
+class EvaluationCaseSchema(BaseModel):
+    """Một câu mẫu người dùng đưa vào để chấm."""
+
+    id: str
+    language: Language
+    target: Language
+    transcript: str  # câu gốc chuẩn — vừa là tham chiếu ASR, vừa là đầu vào MT
+    translation: str  # bản dịch tham chiếu
+    # Đường dẫn TUYỆT ĐỐI tới file WAV giọng đọc thật. Bỏ trống thì service tự đọc câu
+    # tham chiếu bằng TTS rồi nghe lại (`audioSource` của kết quả sẽ là tts-roundtrip).
+    audio: str = ""
+
+
+class EvaluationRequest(BaseModel):
+    # Bỏ trống = chạy bộ câu mẫu đi kèm service (GET /api/evaluate/corpus).
+    cases: list[EvaluationCaseSchema] = []
+    # Chỉ chạy N câu đầu — để thử nhanh trước khi chạy cả bộ.
+    limit: int | None = None
+
+
+class EvaluationCaseResultSchema(BaseModel):
+    id: str
+    language: Language
+    target: Language
+    # "recorded" = giọng người thật · "tts-roundtrip" = máy tự đọc rồi tự nghe lại
+    audioSource: str
+    reference: str
+    hypothesis: str
+    errorRate: float
+    metric: str  # "WER" cho vi/en · "CER" cho zh/ja
+    referenceTranslation: str
+    translation: str
+    chrf: float
+    asrMs: int
+    mtMs: int
+    audioMs: int
+
+
+class EvaluationResponse(BaseModel):
+    """Kết quả chấm: từng câu + bảng tổng (độ trễ báo p50/p90, không báo trung bình)."""
+
+    cases: list[EvaluationCaseResultSchema] = []
+    errorRate: float = 0.0
+    chrf: float = 0.0
+    asrP50Ms: int = 0
+    asrP90Ms: int = 0
+    mtP50Ms: int = 0
+    mtP90Ms: int = 0
+    totalP90Ms: int = 0
+    rtfP90: float = 0.0
+    # True khi có ít nhất một câu chạy bằng giọng tổng hợp — số sẽ LẠC QUAN hơn thực
+    # tế, giao diện phải nói rõ.
+    hasSyntheticAudio: bool = False
+    cancelled: bool = False
+
+
+class EvaluationProgressResponse(BaseModel):
+    active: bool
+    total: int
+    done: int
+    currentCase: str
+    percent: float | None
+    error: str | None
     cancelling: bool = False
 
 
