@@ -62,9 +62,10 @@ export const PRESET_META: Record<Preset, PresetMeta> = {
 // model là service tải thật về `modelsDir` (POST /api/models/download) — bảng này chỉ
 // còn là phần TRÌNH BÀY: tên, mô tả, dung lượng, nền tảng chạy được.
 //
-// `name` là tên LOGIC mà AI service hiểu: đặt được thẳng vào preset
-// (`config/presets.py`) hoặc vào `LLVT_ASR_ADAPTER`/`LLVT_DIARIZATION_MODEL`. Không
-// phải tên file trên đĩa — chỗ đó là cột "đã cài" bên trái, dựng từ `GET /api/models`.
+// `name` là **đường dẫn thật ở thượng nguồn** — repo HuggingFace, hoặc tên file trong
+// repo với GGML. Đúng một chuỗi cho một model: nó là thứ hiện ở đây, thứ dán vào ô
+// "Tự chọn", thứ gửi cho `POST /api/models/download`, và (bỏ đuôi `.bin`) cũng là thứ
+// nằm trên đĩa ở cột "đã cài" bên trái.
 //
 // `size` là dung lượng THẬT lấy từ HuggingFace API, không phải ước lượng.
 //
@@ -90,64 +91,64 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   // English-only sẽ trả rác cho ba thứ tiếng đó.
   {
     stage: 'ASR',
-    name: 'whisper-large-v3-turbo-q5',
+    name: 'ggml-large-v3-turbo-q5_0.bin',
     detail: 'ggerganov · whisper.cpp · vi/en/ja/zh',
     size: '574 MB'
   },
   {
     stage: 'ASR',
-    name: 'whisper-large-v3-turbo-q8',
+    name: 'ggml-large-v3-turbo-q8_0.bin',
     detail: 'ggerganov · whisper.cpp · vi/en/ja/zh',
     size: '874 MB'
   },
   {
     stage: 'ASR',
-    name: 'whisper-large-v3-turbo',
+    name: 'ggml-large-v3-turbo.bin',
     detail: 'ggerganov · whisper.cpp · fp16',
     size: '1.62 GB'
   },
   {
     stage: 'ASR',
-    name: 'whisper-large-v3-q5',
+    name: 'ggml-large-v3-q5_0.bin',
     detail: 'ggerganov · whisper.cpp · chính xác nhất',
     size: '1.08 GB'
   },
   {
     stage: 'ASR',
-    name: 'whisper-large-v3',
+    name: 'ggml-large-v3.bin',
     detail: 'ggerganov · whisper.cpp · fp16',
     size: '3.10 GB'
   },
   {
     stage: 'ASR',
-    name: 'whisper-medium-q5',
+    name: 'ggml-medium-q5_0.bin',
     detail: 'ggerganov · whisper.cpp',
     size: '539 MB'
   },
   {
     stage: 'ASR',
-    name: 'whisper-medium-q8',
+    name: 'ggml-medium-q8_0.bin',
     detail: 'ggerganov · whisper.cpp',
     size: '823 MB'
   },
-  { stage: 'ASR', name: 'whisper-medium', detail: 'ggerganov · whisper.cpp', size: '1.53 GB' },
+  { stage: 'ASR', name: 'ggml-medium.bin', detail: 'ggerganov · whisper.cpp', size: '1.53 GB' },
   {
     stage: 'ASR',
-    name: 'whisper-small-q5',
+    name: 'ggml-small-q5_1.bin',
     detail: 'ggerganov · whisper.cpp · preset Fast',
     size: '190 MB'
   },
-  { stage: 'ASR', name: 'whisper-small-q8', detail: 'ggerganov · whisper.cpp', size: '264 MB' },
-  { stage: 'ASR', name: 'whisper-small', detail: 'ggerganov · whisper.cpp', size: '488 MB' },
-  { stage: 'ASR', name: 'whisper-base-q5', detail: 'ggerganov · whisper.cpp', size: '60 MB' },
-  { stage: 'ASR', name: 'whisper-base-q8', detail: 'ggerganov · whisper.cpp', size: '82 MB' },
-  { stage: 'ASR', name: 'whisper-tiny-q5', detail: 'ggerganov · whisper.cpp', size: '32 MB' },
-  { stage: 'ASR', name: 'whisper-tiny-q8', detail: 'ggerganov · whisper.cpp', size: '44 MB' },
+  { stage: 'ASR', name: 'ggml-small-q8_0.bin', detail: 'ggerganov · whisper.cpp', size: '264 MB' },
+  { stage: 'ASR', name: 'ggml-small.bin', detail: 'ggerganov · whisper.cpp', size: '488 MB' },
+  { stage: 'ASR', name: 'ggml-base-q5_1.bin', detail: 'ggerganov · whisper.cpp', size: '60 MB' },
+  { stage: 'ASR', name: 'ggml-base-q8_0.bin', detail: 'ggerganov · whisper.cpp', size: '82 MB' },
+  { stage: 'ASR', name: 'ggml-tiny-q5_1.bin', detail: 'ggerganov · whisper.cpp', size: '32 MB' },
+  { stage: 'ASR', name: 'ggml-tiny-q8_0.bin', detail: 'ggerganov · whisper.cpp', size: '44 MB' },
 
   // --- ASR · MLX (Apple Silicon / Metal) — LLVT_ASR_ADAPTER=mlx_whisper ---
   {
     stage: 'ASR',
-    name: 'mlx-whisper-large-v3-turbo-q8',
+    name: 'mlx-community/whisper-large-v3-turbo-asr-8bit',
     detail: 'mlx-community · mlx-audio · preset Balanced',
     size: '868 MB',
     platform: 'darwin',
@@ -155,7 +156,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-large-v3-turbo',
+    name: 'mlx-community/whisper-large-v3-turbo-asr-fp16',
     detail: 'mlx-community · mlx-audio · fp16',
     size: '1.62 GB',
     platform: 'darwin',
@@ -163,7 +164,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-large-v3-turbo-q4',
+    name: 'mlx-community/whisper-large-v3-turbo-asr-4bit',
     detail: 'mlx-community · mlx-audio',
     size: '468 MB',
     platform: 'darwin',
@@ -171,7 +172,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-large-v3-q8',
+    name: 'mlx-community/whisper-large-v3-asr-8bit',
     detail: 'mlx-community · mlx-audio · chính xác nhất',
     size: '1.27 GB',
     platform: 'darwin',
@@ -179,7 +180,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-large-v3',
+    name: 'mlx-community/whisper-large-v3-asr-fp16',
     detail: 'mlx-community · mlx-audio · fp16',
     size: '3.09 GB',
     platform: 'darwin',
@@ -187,7 +188,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-large-v3-q4',
+    name: 'mlx-community/whisper-large-v3-asr-4bit',
     detail: 'mlx-community · mlx-audio',
     size: '882 MB',
     platform: 'darwin',
@@ -195,7 +196,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-small-q8',
+    name: 'mlx-community/whisper-small-asr-8bit',
     detail: 'mlx-community · mlx-audio · preset Fast',
     size: '263 MB',
     platform: 'darwin',
@@ -203,7 +204,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-small',
+    name: 'mlx-community/whisper-small-asr-fp16',
     detail: 'mlx-community · mlx-audio · fp16',
     size: '486 MB',
     platform: 'darwin',
@@ -211,7 +212,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-small-q4',
+    name: 'mlx-community/whisper-small-asr-4bit',
     detail: 'mlx-community · mlx-audio',
     size: '144 MB',
     platform: 'darwin',
@@ -219,7 +220,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-tiny-q8',
+    name: 'mlx-community/whisper-tiny-asr-8bit',
     detail: 'mlx-community · mlx-audio',
     size: '45 MB',
     platform: 'darwin',
@@ -227,7 +228,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-tiny',
+    name: 'mlx-community/whisper-tiny-asr-fp16',
     detail: 'mlx-community · mlx-audio · fp16',
     size: '79 MB',
     platform: 'darwin',
@@ -235,7 +236,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   },
   {
     stage: 'ASR',
-    name: 'mlx-whisper-tiny-q4',
+    name: 'mlx-community/whisper-tiny-asr-4bit',
     detail: 'mlx-community · mlx-audio',
     size: '26 MB',
     platform: 'darwin',
@@ -248,42 +249,42 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   // Windows + NVIDIA (fp16 trên nhân CUDA riêng); trên CPU thì chạy int8.
   {
     stage: 'ASR',
-    name: 'fw-whisper-large-v3-turbo',
+    name: 'deepdml/faster-whisper-large-v3-turbo-ct2',
     detail: 'deepdml · CTranslate2 · preset Balanced',
     size: '1.62 GB',
     extra: 'ctranslate2'
   },
   {
     stage: 'ASR',
-    name: 'fw-whisper-large-v3',
+    name: 'Systran/faster-whisper-large-v3',
     detail: 'Systran · CTranslate2 · chính xác nhất',
     size: '3.09 GB',
     extra: 'ctranslate2'
   },
   {
     stage: 'ASR',
-    name: 'fw-whisper-medium',
+    name: 'Systran/faster-whisper-medium',
     detail: 'Systran · CTranslate2',
     size: '1.53 GB',
     extra: 'ctranslate2'
   },
   {
     stage: 'ASR',
-    name: 'fw-whisper-small',
+    name: 'Systran/faster-whisper-small',
     detail: 'Systran · CTranslate2 · preset Fast',
     size: '486 MB',
     extra: 'ctranslate2'
   },
   {
     stage: 'ASR',
-    name: 'fw-whisper-base',
+    name: 'Systran/faster-whisper-base',
     detail: 'Systran · CTranslate2',
     size: '148 MB',
     extra: 'ctranslate2'
   },
   {
     stage: 'ASR',
-    name: 'fw-whisper-tiny',
+    name: 'Systran/faster-whisper-tiny',
     detail: 'Systran · CTranslate2',
     size: '78 MB',
     extra: 'ctranslate2'
@@ -292,12 +293,11 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   // --- MT ---
   {
     stage: 'MT',
-    name: 'nllb-200-distilled-600M',
+    name: 'facebook/nllb-200-distilled-600M',
     detail: 'facebook · transformers · 200 lang',
     size: '2.4 GB'
   },
-  { stage: 'MT', name: 'nllb-200-distilled-600M-int8', detail: 'facebook · int8', size: '640 MB' },
-  { stage: 'MT', name: 'nllb-200-1.3B', detail: 'facebook · 200 lang', size: '5.5 GB' },
+  { stage: 'MT', name: 'facebook/nllb-200-1.3B', detail: 'facebook · 200 lang', size: '5.5 GB' },
 
   // --- TTS ---
   {

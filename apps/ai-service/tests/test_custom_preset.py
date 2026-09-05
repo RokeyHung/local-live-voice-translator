@@ -54,11 +54,11 @@ def test_choosing_a_runtime_picks_that_runtime_s_equivalent_model():
 def test_explicit_choices_win():
     config = custom_config(
         asr_adapter="whisper_cpp",
-        asr_model="whisper-tiny-q5",
-        mt_model="nllb-200-distilled-600M-int8",
+        asr_model="ggml-tiny-q5_1.bin",
+        mt_model="facebook/nllb-200-1.3B",
     )
-    assert config.asr_model == "whisper-tiny-q5"
-    assert config.mt_model == "nllb-200-distilled-600M-int8"
+    assert config.asr_model == "ggml-tiny-q5_1.bin"
+    assert config.mt_model == "facebook/nllb-200-1.3B"
 
 
 def test_custom_has_no_alternatives_left_to_resolve():
@@ -86,12 +86,14 @@ def test_config_exposes_the_real_choices_not_a_hand_written_list(client: TestCli
 
 
 def test_saving_choices_survives_and_shows_up_in_config(client: TestClient):
-    body = _put(client, customAsrAdapter="mlx_whisper", customAsrModel="mlx-whisper-tiny-q8")
+    body = _put(
+        client, customAsrAdapter="mlx_whisper", customAsrModel="mlx-community/whisper-tiny-asr-8bit"
+    )
 
     assert body["custom"]["asrAdapter"] == "mlx_whisper"
-    assert body["custom"]["asrModel"] == "mlx-whisper-tiny-q8"
-    assert get_settings().custom_asr_model == "mlx-whisper-tiny-q8"
-    assert get_preset_config(Preset.custom).asr_model == "mlx-whisper-tiny-q8"
+    assert body["custom"]["asrModel"] == "mlx-community/whisper-tiny-asr-8bit"
+    assert get_settings().custom_asr_model == "mlx-community/whisper-tiny-asr-8bit"
+    assert get_preset_config(Preset.custom).asr_model == "mlx-community/whisper-tiny-asr-8bit"
 
 
 def test_choices_are_validated_against_the_registry(client: TestClient):
@@ -110,12 +112,12 @@ def test_choices_are_validated_against_the_registry(client: TestClient):
 
 
 def test_an_empty_string_resets_one_stage_to_the_default(client: TestClient):
-    _put(client, customAsrModel="whisper-tiny-q5")
+    _put(client, customAsrModel="ggml-tiny-q5_1.bin")
     body = _put(client, customAsrModel="")
     assert body["custom"]["asrModel"] == PRESETS[Preset.balanced].asr_model
 
 
 def test_omitting_the_fields_leaves_the_choices_alone(client: TestClient):
-    _put(client, customAsrModel="whisper-tiny-q5")
+    _put(client, customAsrModel="ggml-tiny-q5_1.bin")
     body = _put(client, historyEnabled=False)
-    assert body["custom"]["asrModel"] == "whisper-tiny-q5"
+    assert body["custom"]["asrModel"] == "ggml-tiny-q5_1.bin"

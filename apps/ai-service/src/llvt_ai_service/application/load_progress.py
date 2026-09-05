@@ -40,13 +40,16 @@ SAMPLE_INTERVAL_S = 0.5
 # `model.safetensors` ghi trên model card của HuggingFace, cộng tokenizer — nên là số
 # xấp xỉ. Model nào không có ở đây thì không hiện phần trăm.
 EXPECTED_BYTES: dict[str, int] = {
-    "whisper-large-v3-turbo-q5": 574_041_195,  # đo được: ggml-large-v3-turbo-q5_0.bin
-    "nllb-200-distilled-600M": 2_460_000_000,  # xấp xỉ theo model card
-    "nllb-200-distilled-600M-int8": 2_460_000_000,
+    "ggml-large-v3-turbo-q5_0.bin": 574_041_195,  # đo trực tiếp trên file đã tải
+    "ggml-large-v3-turbo-q8_0.bin": 874_188_075,  # đo qua API HuggingFace
+    "ggml-small-q5_1.bin": 190_085_487,
+    "facebook/nllb-200-distilled-600M": 2_460_000_000,  # xấp xỉ theo model card
 }
 
 # Model nào là số đo, model nào là ước lượng (để giao diện hiện dấu ≈ cho trung thực).
-MEASURED_MODELS = frozenset({"whisper-large-v3-turbo-q5"})
+MEASURED_MODELS = frozenset(
+    {"ggml-large-v3-turbo-q5_0.bin", "ggml-large-v3-turbo-q8_0.bin", "ggml-small-q5_1.bin"}
+)
 
 WAITING = "waiting"
 DOWNLOADING = "downloading"

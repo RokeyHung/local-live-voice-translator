@@ -71,7 +71,7 @@ def resolve(name: str) -> tuple[str, str]:
         return "ASR", "faster_whisper"
     if clean in NLLB_MODELS:
         return "MT", "nllb"
-    if clean == "kokoro-ja":
+    if clean in ("kokoro-ja", "kokoro-v1.0.onnx"):
         return "TTS", "kokoro"
     if clean.startswith(("vits-", "sherpa-onnx-vits-")):
         return "TTS", "sherpa"

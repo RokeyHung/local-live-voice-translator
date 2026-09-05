@@ -74,33 +74,36 @@ def _supported(params: dict[str, Any]) -> dict[str, Any]:
     return known
 
 
-# Tên model logic trong preset -> id GGML mà pywhispercpp hiểu (dựng tên file
-# ggml-<id>.bin). Xem constants.AVAILABLE_MODELS của pywhispercpp.
+# Tên file THẬT trong repo `ggerganov/whisper.cpp` -> id mà pywhispercpp hiểu.
 #
-# Bảng này chỉ là lớp ĐẶT TÊN: tên nào không có ở đây được truyền thẳng xuống
-# pywhispercpp, nên mọi id trong AVAILABLE_MODELS vẫn dùng được. Có bảng để preset và
-# danh mục trong giao diện gọi model bằng một tên thống nhất (`whisper-<cỡ>-q<n>`)
-# thay vì dán id thô của từng runtime.
+# Khoá cố ý là **đường dẫn thật** chứ không phải một tên tự đặt: nó là thứ người dùng
+# thấy trên HuggingFace, thứ nằm trên đĩa sau khi tải (bỏ đuôi `.bin`), và thứ dán
+# thẳng vào ô "Tự chọn" hay `POST /api/models/download` được. Một tên cho một model,
+# không phải hai.
+#
+# Giá trị là id của pywhispercpp — nó tự dựng lại tên file, nên phần này vẫn phải có.
+# Tên nào không nằm trong bảng được truyền thẳng xuống pywhispercpp, nên mọi id trong
+# `constants.AVAILABLE_MODELS` vẫn dùng được.
 #
 # CỐ TÌNH không liệt kê các biến thể `.en` (small.en, medium.en…) dù whisper.cpp có:
 # ứng dụng luôn phải nhận cả vi/ja/zh, model English-only sẽ trả rác cho ba thứ tiếng
 # đó. Ai muốn đo riêng chiều en→vi vẫn đặt thẳng `small.en` vào preset được.
 MODEL_MAP: dict[str, str] = {
-    "whisper-tiny-q5": "tiny-q5_1",
-    "whisper-tiny-q8": "tiny-q8_0",
-    "whisper-base-q5": "base-q5_1",
-    "whisper-base-q8": "base-q8_0",
-    "whisper-small": "small",
-    "whisper-small-q5": "small-q5_1",
-    "whisper-small-q8": "small-q8_0",
-    "whisper-medium": "medium",
-    "whisper-medium-q5": "medium-q5_0",
-    "whisper-medium-q8": "medium-q8_0",
-    "whisper-large-v3": "large-v3",
-    "whisper-large-v3-q5": "large-v3-q5_0",
-    "whisper-large-v3-turbo": "large-v3-turbo",
-    "whisper-large-v3-turbo-q5": "large-v3-turbo-q5_0",
-    "whisper-large-v3-turbo-q8": "large-v3-turbo-q8_0",
+    "ggml-tiny-q5_1.bin": "tiny-q5_1",
+    "ggml-tiny-q8_0.bin": "tiny-q8_0",
+    "ggml-base-q5_1.bin": "base-q5_1",
+    "ggml-base-q8_0.bin": "base-q8_0",
+    "ggml-small.bin": "small",
+    "ggml-small-q5_1.bin": "small-q5_1",
+    "ggml-small-q8_0.bin": "small-q8_0",
+    "ggml-medium.bin": "medium",
+    "ggml-medium-q5_0.bin": "medium-q5_0",
+    "ggml-medium-q8_0.bin": "medium-q8_0",
+    "ggml-large-v3.bin": "large-v3",
+    "ggml-large-v3-q5_0.bin": "large-v3-q5_0",
+    "ggml-large-v3-turbo.bin": "large-v3-turbo",
+    "ggml-large-v3-turbo-q5_0.bin": "large-v3-turbo-q5_0",
+    "ggml-large-v3-turbo-q8_0.bin": "large-v3-turbo-q8_0",
 }
 
 

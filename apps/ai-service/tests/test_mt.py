@@ -36,8 +36,10 @@ def _make_mt(out: str = "translated", model: str = "nllb-200-distilled-600M"):
 
 
 def test_model_name_maps_to_repo_id():
-    assert MODEL_MAP["nllb-200-distilled-600M"] == "facebook/nllb-200-distilled-600M"
-    assert MODEL_MAP["nllb-200-distilled-600M-int8"] == "facebook/nllb-200-distilled-600M"
+    # Khoá là ĐƯỜNG DẪN THẬT, nên bảng này là danh sách repo app biết chứ không phải
+    # một lớp đổi tên: khoá bằng giá trị.
+    assert MODEL_MAP["facebook/nllb-200-distilled-600M"] == "facebook/nllb-200-distilled-600M"
+    assert MODEL_MAP["facebook/nllb-200-1.3B"] == "facebook/nllb-200-1.3B"
     # Tên lạ giữ nguyên (cho phép truyền thẳng repo/đường dẫn).
     mt = NllbTranslator("some/other-repo", loader=lambda _r, _d, _dev: RecordingBackend())
     assert mt._repo_id == "some/other-repo"
@@ -51,7 +53,7 @@ def test_loader_receives_repo_dir_device():
         return RecordingBackend()
 
     mt = NllbTranslator(
-        "nllb-200-distilled-600M", models_dir="/models/n", device="cpu", loader=loader
+        "facebook/nllb-200-distilled-600M", models_dir="/models/n", device="cpu", loader=loader
     )
     asyncio.run(mt.load())
     assert captured == {

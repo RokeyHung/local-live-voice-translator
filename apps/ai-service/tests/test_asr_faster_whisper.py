@@ -49,7 +49,7 @@ def _asr(
 ) -> tuple[FasterWhisperAsr, FakeFasterWhisper]:
     model = FakeFasterWhisper(segments)
     asr = FasterWhisperAsr(
-        "fw-whisper-small",
+        "Systran/faster-whisper-small",
         models_dir=None,
         loader=lambda _repo, _dir, _device: model,
         device="cpu",
@@ -63,7 +63,7 @@ def _asr(
 
 
 def test_logical_names_map_to_ctranslate2_repos():
-    assert MODEL_MAP["fw-whisper-large-v3"] == "Systran/faster-whisper-large-v3"
+    assert MODEL_MAP["Systran/faster-whisper-large-v3"] == "Systran/faster-whisper-large-v3"
 
 
 def test_unknown_names_pass_through_so_any_repo_still_works():
@@ -100,7 +100,7 @@ def test_runtime_info_reports_the_compute_type_too():
 
 
 def test_transcribe_before_load_is_an_error_not_an_empty_result():
-    asr = FasterWhisperAsr("fw-whisper-small")
+    asr = FasterWhisperAsr("Systran/faster-whisper-small")
     with pytest.raises(RuntimeError, match="chưa load"):
         asyncio.run(asr.transcribe(b"\x00\x00", Language.vi))
 

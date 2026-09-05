@@ -37,18 +37,18 @@ logger = logging.getLogger("llvt.adapters.asr.faster_whisper")
 
 SAMPLE_RATE = 16000
 
-# Tên model logic -> repo CTranslate2 trên HuggingFace. Giữ đúng lối đặt tên của hai
-# adapter kia (`fw-whisper-<cỡ>`) để preset và danh mục đọc như nhau.
+# Repo CTranslate2 trên HuggingFace mà adapter này chạy được. Khoá = giá trị =
+# **đường dẫn thật**, cùng lý do đã ghi ở `mlx_whisper.MODEL_MAP`.
 #
 # Không có biến thể `.en` vì lý do đã ghi ở whisper_cpp: ứng dụng luôn phải nhận cả
 # vi/ja/zh. Cũng không có `distil-*`: bản distil chỉ hỗ trợ tiếng Anh.
 MODEL_MAP: dict[str, str] = {
-    "fw-whisper-tiny": "Systran/faster-whisper-tiny",
-    "fw-whisper-base": "Systran/faster-whisper-base",
-    "fw-whisper-small": "Systran/faster-whisper-small",
-    "fw-whisper-medium": "Systran/faster-whisper-medium",
-    "fw-whisper-large-v3": "Systran/faster-whisper-large-v3",
-    "fw-whisper-large-v3-turbo": "deepdml/faster-whisper-large-v3-turbo-ct2",
+    "Systran/faster-whisper-tiny": "Systran/faster-whisper-tiny",
+    "Systran/faster-whisper-base": "Systran/faster-whisper-base",
+    "Systran/faster-whisper-small": "Systran/faster-whisper-small",
+    "Systran/faster-whisper-medium": "Systran/faster-whisper-medium",
+    "Systran/faster-whisper-large-v3": "Systran/faster-whisper-large-v3",
+    "deepdml/faster-whisper-large-v3-turbo-ct2": "deepdml/faster-whisper-large-v3-turbo-ct2",
 }
 
 # Tham số giải mã. Đối xứng với DECODE_PARAMS của hai adapter kia — so ba runtime chỉ

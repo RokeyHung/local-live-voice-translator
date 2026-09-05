@@ -37,15 +37,15 @@ flowchart LR
 
 ## 3. Thiết kế adapter
 
-| Vấn đề                      | Cách xử lý                                                                                                                                                                    |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mã ngôn ngữ NLLB            | `NLLB_CODE` map `Language`→FLORES-200 (`vie_Latn`/`eng_Latn`/`jpn_Jpan`/`zho_Hans`). Set `tokenizer.src_lang`, ép `forced_bos_token_id = convert_tokens_to_ids(tgt)`.         |
-| Tên model theo preset       | `MODEL_MAP`: `nllb-200-distilled-600M` và `...-int8` → cùng repo `facebook/nllb-200-distilled-600M` (INT8 để backend tối ưu sau). Tên lạ giữ nguyên (truyền thẳng repo/path). |
-| Model không hẳn thread-safe | Adapter giữ `SerialExecutor` nội bộ (lock + `to_thread`) → nhiều pipeline (mic/system) dùng chung 1 model vẫn tuần tự, an toàn.                                               |
-| Nạp model nặng (~2.4GB)     | `load()` chạy `asyncio.to_thread`; `translate()` trước khi `load()` → `RuntimeError`.                                                                                         |
-| Đầu vào                     | `_normalize` gộp whitespace + trim. **Rỗng** → trả `""` không gọi model; **cùng ngôn ngữ** → trả nguyên văn không gọi model (tiết kiệm).                                      |
-| Kết quả                     | `TranslationResult` kèm `source_text` (đã chuẩn hóa), `translated_text`, `processing_ms` để đo độ trễ MT.                                                                     |
-| Testability                 | Backend tiêm được: loader `(repo_id, models_dir, device) → TranslationBackend`. Mặc định `_default_loader` dựng `_TransformersNllb`.                                          |
+| Vấn đề                      | Cách xử lý                                                                                                                                                                                                                                                 |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mã ngôn ngữ NLLB            | `NLLB_CODE` map `Language`→FLORES-200 (`vie_Latn`/`eng_Latn`/`jpn_Jpan`/`zho_Hans`). Set `tokenizer.src_lang`, ép `forced_bos_token_id = convert_tokens_to_ids(tgt)`.                                                                                      |
+| Tên model theo preset       | `MODEL_MAP` dùng **repo thật** làm khoá (`facebook/nllb-200-distilled-600M`, `facebook/nllb-200-1.3B`). Bản `-int8` từng có ở đây đã bỏ: nó trỏ về đúng repo gốc nên chỉ là một cái tên, không phải một model. Tên lạ giữ nguyên (truyền thẳng repo/path). |
+| Model không hẳn thread-safe | Adapter giữ `SerialExecutor` nội bộ (lock + `to_thread`) → nhiều pipeline (mic/system) dùng chung 1 model vẫn tuần tự, an toàn.                                                                                                                            |
+| Nạp model nặng (~2.4GB)     | `load()` chạy `asyncio.to_thread`; `translate()` trước khi `load()` → `RuntimeError`.                                                                                                                                                                      |
+| Đầu vào                     | `_normalize` gộp whitespace + trim. **Rỗng** → trả `""` không gọi model; **cùng ngôn ngữ** → trả nguyên văn không gọi model (tiết kiệm).                                                                                                                   |
+| Kết quả                     | `TranslationResult` kèm `source_text` (đã chuẩn hóa), `translated_text`, `processing_ms` để đo độ trễ MT.                                                                                                                                                  |
+| Testability                 | Backend tiêm được: loader `(repo_id, models_dir, device) → TranslationBackend`. Mặc định `_default_loader` dựng `_TransformersNllb`.                                                                                                                       |
 
 Adapter **là nơi duy nhất** biết transformers; pipeline/preset chỉ thấy port. Preset trỏ tên model (Fast=…-int8, Balanced/Quality=…-600M); registry truyền `models_dir = ~/.llvt/models/nllb`.
 

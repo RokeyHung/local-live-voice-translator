@@ -68,13 +68,13 @@ bắt đầu phiên dịch đầu tiên (lúc đó câu đầu sẽ phải chờ
 | Khâu | Model mặc định (preset Balanced)   | Nguồn tải                                   |
 | ---- | ---------------------------------- | ------------------------------------------- |
 | VAD  | Silero VAD                         | gói `silero-vad` trên PyPI (không tải thêm) |
-| ASR  | `whisper-large-v3-turbo-q5`        | GGML qua pywhispercpp                       |
+| ASR  | `ggml-large-v3-turbo-q5_0.bin`     | GGML qua pywhispercpp                       |
 | MT   | `facebook/nllb-200-distilled-600M` | Hugging Face                                |
 | TTS  | Piper vi/en, VITS zh-ll            | GitHub release `tts-models` của k2-fsa      |
 | TTS  | Kokoro v1.0 (tiếng Nhật)           | GitHub release của kokoro-onnx              |
 
-Preset **Fast** dùng `whisper-small-q5` + NLLB int8 (nhẹ và nhanh hơn, chính xác kém
-hơn); **Quality** dùng `whisper-large-v3-turbo-q8`. Đổi ở màn **Cài đặt**.
+Preset **Fast** dùng `ggml-small-q5_1.bin` + NLLB int8 (nhẹ và nhanh hơn, chính xác kém
+hơn); **Quality** dùng `ggml-large-v3-turbo-q8_0.bin`. Đổi ở màn **Cài đặt**.
 
 **Chỗ lưu model** mặc định là `~/.llvt/models` (Windows: `C:\Users\<tên>\.llvt\models`).
 Đổi ở màn **Cài đặt → Thư mục lưu model**; model đã tải **không** tự chuyển sang chỗ

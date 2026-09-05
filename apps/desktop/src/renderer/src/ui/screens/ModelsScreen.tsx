@@ -724,10 +724,11 @@ export function ModelsScreen(): JSX.Element {
               <div className="px-5 py-7 text-center text-base text-fg-5">{L.noCatalogResults}</div>
             )}
             {catalog.map((entry) => {
-              // Khớp với danh sách trên đĩa thật, không khớp với bảng chép tay.
-              const onDisk = [...installedNames].some(
-                (name) => name === entry.name || name.endsWith(`/${entry.name}`)
-              )
+              // Khớp với danh sách trên đĩa thật. Từ khi danh mục dùng đường dẫn
+              // thật, tên chỉ còn lệch đúng một chỗ: GGML nằm trên đĩa dưới dạng tên
+              // file KHÔNG có đuôi `.bin`. Trước đây so thẳng nên nhãn "đã tải" của
+              // mọi mục whisper.cpp không bao giờ sáng dù model có sẵn.
+              const onDisk = installedNames.has(entry.name.replace(/\.bin$/, ''))
               // Model MLX chỉ chạy trên Metal của Apple Silicon. Làm mờ (thay vì ẩn)
               // để danh mục vẫn là bảng tra cứu đầy đủ, nhưng người dùng Windows
               // không mất công thử một thứ máy họ không chạy được.

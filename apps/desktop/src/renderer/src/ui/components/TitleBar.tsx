@@ -15,7 +15,7 @@ export function TitleBar(): JSX.Element {
 
   return (
     <div
-      className={`flex h-11 shrink-0 items-center gap-3.5 border-b border-line bg-inset backdrop-blur-xl ${
+      className={`flex h-9 shrink-0 items-center gap-3.5 border-b border-line bg-inset backdrop-blur-xl ${
         isMac ? 'pr-4 pl-21' : 'px-4'
       }`}
       style={DRAG}

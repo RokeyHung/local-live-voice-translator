@@ -28,7 +28,7 @@ def _fresh_progress():
 
 def test_percent_is_none_when_model_size_unknown():
     tracker = LoadProgress()
-    tracker.begin([("ASR", "model-la-hoac"), ("MT", "nllb-200-distilled-600M")])
+    tracker.begin([("ASR", "model-la-hoac"), ("MT", "facebook/nllb-200-distilled-600M")])
     tracker.stage_begin("ASR")
 
     asr = tracker.snapshot()["stages"][0]
@@ -37,7 +37,7 @@ def test_percent_is_none_when_model_size_unknown():
 
     tracker.stage_begin("MT")
     mt = tracker.snapshot()["stages"][1]
-    assert mt["totalBytes"] == lp.EXPECTED_BYTES["nllb-200-distilled-600M"]
+    assert mt["totalBytes"] == lp.EXPECTED_BYTES["facebook/nllb-200-distilled-600M"]
     assert mt["estimated"] is True, "dung lượng NLLB là số xấp xỉ, phải nói rõ"
 
 

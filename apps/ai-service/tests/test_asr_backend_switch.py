@@ -47,8 +47,8 @@ def test_unknown_override_falls_back_to_the_preset(monkeypatch, balanced):
 
 
 def test_switching_adapter_keeps_the_quality_tier(balanced):
-    assert asr_model(balanced, "whisper_cpp") == "whisper-large-v3-turbo-q5"
-    assert asr_model(balanced, "mlx_whisper") == "mlx-whisper-large-v3-turbo-q8"
+    assert asr_model(balanced, "whisper_cpp") == "ggml-large-v3-turbo-q5_0.bin"
+    assert asr_model(balanced, "mlx_whisper") == "mlx-community/whisper-large-v3-turbo-asr-8bit"
 
 
 def test_every_preset_has_an_mlx_equivalent():

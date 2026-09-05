@@ -34,7 +34,7 @@ def test_cancel_is_ignored_when_nothing_is_loading():
 
 def test_cancel_flag_is_visible_to_the_load_loop_and_to_the_ui():
     tracker = LoadProgress()
-    tracker.begin([("VAD", "silero-vad"), ("ASR", "whisper-small-q5")])
+    tracker.begin([("VAD", "silero-vad"), ("ASR", "ggml-small-q5_1.bin")])
     tracker.request_cancel()
 
     assert tracker.cancel_requested is True
@@ -43,7 +43,7 @@ def test_cancel_flag_is_visible_to_the_load_loop_and_to_the_ui():
 
 def test_cancelled_marks_unfinished_stages_without_calling_them_failures():
     tracker = LoadProgress()
-    tracker.begin([("VAD", "silero-vad"), ("ASR", "whisper-small-q5"), ("MT", "nllb")])
+    tracker.begin([("VAD", "silero-vad"), ("ASR", "ggml-small-q5_1.bin"), ("MT", "nllb")])
     tracker.stage_begin("VAD")
     tracker.stage_done("VAD")
     tracker.stage_begin("ASR")
@@ -73,9 +73,9 @@ def test_cancel_endpoint_is_a_no_op_without_a_running_load(client: TestClient):
 
 
 def test_catalog_names_route_to_the_right_downloader():
-    assert model_download.resolve("whisper-small-q5") == ("ASR", "whisper_cpp")
-    assert model_download.resolve("mlx-whisper-large-v3-turbo-q8") == ("ASR", "mlx")
-    assert model_download.resolve("nllb-200-distilled-600M") == ("MT", "nllb")
+    assert model_download.resolve("ggml-small-q5_1.bin") == ("ASR", "whisper_cpp")
+    assert model_download.resolve("mlx-community/whisper-large-v3-turbo-asr-8bit") == ("ASR", "mlx")
+    assert model_download.resolve("facebook/nllb-200-distilled-600M") == ("MT", "nllb")
     assert model_download.resolve("kokoro-ja") == ("TTS", "kokoro")
     assert model_download.resolve("vits-piper-vi_VN-vais1000-medium") == ("TTS", "sherpa")
     assert model_download.resolve("pyannote/speaker-diarization-community-1") == ("DIA", "pyannote")
@@ -96,14 +96,14 @@ def test_download_endpoint_reports_where_the_model_landed(
         return models_dir / "whisper-cpp" / "ggml-small-q5_1.bin"
 
     monkeypatch.setattr(model_download, "download", fake_download)
-    response = client.post("/api/models/download", json={"name": "whisper-small-q5"})
+    response = client.post("/api/models/download", json={"name": "ggml-small-q5_1.bin"})
 
     assert response.status_code == 200
     body = response.json()
-    assert body["name"] == "whisper-small-q5"
+    assert body["name"] == "ggml-small-q5_1.bin"
     assert body["stage"] == "ASR"
     assert body["path"].endswith("ggml-small-q5_1.bin")
-    assert called == ["whisper-small-q5"]
+    assert called == ["ggml-small-q5_1.bin"]
 
 
 def test_download_endpoint_rejects_an_unknown_name_with_400(client: TestClient):
@@ -118,7 +118,7 @@ def test_download_failure_is_503_not_500(client: TestClient, monkeypatch: pytest
         raise OSError("Network is unreachable")
 
     monkeypatch.setattr(model_download, "download", boom)
-    response = client.post("/api/models/download", json={"name": "whisper-small-q5"})
+    response = client.post("/api/models/download", json={"name": "ggml-small-q5_1.bin"})
 
     assert response.status_code == 503
     assert "Network is unreachable" in response.json()["detail"]

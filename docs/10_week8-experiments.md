@@ -45,7 +45,7 @@ trả chuỗi rỗng, MT sẽ "nhanh" một cách giả tạo. Nên mỗi khâu 
 Đơn vị: mili giây. Đọc bảng này:
 
 - **ASR là khâu nặng nhất** cho hai chiều Việt–Anh (~1 s cho 3 giây audio), đúng như dự
-  đoán: `whisper-large-v3-turbo-q5` chạy Metal.
+  đoán: `ggml-large-v3-turbo-q5_0.bin` chạy Metal.
 - vi→en tổng 1,82 s cho 3 giây tiếng nói → **≈ 0,6 lần thời gian thực**, tức pipeline
   theo kịp người nói bình thường.
 - TTS tiếng Nhật (Kokoro) và tiếng Trung (VITS zh-ll) đắt hơn Piper 5–7 lần; hai chiều

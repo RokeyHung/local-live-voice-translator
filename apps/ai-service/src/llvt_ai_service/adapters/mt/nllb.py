@@ -30,11 +30,15 @@ NLLB_CODE: dict[Language, str] = {
     Language.zh: "zho_Hans",
 }
 
-# Tên model logic trong preset -> repo HF. (Biến thể INT8 dùng lại repo gốc; lượng
-# tử hóa là việc của backend tối ưu sau này.)
+# Repo HF dùng được. Khoá = giá trị = **đường dẫn thật**.
+#
+# Bỏ hẳn mục `nllb-200-distilled-600M-int8` từng có ở đây: nó trỏ về ĐÚNG repo gốc,
+# tức preset Fast quảng cáo "int8" nhưng chạy y hệt Balanced. Lượng tử hoá là việc
+# của backend tối ưu sau này; tới lúc đó thêm một repo thật, đừng thêm một cái tên.
 MODEL_MAP: dict[str, str] = {
-    "nllb-200-distilled-600M": "facebook/nllb-200-distilled-600M",
-    "nllb-200-distilled-600M-int8": "facebook/nllb-200-distilled-600M",
+    "facebook/nllb-200-distilled-600M": "facebook/nllb-200-distilled-600M",
+    # 1.3B: chất lượng cao hơn, đổi lại ~5,5 GB và chậm hơn hẳn.
+    "facebook/nllb-200-1.3B": "facebook/nllb-200-1.3B",
 }
 
 # Số token sinh tối đa cho một utterance (câu/đoạn ngắn).

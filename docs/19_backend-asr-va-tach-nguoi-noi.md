@@ -31,18 +31,19 @@ này bắt buộc phải có tiếng Việt ở một đầu.
 
 ### 1.1. Danh mục sau khi mở rộng
 
-`whisper_cpp.MODEL_MAP` giờ có 15 tên (tiny → large-v3, các mức lượng tử hoá q5/q8),
-`mlx_whisper.MODEL_MAP` có 12. Danh mục hiển thị ở màn Quản lý model
+`whisper_cpp.MODEL_MAP` giờ có 15 mục (tiny → large-v3, các mức lượng tử hoá q5/q8),
+`mlx_whisper.MODEL_MAP` có 12. Khoá là **đường dẫn thật ở thượng nguồn** — xem
+[`22`](22_dat-ten-model-theo-duong-dan-that.md). Danh mục hiển thị ở màn Quản lý model
 (`application/presets.ts`) liệt kê đủ cả hai, kèm **dung lượng thật lấy từ API của
 HuggingFace** chứ không phải số ước lượng.
 
-Nhân tiện sửa được hai con số sai trong danh mục cũ: `whisper-large-v3-turbo-q5` là
+Nhân tiện sửa được hai con số sai trong danh mục cũ: `ggml-large-v3-turbo-q5_0.bin` là
 **574 MB** (không phải 809 MB) và `-q8` là **874 MB** (không phải 1,2 GB).
 
 Cố ý **không** đưa vào các biến thể English-only (`small.en`, `medium.en`…) dù
 whisper.cpp có: ứng dụng luôn phải nhận cả vi/ja/zh, model English-only sẽ trả rác cho
 ba thứ tiếng đó. Ai muốn đo riêng chiều en→vi vẫn đặt thẳng `small.en` vào preset được
-— `MODEL_MAP` chỉ là lớp đặt tên, tên lạ được truyền thẳng xuống pywhispercpp.
+— tên lạ được truyền thẳng xuống pywhispercpp.
 
 ---
 
@@ -79,11 +80,11 @@ model của hai runtime không thay nhau được (`large-v3-turbo-q5_0` và
 `mlx-community/whisper-large-v3-turbo-asr-8bit`), nên `PresetConfig.asr_alternatives`
 giữ bảng tương đương và `asr_model(cfg, adapter)` tra sang cột đúng:
 
-| Preset   | whisper.cpp                 | mlx_whisper                     |
-| -------- | --------------------------- | ------------------------------- |
-| Fast     | `whisper-small-q5`          | `mlx-whisper-small-q8`          |
-| Balanced | `whisper-large-v3-turbo-q5` | `mlx-whisper-large-v3-turbo-q8` |
-| Quality  | `whisper-large-v3-turbo-q8` | `mlx-whisper-large-v3-turbo`    |
+| Preset   | whisper.cpp                    | mlx_whisper                                     |
+| -------- | ------------------------------ | ----------------------------------------------- |
+| Fast     | `ggml-small-q5_1.bin`          | `mlx-community/whisper-small-asr-8bit`          |
+| Balanced | `ggml-large-v3-turbo-q5_0.bin` | `mlx-community/whisper-large-v3-turbo-asr-8bit` |
+| Quality  | `ggml-large-v3-turbo-q8_0.bin` | `mlx-community/whisper-large-v3-turbo-asr-fp16` |
 
 Đặt sai tên adapter thì service **cảnh báo trong log rồi dùng tiếp adapter của preset**,
 không chết lúc khởi động.

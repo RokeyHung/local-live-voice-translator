@@ -42,7 +42,7 @@ def _asr(
 ) -> tuple[MlxWhisperAsr, FakeMlxModel]:
     model = FakeMlxModel(segments)
     asr = MlxWhisperAsr(
-        "mlx-whisper-small-q8",
+        "mlx-community/whisper-small-asr-8bit",
         models_dir=None,
         loader=lambda _repo, _dir: model,
         **kwargs,  # type: ignore[arg-type]
@@ -55,7 +55,7 @@ def _asr(
 
 
 def test_logical_names_map_to_mlx_community_repos():
-    assert MODEL_MAP["mlx-whisper-large-v3-turbo-q8"] == (
+    assert MODEL_MAP["mlx-community/whisper-large-v3-turbo-asr-8bit"] == (
         "mlx-community/whisper-large-v3-turbo-asr-8bit"
     )
 
@@ -94,7 +94,7 @@ def test_unload_releases_the_model_and_can_be_repeated():
 
 
 def test_transcribe_before_load_is_an_error_not_an_empty_result():
-    asr = MlxWhisperAsr("mlx-whisper-small-q8")
+    asr = MlxWhisperAsr("mlx-community/whisper-small-asr-8bit")
     with pytest.raises(RuntimeError, match="chưa load"):
         asyncio.run(asr.transcribe(b"\x00\x00", Language.vi))
 

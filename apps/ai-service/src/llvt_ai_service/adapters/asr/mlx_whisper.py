@@ -40,21 +40,23 @@ logger = logging.getLogger("llvt.adapters.asr.mlx_whisper")
 
 SAMPLE_RATE = 16000
 
-# Tên model logic -> repo HF. Giữ đúng lối đặt tên của MODEL_MAP bên whisper_cpp
-# (`mlx-whisper-<cỡ>-<độ chính xác>`) để preset và danh mục đọc như nhau.
+# Repo HF mà adapter này chạy được. Khoá = giá trị = **đường dẫn thật**: bảng ở đây
+# là danh sách model app biết (dùng để kiểm tra tên và dựng ô chọn), không phải một
+# lớp đổi tên. Repo nào không có trong bảng vẫn nạp được (truyền thẳng), chỉ là app
+# không tự biết dung lượng của nó.
 MODEL_MAP: dict[str, str] = {
-    "mlx-whisper-tiny-q4": "mlx-community/whisper-tiny-asr-4bit",
-    "mlx-whisper-tiny-q8": "mlx-community/whisper-tiny-asr-8bit",
-    "mlx-whisper-tiny": "mlx-community/whisper-tiny-asr-fp16",
-    "mlx-whisper-small-q4": "mlx-community/whisper-small-asr-4bit",
-    "mlx-whisper-small-q8": "mlx-community/whisper-small-asr-8bit",
-    "mlx-whisper-small": "mlx-community/whisper-small-asr-fp16",
-    "mlx-whisper-large-v3-q4": "mlx-community/whisper-large-v3-asr-4bit",
-    "mlx-whisper-large-v3-q8": "mlx-community/whisper-large-v3-asr-8bit",
-    "mlx-whisper-large-v3": "mlx-community/whisper-large-v3-asr-fp16",
-    "mlx-whisper-large-v3-turbo-q4": "mlx-community/whisper-large-v3-turbo-asr-4bit",
-    "mlx-whisper-large-v3-turbo-q8": "mlx-community/whisper-large-v3-turbo-asr-8bit",
-    "mlx-whisper-large-v3-turbo": "mlx-community/whisper-large-v3-turbo-asr-fp16",
+    "mlx-community/whisper-tiny-asr-4bit": "mlx-community/whisper-tiny-asr-4bit",
+    "mlx-community/whisper-tiny-asr-8bit": "mlx-community/whisper-tiny-asr-8bit",
+    "mlx-community/whisper-tiny-asr-fp16": "mlx-community/whisper-tiny-asr-fp16",
+    "mlx-community/whisper-small-asr-4bit": "mlx-community/whisper-small-asr-4bit",
+    "mlx-community/whisper-small-asr-8bit": "mlx-community/whisper-small-asr-8bit",
+    "mlx-community/whisper-small-asr-fp16": "mlx-community/whisper-small-asr-fp16",
+    "mlx-community/whisper-large-v3-asr-4bit": "mlx-community/whisper-large-v3-asr-4bit",
+    "mlx-community/whisper-large-v3-asr-8bit": "mlx-community/whisper-large-v3-asr-8bit",
+    "mlx-community/whisper-large-v3-asr-fp16": "mlx-community/whisper-large-v3-asr-fp16",
+    "mlx-community/whisper-large-v3-turbo-asr-4bit": "mlx-community/whisper-large-v3-turbo-asr-4bit",
+    "mlx-community/whisper-large-v3-turbo-asr-8bit": "mlx-community/whisper-large-v3-turbo-asr-8bit",
+    "mlx-community/whisper-large-v3-turbo-asr-fp16": "mlx-community/whisper-large-v3-turbo-asr-fp16",
 }
 
 # Tham số giải mã. Cố ý ĐỐI XỨNG với DECODE_PARAMS của whisper_cpp: hai backend chỉ

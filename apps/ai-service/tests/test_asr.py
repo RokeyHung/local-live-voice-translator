@@ -37,7 +37,7 @@ class RecordingModel:
         return self._segments
 
 
-def _make_asr(segments: list[RecordingSegment], model: str = "whisper-small-q5"):
+def _make_asr(segments: list[RecordingSegment], model: str = "ggml-small-q5_1.bin"):
     """Dựng adapter với loader tiêm sẵn, trả (adapter, model_giả)."""
     fake = RecordingModel(segments)
     asr = WhisperCppAsr(model, models_dir="/tmp/x", loader=lambda _id, _dir: fake)
@@ -45,9 +45,9 @@ def _make_asr(segments: list[RecordingSegment], model: str = "whisper-small-q5")
 
 
 def test_model_name_maps_to_ggml_id():
-    assert MODEL_MAP["whisper-small-q5"] == "small-q5_1"
-    assert MODEL_MAP["whisper-large-v3-turbo-q5"] == "large-v3-turbo-q5_0"
-    assert MODEL_MAP["whisper-large-v3-turbo-q8"] == "large-v3-turbo-q8_0"
+    assert MODEL_MAP["ggml-small-q5_1.bin"] == "small-q5_1"
+    assert MODEL_MAP["ggml-large-v3-turbo-q5_0.bin"] == "large-v3-turbo-q5_0"
+    assert MODEL_MAP["ggml-large-v3-turbo-q8_0.bin"] == "large-v3-turbo-q8_0"
     # Tên lạ giữ nguyên (cho phép truyền thẳng đường dẫn/id GGML).
     asr = WhisperCppAsr("small.en-q5_1", loader=lambda _i, _d: RecordingModel([]))
     assert asr._model_id == "small.en-q5_1"
@@ -61,7 +61,7 @@ def test_loader_receives_mapped_id_and_dir():
         captured["dir"] = models_dir
         return RecordingModel([])
 
-    asr = WhisperCppAsr("whisper-small-q5", models_dir="/models/w", loader=loader)
+    asr = WhisperCppAsr("ggml-small-q5_1.bin", models_dir="/models/w", loader=loader)
     asyncio.run(asr.load())
     assert captured == {"id": "small-q5_1", "dir": "/models/w"}
 
@@ -145,7 +145,7 @@ def test_real_small_model_transcribes_without_error():
 
         return Model(model_id, models_dir=models_dir, redirect_whispercpp_logs_to=None)
 
-    asr = WhisperCppAsr("whisper-small-q5", models_dir="/tmp/llvt-asr-it", loader=real_loader)
+    asr = WhisperCppAsr("ggml-small-q5_1.bin", models_dir="/tmp/llvt-asr-it", loader=real_loader)
     asyncio.run(asr.load())
     sr = 16000
     t = np.arange(sr, dtype=np.float32) / sr
