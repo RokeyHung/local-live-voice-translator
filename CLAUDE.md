@@ -26,6 +26,7 @@ make setup     # install deps for both apps (uv sync + npm install)
 make dev       # run AI service + desktop together (Ctrl+C stops both)
 make service   # run AI service only (http://127.0.0.1:8756)
 make desktop   # run desktop only (electron-vite dev)
+make preview   # build desktop, then run service + the built app (electron-vite preview, no HMR)
 make build     # typecheck + build desktop
 make test      # pytest for ai-service
 make lint      # eslint (desktop) + ruff check (service)

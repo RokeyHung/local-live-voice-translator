@@ -15,7 +15,7 @@ PREFIX      ?= rec
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup setup-service setup-desktop dev service desktop \
+.PHONY: help setup setup-service setup-desktop dev service desktop preview \
         build typecheck lint format format-docs health docs test bench accuracy soak segment clean
 
 help: ## Hiện danh sách lệnh
@@ -43,6 +43,14 @@ service: ## Chỉ chạy Local AI service (http://127.0.0.1:8756)
 
 desktop: ## Chỉ chạy desktop client (electron-vite dev)
 	cd $(DESKTOP_DIR) && $(NPM) run dev
+
+preview: build ## Chạy AI service + desktop từ bản build (không HMR, Ctrl+C dừng cả hai)
+	@echo "▶ AI service + desktop (bản build)… (Ctrl+C to stop)"
+	@cd $(AI_DIR) && $(UV) run llvt-ai-service & \
+	SVC=$$!; \
+	trap 'kill $$SVC 2>/dev/null' EXIT INT TERM; \
+	sleep 1; \
+	cd $(DESKTOP_DIR) && $(NPM) start
 
 build: ## Build desktop (typecheck + electron-vite build)
 	cd $(DESKTOP_DIR) && $(NPM) run build
