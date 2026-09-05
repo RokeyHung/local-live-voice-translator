@@ -69,6 +69,18 @@ export interface ConfigResponse {
   hfTokenSource: HfTokenSource
   hfTokenHint: string
   hfTokenEditable: boolean // false khi LLVT_HF_TOKEN đang quyết định
+  // Bộ model của preset 'custom' + những lựa chọn service thật sự chạy được.
+  custom: CustomChoice | null
+}
+
+export interface CustomChoice {
+  asrAdapter: string
+  asrModel: string
+  mtModel: string
+  // Danh sách lấy từ registry của service — giao diện không chép tay bảng nào.
+  asrAdapterChoices: string[]
+  asrModelChoices: string[]
+  mtModelChoices: string[]
 }
 
 // 'env' = LLVT_HF_TOKEN (app không sửa được) · 'saved' = ô nhập trong app ·
@@ -83,7 +95,8 @@ export interface HfVerifyResult {
 }
 
 // Tiến trình nạp model (GET /api/models/progress), hỏi trong lúc lệnh nạp đang chạy.
-export type LoadStageStatus = 'waiting' | 'downloading' | 'loading' | 'done' | 'failed'
+export type LoadStageStatus =
+  'waiting' | 'downloading' | 'loading' | 'done' | 'failed' | 'cancelled'
 
 export interface StageProgress {
   stage: Stage
@@ -100,10 +113,18 @@ export interface StageProgress {
 
 export interface LoadProgress {
   active: boolean
+  cancelling: boolean // đã bấm Huỷ, đang chờ khâu hiện tại chạy nốt
   currentStage: Stage | null
   overallPercent: number | null
   error: string | null
   stages: StageProgress[]
+}
+
+// Kết quả POST /api/models/download.
+export interface DownloadedModel {
+  name: string
+  stage: Stage
+  path: string
 }
 
 // Kết quả DELETE /api/models.
@@ -184,6 +205,9 @@ export interface SessionConfig {
   outgoing: LanguagePair // user → remote (Speak)
   incoming: LanguagePair // remote → user (Listen)
   preset: Preset
+  // SPEC 7.10: dừng lại cho người dùng sửa bản dịch trước khi đọc ra micro ảo.
+  // Chỉ áp cho chiều outgoing — câu của phía bên kia không phải của mình mà sửa.
+  reviewBeforeSpeaking: boolean
 }
 
 // Một utterance hiển thị trên subtitle: gom asr.final + mt.result + tts.audio theo id.
@@ -280,15 +304,20 @@ export const DEFAULT_SESSION_CONFIG: SessionConfig = {
   mode: 'two_way',
   outgoing: { source: 'vi', target: 'en' },
   incoming: { source: 'en', target: 'vi' },
-  preset: 'balanced'
+  preset: 'balanced',
+  // Mặc định TẮT: chế độ dịch trực tiếp lấy độ trễ thấp làm chính, còn duyệt tay thì
+  // mỗi câu phải chờ người dùng bấm. Bật ở màn Cài đặt khi cần chính xác hơn nhanh.
+  reviewBeforeSpeaking: false
 }
 
 export const LANGUAGES: Language[] = ['vi', 'en', 'ja', 'zh']
 
+// Ba mức dựng sẵn; 'custom' hiện riêng ở ô thứ tư nên không nằm trong danh sách này.
 export const PRESETS: Preset[] = ['fast', 'balanced', 'quality']
 
 export const PRESET_LABELS: Record<Preset, string> = {
   fast: 'Fast',
   balanced: 'Balanced',
-  quality: 'Quality'
+  quality: 'Quality',
+  custom: 'Custom'
 }

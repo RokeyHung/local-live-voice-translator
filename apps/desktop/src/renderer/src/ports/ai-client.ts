@@ -5,6 +5,7 @@ import type {
   BenchmarkResponse,
   ConfigResponse,
   DeletedModels,
+  DownloadedModel,
   HealthResponse,
   HfVerifyResult,
   HistorySession,
@@ -37,6 +38,17 @@ export interface AiClient {
   setHistoryEnabled(preset: Preset, enabled: boolean): Promise<ConfigResponse>
   // Đổi thư mục lưu model; service lưu lại và giải phóng model đang nạp.
   setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse>
+  // Lựa chọn model cho preset 'custom'; khoá nào bỏ trống là giữ nguyên.
+  setCustomModels(
+    preset: Preset,
+    choice: { asrAdapter?: string; asrModel?: string; mtModel?: string }
+  ): Promise<ConfigResponse>
+  // Dừng lượt nạp đang chạy (dừng ở ranh giới khâu kế tiếp).
+  cancelLoadModels(): Promise<void>
+  // Tải một model trong danh mục về đĩa, KHÔNG nạp vào bộ nhớ.
+  downloadModel(name: string): Promise<DownloadedModel>
+  // Xoá đúng một model đã tải, theo `path` mà GET /api/models trả về.
+  deleteInstalledModel(path: string): Promise<DeletedModels>
   // Lưu access token HuggingFace ở phía service (chuỗi rỗng = gỡ token đã lưu).
   // Token không bao giờ đi ngược lại về renderer.
   setHfToken(preset: Preset, token: string): Promise<ConfigResponse>

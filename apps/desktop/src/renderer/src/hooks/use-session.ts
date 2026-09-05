@@ -12,6 +12,9 @@ export interface SessionActions {
   ptt: (pressed: boolean) => void
   mute: (muted: boolean) => void
   stop: () => void
+  // Duyệt trước khi gửi (SPEC 7.10): gửi bản đã sửa đi đọc, hoặc bỏ hẳn câu đó.
+  confirm: (utteranceId: string, text: string) => void
+  discard: (utteranceId: string) => void
 }
 
 export function useSession(): SessionActions {
@@ -33,6 +36,8 @@ export function useSession(): SessionActions {
     start: () => void ref.current?.start(),
     ptt: (pressed) => ref.current?.ptt(pressed),
     mute: (muted) => ref.current?.mute(muted),
-    stop: () => ref.current?.stop()
+    stop: () => ref.current?.stop(),
+    confirm: (utteranceId, text) => ref.current?.confirm(utteranceId, text),
+    discard: (utteranceId) => ref.current?.discard(utteranceId)
   }
 }

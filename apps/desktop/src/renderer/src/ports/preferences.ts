@@ -7,6 +7,8 @@ export interface StoredPreferences {
   theme: ThemeMode
   uiLanguage: UiLanguage
   layout: SessionLayout
+  reviewBeforeSpeaking: boolean
+  reviewCountdownSec: number
   glossary: GlossaryEntry[]
   inputDeviceId: string
   outputDeviceId: string

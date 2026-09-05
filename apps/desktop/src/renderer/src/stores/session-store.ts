@@ -50,6 +50,10 @@ interface SessionState {
   // Id phiên trong lịch sử của service (service gửi kèm event state khi bắt đầu).
   historySessionId: string | null
   utterances: Utterance[]
+  // Bản nháp trong ô "duyệt trước khi gửi", theo id câu (SPEC 7.10). Có khoá ở đây
+  // nghĩa là câu đó đang chờ người dùng bấm Gửi/Bỏ. Mồi bằng chính bản dịch máy để
+  // người dùng sửa chứ không phải gõ lại từ đầu.
+  reviewDrafts: Record<string, string>
   partial: { utteranceId: string; text: string } | null
   micLevel: number // RMS 0..1 của khung mic gần nhất
   systemLevel: number // RMS 0..1 của khung âm thanh hệ thống gần nhất
@@ -68,6 +72,9 @@ interface SessionState {
   setSystemLevel: (level: number) => void
   setSystemCapturing: (capturing: boolean) => void
   setDucking: (ducking: boolean) => void
+  setReviewDraft: (utteranceId: string, text: string) => void
+  // Đã bấm Gửi/Bỏ: quên bản nháp đi. Trạng thái câu do service báo về sau đó.
+  resolveReview: (utteranceId: string) => void
   applyMessage: (msg: WsMessage) => void
   clearTranscript: () => void
   reset: () => void
@@ -114,6 +121,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   pipelineState: null,
   historySessionId: null,
   utterances: [],
+  reviewDrafts: {},
   partial: null,
   micLevel: 0,
   systemLevel: 0,
@@ -132,6 +140,14 @@ export const useSessionStore = create<SessionState>((set) => ({
   setSystemLevel: (systemLevel): void => set({ systemLevel }),
   setSystemCapturing: (systemCapturing): void => set({ systemCapturing }),
   setDucking: (ducking): void => set({ ducking }),
+  setReviewDraft: (utteranceId, text): void =>
+    set((s) => ({ reviewDrafts: { ...s.reviewDrafts, [utteranceId]: text } })),
+  resolveReview: (utteranceId): void =>
+    set((s) => {
+      const rest = { ...s.reviewDrafts }
+      delete rest[utteranceId]
+      return { reviewDrafts: rest }
+    }),
 
   applyMessage: (msg): void =>
     set((s) => {
@@ -182,6 +198,16 @@ export const useSessionStore = create<SessionState>((set) => ({
           }
 
           let utterances = upsert(s.utterances, utteranceId, patch)
+
+          // Câu vừa chuyển sang chờ duyệt: mồi ô sửa bằng chính bản dịch máy (đã
+          // tới trước qua `mt.result`). Không ghi đè nếu người dùng đã gõ gì đó —
+          // service có thể gửi lại `state` mà không được xoá công sửa của họ.
+          let reviewDrafts = s.reviewDrafts
+          if (state === 'WaitingForConfirmation' && !(utteranceId in reviewDrafts)) {
+            const pending = utterances.find((u) => u.id === utteranceId)
+            reviewDrafts = { ...reviewDrafts, [utteranceId]: pending?.translatedText ?? '' }
+          }
+
           if (state === 'Completed') {
             const kept = dropIfEmpty(utterances, utteranceId)
             // Chỉ đếm những câu thật sự ra chữ — không thì mỗi khoảng lặng cũng làm
@@ -198,6 +224,7 @@ export const useSessionStore = create<SessionState>((set) => ({
             historySessionId,
             partial: state === 'Completed' ? null : s.partial,
             utterances,
+            reviewDrafts,
             metrics
           }
         }
@@ -267,6 +294,7 @@ export const useSessionStore = create<SessionState>((set) => ({
     marks.clear()
     set({
       utterances: [],
+      reviewDrafts: {},
       partial: null,
       metrics: EMPTY_METRICS,
       lastError: null,
@@ -279,6 +307,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       pipelineState: null,
       historySessionId: null,
       utterances: [],
+      reviewDrafts: {},
       partial: null,
       metrics: EMPTY_METRICS,
       lastError: null,

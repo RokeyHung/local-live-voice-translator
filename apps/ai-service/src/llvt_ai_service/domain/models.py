@@ -35,6 +35,10 @@ class SessionConfig:
     incoming: LanguagePair | None = None  # remote -> user (Listen)
     outgoing: LanguagePair | None = None  # user -> remote (Speak)
     preset: Preset = Preset.balanced
+    # SPEC 7.10 "Review before speaking": dừng lại cho người dùng sửa bản dịch trước
+    # khi tổng hợp giọng. Chỉ áp cho chiều **outgoing** — câu của phía bên kia thì
+    # không có gì để sửa, mình đâu phải người nói ra nó.
+    review_before_speaking: bool = False
 
 
 @dataclass

@@ -57,6 +57,7 @@ class SessionController:
                 synthesize=True,
                 session_id=session_id,
                 repository=self._repo,
+                review=config.review_before_speaking,
             )
         # Kèm sessionId để client biết phiên nào trong lịch sử ứng với phiên đang chạy.
         await self._emit(ev.StateChanged(PipelineState.listening, session_id=session_id))
@@ -88,6 +89,26 @@ class SessionController:
         if self._outgoing is not None and self._ptt_active and not self._muted:
             await self._outgoing.feed(chunk)
 
+    async def confirm(self, utterance_id: str, text: str | None = None) -> None:
+        """Người dùng bấm Gửi ở ô duyệt (SPEC 7.10) — đọc câu đã sửa ra micro ảo."""
+        if self._outgoing is None:
+            return
+        if not await self._outgoing.confirm(utterance_id, text):
+            # Bấm hai lần, hoặc bấm sau khi phiên đã dừng. Báo lại cho client biết
+            # chứ không im lặng — nút bấm mà không có gì xảy ra là thứ khó hiểu nhất.
+            await self._emit(
+                ev.PipelineError(
+                    code="review_expired",
+                    message="Câu này không còn chờ duyệt nữa.",
+                    utterance_id=utterance_id,
+                )
+            )
+
+    async def discard(self, utterance_id: str) -> None:
+        """Người dùng bấm Bỏ ở ô duyệt — không đọc ra, nhưng vẫn giữ trong lịch sử."""
+        if self._outgoing is not None:
+            await self._outgoing.discard_pending(utterance_id)
+
     async def stop(self) -> None:
         session_id = ""
         if self._session is not None:
@@ -96,6 +117,9 @@ class SessionController:
             # lần mở app sau nghĩa là app tắt đột ngột giữa phiên.
             await self._repo.save_session(self._session)
             session_id = self._session.id
+        if self._outgoing is not None:
+            # Câu treo chờ duyệt mà phiên đã dừng thì không còn đường gửi đi nữa.
+            self._outgoing.clear_pending()
         self._incoming = None
         self._outgoing = None
         self._ptt_active = False

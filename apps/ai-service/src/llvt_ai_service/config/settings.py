@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     # Model tương ứng lấy từ `PresetConfig.asr_alternatives` nên vẫn đúng mức đã chọn.
     asr_adapter: str = ""
 
+    # Lựa chọn model của preset `custom` (màn Quản lý model → ô "Tự chọn"). Trống =
+    # lấy theo Balanced. Lưu vào ~/.llvt/settings.json qua PUT /api/config.
+    custom_asr_adapter: str = ""
+    custom_asr_model: str = ""
+    custom_mt_model: str = ""
+
     # --- Tách người nói (diarization) — chỉ dùng cho màn Nhập tệp ---------------
     #
     # Mặc định TẮT vì hai lẽ: model pyannote là repo *gated* (lần tải đầu cần access

@@ -45,6 +45,10 @@ class Preset(str, Enum):
     fast = "fast"
     balanced = "balanced"
     quality = "quality"
+    # Người dùng tự chọn model cho từng khâu (SPEC 3.1 "cho phép lựa chọn model").
+    # Lựa chọn cụ thể nằm ở `~/.llvt/settings.json`, không nằm trong enum này —
+    # đây chỉ là "đang dùng bộ tự chọn" chứ không phải một bộ model cố định.
+    custom = "custom"
 
 
 class UtteranceStatus(str, Enum):

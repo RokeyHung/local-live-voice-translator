@@ -44,6 +44,17 @@ export const PRESET_META: Record<Preset, PresetMeta> = {
     tint: 'rgba(168,85,247,.12)',
     descVi: 'Whisper Q8 + NLLB-600M. Chất lượng cao nhất.',
     descEn: 'Whisper Q8 + NLLB-600M. Highest quality.'
+  },
+  // RAM để bằng Balanced vì đó là gốc của bộ tự chọn; chọn model to hơn thì con số
+  // này thành thiếu, nhưng cảnh báo hụt còn hơn cảnh báo sai.
+  custom: {
+    id: 'custom',
+    name: 'Custom',
+    ramGb: 6,
+    color: '#f472b6',
+    tint: 'rgba(244,114,182,.12)',
+    descVi: 'Tự chọn model cho khâu ASR và MT.',
+    descEn: 'Pick your own ASR and MT models.'
   }
 }
 

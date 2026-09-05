@@ -147,6 +147,34 @@ def file_bytes(path: Path) -> int:
     return total
 
 
+class NotManagedError(ValueError):
+    """Đường dẫn nằm ngoài những thư mục app tự tạo — từ chối xoá."""
+
+
+def remove_one(models_dir: Path, path: str) -> int:
+    """Xoá đúng một model đã tải; trả số byte giải phóng.
+
+    ``path`` phải là đường dẫn ``GET /api/models`` vừa trả về. Kiểm tra lại chứ không
+    tin: nhận một đường dẫn tuỳ ý từ REST rồi ``rmtree`` là cách nhanh nhất để xoá
+    nhầm thư mục của người dùng. Hai điều kiện phải đúng cả hai — nằm trong một
+    ``MANAGED_DIRS``, và là thứ ``scan()`` thật sự liệt kê.
+    """
+    target = Path(path).resolve()
+    roots = [(models_dir / name).resolve() for name in MANAGED_DIRS]
+    if not any(target.is_relative_to(root) and target != root for root in roots):
+        raise NotManagedError(f"{path} không nằm trong thư mục model do app quản lý.")
+    if target not in {Path(m.path).resolve() for m in scan(models_dir)}:
+        raise NotManagedError(f"{path} không phải model đã tải nào.")
+
+    size = _dir_size(target) if target.is_dir() else target.stat().st_size
+    if target.is_dir():
+        shutil.rmtree(target)
+    else:
+        target.unlink()
+    logger.info("Đã xoá model %s (%d byte)", target, size)
+    return size
+
+
 def purge(models_dir: Path) -> tuple[list[str], int]:
     """Xoá model đã tải; trả (tên thư mục đã xoá, số byte giải phóng).
 

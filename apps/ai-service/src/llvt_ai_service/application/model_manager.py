@@ -151,6 +151,18 @@ class ModelLoadError(RuntimeError):
         super().__init__(f"Không nạp được model cho khâu {stage}: {cause}")
 
 
+class ModelLoadCancelled(RuntimeError):
+    """Người dùng bấm Huỷ giữa lượt nạp.
+
+    Kiểu riêng để transport phân biệt với ``ModelLoadError``: không có gì hỏng cả,
+    nên REST trả 409 chứ không phải 503, và giao diện không hiện thông báo lỗi đỏ.
+    """
+
+    def __init__(self, stage: str) -> None:
+        self.stage = stage
+        super().__init__(f"Đã dừng lượt nạp model trước khâu {stage}")
+
+
 @dataclass
 class StageInfo:
     """Một khâu của pipeline với thông tin THẬT lấy từ provider đang chạy."""
@@ -283,6 +295,15 @@ class ModelManager:
         # context Metal — và lần bấm "Khởi động model" tiếp theo lại nạp thêm một bộ.
         loaded: list[Any] = []
         for stage, provider, _model, watch_dir, note, required in plan:
+            if progress.cancel_requested:
+                # Người dùng bấm Huỷ. Kiểm ở RANH GIỚI khâu vì không giết ngang được
+                # một lượt tải đang chạy trong worker thread — nhưng vẫn cứu được
+                # những khâu sau, mà đó mới là chỗ tốn (NLLB ~2,4 GB).
+                logger.info("Huỷ lượt nạp model trước khâu %s theo yêu cầu", stage)
+                for done in loaded:
+                    await done.unload()
+                progress.cancelled()
+                raise ModelLoadCancelled(stage)
             progress.stage_begin(stage, watch_dir)
             try:
                 await provider.load()

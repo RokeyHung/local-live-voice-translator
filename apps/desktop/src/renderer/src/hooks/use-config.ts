@@ -11,6 +11,7 @@ import type {
   BenchmarkResponse,
   ConfigResponse,
   DeletedModels,
+  DownloadedModel,
   HfVerifyResult,
   InstalledModel,
   LoadProgress,
@@ -159,6 +160,53 @@ export function useVerifyHfToken(): UseMutationResult<HfVerifyResult, Error, str
   return useMutation({
     mutationFn: (token: string) => client.verifyHfToken(token),
     retry: false
+  })
+}
+
+// Dừng lượt nạp đang chạy. Không invalidate gì: `POST /api/models/load` sẽ tự trả
+// 409 và cập nhật lại cấu hình khi nó thoát.
+export function useCancelLoadModels(): UseMutationResult<void, Error, void> {
+  return useMutation({ mutationFn: () => client.cancelLoadModels(), retry: false })
+}
+
+// Tải một model trong danh mục về đĩa (không nạp vào bộ nhớ, không đổi preset).
+export function useDownloadModel(): UseMutationResult<DownloadedModel, Error, string> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    // Tải hàng GB trong một request — đừng tự thử lại, sẽ tải chồng lên nhau.
+    mutationFn: (name: string) => client.downloadModel(name),
+    retry: false,
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+      void queryClient.invalidateQueries({ queryKey: ['storage'] })
+      logInfo('models', (L) => format(L.logModelDownloaded, { name: data.name }))
+    }
+  })
+}
+
+// Xoá đúng một model đã tải.
+export function useDeleteInstalledModel(): UseMutationResult<DeletedModels, Error, string> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (path: string) => client.deleteInstalledModel(path),
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: ['installed-models'] })
+      void queryClient.invalidateQueries({ queryKey: ['storage'] })
+      logInfo('models', (L) => format(L.logModelDeleted, { size: formatBytes(data.freedBytes) }))
+    }
+  })
+}
+
+// Lưu lựa chọn model cho preset 'custom'.
+export function useSetCustomModels(): UseMutationResult<
+  ConfigResponse,
+  Error,
+  { preset: Preset; choice: { asrAdapter?: string; asrModel?: string; mtModel?: string } }
+> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ preset, choice }) => client.setCustomModels(preset, choice),
+    onSuccess: (data) => queryClient.setQueryData(['config'], data)
   })
 }
 

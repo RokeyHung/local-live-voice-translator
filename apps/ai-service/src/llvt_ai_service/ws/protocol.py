@@ -94,7 +94,20 @@ def parse_session_config(payload: dict[str, Any]) -> SessionConfig:
         incoming=pair("incomingSource", "incomingTarget"),
         outgoing=pair("outgoingSource", "outgoingTarget"),
         preset=Preset(payload.get("preset", "balanced")),
+        review_before_speaking=bool(payload.get("reviewBeforeSpeaking", False)),
     )
+
+
+def parse_review_action(payload: dict[str, Any]) -> tuple[str, str | None]:
+    """`(utteranceId, text)` của control.confirm / control.discard.
+
+    `text` là bản người dùng đã sửa; None khi client không gửi (đọc nguyên bản dịch
+    máy). Cắt độ dài để một client hỏng không đẩy được cả quyển sách vào TTS.
+    """
+    utterance_id = str(payload.get("utteranceId", "")).strip()
+    raw = payload.get("text")
+    text = raw[:2000] if isinstance(raw, str) else None
+    return utterance_id, text
 
 
 def parse_session_title(payload: dict[str, Any]) -> str:

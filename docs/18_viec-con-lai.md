@@ -176,6 +176,23 @@ Code đã xong và test sạch, phần **chạy thật thì chưa**:
 
 ---
 
+## 8. Đợt 05/09 (2) — nhóm A: tính năng có chỗ trong UI nhưng thiếu backend
+
+Chi tiết ở [`20_duyet-truoc-khi-gui-va-quan-ly-model.md`](20_duyet-truoc-khi-gui-va-quan-ly-model.md).
+Rà toàn bộ `DisabledButton` / `notSupported` / enum không ai phát ra thì còn đúng năm
+chỗ, đã đóng cả năm. Còn phải thử tay:
+
+- [ ] **Duyệt trước khi gửi trong một cuộc họp thật** — đếm ngược 5 giây có đủ để đọc
+      và sửa không, hay phải dài hơn. Bật ở màn Cài đặt.
+- [ ] **Nút Huỷ nạp model** mới thử được nhánh "không có gì đang chạy". Muốn thử đúng
+      đường dừng-giữa-chừng thì phải xoá model đi rồi bấm nạp lại.
+
+Sau đợt này, phần **code** còn thiếu của đồ án chỉ còn: màn hình đánh giá trong app
+(mục 3), và adapter `faster_whisper` vẫn là stub. Mọi thứ còn lại là chạy thật, đo, và
+Tuần 9.
+
+---
+
 ## Phụ lục — đã làm gì trong đợt 04/09
 
 | Commit    | Nội dung                                                                                                          |

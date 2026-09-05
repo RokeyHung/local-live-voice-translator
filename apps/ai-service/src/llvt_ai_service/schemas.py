@@ -30,6 +30,21 @@ class StageInfoSchema(BaseModel):
     loaded: bool
 
 
+class CustomChoiceSchema(BaseModel):
+    """Bộ model người dùng tự chọn cho preset `custom`, kèm những lựa chọn có thật.
+
+    Danh sách lựa chọn lấy từ chính registry của service chứ không chép tay ở giao
+    diện — thêm một adapter mới là ô chọn tự có thêm mục, không phải sửa hai nơi.
+    """
+
+    asrAdapter: str
+    asrModel: str
+    mtModel: str
+    asrAdapterChoices: list[str] = []
+    asrModelChoices: list[str] = []
+    mtModelChoices: list[str] = []
+
+
 class ConfigResponse(BaseModel):
     preset: Preset
     availablePresets: list[Preset]
@@ -57,6 +72,10 @@ class ConfigResponse(BaseModel):
     # False khi LLVT_HF_TOKEN đang quyết định → giao diện khoá ô nhập lại.
     hfTokenEditable: bool = True
 
+    # Bộ model của preset `custom` (kể cả khi đang chạy preset khác) — giao diện cần
+    # nó để vẽ sẵn ô "Tự chọn".
+    custom: CustomChoiceSchema | None = None
+
 
 class InstalledModelSchema(BaseModel):
     name: str
@@ -75,7 +94,7 @@ class StageProgressSchema(BaseModel):
 
     stage: str
     model: str
-    status: str  # waiting | downloading | loading | done | failed
+    status: str  # waiting | downloading | loading | done | failed | cancelled
     doneBytes: int
     totalBytes: int | None
     estimated: bool
@@ -85,6 +104,8 @@ class StageProgressSchema(BaseModel):
 
 class LoadProgressResponse(BaseModel):
     active: bool
+    # Đã bấm Huỷ nhưng khâu đang chạy chưa xong (giống `cancelling` của nhập tệp).
+    cancelling: bool = False
     currentStage: str | None
     overallPercent: float | None
     error: str | None
@@ -100,6 +121,11 @@ class ConfigUpdate(BaseModel):
     # None = giữ nguyên, chuỗi rỗng = XOÁ token đã lưu. Trả 409 nếu LLVT_HF_TOKEN
     # đang quyết định.
     hfToken: str | None = None
+    # Lựa chọn cho preset `custom`. None = giữ nguyên, chuỗi rỗng = trả khâu đó về
+    # mặc định (theo Balanced). Lưu lại kể cả khi đang chạy preset khác.
+    customAsrAdapter: str | None = None
+    customAsrModel: str | None = None
+    customMtModel: str | None = None
 
 
 class HfVerifyRequest(BaseModel):
@@ -116,6 +142,18 @@ class HfVerifyResponse(BaseModel):
     user: str = ""
     # Lý do khi không hợp lệ (hết hạn, sai, hoặc không có mạng).
     error: str = ""
+
+
+class DownloadRequest(BaseModel):
+    """Tên model trong danh mục (không phải đường dẫn file)."""
+
+    name: str
+
+
+class DownloadedModel(BaseModel):
+    name: str
+    stage: str  # ASR | MT | TTS | DIA
+    path: str  # nơi model vừa được tải về
 
 
 class DeletedModels(BaseModel):

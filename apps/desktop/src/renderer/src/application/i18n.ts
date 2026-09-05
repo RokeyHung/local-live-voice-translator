@@ -140,6 +140,7 @@ export interface Dict {
   lpLoading: string
   lpDone: string
   lpFailed: string
+  lpCancelled: string
   modelsIdleBadge: string
   mbIdleHint: string
   applyingPreset: string
@@ -147,6 +148,14 @@ export interface Dict {
   stageLbl: string
   adapterLbl: string
   customTitle: string
+  customAsrAdapter: string
+  customAsrModel: string
+  customMtModel: string
+  customApply: string
+  customNote: string
+  dlWorking: string
+  delOneTip: string
+  confirmDeleteOne: string
   customSub: string
   browseTitle: string
   browseSub: string
@@ -209,6 +218,8 @@ export interface Dict {
   logModelsUnloaded: string
   logPresetChanged: string
   logModelsDeleted: string
+  logModelDownloaded: string
+  logModelDeleted: string
   logModelsDirChanged: string
   logHfTokenSaved: string
   logHfTokenCleared: string
@@ -281,6 +292,18 @@ export interface Dict {
   tSystemSub: string
   tLightSub: string
   tDarkSub: string
+  reviewTitle: string
+  reviewSend: string
+  reviewDiscard: string
+  reviewAutoIn: string
+  reviewHint: string
+  reviewSectionTitle: string
+  reviewSectionDesc: string
+  reviewOn: string
+  reviewOff: string
+  reviewCountdownLbl: string
+  reviewCountdownOff: string
+  reviewMidSession: string
   hfTitle: string
   hfDesc: string
   hfPh: string
@@ -513,6 +536,7 @@ const vi: Dict = {
   lpLoading: 'đang nạp…',
   lpDone: 'xong',
   lpFailed: 'lỗi',
+  lpCancelled: 'đã dừng',
   modelsIdleBadge: 'Chưa nạp model',
   mbIdleHint: 'Bấm Bắt đầu để nạp',
   applyingPreset: 'Đang nạp preset…',
@@ -520,7 +544,15 @@ const vi: Dict = {
   stageLbl: 'Khâu',
   adapterLbl: 'Adapter',
   customTitle: 'Cấu hình tự chọn',
-  customSub: 'Chọn model riêng cho từng khâu — cần API model bên AI service.',
+  customSub: 'Chọn model riêng cho từng khâu.',
+  customAsrAdapter: 'Runtime ASR',
+  customAsrModel: 'Model ASR',
+  customMtModel: 'Model dịch',
+  customApply: 'Lưu lựa chọn',
+  customNote: 'Lưu xong bấm "Tự chọn" ở trên để chạy bộ này. Khâu VAD và TTS vẫn theo Balanced.',
+  dlWorking: 'Đang tải…',
+  delOneTip: 'Xoá model này',
+  confirmDeleteOne: 'Xoá model này khỏi đĩa? Lần nạp sau sẽ phải tải lại.',
   browseTitle: 'Tìm & tải model từ Hugging Face',
   browseSub: 'Danh mục tham khảo theo docs/02 — tải về chưa nối với AI service.',
   browseDisabled: 'Tải model từ giao diện chưa hỗ trợ.',
@@ -583,6 +615,8 @@ const vi: Dict = {
   logModelsUnloaded: 'Đã giải phóng model khỏi bộ nhớ',
   logPresetChanged: 'Đổi preset sang {preset}',
   logModelsDeleted: 'Đã xóa model trên đĩa, giải phóng {size}',
+  logModelDownloaded: 'Đã tải model {name}',
+  logModelDeleted: 'Đã xoá một model, giải phóng {size}',
   logModelsDirChanged: 'Đổi thư mục lưu model sang {dir}',
   logHfTokenSaved: 'Đã lưu access token HuggingFace',
   logHfTokenCleared: 'Đã gỡ access token HuggingFace',
@@ -659,6 +693,19 @@ const vi: Dict = {
   tSystemSub: 'Theo máy',
   tLightSub: 'Luôn sáng',
   tDarkSub: 'Luôn tối',
+  reviewTitle: 'Duyệt trước khi gửi',
+  reviewSend: 'Gửi',
+  reviewDiscard: 'Bỏ',
+  reviewAutoIn: 'tự gửi sau',
+  reviewHint: 'Enter để gửi · Esc để bỏ',
+  reviewSectionTitle: 'Duyệt trước khi gửi',
+  reviewSectionDesc:
+    'Dừng lại cho bạn sửa bản dịch trước khi đọc vào cuộc họp. Chính xác hơn, đổi lại mỗi câu phải chờ bạn bấm.',
+  reviewOn: 'Bật',
+  reviewOff: 'Tắt',
+  reviewCountdownLbl: 'Tự gửi sau',
+  reviewCountdownOff: 'Không tự gửi',
+  reviewMidSession: 'Đổi lúc đang có phiên chạy thì phải bắt đầu lại phiên mới có tác dụng.',
   hfTitle: 'Hugging Face Token',
   hfDesc:
     'Token để tải model cần quyền truy cập (gated). AI service giữ, không nằm trong trình duyệt.',
@@ -900,6 +947,7 @@ const en: Dict = {
   lpLoading: 'loading…',
   lpDone: 'done',
   lpFailed: 'failed',
+  lpCancelled: 'stopped',
   modelsIdleBadge: 'Models not loaded',
   mbIdleHint: 'Press Start to load',
   applyingPreset: 'Loading preset…',
@@ -907,7 +955,15 @@ const en: Dict = {
   stageLbl: 'Stage',
   adapterLbl: 'Adapter',
   customTitle: 'Custom configuration',
-  customSub: 'Pick a model per stage — needs a model API on the AI service.',
+  customSub: 'Pick a model per stage.',
+  customAsrAdapter: 'ASR runtime',
+  customAsrModel: 'ASR model',
+  customMtModel: 'Translation model',
+  customApply: 'Save choices',
+  customNote: 'After saving, hit "Custom" above to run it. VAD and TTS still follow Balanced.',
+  dlWorking: 'Downloading…',
+  delOneTip: 'Remove this model',
+  confirmDeleteOne: 'Remove this model from disk? The next load will re-download it.',
   browseTitle: 'Search & download from Hugging Face',
   browseSub: 'Reference catalog from docs/02 — downloading is not wired to the AI service.',
   browseDisabled: 'Downloading models from the UI is not supported.',
@@ -970,6 +1026,8 @@ const en: Dict = {
   logModelsUnloaded: 'Models freed from memory',
   logPresetChanged: 'Preset changed to {preset}',
   logModelsDeleted: 'Models deleted from disk, freed {size}',
+  logModelDownloaded: 'Downloaded model {name}',
+  logModelDeleted: 'Removed one model, freed {size}',
   logModelsDirChanged: 'Model folder changed to {dir}',
   logHfTokenSaved: 'Hugging Face access token saved',
   logHfTokenCleared: 'Hugging Face access token removed',
@@ -1047,6 +1105,19 @@ const en: Dict = {
   tSystemSub: 'Match OS',
   tLightSub: 'Always light',
   tDarkSub: 'Always dark',
+  reviewTitle: 'Review before speaking',
+  reviewSend: 'Send',
+  reviewDiscard: 'Discard',
+  reviewAutoIn: 'auto-send in',
+  reviewHint: 'Enter to send · Esc to discard',
+  reviewSectionTitle: 'Review before speaking',
+  reviewSectionDesc:
+    'Pause so you can edit the translation before it is spoken into the meeting. More accurate, but every sentence waits for you.',
+  reviewOn: 'On',
+  reviewOff: 'Off',
+  reviewCountdownLbl: 'Auto-send after',
+  reviewCountdownOff: 'Never auto-send',
+  reviewMidSession: 'Changing this during a running session takes effect on the next session.',
   hfTitle: 'Hugging Face Token',
   hfDesc: 'Token for downloading gated models. Held by the AI service, never by the browser.',
   hfPh: 'hf_xxxxxxxxxxxxxxxxxxxx',

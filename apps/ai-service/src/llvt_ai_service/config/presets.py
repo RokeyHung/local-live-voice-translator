@@ -89,5 +89,40 @@ PRESETS: dict[Preset, PresetConfig] = {
 }
 
 
+# Bộ tự chọn khởi điểm từ Balanced: người dùng mở màn Custom lần đầu thấy một cấu
+# hình chạy được, rồi đổi từng khâu — chứ không phải một biểu mẫu trống.
+CUSTOM_BASE = Preset.balanced
+
+
+def custom_config(asr_adapter: str = "", asr_model: str = "", mt_model: str = "") -> PresetConfig:
+    """Dựng ``PresetConfig`` cho preset ``custom`` từ lựa chọn đã lưu.
+
+    Khoá nào để trống thì lấy theo Balanced. Ngưỡng VAD cũng lấy của Balanced: đó là
+    tham số endpointing, không phải lựa chọn model, và bắt người dùng chỉnh chín con
+    số ms thì hại nhiều hơn lợi.
+    """
+    base = PRESETS[CUSTOM_BASE]
+    adapter = asr_adapter or base.asr_adapter
+    return PresetConfig(
+        vad_adapter=base.vad_adapter,
+        asr_adapter=adapter,
+        asr_model=asr_model or base.asr_alternatives.get(adapter) or base.asr_model,
+        mt_adapter=base.mt_adapter,
+        mt_model=mt_model or base.mt_model,
+        tts_adapter=base.tts_adapter,
+        vad=base.vad,
+        # Bộ tự chọn đã chỉ đích danh adapter + model, nên không còn "mức tương
+        # đương" nào để tra sang runtime khác.
+        asr_alternatives={},
+    )
+
+
 def get_preset_config(preset: Preset) -> PresetConfig:
+    if preset is Preset.custom:
+        from llvt_ai_service.config.settings import get_settings
+
+        settings = get_settings()
+        return custom_config(
+            settings.custom_asr_adapter, settings.custom_asr_model, settings.custom_mt_model
+        )
     return PRESETS[preset]

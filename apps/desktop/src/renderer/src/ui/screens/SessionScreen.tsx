@@ -22,6 +22,7 @@ import {
   ScreenHeader,
   Segmented
 } from '../components/primitives'
+import { ReviewPanel } from '../components/ReviewPanel'
 import { UtteranceBubble, UtteranceFocus, UtteranceRow } from '../components/UtteranceViews'
 import { Visualizer } from '../components/Visualizer'
 import { SCREEN, SELECT, SELECT_ARROW } from '../styles'
@@ -197,6 +198,7 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
   const layout = useUiStore((s) => s.layout)
   const setLayout = useUiStore((s) => s.setLayout)
   const glossary = useUiStore((s) => s.glossary)
+  const reviewCountdownSec = useUiStore((s) => s.reviewCountdownSec)
   const outputDeviceId = useUiStore((s) => s.outputDeviceId)
   const virtualMicDeviceId = useUiStore((s) => s.virtualMicDeviceId)
 
@@ -214,6 +216,8 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
   const systemCapturing = useSessionStore((s) => s.systemCapturing)
   const ducking = useSessionStore((s) => s.ducking)
   const utterances = useSessionStore((s) => s.utterances)
+  const reviewDrafts = useSessionStore((s) => s.reviewDrafts)
+  const setReviewDraft = useSessionStore((s) => s.setReviewDraft)
   const metrics = useSessionStore((s) => s.metrics)
   const wsStatus = useSessionStore((s) => s.wsStatus)
   const lastError = useSessionStore((s) => s.lastError)
@@ -235,6 +239,20 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
     () => utterances.map((u) => toView(u, utteranceSide(u, config), glossary)),
     [utterances, config, glossary]
   )
+  // Câu đang chờ duyệt. Suy từ trạng thái service báo về, không giữ danh sách riêng —
+  // service mới là bên biết câu nào còn treo.
+  const reviewItems = useMemo(
+    () =>
+      utterances
+        .filter((u) => u.state === 'WaitingForConfirmation')
+        .map((u) => ({
+          id: u.id,
+          sourceText: u.sourceText ?? '',
+          draft: reviewDrafts[u.id] ?? u.translatedText ?? ''
+        })),
+    [utterances, reviewDrafts]
+  )
+
   const remoteList = views.filter((u) => u.side === 'remote')
   const meList = views.filter((u) => u.side === 'me')
   const latest = views[views.length - 1] ?? null
@@ -334,6 +352,17 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
       {lastError && (
         <Notice tone="error" icon="warning" title={lastError.code} body={lastError.message} />
       )}
+
+      {/* Duyệt trước khi gửi (SPEC 7.10) — đặt TRÊN phần phụ đề vì nó đang chặn
+          luồng: chưa bấm thì chưa có gì phát ra cuộc họp. */}
+      <ReviewPanel
+        items={reviewItems}
+        countdownSec={reviewCountdownSec}
+        onEdit={setReviewDraft}
+        onSend={(id) => actions.confirm(id, reviewDrafts[id] ?? '')}
+        onDiscard={(id) => actions.discard(id)}
+        L={L}
+      />
 
       {/* nội dung theo bố cục */}
       {layout === 'split' && (

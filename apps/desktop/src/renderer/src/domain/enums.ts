@@ -21,7 +21,8 @@ export type Language = 'vi' | 'en' | 'ja' | 'zh'
 
 export type SessionMode = 'listen' | 'speak' | 'two_way'
 
-export type Preset = 'fast' | 'balanced' | 'quality'
+// 'custom' = người dùng tự chọn model từng khâu (lựa chọn nằm ở service).
+export type Preset = 'fast' | 'balanced' | 'quality' | 'custom'
 
 // Kết quả chạy pipeline của một câu trong lịch sử.
 export type UtteranceStatus = 'success' | 'failed'

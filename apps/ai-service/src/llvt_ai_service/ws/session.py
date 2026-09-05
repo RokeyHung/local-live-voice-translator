@@ -20,6 +20,7 @@ from llvt_ai_service.ws.protocol import (
     WsMessage,
     event_to_wire,
     parse_audio_chunk,
+    parse_review_action,
     parse_session_config,
     parse_session_title,
 )
@@ -91,6 +92,12 @@ async def _dispatch(controller: SessionController, raw: object, emit) -> None:
         await controller.on_ptt(bool(msg.payload.get("pressed")))
     elif msg.type == "control.mute":
         await controller.on_mute(bool(msg.payload.get("muted")))
+    elif msg.type == "control.confirm":
+        utterance_id, text = parse_review_action(msg.payload)
+        await controller.confirm(utterance_id, text)
+    elif msg.type == "control.discard":
+        utterance_id, _ = parse_review_action(msg.payload)
+        await controller.discard(utterance_id)
     elif msg.type == "audio.chunk":
         try:
             chunk = parse_audio_chunk("", msg.payload)

@@ -106,6 +106,10 @@ export function SettingsScreen(): JSX.Element {
   const setTheme = useUiStore((s) => s.setTheme)
   const uiLanguage = useUiStore((s) => s.uiLanguage)
   const setUiLanguage = useUiStore((s) => s.setUiLanguage)
+  const reviewBeforeSpeaking = useUiStore((s) => s.reviewBeforeSpeaking)
+  const setReviewBeforeSpeaking = useUiStore((s) => s.setReviewBeforeSpeaking)
+  const reviewCountdownSec = useUiStore((s) => s.reviewCountdownSec)
+  const setReviewCountdownSec = useUiStore((s) => s.setReviewCountdownSec)
   const glossary = useUiStore((s) => s.glossary)
   const addGlossary = useUiStore((s) => s.addGlossary)
   const removeGlossary = useUiStore((s) => s.removeGlossary)
@@ -379,6 +383,40 @@ export function SettingsScreen(): JSX.Element {
             )}
           </div>
           <div className="mt-1 text-sm text-fg-4">{L.historyOffNote}</div>
+        </div>
+      </Section>
+
+      <Section
+        icon="pencil"
+        color="#fbbf24"
+        title={L.reviewSectionTitle}
+        desc={L.reviewSectionDesc}
+        right={
+          <Segmented
+            value={reviewBeforeSpeaking ? 'on' : 'off'}
+            onChange={(v) => setReviewBeforeSpeaking(v === 'on')}
+            options={[
+              { value: 'off', label: L.reviewOff },
+              { value: 'on', label: L.reviewOn }
+            ]}
+          />
+        }
+      >
+        <div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-base text-fg-3">{L.reviewCountdownLbl}</span>
+            <Segmented
+              value={String(reviewCountdownSec)}
+              onChange={(v) => setReviewCountdownSec(Number(v))}
+              options={[
+                { value: '0', label: L.reviewCountdownOff },
+                { value: '3', label: '3s' },
+                { value: '5', label: '5s' },
+                { value: '10', label: '10s' }
+              ]}
+            />
+          </div>
+          <div className="mt-2 text-sm text-fg-4">{L.reviewMidSession}</div>
         </div>
       </Section>
 

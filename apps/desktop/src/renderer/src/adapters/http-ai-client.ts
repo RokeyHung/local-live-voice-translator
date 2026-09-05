@@ -6,6 +6,7 @@ import type {
   BenchmarkResponse,
   ConfigResponse,
   DeletedModels,
+  DownloadedModel,
   HealthResponse,
   HfVerifyResult,
   HistorySession,
@@ -77,6 +78,56 @@ export class HttpAiClient implements AiClient {
     })
     if (!res.ok) throw new Error(`Kiểm tra token thất bại: HTTP ${res.status}`)
     return (await res.json()) as HfVerifyResult
+  }
+
+  async setCustomModels(
+    preset: Preset,
+    choice: { asrAdapter?: string; asrModel?: string; mtModel?: string }
+  ): Promise<ConfigResponse> {
+    const res = await fetch(`${AI_BASE_URL}/api/config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        preset,
+        customAsrAdapter: choice.asrAdapter,
+        customAsrModel: choice.asrModel,
+        customMtModel: choice.mtModel
+      })
+    })
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Lưu lựa chọn model thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as ConfigResponse
+  }
+
+  async cancelLoadModels(): Promise<void> {
+    const res = await fetch(`${AI_BASE_URL}/api/models/load/cancel`, { method: 'POST' })
+    if (!res.ok) throw new Error(`Dừng nạp model thất bại: HTTP ${res.status}`)
+  }
+
+  async downloadModel(name: string): Promise<DownloadedModel> {
+    const res = await fetch(`${AI_BASE_URL}/api/models/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    })
+    if (!res.ok) {
+      // Service nói rõ lý do (tên lạ, mất mạng, thiếu token cho model gated).
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Tải model thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as DownloadedModel
+  }
+
+  async deleteInstalledModel(path: string): Promise<DeletedModels> {
+    const params = new URLSearchParams({ path })
+    const res = await fetch(`${AI_BASE_URL}/api/models/one?${params}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Xoá model thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as DeletedModels
   }
 
   async setModelsDir(preset: Preset, dir: string): Promise<ConfigResponse> {
