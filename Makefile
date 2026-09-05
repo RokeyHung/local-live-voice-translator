@@ -17,7 +17,7 @@ PREFIX      ?= rec
 
 .PHONY: help setup setup-service setup-desktop dev service desktop preview \
         build typecheck lint format format-docs health docs test bench accuracy soak segment \
-        endpointing setup-eval setup-mlx setup-diarization \
+        endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 \
         eval-asr eval-mt eval-comet eval-latency clean
 
 help: ## Hiện danh sách lệnh
@@ -37,6 +37,9 @@ setup-mlx: ## Cài backend ASR chạy trên MLX (mlx-audio) — chỉ macOS + Ap
 
 setup-diarization: ## Cài khâu tách người nói (pyannote.audio) cho màn Nhập tệp
 	cd $(AI_DIR) && $(UV) sync --extra diarization
+
+setup-ctranslate2: ## Cài backend ASR faster-whisper (CPU int8 / NVIDIA fp16)
+	cd $(AI_DIR) && $(UV) sync --extra ctranslate2
 
 setup-desktop: ## Cài phụ thuộc desktop (npm install)
 	cd $(DESKTOP_DIR) && $(NPM) install

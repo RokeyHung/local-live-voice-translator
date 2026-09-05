@@ -7,6 +7,9 @@ import type {
   ConfigResponse,
   DeletedModels,
   DownloadedModel,
+  EvaluationCase,
+  EvaluationProgress,
+  EvaluationResult,
   HealthResponse,
   HfVerifyResult,
   HistorySession,
@@ -229,6 +232,39 @@ export class HttpAiClient implements AiClient {
       throw new Error(detail?.detail ?? `Chuyển tệp thành văn bản thất bại: HTTP ${res.status}`)
     }
     return (await res.json()) as TranscriptionResult
+  }
+
+  // --- Đánh giá ---
+
+  async fetchEvaluationCorpus(): Promise<EvaluationCase[]> {
+    const res = await fetch(`${AI_BASE_URL}/api/evaluate/corpus`)
+    if (!res.ok) throw new Error(`Đọc bộ câu mẫu thất bại: HTTP ${res.status}`)
+    return (await res.json()) as EvaluationCase[]
+  }
+
+  async runEvaluation(cases: EvaluationCase[], limit?: number): Promise<EvaluationResult> {
+    const res = await fetch(`${AI_BASE_URL}/api/evaluate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cases, limit })
+    })
+    if (!res.ok) {
+      // Service nói rõ lý do (đường dẫn audio sai, quá nhiều câu, model không nạp được).
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Chạy đánh giá thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as EvaluationResult
+  }
+
+  async fetchEvaluationProgress(): Promise<EvaluationProgress> {
+    const res = await fetch(`${AI_BASE_URL}/api/evaluate/progress`)
+    if (!res.ok) throw new Error(`Không lấy được tiến trình đánh giá: HTTP ${res.status}`)
+    return (await res.json()) as EvaluationProgress
+  }
+
+  async cancelEvaluation(): Promise<void> {
+    const res = await fetch(`${AI_BASE_URL}/api/evaluate/cancel`, { method: 'POST' })
+    if (!res.ok) throw new Error(`Dừng đánh giá thất bại: HTTP ${res.status}`)
   }
 
   async cancelTranscribe(): Promise<void> {

@@ -68,4 +68,18 @@ def test_all_mlx_alternatives_are_names_the_adapter_knows():
 
 
 def test_unknown_adapter_keeps_the_preset_model_instead_of_guessing(balanced):
-    assert asr_model(balanced, "faster_whisper") == balanced.asr_model
+    # Adapter không có cột trong `asr_alternatives` thì giữ nguyên model của preset và
+    # để adapter tự báo lỗi — im lặng thay bằng model khác mức còn khó hiểu hơn.
+    assert asr_model(balanced, "khong-co-that") == balanced.asr_model
+
+
+def test_all_three_backends_are_registered():
+    assert set(ASR_REGISTRY) == {"whisper_cpp", "mlx_whisper", "faster_whisper"}
+
+
+def test_every_preset_has_a_faster_whisper_equivalent():
+    from llvt_ai_service.adapters.asr.faster_whisper import MODEL_MAP as FW_MODELS
+
+    for preset in PRESETS:
+        name = get_preset_config(preset).asr_alternatives.get("faster_whisper")
+        assert name in FW_MODELS, (preset, name)

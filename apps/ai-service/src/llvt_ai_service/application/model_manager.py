@@ -109,7 +109,11 @@ ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
         models_dir=str(get_settings().models_dir / "mlx-whisper"),
         min_confidence=get_settings().asr_min_confidence,
     ),
-    "faster_whisper": lambda cfg: FasterWhisperAsr(asr_model(cfg, "faster_whisper")),
+    "faster_whisper": lambda cfg: FasterWhisperAsr(
+        asr_model(cfg, "faster_whisper"),
+        models_dir=str(get_settings().models_dir / "faster-whisper"),
+        min_confidence=get_settings().asr_min_confidence,
+    ),
 }
 DIARIZATION_REGISTRY: dict[str, Callable[[], SpeakerDiarizer]] = {
     "pyannote": lambda: PyannoteDiarizer(

@@ -6,6 +6,9 @@ import type {
   ConfigResponse,
   DeletedModels,
   DownloadedModel,
+  EvaluationCase,
+  EvaluationProgress,
+  EvaluationResult,
   HealthResponse,
   HfVerifyResult,
   HistorySession,
@@ -77,6 +80,15 @@ export interface AiClient {
   // Xin dừng tệp đang chạy: `transcribeFile` vẫn trả về bình thường, với phần đã
   // chạy được và `cancelled: true` — huỷ không có nghĩa là vứt kết quả dở dang đi.
   cancelTranscribe(): Promise<void>
+
+  // --- Đánh giá (GVHD biên bản 19/08 mục 3d) ---
+  // Bộ câu mẫu đi kèm service — đúng bộ mà `make accuracy` dùng.
+  fetchEvaluationCorpus(): Promise<EvaluationCase[]>
+  // Chạy và chấm; chặn tới khi xong nên hỏi tiến trình song song.
+  runEvaluation(cases: EvaluationCase[], limit?: number): Promise<EvaluationResult>
+  fetchEvaluationProgress(): Promise<EvaluationProgress>
+  // Dừng ở ranh giới câu; `runEvaluation` vẫn trả phần đã chấm xong.
+  cancelEvaluation(): Promise<void>
 
   // --- Lịch sử phiên (lưu trong SQLite của service) ---
   fetchSessions(query?: string): Promise<HistorySession[]>

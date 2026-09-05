@@ -25,6 +25,7 @@ export interface Dict {
   settings: string
   about: string
   importFiles: string
+  evaluate: string
   // phiên dịch
   layout: string
   vSplit: string
@@ -229,6 +230,35 @@ export interface Dict {
   logImportFailed: string
   logBenchDone: string
   logBenchFailed: string
+  logEvalStart: string
+  logEvalDone: string
+  logEvalFailed: string
+  // đánh giá
+  evalSub: string
+  evalBundledSet: string
+  evalCustomSet: string
+  evalSetSummary: string
+  evalPickFile: string
+  evalUseBundled: string
+  evalQuick: string
+  evalRun: string
+  evalRunning: string
+  evalFailed: string
+  evalBadFile: string
+  evalEmptyFile: string
+  evalSyntheticT: string
+  evalSyntheticB: string
+  evalSyntheticBadge: string
+  evalCancelledNote: string
+  evalScriptNote: string
+  evalLowerBetter: string
+  evalHigherBetter: string
+  evalAsrP50: string
+  evalAsrP90: string
+  evalMtP90: string
+  evalRtfP90: string
+  evalRtfOk: string
+  evalRtfSlow: string
   // lịch sử
   historySub: string
   clearAll: string
@@ -418,6 +448,7 @@ const vi: Dict = {
   settings: 'Cài đặt',
   about: 'Về ứng dụng',
   importFiles: 'Nhập tệp',
+  evaluate: 'Đánh giá',
 
   layout: 'Bố cục',
   vSplit: 'Chia đôi',
@@ -626,7 +657,37 @@ const vi: Dict = {
   logImportFailed: 'Lỗi khi xử lý {name}: {msg}',
   logBenchDone: 'Đo độ trễ xong · tổng {total} ms',
   logBenchFailed: 'Đo độ trễ thất bại: {msg}',
+  logEvalStart: 'Bắt đầu đánh giá {n} câu',
+  logEvalDone: 'Đánh giá xong {n} câu — lỗi {err}, chrF {chrf}',
+  logEvalFailed: 'Đánh giá thất bại: {msg}',
 
+  evalSub: 'Chạy bộ câu mẫu qua hệ thống và tự chấm điểm.',
+  evalBundledSet: 'Bộ câu mẫu đi kèm',
+  evalCustomSet: 'Bộ câu của bạn',
+  evalSetSummary: '{n} câu · {recorded} có bản ghi thật · {synthetic} dùng giọng tổng hợp',
+  evalPickFile: 'Nạp file JSON',
+  evalUseBundled: 'Dùng bộ mẫu',
+  evalQuick: 'Chạy thử 3 câu',
+  evalRun: 'Chạy đánh giá',
+  evalRunning: 'Đang chấm {id}…',
+  evalFailed: 'Chạy đánh giá thất bại',
+  evalBadFile: 'Không đọc được file',
+  evalEmptyFile: 'File không có câu nào.',
+  evalSyntheticT: 'Có câu chạy bằng giọng tổng hợp',
+  evalSyntheticB:
+    'Câu không có bản ghi thì máy tự đọc rồi tự nghe lại. Giọng tổng hợp sạch và đều nên số sẽ LẠC QUAN hơn thực tế — muốn số dùng được cho báo cáo thì thu âm giọng người và điền đường dẫn vào trường `audio`.',
+  evalSyntheticBadge: 'giọng máy',
+  evalCancelledNote: 'Đã dừng giữa chừng — bảng dưới chỉ gồm những câu đã chấm xong.',
+  evalScriptNote:
+    'Số ở đây để thử nhanh và so các cấu hình với nhau. Bảng đưa vào báo cáo lấy từ `make eval-asr` / `make eval-mt` (dùng jiwer + spBLEU nên so được với số công bố của NLLB-200).',
+  evalLowerBetter: 'càng thấp càng tốt',
+  evalHigherBetter: 'càng cao càng tốt',
+  evalAsrP50: 'ASR p50',
+  evalAsrP90: 'ASR p90',
+  evalMtP90: 'Dịch p90',
+  evalRtfP90: 'RTF p90',
+  evalRtfOk: 'nhanh hơn thời gian thực',
+  evalRtfSlow: 'chậm hơn thời gian thực',
   historySub: 'Mỗi cuộc họp được ghi lại riêng khi bạn nhấn Bắt đầu.',
   clearAll: 'Xóa tất cả',
   meetingsTitle: 'Cuộc họp',
@@ -828,6 +889,7 @@ const en: Dict = {
   settings: 'Settings',
   about: 'About',
   importFiles: 'Import Files',
+  evaluate: 'Evaluation',
 
   layout: 'Layout',
   vSplit: 'Split',
@@ -1037,7 +1099,38 @@ const en: Dict = {
   logImportFailed: 'Failed to process {name}: {msg}',
   logBenchDone: 'Latency run finished · {total} ms total',
   logBenchFailed: 'Latency run failed: {msg}',
+  logEvalStart: 'Evaluating {n} cases',
+  logEvalDone: 'Evaluated {n} cases — error {err}, chrF {chrf}',
+  logEvalFailed: 'Evaluation failed: {msg}',
 
+  evalSub: 'Run a sample set through the system and score it.',
+  evalBundledSet: 'Bundled sample set',
+  evalCustomSet: 'Your own set',
+  evalSetSummary:
+    '{n} cases · {recorded} with real recordings · {synthetic} using synthetic speech',
+  evalPickFile: 'Load JSON file',
+  evalUseBundled: 'Use bundled set',
+  evalQuick: 'Quick run (3 cases)',
+  evalRun: 'Run evaluation',
+  evalRunning: 'Scoring {id}…',
+  evalFailed: 'Evaluation failed',
+  evalBadFile: 'Could not read the file',
+  evalEmptyFile: 'The file has no cases.',
+  evalSyntheticT: 'Some cases ran on synthetic speech',
+  evalSyntheticB:
+    'Cases without a recording are spoken by the app and fed back to ASR. Synthetic speech is clean and even, so the numbers are OPTIMISTIC — for report-grade numbers, record real speech and point the `audio` field at it.',
+  evalSyntheticBadge: 'synthetic',
+  evalCancelledNote: 'Stopped early — the table below only covers the cases already scored.',
+  evalScriptNote:
+    'These numbers are for quick checks and comparing configurations. Report tables come from `make eval-asr` / `make eval-mt`, which use jiwer + spBLEU so they line up with the published NLLB-200 figures.',
+  evalLowerBetter: 'lower is better',
+  evalHigherBetter: 'higher is better',
+  evalAsrP50: 'ASR p50',
+  evalAsrP90: 'ASR p90',
+  evalMtP90: 'MT p90',
+  evalRtfP90: 'RTF p90',
+  evalRtfOk: 'faster than real time',
+  evalRtfSlow: 'slower than real time',
   historySub: 'Each meeting is recorded separately when you press Start.',
   clearAll: 'Clear all',
   meetingsTitle: 'Meetings',

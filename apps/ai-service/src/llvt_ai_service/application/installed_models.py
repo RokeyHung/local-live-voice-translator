@@ -4,6 +4,7 @@ Mỗi adapter tự tải model theo kiểu riêng nên bố cục thư mục kh�
 
 - ``whisper-cpp/``  : file ``.bin`` phẳng do pywhispercpp tải về.
 - ``mlx-whisper/``  : cache HuggingFace của backend MLX (``models--mlx-community--…``).
+- ``faster-whisper/``: cache HuggingFace của backend CTranslate2.
 - ``nllb/``         : cache của HuggingFace (``models--facebook--nllb-...``).
 - ``sherpa-tts/``   : mỗi voice một thư mục đã giải nén.
 - ``kokoro-ja/``    : model + bộ giọng tiếng Nhật (hai file .onnx/.bin rời).
@@ -24,11 +25,20 @@ logger = logging.getLogger("llvt.installed_models")
 
 # Chỉ những thư mục này là do app tạo ra. Xoá model nghĩa là xoá đúng chúng, KHÔNG
 # phải xoá sạch `models_dir` — người dùng có thể trỏ nó vào một thư mục có sẵn thứ khác.
-MANAGED_DIRS = ("whisper-cpp", "mlx-whisper", "nllb", "sherpa-tts", "kokoro-ja", "pyannote")
+MANAGED_DIRS = (
+    "whisper-cpp",
+    "mlx-whisper",
+    "faster-whisper",
+    "nllb",
+    "sherpa-tts",
+    "kokoro-ja",
+    "pyannote",
+)
 
 # Thư mục dùng bố cục cache HuggingFace (`models--<org>--<repo>/`) -> khâu tương ứng.
 HF_CACHE_DIRS: tuple[tuple[str, str], ...] = (
     ("mlx-whisper", "ASR"),
+    ("faster-whisper", "ASR"),
     ("nllb", "MT"),
     ("pyannote", "DIA"),
 )

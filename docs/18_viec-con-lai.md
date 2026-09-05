@@ -187,9 +187,27 @@ chỗ, đã đóng cả năm. Còn phải thử tay:
 - [ ] **Nút Huỷ nạp model** mới thử được nhánh "không có gì đang chạy". Muốn thử đúng
       đường dừng-giữa-chừng thì phải xoá model đi rồi bấm nạp lại.
 
-Sau đợt này, phần **code** còn thiếu của đồ án chỉ còn: màn hình đánh giá trong app
-(mục 3), và adapter `faster_whisper` vẫn là stub. Mọi thứ còn lại là chạy thật, đo, và
-Tuần 9.
+---
+
+## 9. Đợt 05/09 (3) — nhóm B và C: hai việc code cuối cùng
+
+Chi tiết ở [`21_man-danh-gia-va-backend-thu-ba.md`](21_man-danh-gia-va-backend-thu-ba.md).
+
+**Màn Đánh giá trong app** (mục 3d thầy giao, dòng đầu bảng ở mục 3 trên) — đã xong.
+**Adapter `faster_whisper`** — đã hiện thực thật, không còn stub nào trong dự án.
+
+Còn phải chạy thật:
+
+- [ ] **Thay bộ câu mẫu 10 câu bằng câu thoại họp thật, có thu âm giọng người.** Đây
+      là việc quyết định giá trị của mọi con số trên màn Đánh giá — bộ đi kèm chỉ để
+      màn hình có thứ chạy được ngay, và nó chạy bằng giọng tổng hợp nên số lạc quan
+      hơn thực tế.
+- [ ] **Đo faster-whisper trên máy Windows + NVIDIA**, thêm cột thứ ba vào bảng của
+      [`17`](17_bo-danh-gia-fleurs.md): `make setup-ctranslate2` rồi
+      `LLVT_ASR_ADAPTER=faster_whisper make eval-asr`.
+
+**Từ đây, dự án không còn việc code nào đang treo.** Toàn bộ phần còn lại là chạy
+thật, đo số, và Tuần 9 (báo cáo / đóng gói / demo).
 
 ---
 

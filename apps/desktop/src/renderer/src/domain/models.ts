@@ -195,6 +195,60 @@ export interface TranscribeProgress {
   phase: 'diarizing' | 'transcribing'
 }
 
+// --- Đánh giá (mirror schemas.py: Evaluation*) ---
+
+export interface EvaluationCase {
+  id: string
+  language: Language
+  target: Language
+  transcript: string // câu gốc chuẩn — vừa là tham chiếu ASR, vừa là đầu vào MT
+  translation: string // bản dịch tham chiếu
+  audio: string // đường dẫn TUYỆT ĐỐI tới WAV; rỗng = service tự đọc bằng TTS
+}
+
+export interface EvaluationCaseResult {
+  id: string
+  language: Language
+  target: Language
+  // 'recorded' = giọng người thật · 'tts-roundtrip' = máy tự đọc rồi tự nghe lại
+  audioSource: 'recorded' | 'tts-roundtrip'
+  reference: string
+  hypothesis: string
+  errorRate: number
+  metric: string // 'WER' cho vi/en · 'CER' cho zh/ja
+  referenceTranslation: string
+  translation: string
+  chrf: number
+  asrMs: number
+  mtMs: number
+  audioMs: number
+}
+
+export interface EvaluationResult {
+  cases: EvaluationCaseResult[]
+  errorRate: number
+  chrf: number
+  asrP50Ms: number
+  asrP90Ms: number
+  mtP50Ms: number
+  mtP90Ms: number
+  totalP90Ms: number
+  rtfP90: number
+  // true = có ít nhất một câu chạy bằng giọng tổng hợp → số LẠC QUAN hơn thực tế.
+  hasSyntheticAudio: boolean
+  cancelled: boolean
+}
+
+export interface EvaluationProgress {
+  active: boolean
+  total: number
+  done: number
+  currentCase: string
+  percent: number | null
+  error: string | null
+  cancelling: boolean
+}
+
 export interface LanguagePair {
   source: Language
   target: Language

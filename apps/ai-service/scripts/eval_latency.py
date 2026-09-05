@@ -29,6 +29,7 @@ from pathlib import Path
 
 import fleurs
 
+from llvt_ai_service.application.evaluation import percentile
 from llvt_ai_service.application.model_manager import ModelManager, ProviderSet
 from llvt_ai_service.domain.enums import Language, Preset
 
@@ -103,9 +104,9 @@ async def run_sample(
     )
 
 
-def _pct(values: list[float], q: float) -> float:
-    ordered = sorted(values)
-    return ordered[min(len(ordered) - 1, round(q * (len(ordered) - 1)))]
+# Dùng lại phân vị của package: màn "Đánh giá" trong app và script này phải ra cùng
+# một con số p90 trên cùng bộ dữ liệu.
+_pct = percentile
 
 
 def print_table(samples: list[Sample], direction: str) -> dict[str, float]:

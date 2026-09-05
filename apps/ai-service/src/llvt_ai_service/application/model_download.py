@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from llvt_ai_service.adapters.asr.faster_whisper import MODEL_MAP as FW_MODELS
 from llvt_ai_service.adapters.asr.mlx_whisper import MODEL_MAP as MLX_MODELS
 from llvt_ai_service.adapters.asr.whisper_cpp import MODEL_MAP as WHISPER_MODELS
 from llvt_ai_service.adapters.mt.nllb import MODEL_MAP as NLLB_MODELS
@@ -66,6 +67,8 @@ def resolve(name: str) -> tuple[str, str]:
         return "ASR", "whisper_cpp"
     if clean in MLX_MODELS:
         return "ASR", "mlx"
+    if clean in FW_MODELS:
+        return "ASR", "faster_whisper"
     if clean in NLLB_MODELS:
         return "MT", "nllb"
     if clean == "kokoro-ja":
@@ -89,6 +92,8 @@ def download(name: str, models_dir: Path) -> Path:
         return _download_whisper_cpp(clean, models_dir)
     if kind == "mlx":
         return _snapshot(MLX_MODELS[clean], models_dir, "mlx-whisper")
+    if kind == "faster_whisper":
+        return _snapshot(FW_MODELS[clean], models_dir, "faster-whisper")
     if kind == "nllb":
         return _snapshot(NLLB_MODELS[clean], models_dir, "nllb")
     if kind == "kokoro":

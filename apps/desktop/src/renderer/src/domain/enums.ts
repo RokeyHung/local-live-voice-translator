@@ -46,6 +46,7 @@ export type ScreenId =
   | 'models'
   | 'diagnostics'
   | 'history'
+  | 'evaluate'
   | 'settings'
   | 'about'
   | 'logs'
@@ -56,7 +57,15 @@ export type LogLevel = 'info' | 'warn' | 'error'
 
 // Nơi phát ra sự kiện; hiện đúng ở cột thứ ba của màn Nhật ký.
 export type LogSource =
-  'app' | 'system' | 'service' | 'session' | 'models' | 'import' | 'benchmark' | 'storage'
+  | 'app'
+  | 'system'
+  | 'service'
+  | 'session'
+  | 'models'
+  | 'import'
+  | 'benchmark'
+  | 'storage'
+  | 'evaluate'
 
 export type ThemeMode = 'system' | 'light' | 'dark'
 

@@ -63,7 +63,10 @@ PRESETS: dict[Preset, PresetConfig] = {
         tts_adapter="sherpa_onnx",
         # small-q5 giải mã rất nhanh → cắt sớm, ưu tiên độ trễ thấp.
         vad=VadTuning(soft_max_ms=2200, max_speech_ms=4500, min_silence_ms=280),
-        asr_alternatives={"mlx_whisper": "mlx-whisper-small-q8"},
+        asr_alternatives={
+            "mlx_whisper": "mlx-whisper-small-q8",
+            "faster_whisper": "fw-whisper-small",
+        },
     ),
     Preset.balanced: PresetConfig(
         vad_adapter="silero",
@@ -73,7 +76,10 @@ PRESETS: dict[Preset, PresetConfig] = {
         mt_model="nllb-200-distilled-600M",
         tts_adapter="sherpa_onnx",
         vad=VadTuning(),
-        asr_alternatives={"mlx_whisper": "mlx-whisper-large-v3-turbo-q8"},
+        asr_alternatives={
+            "mlx_whisper": "mlx-whisper-large-v3-turbo-q8",
+            "faster_whisper": "fw-whisper-large-v3-turbo",
+        },
     ),
     Preset.quality: PresetConfig(
         vad_adapter="silero",
@@ -84,7 +90,10 @@ PRESETS: dict[Preset, PresetConfig] = {
         tts_adapter="sherpa_onnx",
         # Đoạn dài hơn cho whisper nhiều ngữ cảnh hơn, đổi lại chờ lâu hơn.
         vad=VadTuning(soft_max_ms=4500, max_speech_ms=8000, min_silence_ms=380),
-        asr_alternatives={"mlx_whisper": "mlx-whisper-large-v3-turbo"},
+        asr_alternatives={
+            "mlx_whisper": "mlx-whisper-large-v3-turbo",
+            "faster_whisper": "fw-whisper-large-v3",
+        },
     ),
 }
 

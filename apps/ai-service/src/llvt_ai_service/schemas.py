@@ -286,6 +286,72 @@ class TranscribeProgressResponse(BaseModel):
     phase: str = "transcribing"
 
 
+class EvaluationCaseSchema(BaseModel):
+    """Một câu mẫu người dùng đưa vào để chấm."""
+
+    id: str
+    language: Language
+    target: Language
+    transcript: str  # câu gốc chuẩn — vừa là tham chiếu ASR, vừa là đầu vào MT
+    translation: str  # bản dịch tham chiếu
+    # Đường dẫn TUYỆT ĐỐI tới file WAV giọng đọc thật. Bỏ trống thì service tự đọc câu
+    # tham chiếu bằng TTS rồi nghe lại (`audioSource` của kết quả sẽ là tts-roundtrip).
+    audio: str = ""
+
+
+class EvaluationRequest(BaseModel):
+    # Bỏ trống = chạy bộ câu mẫu đi kèm service (GET /api/evaluate/corpus).
+    cases: list[EvaluationCaseSchema] = []
+    # Chỉ chạy N câu đầu — để thử nhanh trước khi chạy cả bộ.
+    limit: int | None = None
+
+
+class EvaluationCaseResultSchema(BaseModel):
+    id: str
+    language: Language
+    target: Language
+    # "recorded" = giọng người thật · "tts-roundtrip" = máy tự đọc rồi tự nghe lại
+    audioSource: str
+    reference: str
+    hypothesis: str
+    errorRate: float
+    metric: str  # "WER" cho vi/en · "CER" cho zh/ja
+    referenceTranslation: str
+    translation: str
+    chrf: float
+    asrMs: int
+    mtMs: int
+    audioMs: int
+
+
+class EvaluationResponse(BaseModel):
+    """Kết quả chấm: từng câu + bảng tổng (độ trễ báo p50/p90, không báo trung bình)."""
+
+    cases: list[EvaluationCaseResultSchema] = []
+    errorRate: float = 0.0
+    chrf: float = 0.0
+    asrP50Ms: int = 0
+    asrP90Ms: int = 0
+    mtP50Ms: int = 0
+    mtP90Ms: int = 0
+    totalP90Ms: int = 0
+    rtfP90: float = 0.0
+    # True khi có ít nhất một câu chạy bằng giọng tổng hợp — số sẽ LẠC QUAN hơn thực
+    # tế, giao diện phải nói rõ.
+    hasSyntheticAudio: bool = False
+    cancelled: bool = False
+
+
+class EvaluationProgressResponse(BaseModel):
+    active: bool
+    total: int
+    done: int
+    currentCase: str
+    percent: float | None
+    error: str | None
+    cancelling: bool = False
+
+
 class ResourceResponse(BaseModel):
     """Tài nguyên của chính tiến trình AI service (renderer không tự đọc được)."""
 

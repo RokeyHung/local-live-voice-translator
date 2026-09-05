@@ -10,6 +10,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from llvt_ai_service.adapters.asr.faster_whisper import MODEL_MAP as FW_MODELS
 from llvt_ai_service.adapters.asr.mlx_whisper import MODEL_MAP as MLX_MODELS
 from llvt_ai_service.adapters.asr.whisper_cpp import MODEL_MAP as WHISPER_MODELS
 from llvt_ai_service.config.presets import PRESETS, custom_config, get_preset_config
@@ -79,11 +80,9 @@ def test_custom_is_offered_as_a_preset(client: TestClient):
 
 def test_config_exposes_the_real_choices_not_a_hand_written_list(client: TestClient):
     custom = client.get("/api/config").json()["custom"]
-    assert "whisper_cpp" in custom["asrAdapterChoices"]
-    assert "mlx_whisper" in custom["asrAdapterChoices"]
-    # faster_whisper còn là stub — mời người dùng chọn nó là mời họ vào lỗi.
-    assert "faster_whisper" not in custom["asrAdapterChoices"]
-    assert set(custom["asrModelChoices"]) == {*WHISPER_MODELS, *MLX_MODELS}
+    # Cả ba backend ASR đều chọn được — không backend nào còn là stub.
+    assert set(custom["asrAdapterChoices"]) == {"whisper_cpp", "mlx_whisper", "faster_whisper"}
+    assert set(custom["asrModelChoices"]) == {*WHISPER_MODELS, *MLX_MODELS, *FW_MODELS}
 
 
 def test_saving_choices_survives_and_shows_up_in_config(client: TestClient):

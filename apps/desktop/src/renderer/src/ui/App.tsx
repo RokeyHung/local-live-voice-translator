@@ -18,6 +18,7 @@ import { Sidebar, type ServiceStatus } from './components/Sidebar'
 import { TitleBar } from './components/TitleBar'
 import { AboutScreen } from './screens/AboutScreen'
 import { DiagnosticsScreen } from './screens/DiagnosticsScreen'
+import { EvaluateScreen } from './screens/EvaluateScreen'
 import { HistoryScreen } from './screens/HistoryScreen'
 import { ImportScreen } from './screens/ImportScreen'
 import { LogsScreen } from './screens/LogsScreen'
@@ -102,6 +103,9 @@ export default function App(): JSX.Element {
           </Screen>
           <Screen show={screen === 'diagnostics'}>
             <DiagnosticsScreen />
+          </Screen>
+          <Screen show={screen === 'evaluate'}>
+            <EvaluateScreen />
           </Screen>
           <Screen show={screen === 'history'}>
             <HistoryScreen />

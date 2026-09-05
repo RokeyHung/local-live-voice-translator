@@ -9,6 +9,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from llvt_ai_service.adapters.asr.faster_whisper import MODEL_MAP as FW_MODELS
 from llvt_ai_service.adapters.asr.mlx_whisper import MODEL_MAP as MLX_MODELS
 from llvt_ai_service.adapters.asr.whisper_cpp import MODEL_MAP as WHISPER_MODELS
 from llvt_ai_service.adapters.mt.nllb import MODEL_MAP as NLLB_MODELS
@@ -98,10 +99,8 @@ def _custom_choices(settings) -> CustomChoiceSchema:
         asrAdapter=active.asr_adapter,
         asrModel=active.asr_model,
         mtModel=active.mt_model,
-        # Bỏ faster_whisper: adapter còn là stub, đưa vào ô chọn là mời người dùng
-        # chọn một thứ chắc chắn hỏng.
-        asrAdapterChoices=[name for name in ASR_REGISTRY if name != "faster_whisper"],
-        asrModelChoices=[*WHISPER_MODELS, *MLX_MODELS],
+        asrAdapterChoices=list(ASR_REGISTRY),
+        asrModelChoices=[*WHISPER_MODELS, *MLX_MODELS, *FW_MODELS],
         mtModelChoices=list(NLLB_MODELS),
     )
 
@@ -220,7 +219,7 @@ def _apply_custom(body: ConfigUpdate) -> bool:
     if adapter and adapter not in ASR_REGISTRY:
         raise HTTPException(status_code=400, detail=f"Không có adapter ASR tên {adapter!r}.")
     model = changes.get("custom_asr_model")
-    if model and model not in WHISPER_MODELS and model not in MLX_MODELS:
+    if model and model not in WHISPER_MODELS | MLX_MODELS | FW_MODELS:
         raise HTTPException(status_code=400, detail=f"Không có model ASR tên {model!r}.")
     mt = changes.get("custom_mt_model")
     if mt and mt not in NLLB_MODELS:
