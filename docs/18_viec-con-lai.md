@@ -138,9 +138,10 @@ script độc lập chạy ở môi trường riêng (`uv run --no-project scrip
 
 ## 6. Việc kỹ thuật nhỏ
 
-- [ ] **Push nhánh lên GitHub.** Hai commit `d0e700a` và `e0b3180` đang nằm local trên
-      `feat/gvhd-2026-08-19`, chưa đẩy lên `origin`. Cũng cần quyết merge vào `main` hay
-      giữ nhánh (repo vốn commit thẳng `main` — xem `CLAUDE.md`).
+- [x] ~~Push nhánh lên GitHub + quyết merge hay giữ nhánh~~ — đã đẩy lên `origin` và
+      **merge vào `main`** ngày 06/09, giữ nguyên từng commit (merge commit, không
+      squash) vì phần giải thích _vì sao_ trong mỗi commit message là tư liệu dùng được
+      khi bảo vệ. Nhánh `feat/gvhd-2026-08-19` giữ lại, không xoá.
 - [x] ~~Sửa 9072 cảnh báo CRLF của `make lint`~~ — đã thêm `.gitattributes`
       (`* text=auto eol=lf`) ở đợt 05/09. Chọn cách này thay vì nới `endOfLine: auto`
       cho prettier: chỗ sai là kết thúc dòng trong thư mục làm việc, không phải quy
