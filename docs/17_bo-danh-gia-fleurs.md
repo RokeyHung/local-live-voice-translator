@@ -407,6 +407,24 @@ mong đợi (vi 256 ms ở cả ba chiều xuất phát từ vi).
 **Tổng p90 lên tới 10–13 giây** ở ba chiều nguồn tiếng Việt trông đáng sợ, nhưng đó là
 tổng cho **một câu FLEURS dài ~12 giây** — RTF mới là con số so sánh được, và nó vẫn < 1.
 
+### Đừng đối chiếu bảng này với mục 14.1 của SPEC
+
+[SPEC mục 14.1](01_spec-realtime-voice-translation.md) đặt mục tiêu **cho một câu ngắn**:
+ASR < 1.500 ms, MT < 1.000 ms, TTS < 1.500 ms, tổng outgoing trung vị < 4 giây. Bảng
+trên **không** kiểm chứng được các mốc đó, và đặt cạnh nhau là đọc sai:
+
+- mỗi dòng ở đây là **một phát ngôn FLEURS dài ~12 giây**, bị VAD cắt thành nhiều đoạn,
+  và cột ASR/MT/TTS là **tổng cộng dồn** thời gian của tất cả các đoạn đó — không phải
+  thời gian cho một câu;
+- SPEC nói về **độ trễ người dùng cảm nhận** (từ lúc dứt câu tới lúc có phụ đề), còn cột
+  "Tổng" ở đây là **thời gian tính toán**. Hai đại lượng khác nhau — mục 5.4 của
+  [`26`](26_do-do-danh-gia-wer-bleu-comet-rtf.md) nói kỹ chỗ này.
+
+Số đối chiếu được với SPEC 14.1 là bộ đo trên **audio 3 giây** ở
+[`14` mục 11](14_slides-bao-cao.md): ASR 991–1.060 ms · MT 460–579 ms · TTS 141–969 ms ·
+tổng 1,8–2,6 giây — **đạt cả bốn mốc**. Bảng FLEURS trả lời một câu hỏi khác: hệ thống
+có theo kịp luồng nói liên tục không (RTF), chứ không phải một câu mất bao lâu.
+
 ---
 
 ## 8b. Kết quả mục (b): MT trên toàn bộ FLEURS `test` — 06/09/2026

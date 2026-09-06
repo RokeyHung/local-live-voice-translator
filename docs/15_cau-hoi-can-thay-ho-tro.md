@@ -5,6 +5,14 @@
 Mỗi câu gồm: **bối cảnh** (vì sao vướng) → **phương án em đề xuất** → **thứ cần thầy quyết**.
 Đặt sẵn phương án để thầy chỉ cần xác nhận hoặc chỉnh, không phải nghĩ từ đầu.
 
+> **Trạng thái 07/09 — nhóm A đã có câu trả lời, giữ nguyên phần dưới làm bản ghi.**
+> Thầy chốt ở [biên bản 19/08](meetings/bien-ban-hop-GVHD-2026-08-19.md) mục 3: đo trên
+> **FLEURS** thay vì bộ câu tự dựng, và **dùng cả BLEU lẫn COMET** — ngược với đề xuất
+> "không dùng BLEU/COMET" ở mục A1 dưới đây. Hai lý do em nêu lúc đó cũng không còn
+> đúng: bộ dữ liệu giờ là 2.022 cặp câu chứ không phải 30, và COMET chấm hết trong ~4
+> phút chứ không "chạy chậm". Số thật ở [`17` mục 8](17_bo-danh-gia-fleurs.md), phần
+> giải thích bốn độ đo ở [`26`](26_do-do-danh-gia-wer-bleu-comet-rtf.md).
+
 ---
 
 ## Nhóm A — Thực nghiệm và đánh giá

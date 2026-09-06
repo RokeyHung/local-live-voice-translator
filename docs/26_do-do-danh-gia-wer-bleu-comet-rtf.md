@@ -405,6 +405,19 @@ làm căn cứ kết luận**, vì:
 _(Dòng thứ ba là **đề xuất của sinh viên**, ghép ngưỡng 0,5 có nguồn với mốc độ trễ cảm nhận ở
 mục 5.5. Cần thầy chốt.)_
 
+**Hệ thống hiện tại đứng ở đâu trên bảng này** (đo 07/09, chi tiết ở
+[`17` mục 8c](17_bo-danh-gia-fleurs.md)):
+
+| Mức              | Chiều đạt                                         |
+| ---------------- | ------------------------------------------------- |
+| Đạt tối thiểu    | **cả sáu** (RTF p90 cao nhất là vi→ja với 0,786)  |
+| Đạt để dùng thật | ja→vi 0,395 · en→vi 0,496 · zh→vi 0,509 (sát mép) |
+| Không đạt        | không có chiều nào                                |
+
+Ba chiều chưa đạt mức "dùng thật" đều là ba chiều **nguồn tiếng Việt** (0,580 · 0,727 ·
+0,786) — nên câu trả lời cho thầy không chỉ là "đạt hay chưa", mà là **đạt ngưỡng cứng
+ở mọi chiều, còn ngưỡng đề xuất thì phụ thuộc chiều nào**.
+
 ### 5.4. RTF **không phải** độ trễ người dùng cảm nhận
 
 Đây là điểm quan trọng nhất của cả mục 5, và là chỗ hội đồng dễ hỏi vặn.

@@ -99,10 +99,17 @@ p90 **856 ms** · dịch p90 **396 ms** · tổng p90 **1.227 ms** · **RTF p90 
 (< 1 nghĩa là xử lý nhanh hơn thời gian thực).
 
 > **RTF ở đây tính trên phạm vi hẹp: chỉ ASR + MT**, không gồm VAD và TTS — vì màn Đánh
-> giá chấm chất lượng dịch nên không chạy TTS. Con số `make eval-latency` sẽ in ra là
-> **của cả chuỗi VAD→ASR→MT→TTS** nên sẽ **cao hơn**. Hai con số không thay thế được
-> nhau; báo cáo phải ghi rõ phạm vi. Xem
-> [`26` mục 5.6](26_do-do-danh-gia-wer-bleu-comet-rtf.md).
+> giá chấm chất lượng dịch nên không chạy TTS. Hai con số không thay thế được nhau; báo
+> cáo phải ghi rõ phạm vi. Xem [`26` mục 5.6](26_do-do-danh-gia-wer-bleu-comet-rtf.md).
+>
+> **Cập nhật 07/09 — dự đoán ở đây sai.** Chỗ này từng viết rằng RTF của
+> `make eval-latency` (cả chuỗi VAD→ASR→MT→TTS) sẽ **cao hơn** 0,818 vì nó gồm nhiều
+> khâu hơn. Đo thật thì ngược lại: RTF p90 nằm trong **0,395–0,786**, tức thấp hơn
+> ([`17` mục 8c](17_bo-danh-gia-fleurs.md)). Lý do là hai lượt chạy khác nhau **cả model
+> lẫn dữ liệu** — lượt kia dùng `whisper-large-v3-turbo-fp16` trên 22 câu tự dựng, lượt
+> này dùng `whisper-large-v3-asr-8bit` trên FLEURS. Bài học đúng vẫn là bài học cũ, chỉ
+> mạnh hơn: **RTF chỉ so được khi cùng phạm vi, cùng model và cùng dữ liệu** — thêm một
+> khâu vào chuỗi không đủ để đoán chiều thay đổi của con số.
 
 | Chiều | Số câu | Thang đo | Tỷ lệ lỗi | chrF   |
 | ----- | ------ | -------- | --------- | ------ |

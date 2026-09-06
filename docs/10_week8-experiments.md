@@ -78,6 +78,12 @@ Hai chế độ, tuỳ trường `audio` trong bộ câu:
 Script đánh dấu từng dòng thuộc chế độ nào để hai loại số không bị trộn. Kết quả chạy
 thử với model thật (10 câu, chế độ round-trip): **WER trung bình 12,5%**, **chrF 53,4%**.
 
+> **Cập nhật 07/09.** Con số cho báo cáo giờ không lấy từ đây nữa mà từ **FLEURS** —
+> 3.099 bản thu, tham chiếu do người gõ, dữ liệu công khai nên so được với công bố khác:
+> vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7%
+> ([`17` mục 8](17_bo-danh-gia-fleurs.md)). `scripts/accuracy.py` ở tuần 8 vẫn giữ
+> nguyên vai trò kiểm tra nhanh "pipeline còn sống", không phải nguồn số liệu.
+
 ## 4. Giao diện đọc số thật
 
 Trước đợt này màn Chẩn đoán có ô "Chưa hỗ trợ" và vài giá trị phần cứng chép tay. Sau

@@ -69,7 +69,13 @@ Chạy 2 câu đầu của bộ mẫu trên MacBook (whisper large-v3-turbo-q5 +
 | RTF p90         | 1,022         |
 
 Cả hai câu đều là **giọng tổng hợp**, nên đây chưa phải số dùng được cho báo cáo —
-đúng như dải cảnh báo trên màn hình nói. Hai điều đáng chú ý:
+đúng như dải cảnh báo trên màn hình nói. Số cho báo cáo nằm ở
+[`17` mục 8](17_bo-danh-gia-fleurs.md) (FLEURS, 3.099 bản thu). Đừng đặt `RTF p90 1,022`
+ở đây cạnh `RTF p90 0,395–0,786` của mục 8c rồi kết luận hệ thống đã nhanh lên: hai con
+số khác **phạm vi** (đây là ASR+MT, kia là cả chuỗi có TTS), khác **model**, và khác cả
+**dữ liệu** (2 câu tổng hợp so với 50 mẫu FLEURS mỗi chiều).
+
+Hai điều đáng chú ý:
 
 - ASR nghe "API" thành "A.V." và "kiểm thử" thành "kiểm thư" — lỗi đúng kiểu Whisper
   trên từ mượn và thanh điệu.
