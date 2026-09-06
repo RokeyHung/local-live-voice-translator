@@ -6,6 +6,15 @@ ngôn ngữ một** (vi, en, zh, ja).
     uv run python scripts/eval_asr.py --limit 20            # chạy thử, tải ít
     uv run python scripts/eval_asr.py --json bao-cao-asr.json
 
+    # đổi runtime và/hoặc model (bảng so sánh backend ở docs/19)
+    uv run python scripts/eval_asr.py --adapter mlx_whisper \
+        --model mlx-community/whisper-large-v3-asr-fp16 --json asr-mlx.json
+
+Adapter được dựng qua ``ASR_REGISTRY`` chứ không import thẳng một lớp cụ thể, nên thêm
+backend mới vào registry là đo được ngay, không phải sửa script này. ``--model`` phải là
+tên đúng theo runtime đang chọn: GGML là tên file trong repo whisper.cpp, MLX và
+CTranslate2 là repo id đã chuyển đổi sẵn — chúng KHÔNG thay nhau được (xem docs/23).
+
 Hai lưu ý về phương pháp:
 
 * Chỉ số là **WER cho vi/en** và **CER cho zh/ja** — xem ``scripts/metrics.py``.
@@ -22,17 +31,19 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 import fleurs
 import metrics
 
-from llvt_ai_service.adapters.asr.whisper_cpp import WhisperCppAsr
+from llvt_ai_service.application.model_manager import ASR_REGISTRY, asr_adapter_name, asr_model
 from llvt_ai_service.config.presets import get_preset_config
 from llvt_ai_service.config.settings import get_settings
 from llvt_ai_service.domain.enums import Language, Preset
+from llvt_ai_service.ports.asr import SpeechToTextProvider
 
 LANGUAGES: tuple[Language, ...] = (Language.vi, Language.en, Language.zh, Language.ja)
 
@@ -49,7 +60,9 @@ class LanguageResult:
     empty: int  # số câu ASR trả về rỗng (bị lọc, hoặc model không ra chữ nào)
 
 
-async def run_language(asr: WhisperCppAsr, language: Language, limit: int | None) -> LanguageResult:
+async def run_language(
+    asr: SpeechToTextProvider, language: Language, limit: int | None
+) -> LanguageResult:
     references: list[str] = []
     hypotheses: list[str] = []
     audio_seconds = 0.0
@@ -93,15 +106,24 @@ def print_table(results: list[LanguageResult]) -> None:
 
 
 async def main_async(args: argparse.Namespace) -> None:
+    metrics.require("jiwer", "datasets", "soundfile")
+
+    # Đo mô hình, không đo bộ lọc — trừ khi người chạy muốn con số cả hệ thống. Tắt ở
+    # tầng settings chứ không truyền tham số, vì adapter được dựng qua ASR_REGISTRY và
+    # mọi factory trong đó đều tự đọc `asr_min_confidence`.
+    if not args.with_filter:
+        os.environ["LLVT_ASR_MIN_CONFIDENCE"] = "0"
+        get_settings.cache_clear()
+
     cfg = get_preset_config(Preset(args.preset))
-    settings = get_settings()
-    asr = WhisperCppAsr(
-        cfg.asr_model,
-        models_dir=str(settings.models_dir / "whisper-cpp"),
-        # Đo mô hình, không đo bộ lọc — trừ khi người chạy muốn con số cả hệ thống.
-        min_confidence=settings.asr_min_confidence if args.with_filter else 0.0,
-    )
-    print(f"Nạp ASR: {cfg.asr_model} (preset {args.preset})…", flush=True)
+    adapter = args.adapter or asr_adapter_name(cfg)
+    model = args.model or asr_model(cfg, adapter)
+    # Ghi đè ngược vào cfg: factory trong registry gọi lại `asr_model(cfg, adapter)`,
+    # nên đây là cách đưa lựa chọn của người chạy tới đúng adapter mà không phải đụng
+    # vào registry hay preset.
+    cfg = replace(cfg, asr_adapter=adapter, asr_model=model)
+    asr = ASR_REGISTRY[adapter](cfg)
+    print(f"Nạp ASR: {model} qua {adapter} (preset {args.preset})…", flush=True)
     await asr.load()
     print(f"  backend: {asr.runtime_info()}", flush=True)
 
@@ -115,7 +137,8 @@ async def main_async(args: argparse.Namespace) -> None:
             "dataset": "google/fleurs",
             "split": "test",
             "preset": args.preset,
-            "model": cfg.asr_model,
+            "adapter": adapter,
+            "model": model,
             "runtime": asr.runtime_info(),
             "hallucination_filter": bool(args.with_filter),
             "limit": args.limit,
@@ -140,6 +163,16 @@ def main() -> None:
     )
     parser.add_argument(
         "--preset", default=Preset.balanced.value, choices=[p.value for p in Preset]
+    )
+    parser.add_argument(
+        "--adapter",
+        choices=sorted(ASR_REGISTRY),
+        help="runtime ASR (mặc định: LLVT_ASR_ADAPTER nếu có, không thì của preset)",
+    )
+    parser.add_argument(
+        "--model",
+        help="tên model ĐÚNG THEO RUNTIME đó — ba runtime không dùng chung tên model "
+        "(mặc định: model của preset cho runtime đang chọn)",
     )
     parser.add_argument(
         "--with-filter", action="store_true", help="bật bộ lọc câu ma (đo cả hệ thống)"
