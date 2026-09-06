@@ -98,6 +98,12 @@ Chạy qua đúng nút "Chạy đánh giá" trên màn Đánh giá, bộ mẫu 2
 p90 **856 ms** · dịch p90 **396 ms** · tổng p90 **1.227 ms** · **RTF p90 0,818**
 (< 1 nghĩa là xử lý nhanh hơn thời gian thực).
 
+> **RTF ở đây tính trên phạm vi hẹp: chỉ ASR + MT**, không gồm VAD và TTS — vì màn Đánh
+> giá chấm chất lượng dịch nên không chạy TTS. Con số `make eval-latency` sẽ in ra là
+> **của cả chuỗi VAD→ASR→MT→TTS** nên sẽ **cao hơn**. Hai con số không thay thế được
+> nhau; báo cáo phải ghi rõ phạm vi. Xem
+> [`26` mục 5.6](26_do-do-danh-gia-wer-bleu-comet-rtf.md).
+
 | Chiều | Số câu | Thang đo | Tỷ lệ lỗi | chrF   |
 | ----- | ------ | -------- | --------- | ------ |
 | vi→en | 5      | WER      | 9,7 %     | 54,3 % |
