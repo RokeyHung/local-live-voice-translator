@@ -53,6 +53,21 @@ def test_model_name_maps_to_ggml_id():
     assert asr._model_id == "small.en-q5_1"
 
 
+def test_runtime_info_reports_the_upstream_path_not_the_internal_id():
+    """Một model chỉ được có MỘT cái tên (docs/22).
+
+    pywhispercpp nhận `small-q5_1`, nhưng đó là chi tiết bên trong runtime. Danh mục,
+    ô chọn model, `POST /api/models/download` và bảng tiến trình đều dùng
+    `ggml-small-q5_1.bin`; báo cáo id ở đây là bắt màn Phiên dịch hiện một cái tên
+    thứ hai cho đúng model người dùng vừa chọn.
+    """
+    asr = WhisperCppAsr("ggml-small-q5_1.bin", loader=lambda _i, _d: RecordingModel([]))
+    asyncio.run(asr.load())
+
+    assert asr.runtime_info()["model"] == "ggml-small-q5_1.bin"
+    assert asr._model_id == "small-q5_1", "vẫn phải gọi runtime bằng id của nó"
+
+
 def test_loader_receives_mapped_id_and_dir():
     captured: dict[str, Any] = {}
 

@@ -234,7 +234,12 @@ class WhisperCppAsr(SpeechToTextProvider):
 
     def runtime_info(self) -> dict[str, str]:
         return {
-            "model": self._model_id,
+            # Tên NGƯỜI DÙNG chọn (`ggml-small-q5_1.bin`), không phải id nội bộ của
+            # pywhispercpp (`small-q5_1`). Một model chỉ được có một cái tên: mọi
+            # adapter khác đã trả đường dẫn thượng nguồn, danh mục và bảng tiến trình
+            # cũng dùng dạng có `.bin`. Trả id ở đây là bắt màn Phiên dịch hiện một
+            # cái tên thứ hai cho cùng một model.
+            "model": self._model_name,
             "backend": "whisper.cpp",
             "accel": _accel_from_system_info(self._system_info),
         }
