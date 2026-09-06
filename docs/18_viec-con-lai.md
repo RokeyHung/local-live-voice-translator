@@ -33,13 +33,17 @@ Hai việc chỉ cần nhắn tin, nhưng đang trễ:
 - [ ] **Nhắc thầy về baseline cloud.** Biên bản mục 7, Ưu tiên 3 ghi rõ _"nhắc thầy sau
       2 tuần"_. Họp 19/08 → tính tới 04/09 là **16 ngày**.
 - [ ] **Báo cáo thầy công thức RTF và ngưỡng "đạt".** Thầy dặn tự tra rồi báo lại (biên
-      bản mục 3c và câu hỏi số 2). Nội dung đã soạn sẵn ở
-      [`17_bo-danh-gia-fleurs.md` mục 5](17_bo-danh-gia-fleurs.md) — copy phần đó gửi
-      thầy, trong đó có một điểm cần thầy chốt: lấy ngưỡng RTF p90 < 1 (điều kiện cần)
-      hay chặt hơn ở 0,5.
+      bản mục 3c và câu hỏi số 2). Nội dung đã soạn xong, có trích nguồn đầy đủ, ở
+      [`26_do-do-danh-gia-wer-bleu-comet-rtf.md` mục 5](26_do-do-danh-gia-wer-bleu-comet-rtf.md) —
+      **copy nguyên mục 5 gửi thầy**. Kèm theo là mục 8 của tài liệu đó: **5 điểm cần
+      thầy chốt**, trong đó có ngưỡng RTF p90 < 1 (điều kiện cần) hay chặt hơn ở 0,5.
 
 Kèm theo, nên báo thầy hai điều đã phát hiện khi làm (chi tiết ở mục 5 dưới): **zh/ja
 phải dùng CER chứ không phải WER**, và **COMET không cài chung môi trường được**.
+
+Việc thứ ba trong Ưu tiên 1 — _"tự tìm hiểu các thuật ngữ/độ đo mới: WER, BLEU, COMET,
+RTF"_ — đã xong, viết ở [`26`](26_do-do-danh-gia-wer-bleu-comet-rtf.md): công thức, ví dụ
+tính tay, cái bẫy khi diễn giải, ngưỡng đề xuất và danh sách nguồn trích dẫn.
 
 ---
 
@@ -49,7 +53,8 @@ phải dùng CER chứ không phải WER**, và **COMET không cài chung môi t
 [`17_bo-danh-gia-fleurs.md`](17_bo-danh-gia-fleurs.md).
 
 ```bash
-make setup-eval                    # cài datasets + sacrebleu + jiwer (một lần)
+make setup                         # cài đầy đủ, gồm nhóm eval (một lần)
+make fetch-fleurs                  # tải trước dữ liệu FLEURS (một lần, ~2,3 GB)
 
 make eval-mt LIMIT=10              # chạy thử: xem NLLB mất bao lâu mỗi câu
 make eval-mt                       # bản đầy đủ → eval-mt.json
@@ -61,8 +66,11 @@ make eval-asr                      # bản đầy đủ → eval-asr.json
 make eval-latency LIMIT=20         # Total Inference Time + RTF
 ```
 
-**Làm `eval-mt` trước** dù thầy đánh số (a) cho ASR: nó chỉ tải văn bản (~600 KB mỗi
-ngôn ngữ) nên nhẹ hơn nhiều, và cho biết ngay tốc độ NLLB để ước lượng các bước sau.
+**Làm `eval-mt` trước** dù thầy đánh số (a) cho ASR: nó chỉ cần phần văn bản (~600 KB
+mỗi ngôn ngữ) nên nhẹ hơn nhiều, và cho biết ngay tốc độ NLLB để ước lượng các bước sau.
+
+`make eval-mt` sẽ **ghi đè** `eval-mt.json` của lần chạy thử trước — muốn giữ lại thì
+đổi tên file đó đi trước khi chạy bản đầy đủ.
 
 ### Dung lượng phải tải lần đầu
 
@@ -76,6 +84,14 @@ ngôn ngữ) nên nhẹ hơn nhiều, và cho biết ngay tốc độ NLLB để
 
 Tổng khoảng **7,5 GB**. Nên chạy trên máy MacBook (whisper.cpp có Metal) — số RTF đo
 trên máy nào thì chỉ đúng cho máy đó, và báo cáo phải ghi kèm cấu hình máy.
+
+**Trạng thái 06/09:** phần FLEURS (2,2 GB, cả bốn ngôn ngữ, split `test`) đã tải xong về
+`fleurs-cache/`, model whisper.cpp, NLLB và COMET đều đã có sẵn — không phải tải gì thêm.
+Chi tiết cách tải và chỗ dữ liệu nằm ở [`17` mục 2](17_bo-danh-gia-fleurs.md).
+
+**Mục (b) đã xong.** `make eval-mt` + `make eval-comet` chạy đầy đủ 2.022 cặp câu, bảng
+sáu chiều kèm phần đọc số ở [`17` mục 8](17_bo-danh-gia-fleurs.md). Còn lại mục (a)
+`eval-asr` (~55 phút) và mục (c) `eval-latency` (sáu chiều, ~15 phút).
 
 ### Xong là khi nào
 
@@ -110,13 +126,13 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 
 ## 3. Ưu tiên 2
 
-| Việc                                              | Ghi chú                                                                                                                                                              |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`21`](21_man-danh-gia-va-backend-thu-ba.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`25`](25_ket-qua-chay-thu-e2e.md) mục 4.                       |
-| **Quyết giữ hay bỏ ràng buộc Google Meet**        | Thầy gợi ý cân nhắc bỏ (biên bản 4.3), phụ thuộc việc xử lý được silence detection hay không. Giờ đã sửa xong phần tách câu → **quyết được sau khi làm xong mục 2**. |
-| **Cải thiện dịch Nhật → Việt**                    | Làm sau `eval-mt`: cần biết chiều ja→vi đang tệ cỡ nào trước khi sửa, không thì không biết sửa có ăn thua không.                                                     |
-| **Kiểm tra ổn định trên Windows 11**              | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                     |
-| **Chạy thật trên Google Meet**                    | Phụ thuộc quyết định ở dòng 2.                                                                                                                                       |
+| Việc                                              | Ghi chú                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`21`](21_man-danh-gia-va-backend-thu-ba.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`25`](25_ket-qua-chay-thu-e2e.md) mục 4.                                                                                                                                     |
+| **Quyết giữ hay bỏ ràng buộc Google Meet**        | Thầy gợi ý cân nhắc bỏ (biên bản 4.3), phụ thuộc việc xử lý được silence detection hay không. Giờ đã sửa xong phần tách câu → **quyết được sau khi làm xong mục 2**.                                                                                                               |
+| **Cải thiện dịch — nhưng là chiều vi→zh**         | `eval-mt` + `eval-comet` đã chạy đầy đủ ([`17` mục 8](17_bo-danh-gia-fleurs.md)): ja→vi hoá ra **không** phải chiều tệ nhất (spBLEU 19,91 · COMET 0,8191). Chiều yếu nhất là **vi→zh** — cả spBLEU (17,15) lẫn COMET (0,7729) cùng chỉ vào đó. Nhắm vào vi→zh chứ đừng nhắm ja→vi. |
+| **Kiểm tra ổn định trên Windows 11**              | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                                                                                                                                   |
+| **Chạy thật trên Google Meet**                    | Phụ thuộc quyết định ở dòng 2.                                                                                                                                                                                                                                                     |
 
 ---
 
@@ -175,7 +191,12 @@ Code đã xong và test sạch, phần **chạy thật thì chưa**:
 
 - [ ] **Đo MLX so với whisper.cpp trên máy Apple Silicon.** Đây mới là lý do thêm backend
       thứ hai — thêm một cột vào bảng của [`17`](17_bo-danh-gia-fleurs.md):
-      `make setup-mlx && LLVT_ASR_ADAPTER=mlx_whisper make eval-asr`. **Đã có một nửa:**
+      `make eval-asr ADAPTER=mlx_whisper MODEL=<repo mlx> JSON=eval-asr-mlx.json`
+      (`eval_asr.py` giờ nhận `--adapter`/`--model`, dựng adapter qua `ASR_REGISTRY`).
+      Đã chọn xong model bằng bảng đo 7 bản MLX ở
+      [`19` mục 2.2b](19_backend-asr-va-tach-nguoi-noi.md): dùng
+      `whisper-large-v3-asr-8bit` (WER 6,7% · RTF 0,14 · 1,2 GB — bằng chất lượng bản
+      fp16 mà nhẹ hơn 2,3 lần). **Đã có một nửa:**
       [`25`](25_ket-qua-chay-thu-e2e.md) cho số của MLX large-v3-turbo fp16 (ASR
       780–897 ms, RTF p90 0,818); còn thiếu cột whisper.cpp trên cùng bộ mẫu để so.
 - [ ] **Chạy thử diarization trên một bản ghi họp nhiều người thật**, xem nhãn có khớp

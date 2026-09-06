@@ -39,7 +39,8 @@ của hai tập `id` nên không bao giờ so lệch cặp.
 ## 2. Ba nhóm chỉ số, ba lệnh
 
 ```bash
-make setup-eval                  # cài datasets + sacrebleu + jiwer (một lần)
+make setup                       # cài đầy đủ, gồm cả nhóm eval (hoặc make setup-eval)
+make fetch-fleurs                # tải trước dữ liệu FLEURS (một lần, ~2,3 GB)
 
 make eval-asr LIMIT=20           # (a) WER/CER từng ngôn ngữ
 make eval-mt LIMIT=30            # (b) spBLEU + chrF++ trên 6 chiều
@@ -49,6 +50,25 @@ make eval-latency LIMIT=20       # (c) Total Inference Time + RTF
 
 Bỏ `LIMIT` để chạy toàn bộ tập `test` — đó mới là số đưa vào báo cáo. `LIMIT` dùng để
 ước lượng thời gian và dung lượng tải trước khi chạy bản đầy đủ.
+
+### Phụ thuộc: vì sao ba lệnh tự mang theo `--group eval`
+
+`uv sync` đồng bộ môi trường về **đúng** những gì lệnh nêu ra: `make setup-mlx` chạy sau
+`make setup-eval` sẽ gỡ mất `sacrebleu`, im lặng, không báo gì. Đã mất một lượt chạy
+thật vì chuyện này — script dịch xong toàn bộ chiều vi→en (347 câu, 5 phút) rồi mới chết
+ở dòng `from sacrebleu.metrics import BLEU`.
+
+Hai lớp chặn:
+
+1. Ba target `eval-asr` / `eval-mt` / `eval-latency` chạy qua `uv run --group eval`, nên
+   thư viện đo luôn có mặt dù trước đó đã `uv sync` kiểu gì.
+2. Mỗi script gọi `metrics.require(...)` ở dòng đầu của `main_async`, **trước** khi nạp
+   model. Thiếu thư viện thì hỏng trong một giây kèm câu "chạy `make setup-eval`", chứ
+   không phải sau nửa tiếng chạy.
+
+Lớp 2 cần thiết vì `jiwer`/`sacrebleu` cố tình được import muộn bên trong từng hàm đo
+(nhóm `eval` là phụ thuộc tuỳ chọn), nên lỗi thiếu thư viện mặc định nổ ra ở tận bước
+chấm điểm — sau khi model đã chạy xong việc nặng nhất.
 
 Mỗi lệnh ghi thêm một file JSON (`eval-asr.json`, `eval-mt.json`, `eval-latency.json`)
 kèm đủ tham số của lần chạy — preset, tên model, backend thật (Metal/CUDA/CPU), có bật
@@ -68,6 +88,61 @@ nào.
 Phần đánh giá MT cố ý đọc thẳng file `data/<config>/test.tsv` thay vì đi qua thư viện
 `datasets`: chỉ cần văn bản thì không có lý do gì tải 2 GB audio.
 
+### Tải dữ liệu trước bằng `make fetch-fleurs`
+
+Ba lệnh `eval-*` tự tải phần chúng thiếu, nhưng nên tải riêng một lần bằng
+`scripts/fetch_fleurs.sh`: lượt tải audio là hơn 2 GB, đứt mạng giữa chừng thì mất luôn
+cả lượt chạy đánh giá (đã nạp model, đã chạy được một phần). Tải riêng thì chạy lại là
+tiếp tục chỗ dở, và file nào đã có sẽ bị bỏ qua.
+
+```bash
+make fetch-fleurs                       # cả bốn ngôn ngữ, split test
+make fetch-fleurs LANGS="vi en"         # tải lẻ
+make fetch-fleurs FLEURS_CACHE=/duong/dan/khac
+```
+
+**Dữ liệu nằm ở đâu.** Mặc định là `fleurs-cache/` ở thư mục gốc repo (đã có trong
+`.gitignore`), đổi bằng biến `FLEURS_CACHE`. Makefile trỏ **cả hai** biến môi trường của
+Hugging Face vào đó cho các lệnh `eval-*`:
+
+| Biến                | Chứa gì                                               |
+| ------------------- | ----------------------------------------------------- |
+| `HF_HUB_CACHE`      | File tải thẳng từ Hub: `test.tsv` và parquet có audio |
+| `HF_DATASETS_CACHE` | Bản arrow mà `datasets` giải nén ra từ parquet        |
+
+Phải đặt cả hai, nếu không dữ liệu đánh giá bị chẻ làm hai nơi — cái thứ hai mặc định
+nằm ở `~/.cache`. Model **không** bị ảnh hưởng: adapter truyền `cache_dir` riêng nên
+whisper.cpp/NLLB vẫn nằm ở `models_dir`.
+
+**Hai nguồn, hai nhánh khác nhau — không gộp được:**
+
+| Thứ     | Nhánh                  | Đường dẫn                 |
+| ------- | ---------------------- | ------------------------- |
+| Văn bản | `main`                 | `data/<config>/test.tsv`  |
+| Audio   | `refs/convert/parquet` | `<config>/test/*.parquet` |
+
+`datasets.load_dataset()` đọc bản parquet tự chuyển đổi, **không** đọc
+`data/<config>/audio/test.tar.gz` trên `main`. Tải nhầm nhánh là tải thừa vài GB mà
+`eval-asr` vẫn đi tải lại từ đầu.
+
+**Vì sao script dùng `snapshot_download` chứ không dùng `hf download --include`:** CLI
+nhận `repo_id [filenames...]` là tham số vị trí, nên khi truyền nhiều mẫu sau
+`--include` thì một phần rơi vào `filenames` và **toàn bộ `--include` bị bỏ qua** — chỉ
+cảnh báo, vẫn thoát mã 0. Lần đầu tải bằng lệnh đó đã thiếu mất đúng tiếng Việt mà không
+có dấu hiệu gì, và tiếng Việt là ngôn ngữ trục của cả sáu chiều nên thiếu nó là hỏng
+toàn bộ phần MT.
+
+Kiểm tra nhanh dữ liệu đã đủ chưa (đọc offline, không đụng mạng):
+
+```bash
+cd apps/ai-service && HF_HUB_CACHE=../../fleurs-cache HF_HUB_OFFLINE=1 \
+  uv run python -c "import sys; sys.path.insert(0,'scripts'); import fleurs; \
+  from llvt_ai_service.domain.enums import Language as L; \
+  print(len(fleurs.parallel(L.vi, L.en)))"
+```
+
+Ra `347` là văn bản đủ (346 cho vi↔zh, 318 cho vi↔ja — đúng bảng ở mục 1).
+
 ---
 
 ## 3. (a) ASR — WER cho vi/en, **CER** cho zh/ja
@@ -81,6 +156,28 @@ chất là chấm theo chỗ Whisper tình cờ chèn dấu cách, không phải
 câu đúng nghĩa có thể ra WER 0% hay 100% tuỳ cách chèn. Cách làm chuẩn trong ngành, và
 trong chính bài báo FLEURS, là dùng **CER** cho zh/ja. Bảng kết quả ghi rõ từng dòng
 đang là chỉ số nào chứ không gộp một cột "WER" cho gọn.
+
+**Đổi runtime hoặc model.** Script dựng adapter qua `ASR_REGISTRY` chứ không import
+thẳng `WhisperCppAsr`, nên đo được cả ba backend mà không phải sửa code:
+
+```bash
+make eval-asr ADAPTER=mlx_whisper \
+  MODEL=mlx-community/whisper-large-v3-asr-fp16 JSON=eval-asr-mlx.json
+```
+
+`MODEL` phải đúng tên của runtime đang chọn — GGML là tên file trong repo whisper.cpp,
+MLX và CTranslate2 là repo id đã chuyển đổi sẵn, ba loại **không** thay nhau được (mục
+đích của `asr_alternatives` trong preset, xem [`23`](23_chon-model-khong-phai-nap-model.md)).
+Đặt `JSON=` khác đi khi đo backend thứ hai, nếu không nó ghi đè bảng của backend thứ nhất.
+
+Bảng đo bảy model MLX (WER · RTF · dung lượng, trên cùng 20 câu tiếng Việt) nằm ở
+[`19` mục 2.2b](19_backend-asr-va-tach-nguoi-noi.md) — dùng nó để chọn model trước khi
+tốn một tiếng rưỡi chạy bản đầy đủ.
+
+Khi so hai dòng kết quả với nhau, nhớ là **đổi backend thường kèm đổi luôn cỡ model**:
+`ggml-large-v3-turbo-q5_0` (turbo, lượng tử 5-bit) so với
+`mlx-community/whisper-large-v3-asr-fp16` (large-v3 đầy đủ, fp16) là khác cả runtime lẫn
+model. Muốn tách riêng ảnh hưởng của runtime thì phải chọn hai model cùng mức.
 
 **Bộ lọc câu ma mặc định TẮT** khi đo. Mục tiêu của mục (a) là chất lượng của _mô hình_
 Whisper; bộ lọc ở `adapters/asr/hallucination.py` là một lớp sản phẩm nằm sau nó. Cần
@@ -122,6 +219,21 @@ Hai bộ ràng buộc này không cùng tồn tại trong một venv được. V
 Việc xuất từng câu ra JSON còn có ích khi viết báo cáo: soi được câu nào dịch sai và sai
 kiểu gì, thay vì chỉ có một con số tổng.
 
+Cái giá của môi trường riêng là nó cũ hơn phần còn lại của dự án, và hai chỗ đã hỏng thật
+khi chạy trên macOS Apple Silicon — cả hai đều chết **trước khi chấm câu đầu tiên**, nên
+đã vá thẳng trong `eval_comet.py`:
+
+| Triệu chứng                                                     | Nguyên nhân                                                                                                               | Cách vá                        |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `ModuleNotFoundError: No module named 'pkg_resources'`          | `unbabel-comet` ghim `torchmetrics<0.11`, bản đó còn import `pkg_resources`, mà setuptools từ 81 trở đi đã gỡ hẳn gói này | ghim `setuptools<81` ở PEP 723 |
+| `ValueError: multiprocessing_context can only be used with ...` | COMET đặt `multiprocessing_context="fork"` khi thấy MPS khả dụng, nhưng để `num_workers = 2 * gpus` = 0 lúc chấm trên CPU | truyền `num_workers=2`         |
+
+Cái thứ hai chỉ xảy ra trên máy Mac có MPS mà chấm bằng CPU — đúng cấu hình mặc định của
+đề tài.
+
+Chấm COMET **không** đắt: đo thật được ~120 câu trong 13 giây, tức toàn bộ 2.022 câu
+FLEURS hết khoảng 4 phút, so với 28 phút của bước dịch sinh ra chúng.
+
 ---
 
 ## 5. (c) Độ trễ — Total Inference Time và RTF
@@ -130,6 +242,10 @@ kiểu gì, thay vì chỉ có một con số tổng.
 của FLEURS.
 
 ### Công thức RTF — phần thầy dặn tra lại và báo cáo
+
+> Bản đầy đủ, có trích nguồn cho từng khẳng định, nằm ở
+> [`26` mục 5](26_do-do-danh-gia-wer-bleu-comet-rtf.md) — đó mới là phần gửi thầy. Mục
+> này giữ lại bản tóm tắt để đọc liền mạch với phần code.
 
 $$\text{RTF} = \frac{\text{thời gian xử lý}}{\text{thời lượng audio đầu vào}}$$
 
@@ -191,7 +307,61 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 
 ## 7. Việc còn lại của Ưu tiên 1
 
+- [x] Tải dữ liệu FLEURS về máy (`make fetch-fleurs`) — 4 ngôn ngữ, split `test`, 2,2 GB
 - [ ] Chạy `make eval-asr` bản đầy đủ trên máy macOS (Metal) → bảng WER/CER
-- [ ] Chạy `make eval-mt` + `make eval-comet` bản đầy đủ → bảng 6 chiều
+- [x] Chạy `make eval-mt` + `make eval-comet` bản đầy đủ → bảng 6 chiều (mục 8 dưới đây)
 - [ ] Chạy `make eval-latency` cho ít nhất 2 chiều → Total Inference Time + RTF
-- [ ] Gửi thầy mục 5 của tài liệu này (công thức RTF + ngưỡng đề xuất) để chốt
+- [x] Tra công thức RTF, ngưỡng real-time và ba độ đo còn lại, có trích nguồn —
+      [`26`](26_do-do-danh-gia-wer-bleu-comet-rtf.md)
+- [ ] Gửi thầy [`26` mục 5](26_do-do-danh-gia-wer-bleu-comet-rtf.md) (công thức RTF +
+      ngưỡng đề xuất) và [`26` mục 8](26_do-do-danh-gia-wer-bleu-comet-rtf.md) (5 điểm
+      cần chốt)
+
+---
+
+## 8. Kết quả mục (b): MT trên toàn bộ FLEURS `test` — 06/09/2026
+
+Lượt chạy đầy đủ đầu tiên. **2.022 cặp câu**, không giới hạn, 27,6 phút.
+
+| Điều kiện | Giá trị                                                        |
+| --------- | -------------------------------------------------------------- |
+| Model     | `facebook/nllb-200-distilled-600M` (preset `balanced`)         |
+| Dữ liệu   | `google/fleurs`, split `test`, ghép theo `id` (không qua ASR)  |
+| Máy       | Apple M4, macOS 26.6                                           |
+| Độ đo     | spBLEU (tokenizer `flores200`), chrF++, COMET `wmt22-comet-da` |
+
+| Chiều dịch | Câu | spBLEU |  chrF++ | COMET      |
+| ---------- | --: | -----: | ------: | ---------- |
+| vi→en      | 347 |  35,79 |   57,10 | 0,8525     |
+| en→vi      | 347 |  37,13 |   54,69 | 0,8505     |
+| vi→zh      | 346 |  17,15 | _16,14_ | **0,7729** |
+| zh→vi      | 346 |  22,33 |   42,77 | 0,8213     |
+| vi→ja      | 318 |  10,96 | _19,88_ | 0,8239     |
+| ja→vi      | 318 |  19,91 |   40,19 | 0,8191     |
+
+### Ba điều bảng này nói, và một điều nó không nói
+
+**1. COMET xếp hạng khác hẳn spBLEU.** Theo spBLEU, vi→ja (10,96) tệ hơn vi→zh (17,15)
+tới 6 điểm. Theo COMET thì ngược lại: vi→ja 0,8239 **cao hơn** vi→zh 0,7729. Sáu chiều
+nằm gọn trong dải 0,77–0,85 trong khi spBLEU trải từ 10,96 tới 37,13.
+
+Đây là lý do thầy giao cả hai độ đo. spBLEU khớp chuỗi n-gram bề mặt nên phạt rất nặng
+những ngôn ngữ có cách viết khác hẳn nguồn; COMET là mô hình chấm ngữ nghĩa nên nói được
+"câu này diễn đạt khác nhưng vẫn đúng ý". Kết luận "dịch sang tiếng Nhật kém nhất" rút ra
+từ riêng spBLEU là **sai** — chiều yếu nhất thật sự là **vi→zh**, và cả hai độ đo cùng
+đồng ý ở điểm đó.
+
+**2. chrF++ ở hai chiều đích zh/ja không so ngang được** (in nghiêng trong bảng). vi→zh
+có chrF++ 16,14, _thấp hơn cả_ spBLEU của chính nó, trong khi vi→en là 57,10 so với
+35,79. Không phải bản dịch tệ tới mức đó: chrF**++** cộng thêm n-gram **cấp từ**, mà
+tiếng Trung/Nhật không tách từ bằng khoảng trắng nên phần đó gần như bằng 0 và kéo tụt
+điểm tổng. Đây đúng là phiên bản MT của chuyện WER/CER ở mục 3. Trong báo cáo: cột chrF++
+của hai chiều đích zh/ja phải có chú thích, hoặc bỏ hẳn và dựa vào spBLEU + COMET.
+
+**3. Trung bình sáu chiều thì đừng lấy.** Sáu chiều có độ khó rất khác nhau; một con số
+gộp (spBLEU 23,88) không nói lên điều gì ngoài việc trộn hai nhóm không cùng thang.
+
+**Điều bảng không nói:** `wmt22-comet-da` được huấn luyện trên phán đoán của người chấm,
+chủ yếu ở các cặp ngôn ngữ giàu dữ liệu. Độ tin của nó ở vi↔ja và vi↔zh thấp hơn ở vi↔en,
+nên khoảng chênh vài phần nghìn giữa các chiều **không** đủ để kết luận chiều nào hơn
+chiều nào. Chỉ khoảng cách lớn như vi→zh (0,77) so với vi→en (0,85) mới đáng nói.

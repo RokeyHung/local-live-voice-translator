@@ -75,6 +75,10 @@ make setup-mlx                      # uv sync --extra mlx (chỉ macOS + Apple S
 LLVT_ASR_ADAPTER=mlx_whisper make service
 ```
 
+`make setup` đã bao gồm extra này (khi máy là macOS + Apple Silicon). Dùng riêng
+`make setup-mlx` thì nhớ: `uv sync` gỡ mọi nhóm/extra không được nêu trong chính lệnh
+đó — chạy nó sau `make setup` là mất nhóm `eval` và các backend còn lại.
+
 Chỗ dễ sai nhất: preset là một **mức** nhanh/chất lượng, không phải một model. Tên
 model của hai runtime không thay nhau được (`large-v3-turbo-q5_0` và
 `mlx-community/whisper-large-v3-turbo-asr-8bit`), nên `PresetConfig.asr_alternatives`
@@ -88,6 +92,48 @@ giữ bảng tương đương và `asr_model(cfg, adapter)` tra sang cột đún
 
 Đặt sai tên adapter thì service **cảnh báo trong log rồi dùng tiếp adapter của preset**,
 không chết lúc khởi động.
+
+### 2.2b. Bảy model MLX, đo thật để chọn — 06/09/2026
+
+Bảng `asr_alternatives` ở trên chọn model theo suy đoán ("turbo cho nhanh, fp16 cho
+chất lượng"). Dưới đây là số đo thật để kiểm chứng, làm khi cần chọn model cho lượt
+`eval-asr` đầy đủ.
+
+**Cách đo.** Cùng **20 câu đầu tiếng Việt** của FLEURS `test` cho mọi dòng, cùng tham số
+giải mã (`temperature=0`, không fallback), bộ lọc câu ma tắt, trên Apple M4. Lệnh:
+`make eval-asr ADAPTER=mlx_whisper MODEL=<repo> --language vi --limit 20`.
+
+| Model MLX (`mlx-community/…`)       | Trên đĩa |    WER |   RTF | Ước tính chạy đầy đủ 4 ngôn ngữ |
+| ----------------------------------- | -------: | -----: | ----: | ------------------------------- |
+| `whisper-large-v3-asr-fp16`         |   2,9 GB |   6,7% |  0,18 | ~110 phút                       |
+| `whisper-large-v3-asr-8bit`         |   1,2 GB |   6,7% |  0,14 | ~86 phút                        |
+| `whisper-large-v3-asr-4bit`         |   852 MB |   7,2% |  0,13 | ~80 phút                        |
+| `whisper-large-v3-turbo-asr-fp16`   |   1,5 GB |   8,1% |  0,08 | ~49 phút                        |
+| `whisper-large-v3-turbo-asr-8bit`   |   829 MB |   8,1% |  0,08 | ~49 phút                        |
+| `whisper-large-v3-turbo-asr-4bit`   |   447 MB |   8,9% |  0,08 | ~49 phút                        |
+| `whisper-small-asr-fp16`            |   490 MB | 133,5% |  0,14 | không dùng được                 |
+| _whisper.cpp `large-v3-turbo-q5_0`_ |   570 MB |   8,6% | 0,089 | ~55 phút                        |
+
+**Ba điều rút ra:**
+
+1. **Lượng tử hoá gần như miễn phí.** fp16 → 8bit **không đổi WER** (6,7% cả hai) nhưng
+   nhỏ hơn 2,3 lần và nhanh hơn 22%. Xuống 4bit mới mất 0,5–0,8 điểm. Vậy không có lý do
+   nào để dùng bản fp16 của cùng một model — bảng `asr_alternatives` nên ưu tiên 8bit.
+2. **Turbo mới là chỗ đánh đổi thật:** nhanh gấp ~2 lần (RTF 0,08 so với 0,14) nhưng mất
+   1,4 điểm WER. Đây là quyết định sản phẩm, không phải quyết định kỹ thuật.
+3. **Bản `small` không dùng được cho tiếng Việt.** WER 133,5% (vượt 100% được vì lỗi
+   **chèn** cũng bị tính) với 10/20 câu trả rỗng, số còn lại rơi vào vòng lặp lặp chữ:
+
+   > `'Đối với Spring Book, trăng này đã giúp đổi tiện cơ thúc chuổi thua 5 trăng liền. Nói chạy ra, đối với Spring Book, trăng này đã giúp đổi tiện cơ thúc chuổi thua'`
+
+   Adapter tắt fallback nhiệt độ để WER lặp lại được (mục 2.3), nên model kẹt vòng lặp
+   thì không có đường thoát. Preset **Fast** đang trỏ `mlx_whisper` vào
+   `whisper-small-asr-8bit` — **cần đo lại bản 8bit trước khi tin vào cấu hình đó**.
+
+**Hai giới hạn của bảng này**, phải nói kèm khi trích vào báo cáo: chỉ 20 câu và chỉ
+tiếng Việt, nên chênh lệch dưới ~1 điểm WER (8,1% với 8,6%) chưa kết luận được; và dòng
+whisper.cpp khác dòng MLX ở **cả** runtime lẫn cỡ model, nên nó không phải phép so sánh
+runtime thuần tuý.
 
 ### 2.3. Hai chi tiết kỹ thuật đáng ghi lại
 
