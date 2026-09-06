@@ -1,0 +1,56 @@
+{
+  "dataset": "google/fleurs",
+  "split": "test",
+  "preset": "balanced",
+  "adapter": "mlx_whisper",
+  "model": "mlx-community/whisper-large-v3-asr-8bit",
+  "runtime": {
+    "model": "mlx-community/whisper-large-v3-asr-8bit",
+    "backend": "mlx-audio",
+    "accel": "Metal"
+  },
+  "hallucination_filter": false,
+  "limit": null,
+  "languages": [
+    {
+      "language": "vi",
+      "metric": "WER",
+      "score": 0.0884,
+      "samples": 857,
+      "audio_seconds": 10813.7,
+      "asr_seconds": 1589.0,
+      "rtf": 0.147,
+      "empty": 0
+    },
+    {
+      "language": "en",
+      "metric": "WER",
+      "score": 0.0478,
+      "samples": 647,
+      "audio_seconds": 6387.9,
+      "asr_seconds": 910.7,
+      "rtf": 0.143,
+      "empty": 0
+    },
+    {
+      "language": "zh",
+      "metric": "CER",
+      "score": 0.0805,
+      "samples": 945,
+      "audio_seconds": 11065.2,
+      "asr_seconds": 1577.2,
+      "rtf": 0.143,
+      "empty": 0
+    },
+    {
+      "language": "ja",
+      "metric": "CER",
+      "score": 0.0473,
+      "samples": 650,
+      "audio_seconds": 8511.1,
+      "asr_seconds": 1104.6,
+      "rtf": 0.13,
+      "empty": 0
+    }
+  ]
+}

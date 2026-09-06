@@ -1,0 +1,26 @@
+{
+  "dataset": "google/fleurs",
+  "split": "test",
+  "preset": "balanced",
+  "adapter": "whisper_cpp",
+  "model": "ggml-small-q5_1.bin",
+  "runtime": {
+    "model": "ggml-small-q5_1.bin",
+    "backend": "whisper.cpp",
+    "accel": "Metal"
+  },
+  "hallucination_filter": false,
+  "limit": 20,
+  "languages": [
+    {
+      "language": "vi",
+      "metric": "WER",
+      "score": 0.2062,
+      "samples": 20,
+      "audio_seconds": 239.0,
+      "asr_seconds": 16.8,
+      "rtf": 0.07,
+      "empty": 0
+    }
+  ]
+}

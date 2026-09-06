@@ -1,0 +1,159 @@
+{
+  "generated": "2026-09-07",
+  "may": "Apple M4, macOS 26.6",
+  "dataset": "google/fleurs, split test",
+  "ghi_chu": "Ba khối đo tách bạch: ASR trên audio, MT trên văn bản (không qua ASR), độ trễ trên cả chuỗi VAD→ASR→MT→TTS. Xem docs/17 mục 8, 8b, 8c.",
+  "asr": {
+    "adapter": "mlx_whisper",
+    "model": "mlx-community/whisper-large-v3-asr-8bit",
+    "runtime": {
+      "model": "mlx-community/whisper-large-v3-asr-8bit",
+      "backend": "mlx-audio",
+      "accel": "Metal"
+    },
+    "hallucination_filter": false,
+    "ban_thu": 3099,
+    "audio_gio": 10.22,
+    "rtf_gop": 0.141,
+    "cau_rong": 0,
+    "ngon_ngu": {
+      "vi": {
+        "chi_so": "WER",
+        "gia_tri": 0.0884,
+        "rtf": 0.147
+      },
+      "en": {
+        "chi_so": "WER",
+        "gia_tri": 0.0478,
+        "rtf": 0.143
+      },
+      "zh": {
+        "chi_so": "CER",
+        "gia_tri": 0.0805,
+        "rtf": 0.143
+      },
+      "ja": {
+        "chi_so": "CER",
+        "gia_tri": 0.0473,
+        "rtf": 0.13
+      }
+    }
+  },
+  "mt": {
+    "model": "facebook/nllb-200-distilled-600M",
+    "bleu_tokenizer": "flores200 (spBLEU)",
+    "comet_model": "Unbabel/wmt22-comet-da",
+    "cap_cau": 2022,
+    "chieu": {
+      "vi→en": {
+        "spbleu": 35.79,
+        "chrf": 57.1,
+        "comet": 0.8525
+      },
+      "en→vi": {
+        "spbleu": 37.13,
+        "chrf": 54.69,
+        "comet": 0.8505
+      },
+      "vi→zh": {
+        "spbleu": 17.15,
+        "chrf": 16.14,
+        "comet": 0.7729
+      },
+      "zh→vi": {
+        "spbleu": 22.33,
+        "chrf": 42.77,
+        "comet": 0.8213
+      },
+      "vi→ja": {
+        "spbleu": 10.96,
+        "chrf": 19.88,
+        "comet": 0.8239
+      },
+      "ja→vi": {
+        "spbleu": 19.91,
+        "chrf": 40.19,
+        "comet": 0.8191
+      }
+    }
+  },
+  "do_tre": {
+    "adapter": "mlx_whisper",
+    "model": "mlx-community/whisper-large-v3-asr-8bit",
+    "rtf_dinh_nghia": "Total Inference Time / thời lượng audio đầu vào",
+    "chieu": {
+      "en→vi": {
+        "mau": 50,
+        "vad_ms": 45.6,
+        "asr_ms": 2421.2,
+        "mt_ms": 953.2,
+        "tts_ms": 272.6,
+        "tong_ms_tb": 3692.5,
+        "tong_ms_p90": 5511.3,
+        "rtf_tb": 0.392,
+        "rtf_p90": 0.496,
+        "cho_chot_ms": 201.9
+      },
+      "ja→vi": {
+        "mau": 50,
+        "vad_ms": 54.5,
+        "asr_ms": 2858.8,
+        "mt_ms": 1052.2,
+        "tts_ms": 289.7,
+        "tong_ms_tb": 4255.2,
+        "tong_ms_p90": 6367.2,
+        "rtf_tb": 0.324,
+        "rtf_p90": 0.395,
+        "cho_chot_ms": 211.4
+      },
+      "vi→en": {
+        "mau": 50,
+        "vad_ms": 52.7,
+        "asr_ms": 4595.4,
+        "mt_ms": 1128.8,
+        "tts_ms": 317.6,
+        "tong_ms_tb": 6094.6,
+        "tong_ms_p90": 10175.9,
+        "rtf_tb": 0.486,
+        "rtf_p90": 0.58,
+        "cho_chot_ms": 255.8
+      },
+      "vi→ja": {
+        "mau": 50,
+        "vad_ms": 55.0,
+        "asr_ms": 4646.2,
+        "mt_ms": 1024.5,
+        "tts_ms": 2261.4,
+        "tong_ms_tb": 7987.1,
+        "tong_ms_p90": 13256.0,
+        "rtf_tb": 0.639,
+        "rtf_p90": 0.786,
+        "cho_chot_ms": 255.8
+      },
+      "vi→zh": {
+        "mau": 50,
+        "vad_ms": 51.8,
+        "asr_ms": 4598.2,
+        "mt_ms": 1134.4,
+        "tts_ms": 1693.1,
+        "tong_ms_tb": 7477.5,
+        "tong_ms_p90": 12592.9,
+        "rtf_tb": 0.595,
+        "rtf_p90": 0.727,
+        "cho_chot_ms": 255.8
+      },
+      "zh→vi": {
+        "mau": 50,
+        "vad_ms": 48.2,
+        "asr_ms": 2623.3,
+        "mt_ms": 965.0,
+        "tts_ms": 274.4,
+        "tong_ms_tb": 3910.9,
+        "tong_ms_p90": 5460.1,
+        "rtf_tb": 0.375,
+        "rtf_p90": 0.509,
+        "cho_chot_ms": 200.1
+      }
+    }
+  }
+}

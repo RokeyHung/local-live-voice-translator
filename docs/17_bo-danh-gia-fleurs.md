@@ -322,6 +322,10 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 
 ## 8. Kết quả mục (a): ASR trên toàn bộ FLEURS `test` — 07/09/2026
 
+> File JSON gốc của cả ba mục 8 / 8b / 8c nằm ở [`docs/results/`](results/README.md),
+> kèm bản gộp `eval-summary.json` và các lượt đo 20 câu dùng để chọn model. Bảng dưới
+> chỉ là phần tổng hợp.
+
 **3.099 bản thu, 10,22 giờ audio, 86 phút chạy.** Không bỏ câu nào, **0 câu rỗng** ở cả
 bốn ngôn ngữ.
 

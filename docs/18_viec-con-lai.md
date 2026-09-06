@@ -110,8 +110,9 @@ Chi tiết cách tải và chỗ dữ liệu nằm ở [`17` mục 2](17_bo-danh
 ### Xong là khi nào
 
 Ba file `eval-asr.json` / `eval-mt.json` / `eval-latency.json` có số thật, và ba bảng
-tương ứng chép được vào báo cáo. Các file JSON đã bị `.gitignore` (số liệu của từng
-máy) — chép bảng vào tài liệu chứ đừng commit file.
+tương ứng chép được vào báo cáo. `eval-*.json` vẫn bị `.gitignore` theo mặc định (số
+liệu của từng máy, từng lượt chạy dở), **trừ** các lượt đã chốt: chúng được chép vào
+[`docs/results/`](results/README.md) để người đọc báo cáo kiểm lại được từng con số.
 
 ---
 

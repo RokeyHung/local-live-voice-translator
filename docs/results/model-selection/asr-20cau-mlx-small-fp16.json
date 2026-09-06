@@ -1,0 +1,26 @@
+{
+  "dataset": "google/fleurs",
+  "split": "test",
+  "preset": "balanced",
+  "adapter": "mlx_whisper",
+  "model": "mlx-community/whisper-small-asr-fp16",
+  "runtime": {
+    "model": "mlx-community/whisper-small-asr-fp16",
+    "backend": "mlx-audio",
+    "accel": "Metal"
+  },
+  "hallucination_filter": false,
+  "limit": 20,
+  "languages": [
+    {
+      "language": "vi",
+      "metric": "WER",
+      "score": 1.3351,
+      "samples": 20,
+      "audio_seconds": 239.0,
+      "asr_seconds": 32.7,
+      "rtf": 0.137,
+      "empty": 10
+    }
+  ]
+}
