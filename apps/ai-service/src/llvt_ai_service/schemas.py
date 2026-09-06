@@ -41,7 +41,9 @@ class CustomChoiceSchema(BaseModel):
     asrModel: str
     mtModel: str
     asrAdapterChoices: list[str] = []
-    asrModelChoices: list[str] = []
+    # Model ASR theo TỪNG runtime: ba runtime dùng ba định dạng khác nhau nên không có
+    # model nào dùng chung được. Giao diện lọc theo runtime đang chọn.
+    asrModelChoices: dict[str, list[str]] = {}
     mtModelChoices: list[str] = []
 
 
@@ -145,9 +147,13 @@ class HfVerifyResponse(BaseModel):
 
 
 class DownloadRequest(BaseModel):
-    """Tên model trong danh mục (không phải đường dẫn file)."""
+    """Model cần tải: đường dẫn thật ở thượng nguồn."""
 
     name: str
+    # Runtime sẽ chạy model này. CHỈ cần khi `name` không có trong danh mục — lúc đó
+    # `org/repo` nào cũng giống nhau nên service không suy ra được. Giá trị:
+    # whisper_cpp | mlx | faster_whisper | nllb | pyannote.
+    kind: str = ""
 
 
 class DownloadedModel(BaseModel):

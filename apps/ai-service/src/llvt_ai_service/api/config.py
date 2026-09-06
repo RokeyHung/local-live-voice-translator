@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from huggingface_hub.errors import GatedRepoError
+from huggingface_hub.errors import GatedRepoError, RepositoryNotFoundError
 
 from llvt_ai_service.adapters.asr.faster_whisper import MODEL_MAP as FW_MODELS
 from llvt_ai_service.adapters.asr.mlx_whisper import MODEL_MAP as MLX_MODELS
@@ -86,13 +86,19 @@ def _describe(container: Container, preset: Preset) -> ConfigResponse:
     )
 
 
-def _custom_choices(settings) -> CustomChoiceSchema:
-    """Bộ tự chọn hiện tại + những lựa chọn service THẬT SỰ chạy được.
+# Model nào chạy được trên runtime nào. Ba runtime dùng ba định dạng khác hẳn nhau —
+# GGML là file, MLX và CTranslate2 là repo HF đã chuyển đổi sẵn — nên **không** có
+# model nào dùng chung được. Gộp chung một danh sách là mời người dùng chọn một tổ
+# hợp không tồn tại, và lỗi chỉ lộ ra ở lúc nạp.
+ASR_MODELS_BY_ADAPTER: dict[str, list[str]] = {
+    "whisper_cpp": list(WHISPER_MODELS),
+    "mlx_whisper": list(MLX_MODELS),
+    "faster_whisper": list(FW_MODELS),
+}
 
-    Danh sách model ASR gộp cả hai runtime: đổi adapter là đổi luôn họ tên model, và
-    lọc sẵn theo adapter ở đây thì giao diện phải hỏi lại service mỗi lần đổi ô. Tên
-    đã mang tiền tố (`whisper-` / `mlx-whisper-`) nên nhìn là biết thuộc runtime nào.
-    """
+
+def _custom_choices(settings) -> CustomChoiceSchema:
+    """Bộ tự chọn hiện tại + những lựa chọn service THẬT SỰ chạy được."""
     active = custom_config(
         settings.custom_asr_adapter, settings.custom_asr_model, settings.custom_mt_model
     )
@@ -101,7 +107,7 @@ def _custom_choices(settings) -> CustomChoiceSchema:
         asrModel=active.asr_model,
         mtModel=active.mt_model,
         asrAdapterChoices=list(ASR_REGISTRY),
-        asrModelChoices=[*WHISPER_MODELS, *MLX_MODELS, *FW_MODELS],
+        asrModelChoices=ASR_MODELS_BY_ADAPTER,
         mtModelChoices=list(NLLB_MODELS),
     )
 
@@ -216,12 +222,31 @@ def _apply_custom(body: ConfigUpdate) -> bool:
     changes = {k: v for k, v in changes.items() if v is not None}
     if not changes:
         return False
-    adapter = changes.get("custom_asr_adapter")
-    if adapter and adapter not in ASR_REGISTRY:
+    settings = get_settings()
+    adapter = changes.get("custom_asr_adapter") or settings.custom_asr_adapter
+    adapter = adapter or custom_config().asr_adapter
+    if adapter not in ASR_REGISTRY:
         raise HTTPException(status_code=400, detail=f"Không có adapter ASR tên {adapter!r}.")
+
+    # Model phải thuộc ĐÚNG runtime đang chọn. Trước đây chỉ kiểm "có tồn tại ở đâu
+    # đó", nên chọn mlx_whisper + một file GGML vẫn lưu được, rồi lúc nạp thì MLX đi
+    # hỏi HuggingFace một repo tên `ggml-....bin` và ném 404 — người dùng thấy "chọn
+    # model không ăn thua" mà không biết vì sao.
     model = changes.get("custom_asr_model")
-    if model and model not in WHISPER_MODELS | MLX_MODELS | FW_MODELS:
-        raise HTTPException(status_code=400, detail=f"Không có model ASR tên {model!r}.")
+    if model and model not in ASR_MODELS_BY_ADAPTER[adapter]:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"{model!r} không chạy được trên runtime {adapter!r}. "
+                f"Ba runtime dùng ba định dạng khác nhau nên không có model dùng chung."
+            ),
+        )
+    # Đổi mỗi runtime mà giữ nguyên model cũ cũng ra tổ hợp hỏng → trả model về mặc
+    # định của runtime mới thay vì để nó gãy lúc nạp.
+    if changes.get("custom_asr_adapter") and "custom_asr_model" not in changes:
+        if settings.custom_asr_model not in ASR_MODELS_BY_ADAPTER[adapter]:
+            changes["custom_asr_model"] = ""
+
     mt = changes.get("custom_mt_model")
     if mt and mt not in NLLB_MODELS:
         raise HTTPException(status_code=400, detail=f"Không có model MT tên {mt!r}.")
@@ -257,16 +282,20 @@ async def update_config(
         container.repository.enabled = body.historyEnabled
     if body.hfToken is not None:
         _apply_hf_token(body.hfToken)
-    if _apply_custom(body):
-        # Đổi bộ tự chọn trong lúc đang CHẠY preset custom thì phải nạp lại, không thì
-        # `stages` báo một đằng còn bộ nhớ giữ một nẻo.
-        if container.model_manager.preset is Preset.custom and body.preset is Preset.custom:
-            await container.model_manager.load_preset(Preset.custom)
+    if _apply_custom(body) and container.model_manager.preset is Preset.custom:
+        # Bộ tự chọn vừa đổi mà model cũ còn trong RAM thì `stages` báo một đằng, bộ
+        # nhớ giữ một nẻo. Giải phóng chứ KHÔNG nạp lại — xem ghi chú bên dưới.
+        await container.model_manager.unload()
     if body.modelsDir is not None:
         await _apply_models_dir(container, body.modelsDir)
-    current = container.model_manager.preset
-    if body.preset != current:
-        await container.model_manager.load_preset(body.preset)
+    if body.preset != container.model_manager.preset:
+        # Đổi preset chỉ GHI NHẬN lựa chọn, không nạp. Nạp là việc của nút "Khởi động
+        # model" (`POST /api/models/load`): trước đây bấm một ô preset là đứng chờ hàng
+        # chục giây, lần đầu còn tải vài GB — không ai chờ đợi điều đó khi chỉ đang
+        # xem thử các mức. Model đang nạp thuộc preset CŨ nên phải giải phóng, nếu
+        # không giao diện sẽ hiện một bộ model không khớp với ô đang sáng.
+        await container.model_manager.unload()
+        container.model_manager.select_preset(body.preset)
     return _describe(container, body.preset)
 
 
@@ -300,10 +329,14 @@ def installed_models() -> list[InstalledModelSchema]:
         "`Systran/faster-whisper-small`, `facebook/nllb-200-distilled-600M`, "
         "`vits-piper-vi_VN-vais1000-medium`, `pyannote/...`. Model đã có sẵn thì lệnh "
         "trả về ngay.\n\n"
+        "Model **ngoài danh mục** (một repo HuggingFace bất kỳ) cũng tải được, nhưng "
+        "phải kèm `kind` để service biết đặt vào thư mục nào và runtime nào sẽ chạy "
+        "nó — `org/repo` nhìn từ ngoài thì repo nào cũng như repo nào.\n\n"
         "**Chặn tới khi tải xong** — hàng GB nên có thể mất vài phút. Trả 400 nếu tên "
-        "không có trong danh mục, **403** nếu đó là repo *gated* mà tài khoản chưa "
-        "được cấp quyền (token vẫn hợp lệ — phải xin quyền trên web), 503 nếu tải "
-        "hỏng vì lý do khác (thường là mất mạng)."
+        "không có trong danh mục, **404** nếu đường dẫn không tồn tại trên "
+        "HuggingFace (thường là gõ sai), **403** nếu đó là repo *gated* mà tài khoản "
+        "chưa được cấp quyền (token vẫn hợp lệ — phải xin quyền trên web), 503 nếu "
+        "tải hỏng vì lý do khác (thường là mất mạng)."
     ),
 )
 async def download_model(
@@ -312,13 +345,15 @@ async def download_model(
     del container  # không đụng tới model đang nạp
     settings = get_settings()
     try:
-        stage, _kind = model_download.resolve(body.name)
+        stage, _kind = model_download.resolve(body.name, body.kind)
     except model_download.UnknownModelError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     try:
         # Tải là I/O mạng blocking → đẩy ra khỏi event loop, nếu không cả service
         # đứng hình (kể cả /health) suốt lúc tải.
-        path = await asyncio.to_thread(model_download.download, body.name, settings.models_dir)
+        path = await asyncio.to_thread(
+            model_download.download, body.name, settings.models_dir, body.kind
+        )
     except GatedRepoError as exc:
         # Repo gated: token hợp lệ nhưng tài khoản CHƯA được cấp quyền. Đây là việc
         # người dùng phải làm trên web, không phải sự cố tạm thời — trả 403 chứ không
@@ -330,6 +365,19 @@ async def download_model(
                 f"{body.name} là repo *gated*: token của bạn hợp lệ nhưng tài khoản "
                 f"chưa được cấp quyền. Mở https://huggingface.co/{body.name} , điền "
                 "biểu mẫu xin quyền rồi bấm lại — không cần đổi token."
+            ),
+        ) from exc
+    except RepositoryNotFoundError as exc:
+        # Phải đứng SAU GatedRepoError: gated là lớp con của not-found, đảo thứ tự thì
+        # repo gated cũng rơi vào đây và người dùng được bảo là "gõ sai đường dẫn".
+        # Người dùng gõ được đường dẫn tuỳ ý nên gõ sai là kiểu hỏng thường gặp nhất.
+        # Đó là lỗi của yêu cầu, không phải của service: 503 sẽ khiến giao diện mời
+        # "thử lại sau" cho một cái repo không bao giờ tồn tại.
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Không có repo {body.name} trên HuggingFace (hoặc nó là repo riêng "
+                "tư mà token hiện tại không đọc được). Kiểm tra lại đường dẫn."
             ),
         ) from exc
     except Exception as exc:  # noqa: BLE001 — mất mạng, hết đĩa: cùng một cửa

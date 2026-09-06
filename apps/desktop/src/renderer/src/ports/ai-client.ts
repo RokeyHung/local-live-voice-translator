@@ -48,8 +48,9 @@ export interface AiClient {
   ): Promise<ConfigResponse>
   // Dừng lượt nạp đang chạy (dừng ở ranh giới khâu kế tiếp).
   cancelLoadModels(): Promise<void>
-  // Tải một model trong danh mục về đĩa, KHÔNG nạp vào bộ nhớ.
-  downloadModel(name: string): Promise<DownloadedModel>
+  // Tải một model về đĩa, KHÔNG nạp vào bộ nhớ. `kind` chỉ cần khi model nằm ngoài
+  // danh mục (một repo HuggingFace bất kỳ) — service không suy ra được runtime.
+  downloadModel(name: string, kind?: string): Promise<DownloadedModel>
   // Xoá đúng một model đã tải, theo `path` mà GET /api/models trả về.
   deleteInstalledModel(path: string): Promise<DeletedModels>
   // Lưu access token HuggingFace ở phía service (chuỗi rỗng = gỡ token đã lưu).

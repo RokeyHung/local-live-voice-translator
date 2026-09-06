@@ -10,7 +10,12 @@ import { formatBytes } from '../../application/format'
 import { format, type Dict } from '../../application/i18n'
 import { MODEL_CATALOG, PRESET_META, STAGE_COLORS } from '../../application/presets'
 import type { Preset } from '../../domain/enums'
-import { PRESETS, type LoadProgress, type LoadStageStatus } from '../../domain/models'
+import {
+  PRESETS,
+  type DownloadKind,
+  type LoadProgress,
+  type LoadStageStatus
+} from '../../domain/models'
 import {
   useCancelLoadModels,
   useDeleteInstalledModel,
@@ -179,6 +184,34 @@ function CustomPicker({
   )
 }
 
+// Runtime chạy được một model tải tay. Nhãn nói rõ khâu + engine vì tên adapter trần
+// (`mlx`, `nllb`) không đủ để người dùng biết mình đang chọn gì.
+const DOWNLOAD_KINDS: DownloadKind[] = ['whisper_cpp', 'mlx', 'faster_whisper', 'nllb', 'pyannote']
+const DOWNLOAD_KIND_LABEL: Record<DownloadKind, string> = {
+  whisper_cpp: 'ASR · whisper.cpp (GGML)',
+  mlx: 'ASR · MLX',
+  faster_whisper: 'ASR · faster-whisper',
+  nllb: 'MT · NLLB',
+  pyannote: 'DIA · pyannote'
+}
+
+/** Chuỗi người dùng gõ có giống một model không: `tổ-chức/tên` hoặc `ggml-*.bin`. */
+function looksLikeModelPath(query: string): boolean {
+  const q = query.trim()
+  return /^[\w.-]+\/[\w.-]+$/.test(q) || /^ggml-[\w.-]+\.bin$/.test(q)
+}
+
+/** Đoán runtime từ chính đường dẫn — người dùng vẫn đổi được ở ô chọn. */
+function guessDownloadKind(query: string): DownloadKind {
+  const q = query.trim().toLowerCase()
+  if (q.startsWith('ggml-')) return 'whisper_cpp'
+  if (q.startsWith('pyannote/')) return 'pyannote'
+  if (q.includes('nllb')) return 'nllb'
+  if (q.startsWith('mlx-community/') || q.includes('-mlx')) return 'mlx'
+  if (q.includes('faster-whisper') || q.includes('ct2')) return 'faster_whisper'
+  return 'mlx'
+}
+
 /** Tiêu đề của một tấm trong lưới hai cột. */
 function PanelHeader({ children }: { children: ReactNode }): JSX.Element {
   return <div className="border-b border-line bg-surface px-4 py-3.25">{children}</div>
@@ -206,6 +239,8 @@ export function ModelsScreen(): JSX.Element {
   const setSessionConfig = useSessionStore((s) => s.setConfig)
   const active = useSessionStore((s) => s.active)
   const [query, setQuery] = useState('')
+  // Runtime cho model gõ tay ngoài danh mục; đoán từ chính đường dẫn, đổi được.
+  const [kindOverride, setKindOverride] = useState<DownloadKind | null>(null)
 
   const loadModels = useLoadModels()
   const unloadModels = useUnloadModels()
@@ -232,8 +267,15 @@ export function ModelsScreen(): JSX.Element {
   const loading = loadModels.isPending || setPreset.isPending
   const busy = loading || unloadModels.isPending || deleteModels.isPending
   const customChoice = config.data?.custom ?? null
+  // Runtime đang chọn (nháp nếu người dùng vừa đổi), và danh sách model CỦA RIÊNG nó.
+  // Ba runtime dùng ba định dạng model khác nhau nên không có model nào dùng chung.
+  const downloadKind = kindOverride ?? guessDownloadKind(query)
+  const setDownloadKind = setKindOverride
+
+  const pickedAdapter = customDraft.asrAdapter ?? customChoice?.asrAdapter ?? 'whisper_cpp'
+  const asrModelChoices = customChoice?.asrModelChoices[pickedAdapter] ?? []
   // Tên model đang tải, để chỉ ô đó hiện vòng xoay (service chạy một lượt một lúc).
-  const downloadingNow = downloadModel.isPending ? downloadModel.variables : null
+  const downloadingNow = downloadModel.isPending ? (downloadModel.variables?.name ?? null) : null
   const installedList = installed.data ?? []
   const installedNames = new Set(installedList.map((m) => m.name))
   const totalBytes = installedList.reduce((sum, m) => sum + m.sizeBytes, 0)
@@ -512,15 +554,19 @@ export function ModelsScreen(): JSX.Element {
             <div className="grid grid-cols-3 gap-2.5">
               <CustomPicker
                 label={L.customAsrAdapter}
-                value={customDraft.asrAdapter ?? customChoice.asrAdapter}
+                value={pickedAdapter}
                 choices={customChoice.asrAdapterChoices}
                 disabled={busy || active}
-                onChange={(v) => setCustomDraft((d) => ({ ...d, asrAdapter: v }))}
+                onChange={(v) =>
+                  // Đổi runtime là đổi luôn họ model, nên bỏ model đang chọn dở: giữ
+                  // lại sẽ ra một tổ hợp không tồn tại và chỉ gãy lúc nạp.
+                  setCustomDraft({ asrAdapter: v, mtModel: customDraft.mtModel })
+                }
               />
               <CustomPicker
                 label={L.customAsrModel}
                 value={customDraft.asrModel ?? customChoice.asrModel}
-                choices={customChoice.asrModelChoices}
+                choices={asrModelChoices}
                 disabled={busy || active}
                 onChange={(v) => setCustomDraft((d) => ({ ...d, asrModel: v }))}
               />
@@ -720,8 +766,48 @@ export function ModelsScreen(): JSX.Element {
           </PanelHeader>
 
           <div className="cs max-h-76 overflow-y-auto">
-            {catalog.length === 0 && (
+            {/* Danh mục là một danh sách chọn lọc, không phải toàn bộ HuggingFace. Gõ
+                một đường dẫn không có trong đó thì vẫn tải được — chỉ cần nói rõ
+                runtime nào sẽ chạy nó, vì nhìn `org/repo` thì repo nào cũng như nhau. */}
+            {catalog.length === 0 && looksLikeModelPath(query) && (
+              <div className="border-b border-line-soft px-4 py-3">
+                <div className="truncate-1 font-mono text-base font-semibold">{query.trim()}</div>
+                <div className="mt-0.5 text-xs text-fg-4">{L.dlFromHfHint}</div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <select
+                    value={downloadKind}
+                    onChange={(e) => setDownloadKind(e.target.value as DownloadKind)}
+                    className={`${SELECT} h-8 max-w-52`}
+                    style={SELECT_ARROW}
+                  >
+                    {DOWNLOAD_KINDS.map((kind) => (
+                      <option key={kind} value={kind}>
+                        {DOWNLOAD_KIND_LABEL[kind]}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className={`${GHOST_BUTTON} h-8 text-sm`}
+                    disabled={downloadModel.isPending || busy}
+                    onClick={() => downloadModel.mutate({ name: query.trim(), kind: downloadKind })}
+                  >
+                    <Icon
+                      name={downloadModel.isPending ? 'spinner' : 'download'}
+                      size={13}
+                      spin={downloadModel.isPending}
+                    />
+                    {downloadModel.isPending ? L.dlWorking : L.dlBtn}
+                  </button>
+                </div>
+              </div>
+            )}
+            {catalog.length === 0 && !looksLikeModelPath(query) && (
               <div className="px-5 py-7 text-center text-base text-fg-5">{L.noCatalogResults}</div>
+            )}
+            {downloadModel.isError && (
+              <div className="border-b border-line-soft px-4 py-2.5 text-sm text-ac-red">
+                {downloadModel.error.message}
+              </div>
             )}
             {catalog.map((entry) => {
               // Khớp với danh sách trên đĩa thật. Từ khi danh mục dùng đường dẫn
@@ -765,7 +851,7 @@ export function ModelsScreen(): JSX.Element {
                       <button
                         className={`${GHOST_BUTTON} h-7 text-sm`}
                         disabled={downloadModel.isPending || busy}
-                        onClick={() => downloadModel.mutate(entry.name)}
+                        onClick={() => downloadModel.mutate({ name: entry.name })}
                       >
                         <Icon
                           name={downloadingNow === entry.name ? 'spinner' : 'download'}

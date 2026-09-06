@@ -32,14 +32,33 @@ def test_config_reports_every_pipeline_stage():
         assert body["modelsDir"]
 
 
-def test_config_stages_follow_preset_change():
-    """Đổi preset thì stage phải đổi theo — đây chính là chỗ bảng chép tay hay lệch."""
+def test_choosing_a_preset_records_it_without_loading():
+    """Bấm một ô preset chỉ GHI NHẬN lựa chọn, không nạp model.
+
+    Trước đây nó nạp luôn: bấm thử một mức là đứng chờ hàng chục giây, lần đầu còn
+    tải vài GB. Nạp là việc của nút "Khởi động model".
+    """
     with TestClient(app) as client:
         before = client.get("/api/config").json()
         changed = client.put("/api/config", json={"preset": "fast"}).json()
+
         assert changed["preset"] == "fast"
-        assert [s["stage"] for s in changed["stages"]] == STAGES
-        # Trả lại preset ban đầu để không ảnh hưởng test khác.
+        assert changed["stages"] == [], "chọn preset không được kéo theo một lượt nạp"
+        client.put("/api/config", json={"preset": before["preset"]})
+
+
+def test_config_stages_follow_preset_change():
+    """Nạp xong thì `stages` phải mô tả đúng preset đang chọn.
+
+    Đây là chỗ một bảng cấu hình chép tay ở giao diện sẽ lệch với thực tế.
+    """
+    with TestClient(app) as client:
+        before = client.get("/api/config").json()
+        client.put("/api/config", json={"preset": "fast"})
+        loaded = client.post("/api/models/load").json()
+
+        assert loaded["preset"] == "fast"
+        assert [s["stage"] for s in loaded["stages"]] == STAGES
         client.put("/api/config", json={"preset": before["preset"]})
 
 

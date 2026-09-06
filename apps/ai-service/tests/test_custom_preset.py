@@ -82,7 +82,11 @@ def test_config_exposes_the_real_choices_not_a_hand_written_list(client: TestCli
     custom = client.get("/api/config").json()["custom"]
     # Cả ba backend ASR đều chọn được — không backend nào còn là stub.
     assert set(custom["asrAdapterChoices"]) == {"whisper_cpp", "mlx_whisper", "faster_whisper"}
-    assert set(custom["asrModelChoices"]) == {*WHISPER_MODELS, *MLX_MODELS, *FW_MODELS}
+    # Model liệt kê theo TỪNG runtime, không gộp: ba runtime dùng ba định dạng khác
+    # nhau nên không có model nào dùng chung được.
+    assert set(custom["asrModelChoices"]["whisper_cpp"]) == set(WHISPER_MODELS)
+    assert set(custom["asrModelChoices"]["mlx_whisper"]) == set(MLX_MODELS)
+    assert set(custom["asrModelChoices"]["faster_whisper"]) == set(FW_MODELS)
 
 
 def test_saving_choices_survives_and_shows_up_in_config(client: TestClient):
@@ -94,6 +98,30 @@ def test_saving_choices_survives_and_shows_up_in_config(client: TestClient):
     assert body["custom"]["asrModel"] == "mlx-community/whisper-tiny-asr-8bit"
     assert get_settings().custom_asr_model == "mlx-community/whisper-tiny-asr-8bit"
     assert get_preset_config(Preset.custom).asr_model == "mlx-community/whisper-tiny-asr-8bit"
+
+
+def test_a_model_from_the_wrong_runtime_is_refused(client: TestClient):
+    """Chọn mlx_whisper + một file GGML từng lưu được rồi ném 500 lúc nạp.
+
+    MLX đi hỏi HuggingFace một repo tên `ggml-....bin` → 404. Người dùng chỉ thấy
+    "chọn model không ăn thua" mà không biết vì sao, nên phải chặn ngay lúc lưu.
+    """
+    _put(client, customAsrAdapter="mlx_whisper")
+    response = client.put(
+        "/api/config", json={"preset": "balanced", "customAsrModel": "ggml-tiny-q5_1.bin"}
+    )
+
+    assert response.status_code == 400
+    assert "không chạy được trên runtime" in response.json()["detail"]
+
+
+def test_switching_runtime_resets_a_model_that_no_longer_fits(client: TestClient):
+    """Đổi mỗi runtime mà giữ model cũ cũng ra tổ hợp hỏng — trả về mặc định."""
+    _put(client, customAsrAdapter="whisper_cpp", customAsrModel="ggml-tiny-q5_1.bin")
+    body = _put(client, customAsrAdapter="mlx_whisper")
+
+    assert body["custom"]["asrAdapter"] == "mlx_whisper"
+    assert body["custom"]["asrModel"] in MLX_MODELS
 
 
 def test_choices_are_validated_against_the_registry(client: TestClient):

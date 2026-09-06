@@ -79,7 +79,9 @@ export interface CustomChoice {
   mtModel: string
   // Danh sách lấy từ registry của service — giao diện không chép tay bảng nào.
   asrAdapterChoices: string[]
-  asrModelChoices: string[]
+  // Theo TỪNG runtime: ba runtime dùng ba định dạng model khác nhau nên không có
+  // model nào dùng chung được. Gộp một danh sách là mời chọn tổ hợp không tồn tại.
+  asrModelChoices: Record<string, string[]>
   mtModelChoices: string[]
 }
 
@@ -119,6 +121,10 @@ export interface LoadProgress {
   error: string | null
   stages: StageProgress[]
 }
+
+// Runtime sẽ chạy một model tải từ HuggingFace ngoài danh mục. Bắt buộc phải nói rõ:
+// nhìn `org/repo` thì repo nào cũng như repo nào.
+export type DownloadKind = 'whisper_cpp' | 'mlx' | 'faster_whisper' | 'nllb' | 'pyannote'
 
 // Kết quả POST /api/models/download.
 export interface DownloadedModel {

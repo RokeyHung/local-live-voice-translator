@@ -155,6 +155,7 @@ export interface Dict {
   customApply: string
   customNote: string
   dlWorking: string
+  dlFromHfHint: string
   delOneTip: string
   confirmDeleteOne: string
   customSub: string
@@ -582,13 +583,15 @@ const vi: Dict = {
   customApply: 'Lưu lựa chọn',
   customNote: 'Lưu xong bấm "Tự chọn" ở trên để chạy bộ này. Khâu VAD và TTS vẫn theo Balanced.',
   dlWorking: 'Đang tải…',
+  dlFromHfHint:
+    'Không có trong danh mục. Tải thẳng từ HuggingFace — chọn runtime sẽ chạy model này.',
   delOneTip: 'Xoá model này',
   confirmDeleteOne: 'Xoá model này khỏi đĩa? Lần nạp sau sẽ phải tải lại.',
   browseTitle: 'Tìm & tải model từ Hugging Face',
   browseSub: 'Danh mục tham khảo theo docs/02 — tải về chưa nối với AI service.',
   browseDisabled: 'Tải model từ giao diện chưa hỗ trợ.',
   catalogWrongPlatform: 'Model này không chạy trên hệ điều hành hiện tại.',
-  searchPh: 'Lọc danh mục (whisper, nllb, piper…)',
+  searchPh: 'Lọc danh mục, hoặc dán đường dẫn HuggingFace…',
   dlBtn: 'Tải về',
   noCatalogResults: 'Không có model nào khớp từ khóa.',
 
@@ -1024,13 +1027,15 @@ const en: Dict = {
   customApply: 'Save choices',
   customNote: 'After saving, hit "Custom" above to run it. VAD and TTS still follow Balanced.',
   dlWorking: 'Downloading…',
+  dlFromHfHint:
+    'Not in the catalogue. Download straight from HuggingFace — pick the runtime that will run it.',
   delOneTip: 'Remove this model',
   confirmDeleteOne: 'Remove this model from disk? The next load will re-download it.',
   browseTitle: 'Search & download from Hugging Face',
   browseSub: 'Reference catalog from docs/02 — downloading is not wired to the AI service.',
   browseDisabled: 'Downloading models from the UI is not supported.',
   catalogWrongPlatform: 'This model does not run on the current operating system.',
-  searchPh: 'Filter catalog (whisper, nllb, piper…)',
+  searchPh: 'Filter the catalogue, or paste a HuggingFace path…',
   dlBtn: 'Download',
   noCatalogResults: 'No model matches that keyword.',
 

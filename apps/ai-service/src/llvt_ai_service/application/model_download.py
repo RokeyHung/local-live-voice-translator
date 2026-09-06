@@ -60,8 +60,25 @@ def _download_kokoro(_name: str, models_dir: Path) -> Path:
     return _download_model(models_dir)
 
 
-def resolve(name: str) -> tuple[str, str]:
-    """`(khâu, kiểu tải)` cho một tên model — dùng cả để kiểm tra tên có thật không."""
+# Kiểu tải -> (khâu, thư mục con trong models_dir). Dùng khi người dùng tự gõ một repo
+# HuggingFace không có trong danh mục: không đoán được nó thuộc runtime nào từ cái tên,
+# nên client phải nói rõ.
+KINDS: dict[str, tuple[str, str]] = {
+    "whisper_cpp": ("ASR", "whisper-cpp"),
+    "mlx": ("ASR", "mlx-whisper"),
+    "faster_whisper": ("ASR", "faster-whisper"),
+    "nllb": ("MT", "nllb"),
+    "pyannote": ("DIA", "pyannote"),
+}
+
+
+def resolve(name: str, kind: str = "") -> tuple[str, str]:
+    """`(khâu, kiểu tải)` cho một tên model — dùng cả để kiểm tra tên có thật không.
+
+    ``kind`` là lối thoát cho model NGOÀI danh mục: người dùng gõ một repo HF bất kỳ
+    thì không suy ra được nó chạy trên runtime nào (`org/repo` nào cũng giống nhau),
+    nên client chỉ rõ. Tên có trong danh mục thì bỏ qua ``kind`` — danh mục biết rõ hơn.
+    """
     clean = name.strip()
     if clean in WHISPER_MODELS:
         return "ASR", "whisper_cpp"
@@ -77,27 +94,48 @@ def resolve(name: str) -> tuple[str, str]:
         return "TTS", "sherpa"
     if clean.startswith("pyannote/"):
         return "DIA", "pyannote"
-    raise UnknownModelError(f"Không biết model {name!r} — xem danh mục ở màn Quản lý model.")
+
+    if kind:
+        if kind not in KINDS:
+            raise UnknownModelError(f"Không có runtime {kind!r}. Chọn một trong {list(KINDS)}.")
+        if kind == "whisper_cpp":
+            # whisper.cpp phân phối theo FILE trong ggerganov/whisper.cpp, không theo
+            # repo — `org/repo` đưa vào đây là nhầm chỗ.
+            if "/" in clean or not clean.startswith("ggml-"):
+                raise UnknownModelError(
+                    f"{clean!r} không phải file GGML. whisper.cpp nhận tên dạng "
+                    "`ggml-<cỡ>.bin` trong repo ggerganov/whisper.cpp."
+                )
+        elif "/" not in clean:
+            raise UnknownModelError(
+                f"{clean!r} không phải repo HuggingFace. Cần dạng `tổ-chức/tên-repo`."
+            )
+        return KINDS[kind][0], kind
+
+    raise UnknownModelError(
+        f"Không biết model {name!r}. Chọn một mục trong danh mục, hoặc gõ đường dẫn "
+        "HuggingFace kèm runtime muốn chạy nó."
+    )
 
 
-def download(name: str, models_dir: Path) -> Path:
+def download(name: str, models_dir: Path, kind: str = "") -> Path:
     """Tải model về ``models_dir``; trả đường dẫn đã tải. Blocking (I/O mạng).
 
     Model đã có sẵn thì các hàm bên dưới đều tự bỏ qua, nên gọi lại là rẻ.
     """
     clean = name.strip()
-    _stage, kind = resolve(clean)
-    logger.info("Tải model %s (%s)", clean, kind)
-    if kind == "whisper_cpp":
+    _stage, resolved = resolve(clean, kind)
+    logger.info("Tải model %s (%s)", clean, resolved)
+    if resolved == "whisper_cpp":
         return _download_whisper_cpp(clean, models_dir)
-    if kind == "mlx":
-        return _snapshot(MLX_MODELS[clean], models_dir, "mlx-whisper")
-    if kind == "faster_whisper":
-        return _snapshot(FW_MODELS[clean], models_dir, "faster-whisper")
-    if kind == "nllb":
-        return _snapshot(NLLB_MODELS[clean], models_dir, "nllb")
-    if kind == "kokoro":
+    if resolved == "mlx":
+        return _snapshot(MLX_MODELS.get(clean, clean), models_dir, "mlx-whisper")
+    if resolved == "faster_whisper":
+        return _snapshot(FW_MODELS.get(clean, clean), models_dir, "faster-whisper")
+    if resolved == "nllb":
+        return _snapshot(NLLB_MODELS.get(clean, clean), models_dir, "nllb")
+    if resolved == "kokoro":
         return _download_kokoro(clean, models_dir)
-    if kind == "sherpa":
+    if resolved == "sherpa":
         return _download_sherpa_voice(clean, models_dir)
     return _snapshot(clean, models_dir, "pyannote")

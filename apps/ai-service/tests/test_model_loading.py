@@ -53,7 +53,9 @@ def test_load_endpoint_is_idempotent_and_reload_rebuilds():
 def test_unload_frees_models_but_keeps_preset_choice():
     with TestClient(app) as client:
         client.put("/api/config", json={"preset": "fast"})
-        assert len(client.get("/api/config").json()["stages"]) == 4
+        # Chọn preset không nạp gì — phải bấm nút nạp mới có model trong bộ nhớ.
+        assert client.get("/api/config").json()["stages"] == []
+        assert len(client.post("/api/models/load").json()["stages"]) == 4
 
         body = client.post("/api/models/unload").json()
         assert body["stages"] == []

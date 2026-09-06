@@ -91,7 +91,7 @@ def test_download_endpoint_reports_where_the_model_landed(
 ):
     called: list[str] = []
 
-    def fake_download(name: str, models_dir: Path) -> Path:
+    def fake_download(name: str, models_dir: Path, _kind: str = "") -> Path:
         called.append(name)
         return models_dir / "whisper-cpp" / "ggml-small-q5_1.bin"
 
@@ -121,7 +121,7 @@ def test_a_gated_repo_is_403_not_503(client: TestClient, monkeypatch: pytest.Mon
     import httpx
     from huggingface_hub.errors import GatedRepoError
 
-    def gated(_name: str, _dir: Path) -> Path:
+    def gated(_name: str, _dir: Path, _kind: str = "") -> Path:
         # Dựng đúng như thư viện dựng: nó cần `response`, thiếu thì chính hàm khởi tạo
         # ném TypeError và test lại đi kiểm nhánh "lỗi bất kỳ" thay vì nhánh gated.
         raise GatedRepoError(
@@ -140,9 +140,32 @@ def test_a_gated_repo_is_403_not_503(client: TestClient, monkeypatch: pytest.Mon
     assert "không cần đổi token" in detail
 
 
+def test_a_mistyped_repo_path_is_404_not_503(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    """Gõ sai đường dẫn là lỗi thường gặp nhất khi tải model ngoài danh mục.
+
+    503 mời người dùng "thử lại sau" cho một repo không bao giờ tồn tại.
+    """
+    import httpx
+    from huggingface_hub.errors import RepositoryNotFoundError
+
+    def missing(_name: str, _dir: Path, _kind: str = "") -> Path:
+        raise RepositoryNotFoundError(
+            "404 Client Error. Repository Not Found",
+            response=httpx.Response(404, request=httpx.Request("GET", "https://hf.co")),
+        )
+
+    monkeypatch.setattr(model_download, "download", missing)
+    response = client.post(
+        "/api/models/download", json={"name": "go-nham/whisper-khong-co", "kind": "mlx"}
+    )
+
+    assert response.status_code == 404
+    assert "go-nham/whisper-khong-co" in response.json()["detail"]
+
+
 def test_download_failure_is_503_not_500(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     # Mất mạng là lỗi môi trường, không phải lỗi của request.
-    def boom(_name: str, _dir: Path) -> Path:
+    def boom(_name: str, _dir: Path, _kind: str = "") -> Path:
         raise OSError("Network is unreachable")
 
     monkeypatch.setattr(model_download, "download", boom)
