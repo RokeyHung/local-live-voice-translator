@@ -37,9 +37,11 @@ async function waitForHealth(timeoutMs = 90_000): Promise<void> {
   throw new Error('AI service không lên trong thời gian chờ')
 }
 
-/** Khởi động service với một thư mục model RIÊNG, để test không đụng model thật. */
-export function startService(): { proc: ChildProcess; modelsDir: string } {
-  const modelsDir = mkdtempSync(join(tmpdir(), 'llvt-e2e-models-'))
+/** Khởi động service. Không truyền `modelsDir` thì dùng thư mục TẠM — test tải/xoá
+ *  thoải mái mà không đụng model thật. Bài chạy cho báo cáo thì truyền thư mục thật
+ *  vào, và tuyệt đối không được gọi lệnh xoá nào. */
+export function startService(modelsDir?: string): { proc: ChildProcess; modelsDir: string } {
+  modelsDir = modelsDir ?? mkdtempSync(join(tmpdir(), 'llvt-e2e-models-'))
   const proc = spawn('uv', ['run', 'llvt-ai-service'], {
     cwd: AI_DIR,
     env: {
@@ -52,8 +54,14 @@ export function startService(): { proc: ChildProcess; modelsDir: string } {
   return { proc, modelsDir }
 }
 
-export async function launch(): Promise<Harness> {
-  const { proc, modelsDir } = startService()
+export interface LaunchOptions {
+  /** Thư mục model. Bỏ trống = thư mục tạm, và `stop()` sẽ xoá nó đi. */
+  modelsDir?: string
+}
+
+export async function launch(options: LaunchOptions = {}): Promise<Harness> {
+  const { proc, modelsDir } = startService(options.modelsDir)
+  const temporary = options.modelsDir === undefined
   await waitForHealth()
 
   // Terminal của VS Code đặt ELECTRON_RUN_AS_NODE=1; để nguyên thì Electron chạy như
@@ -83,7 +91,9 @@ export async function launch(): Promise<Harness> {
     stop: async () => {
       await app.close().catch(() => undefined)
       proc.kill('SIGTERM')
-      rmSync(modelsDir, { recursive: true, force: true })
+      // CHỈ xoá thư mục do chính test tạo ra. Xoá thư mục model thật của người dùng
+      // là mất hàng GB và vài chục phút tải lại.
+      if (temporary) rmSync(modelsDir, { recursive: true, force: true })
     }
   }
 }

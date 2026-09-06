@@ -4,7 +4,9 @@
     "`audio` là đường dẫn tới file ghi âm do NGƯỜI đọc, tương đối so với thư mục chứa file này.",
     "Thả file vào `audio/` (xem audio/README.md); nhận wav/mp3/m4a, không đúng chuẩn thì ffmpeg tự chuyển.",
     "Chưa có file thì bỏ trống — script sẽ chạy chế độ round-trip bằng TTS và ghi rõ đó chỉ là smoke test.",
-    "Hãy thay/bổ sung bằng câu thoại họp thật của bạn: đây mới là phần quyết định giá trị của số liệu."
+    "Hãy thay/bổ sung bằng câu thoại họp thật của bạn: đây mới là phần quyết định giá trị của số liệu.",
+    "Phủ đủ SÁU chiều mà SPEC hứa: vi↔en, vi↔ja, vi↔zh — chiều nào cũng phải đo, vì NLLB và Whisper không đối xứng giữa hai chiều của cùng một cặp.",
+    "Câu ja/zh và bản dịch tham chiếu của chúng do trợ lý AI soạn, chưa qua người bản ngữ rà lại. Số chrF của hai cặp này vì thế chỉ dùng để SO SÁNH GIỮA CÁC CẤU HÌNH, không phải con số chất lượng dịch tuyệt đối."
   ],
   "cases": [
     {
@@ -86,6 +88,102 @@
       "audio": "",
       "transcript": "Thanks everyone, talk to you soon.",
       "translation": "Cảm ơn mọi người, hẹn gặp lại."
+    },
+    {
+      "id": "ja-vi-01",
+      "language": "vi",
+      "target": "ja",
+      "audio": "",
+      "transcript": "Tôi sẽ gửi tài liệu thiết kế trước ngày mai.",
+      "translation": "明日までに設計書をお送りします。"
+    },
+    {
+      "id": "ja-vi-02",
+      "language": "vi",
+      "target": "ja",
+      "audio": "",
+      "transcript": "Cuộc họp bắt đầu lúc chín giờ sáng.",
+      "translation": "会議は午前九時に始まります。"
+    },
+    {
+      "id": "ja-vi-03",
+      "language": "vi",
+      "target": "ja",
+      "audio": "",
+      "transcript": "Phần này cần thêm hai ngày nữa.",
+      "translation": "この部分にはあと二日必要です。"
+    },
+    {
+      "id": "ja-01",
+      "language": "ja",
+      "target": "vi",
+      "audio": "",
+      "transcript": "今日の議題を確認しましょう。",
+      "translation": "Chúng ta cùng xem lại chương trình họp hôm nay."
+    },
+    {
+      "id": "ja-02",
+      "language": "ja",
+      "target": "vi",
+      "audio": "",
+      "transcript": "テストはすべて成功しました。",
+      "translation": "Tất cả bài kiểm thử đều đã chạy thành công."
+    },
+    {
+      "id": "ja-03",
+      "language": "ja",
+      "target": "vi",
+      "audio": "",
+      "transcript": "来週の月曜日にリリースする予定です。",
+      "translation": "Dự kiến phát hành vào thứ Hai tuần sau."
+    },
+    {
+      "id": "zh-vi-01",
+      "language": "vi",
+      "target": "zh",
+      "audio": "",
+      "transcript": "Chúng ta bắt đầu buổi họp nhé.",
+      "translation": "我们开始会议吧。"
+    },
+    {
+      "id": "zh-vi-02",
+      "language": "vi",
+      "target": "zh",
+      "audio": "",
+      "transcript": "Tôi đã sửa xong lỗi hôm qua.",
+      "translation": "我已经修复了昨天的错误。"
+    },
+    {
+      "id": "zh-vi-03",
+      "language": "vi",
+      "target": "zh",
+      "audio": "",
+      "transcript": "Bản dịch chạy hoàn toàn trên máy.",
+      "translation": "翻译完全在本地运行。"
+    },
+    {
+      "id": "zh-01",
+      "language": "zh",
+      "target": "vi",
+      "audio": "",
+      "transcript": "请分享一下你的屏幕。",
+      "translation": "Bạn chia sẻ màn hình giúp tôi nhé."
+    },
+    {
+      "id": "zh-02",
+      "language": "zh",
+      "target": "vi",
+      "audio": "",
+      "transcript": "这个功能下周就能完成。",
+      "translation": "Tính năng này tuần sau sẽ xong."
+    },
+    {
+      "id": "zh-03",
+      "language": "zh",
+      "target": "vi",
+      "audio": "",
+      "transcript": "延迟大约是两秒。",
+      "translation": "Độ trễ khoảng hai giây."
     }
   ]
 }
