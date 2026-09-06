@@ -12,34 +12,58 @@ PRETTIER    := $(DESKTOP_DIR)/node_modules/.bin/prettier
 MINUTES     ?= 60
 # Tiền tố tên file của `make segment` (make segment MEDIA=x.mov PREFIX=vlog)
 PREFIX      ?= rec
+# Nơi để dữ liệu FLEURS tải về (vài GB). Trỏ HF_HUB_CACHE vào đây cho các lệnh eval-*
+# đọc audio để sẵn thay vì tải lại; model vẫn nằm ở models_dir vì adapter truyền
+# cache_dir riêng, không đi qua biến này.
+FLEURS_CACHE ?= $(CURDIR)/fleurs-cache
+# HF_DATASETS_CACHE là chỗ `datasets` giải nén parquet thành arrow — mặc định nó nằm ở
+# ~/.cache, tức là dữ liệu đánh giá bị chẻ làm hai nơi. Gom về cùng thư mục.
+EVAL_ENV     := HF_HUB_CACHE=$(FLEURS_CACHE) HF_DATASETS_CACHE=$(FLEURS_CACHE)/datasets
+# Tên file kết quả của `make eval-asr`. Đổi khi đo backend thứ hai để không ghi đè bảng
+# cũ: make eval-asr ADAPTER=mlx_whisper MODEL=... JSON=eval-asr-mlx.json
+JSON         ?= eval-asr.json
+# mlx-audio chỉ có bản cho macOS trên chip Apple; thêm extra này ở máy khác thì uv giải
+# phụ thuộc không ra và cả lệnh setup hỏng theo.
+MLX_EXTRA    := $(if $(filter Darwin-arm64,$(shell uname -s)-$(shell uname -m)),--extra mlx)
+# Bản cài đầy đủ: phụ thuộc lõi + nhóm eval + mọi backend tuỳ chọn chạy được trên máy này.
+FULL_DEPS    := --group eval --extra diarization --extra ctranslate2 $(MLX_EXTRA)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup setup-service setup-desktop dev service desktop preview \
+.PHONY: help setup setup-service setup-min setup-desktop dev service desktop preview \
         build typecheck lint format format-docs health docs test test-service test-desktop e2e \
         bench accuracy soak segment \
         endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 \
-        eval-asr eval-mt eval-comet eval-latency clean
+        fetch-fleurs eval-asr eval-mt eval-comet eval-latency clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-setup: setup-service setup-desktop ## Cài phụ thuộc cho cả hai app
+setup: setup-service setup-desktop ## Cài ĐẦY ĐỦ cả hai app: lõi + bộ đánh giá + backend tuỳ chọn
 
-setup-service: ## Cài phụ thuộc Python (uv sync)
+setup-service: ## Cài phụ thuộc Python đầy đủ (lõi + eval + diarization/ctranslate2/mlx)
+	cd $(AI_DIR) && $(UV) sync $(FULL_DEPS)
+
+setup-min: ## Chỉ phụ thuộc lõi để chạy app (nhẹ nhất, không có bộ đánh giá)
 	cd $(AI_DIR) && $(UV) sync
 
-setup-eval: ## Cài thêm phụ thuộc cho bộ đánh giá FLEURS (datasets, sacrebleu, jiwer)
+# LƯU Ý: `uv sync` đồng bộ môi trường về ĐÚNG những gì được nêu — nhóm/extra không nêu
+# sẽ bị GỠ. Nên `make setup-mlx` sau `make setup-eval` là mất sacrebleu, và lượt chạy
+# `eval-mt` chết ở bước chấm điểm sau khi đã dịch xong một chiều. Bốn lệnh dưới đây chỉ
+# dùng khi muốn đúng một thứ; muốn có tất cả thì dùng `make setup`. Ba lệnh `eval-*` tự
+# thêm `--group eval` khi chạy nên không còn phụ thuộc vào việc nhớ cài trước.
+
+setup-eval: ## Chỉ cài phụ thuộc bộ đánh giá FLEURS (datasets, sacrebleu, jiwer)
 	cd $(AI_DIR) && $(UV) sync --group eval
 
-setup-mlx: ## Cài backend ASR chạy trên MLX (mlx-audio) — chỉ macOS + Apple Silicon
+setup-mlx: ## Chỉ cài backend ASR chạy trên MLX (mlx-audio) — macOS + Apple Silicon
 	cd $(AI_DIR) && $(UV) sync --extra mlx
 
-setup-diarization: ## Cài khâu tách người nói (pyannote.audio) cho màn Nhập tệp
+setup-diarization: ## Chỉ cài khâu tách người nói (pyannote.audio) cho màn Nhập tệp
 	cd $(AI_DIR) && $(UV) sync --extra diarization
 
-setup-ctranslate2: ## Cài backend ASR faster-whisper (CPU int8 / NVIDIA fp16)
+setup-ctranslate2: ## Chỉ cài backend ASR faster-whisper (CPU int8 / NVIDIA fp16)
 	cd $(AI_DIR) && $(UV) sync --extra ctranslate2
 
 setup-desktop: ## Cài phụ thuộc desktop (npm install)
@@ -117,17 +141,20 @@ segment: ## Cắt bản ghi dài thành bộ câu để đo WER (make segment ME
 	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make segment MEDIA=ban-ghi.mov [PREFIX=vlog]"; exit 1; }
 	cd $(AI_DIR) && $(UV) run python scripts/segment_audio.py $(abspath $(MEDIA)) --prefix $(PREFIX)
 
-eval-asr: ## WER/CER của ASR trên FLEURS, mục 3a (make eval-asr LIMIT=20 để chạy thử)
-	cd $(AI_DIR) && $(UV) run python scripts/eval_asr.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-asr.json
+fetch-fleurs: ## Tải trước dữ liệu FLEURS (make fetch-fleurs LANGS="vi en" để tải lẻ)
+	FLEURS_CACHE=$(FLEURS_CACHE) $(AI_DIR)/scripts/fetch_fleurs.sh $(LANGS)
+
+eval-asr: ## WER/CER của ASR trên FLEURS, mục 3a (LIMIT=20 chạy thử; ADAPTER/MODEL/JSON đổi runtime)
+	cd $(AI_DIR) && $(EVAL_ENV) $(UV) run --group eval python scripts/eval_asr.py  $(if $(LIMIT),--limit $(LIMIT)) $(if $(ADAPTER),--adapter $(ADAPTER)) $(if $(MODEL),--model $(MODEL)) --json $(JSON)
 
 eval-mt: ## spBLEU/chrF++ trên 6 chiều dịch, mục 3b (make eval-mt LIMIT=30)
-	cd $(AI_DIR) && $(UV) run python scripts/eval_mt.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-mt.json
+	cd $(AI_DIR) && $(EVAL_ENV) $(UV) run --group eval python scripts/eval_mt.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-mt.json
 
 eval-comet: ## Chấm COMET cho eval-mt.json — chạy ở môi trường riêng, mục 3b
 	cd $(AI_DIR) && $(UV) run --no-project scripts/eval_comet.py eval-mt.json
 
 eval-latency: ## Total Inference Time + RTF toàn hệ thống, mục 3c (make eval-latency LIMIT=20)
-	cd $(AI_DIR) && $(UV) run python scripts/eval_latency.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-latency.json
+	cd $(AI_DIR) && $(EVAL_ENV) $(UV) run --group eval python scripts/eval_latency.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-latency.json
 
 endpointing: ## So ngưỡng tách câu của VAD trên một bản ghi (make endpointing MEDIA=file.mov)
 	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make endpointing MEDIA=ban-ghi.mov"; exit 1; }
