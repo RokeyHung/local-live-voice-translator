@@ -92,4 +92,12 @@ Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Qu
 
 Pipeline chạy **model thật** đầy đủ: VAD (Tuần 2) → ASR (Tuần 3) → MT (Tuần 4) → TTS (Tuần 5), giao diện desktop 8 màn (Tuần 6), dịch hai chiều + microphone ảo + thu âm thanh hệ thống (Tuần 7), đo độ trễ/tài nguyên/độ chính xác (Tuần 8), lịch sử phiên lưu SQLite, TTS đủ bốn ngôn ngữ (tiếng Nhật dùng Kokoro + G2P OpenJTalk vì sherpa-onnx không đọc được tiếng Nhật).
 
-Còn lại: chạy thử thật trong Google Meet và trên Windows 11, thu bộ câu bằng giọng người thật cho phép đo độ chính xác, và Tuần 9 (báo cáo, đóng gói, video demo).
+Đã có **bộ số đo trên FLEURS** (bộ dữ liệu chuẩn, tham chiếu do người gõ) — chi tiết ở [docs/17 mục 8](docs/17_bo-danh-gia-fleurs.md):
+
+| Khâu                                | Kết quả                                               |
+| ----------------------------------- | ----------------------------------------------------- |
+| ASR (3.099 bản thu, 10,2 giờ audio) | vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7% |
+| MT (2.022 cặp câu, 6 chiều)         | spBLEU 11,0–37,1 · COMET 0,773–0,853                  |
+| Độ trễ cả chuỗi (50 mẫu × 6 chiều)  | RTF p90 **0,395–0,786** — dưới 1 ở mọi chiều          |
+
+Còn lại: chạy thử thật trong Google Meet và trên Windows 11, thu bộ câu bằng giọng người thật để biết WER trong điều kiện họp thật cao hơn bao nhiêu, và Tuần 9 (báo cáo, đóng gói, video demo).

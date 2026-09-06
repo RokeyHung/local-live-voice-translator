@@ -222,6 +222,49 @@ Không phải vẽ cho đẹp — ba tình huống có thật trong quá trình 
 
 ---
 
+## 11b. Số đo trên FLEURS — bộ dữ liệu chuẩn, 07/09/2026
+
+> Mục 11 là **độ trễ cho một câu ngắn** (audio 3 giây) — đó mới là bộ số đối chiếu với
+> mục tiêu hiệu năng ở SPEC 14.1, và nó **đạt cả bốn mốc**. Mục 11b trả lời câu hỏi
+> khác: hệ thống có **theo kịp luồng nói liên tục** không (RTF), và dịch **đúng** tới
+> đâu. Đừng trộn hai bảng.
+
+Mục 11 đo trên bộ câu tự dựng. Đây là số trên **FLEURS** (bản tiếng nói của FLoRes,
+Google) — dữ liệu công khai, có tham chiếu do người gõ, nên **so sánh được với các công
+bố khác**. Chi tiết ở [`17` mục 8](17_bo-danh-gia-fleurs.md).
+
+**(a) ASR** — `whisper-large-v3-asr-8bit` trên MLX/Metal, **3.099 bản thu, 10,2 giờ
+audio**, chạy hết 86 phút, **0 câu rỗng**:
+
+| vi (WER)  | en (WER)  | zh (CER)  | ja (CER)  | RTF khâu ASR |
+| --------- | --------- | --------- | --------- | ------------ |
+| **8,8 %** | **4,8 %** | **8,1 %** | **4,7 %** | 0,141        |
+
+**(b) MT** — NLLB-200-distilled-600M, **2.022 cặp câu**, đủ sáu chiều:
+
+| Chiều  | vi→en | en→vi | vi→zh | zh→vi | vi→ja | ja→vi |
+| ------ | ----- | ----- | ----- | ----- | ----- | ----- |
+| spBLEU | 35,8  | 37,1  | 17,2  | 22,3  | 11,0  | 19,9  |
+| COMET  | 0,853 | 0,851 | 0,773 | 0,821 | 0,824 | 0,819 |
+
+**(c) Độ trễ toàn chuỗi** VAD→ASR→MT→TTS, 50 mẫu mỗi chiều:
+
+| Chiều   | vi→en | en→vi | vi→zh | zh→vi | vi→ja | ja→vi |
+| ------- | ----- | ----- | ----- | ----- | ----- | ----- |
+| RTF p90 | 0,580 | 0,496 | 0,727 | 0,509 | 0,786 | 0,395 |
+
+**Ba điều nên nói trước khi hội đồng hỏi:**
+
+1. **RTF p90 < 1 ở cả sáu chiều** → hệ thống theo kịp thời gian thực. Ngưỡng chặt hơn
+   (≤ 0,5) thì ba chiều đạt; ba chiều trượt đều là ba chiều **nguồn tiếng Việt**.
+2. **spBLEU và COMET xếp hạng khác nhau.** Theo spBLEU, vi→ja tệ nhất (11,0); theo COMET
+   nó đứng hạng ba (0,824) còn chiều yếu thật sự là vi→zh. spBLEU khớp chuỗi bề mặt nên
+   phạt nặng ngôn ngữ khác hệ chữ viết; COMET chấm ngữ nghĩa. Đây là lý do dùng cả hai.
+3. **chrF++ không so ngang được ở hai chiều đích zh/ja** (cùng bản chất với chuyện phải
+   dùng CER thay WER cho zh/ja), nên bảng báo cáo dựa vào spBLEU + COMET.
+
+---
+
 ## 12. Nguyên tắc đã giữ xuyên suốt
 
 - **Không hiển thị số bịa.** Thà để trống hoặc ghi "chưa hỗ trợ" còn hơn hiện giá trị chép tay — mọi ô trên màn Chẩn đoán đều đến từ một endpoint đo thật.
@@ -238,10 +281,16 @@ Không phải vẽ cho đẹp — ba tình huống có thật trong quá trình 
 | Chạy thật trong **Google Meet** (2 người, mic ảo, chống loop) | Cần máy thật + người thứ hai                                                         |
 | Đo lại toàn bộ trên **Windows 11**                            | Chưa có máy Windows để đo                                                            |
 | **Soak 60 phút** với model thật                               | Cần một máy rảnh 1 giờ (script đã sẵn)                                               |
-| **Bộ câu giọng người thật** để WER dùng được cho báo cáo      | Đã cắt sẵn 115 đoạn từ bản ghi 8 phút; phần **gõ lời tham chiếu không tự động được** |
+| **Bộ câu giọng người thật** (WER trong điều kiện họp thật)    | Đã cắt sẵn 115 đoạn từ bản ghi 8 phút; phần **gõ lời tham chiếu không tự động được** |
 | **T9**: báo cáo, đóng gói cài đặt, video demo                 | Tuần 10/09 – 23/09                                                                   |
 
-> Số WER 12,5% / chrF 53,4% hiện có là chế độ **round-trip qua TTS** — em chủ động **không** đưa vào báo cáo như kết quả chính, vì giọng máy sạch nên WER lạc quan hơn thực tế.
+> **Số cho báo cáo đã có** — mục 11b, đo trên FLEURS. Con số WER 12,5% / chrF 53,4% của
+> chế độ **round-trip qua TTS** không dùng làm kết quả chính (giọng máy sạch nên lạc
+> quan hơn thực tế), và giờ cũng không cần tới nữa.
+>
+> Bộ câu giọng người thật vẫn còn trong danh sách nhưng đổi vai: **không** còn là điều
+> kiện để có số báo cáo, mà để trả lời câu hỏi "WER trong cuộc họp thật cao hơn bao
+> nhiêu so với giọng đọc chuẩn của FLEURS".
 
 ---
 
