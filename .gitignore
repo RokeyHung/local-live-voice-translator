@@ -29,6 +29,8 @@ apps/ai-service/scripts/audio/*
 soak*.json
 # Kết quả bộ đánh giá FLEURS (docs/17) — số liệu của từng máy, không chép vào repo
 eval-*.json
+# Cache dữ liệu FLEURS tải về (scripts/fetch_fleurs.sh) — vài GB audio, tải lại được.
+fleurs-cache/
 
 # Bản ghi nguồn thả tạm vào repo để cắt bộ câu.
 *.mov
