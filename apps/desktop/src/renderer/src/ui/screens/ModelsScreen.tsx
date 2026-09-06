@@ -390,7 +390,7 @@ export function ModelsScreen(): JSX.Element {
                 key={preset}
                 onClick={() => applyPreset(preset)}
                 disabled={disabled}
-                title={active ? L.notSupportedYet : undefined}
+                title={active ? L.cannotChangeWhileActive : undefined}
                 className={[
                   'flex items-center gap-2.25 rounded-lg border px-3.25 py-2.75 text-left text-fg transition-all',
                   'disabled:cursor-not-allowed',
@@ -422,7 +422,7 @@ export function ModelsScreen(): JSX.Element {
           <button
             onClick={() => applyPreset('custom')}
             disabled={!serviceUp || active || setPreset.isPending}
-            title={active ? L.notSupportedYet : L.customSub}
+            title={active ? L.cannotChangeWhileActive : L.customSub}
             className={[
               'flex items-center gap-2.25 rounded-lg border px-3.25 py-2.75 text-left text-fg transition-all',
               'disabled:cursor-not-allowed',

@@ -1,14 +1,28 @@
-# Việc còn lại — trạng thái sau đợt sửa 04/09/2026
+# Việc còn lại — trạng thái sau đợt 06/09/2026
 
-**Cập nhật:** 04/09/2026 · **Nhánh đang làm:** `feat/gvhd-2026-08-19`
+**Cập nhật:** 06/09/2026 · **Nhánh:** `main`
 **Nguồn yêu cầu:** [biên bản họp GVHD 19/08/2026](meetings/bien-ban-hop-GVHD-2026-08-19.md)
 
 > Biên bản họp là **bản ghi thầy đã nói gì**, giữ nguyên không sửa. Tài liệu này là
 > **trạng thái làm được tới đâu** — mở file này ra trước khi làm tiếp.
 
-Tóm tắt một câu: phần **code** của Ưu tiên 1 đã xong và đã kiểm thử, nhưng **chưa có một
-con số đo thật nào** vì máy đang dùng chưa tải model. Thầy cần ba bảng kết quả, không
-phải ba script — nên mọi việc còn lại đều nằm sau bước "chạy thật".
+Tóm tắt một câu: **đã có bộ số đo thật đầu tiên** trên macOS Apple Silicon
+([`25`](25_ket-qua-chay-thu-e2e.md)) — độ trễ đủ sáu chiều và WER/chrF, chạy tự động
+trên app đóng gói. Việc còn lại chia làm hai loại rạch ròi: những thứ chỉ cần **chạy
+trên phần cứng/dữ liệu chưa có** (Windows, Google Meet, giọng người thật, FLEURS), và
+những thứ **cần người quyết** (nhắn thầy, chốt ngưỡng RTF).
+
+Đã xong từ 04/09 tới nay, không cần làm lại:
+
+- Màn hình đánh giá trong app (biên bản 3d) — [`21`](21_man-danh-gia-va-backend-thu-ba.md)
+- Backend ASR thứ hai (MLX) và thứ ba (faster-whisper), tách người nói — [`19`](19_backend-asr-va-tach-nguoi-noi.md), [`21`](21_man-danh-gia-va-backend-thu-ba.md)
+- Duyệt trước khi gửi, các thao tác quản lý model từng bị vô hiệu — [`20`](20_duyet-truoc-khi-gui-va-quan-ly-model.md)
+- Đặt tên model theo đường dẫn thượng nguồn — [`22`](22_dat-ten-model-theo-duong-dan-that.md)
+- Chọn model không còn là nạp model; tải được repo HF bất kỳ — [`23`](23_chon-model-khong-phai-nap-model.md)
+- Model tải dở không còn bị tính là đã tải — [`24`](24_tai-do-dang-khong-phai-da-tai.md)
+- **Ba lớp test**: pytest (298) · vitest cho renderer (44) · Playwright trên app Electron
+  thật + service thật (11). `make test` chạy hai lớp đầu, `make e2e` chạy lớp thứ ba.
+- **Bộ mẫu đánh giá phủ đủ sáu chiều** vi↔en, vi↔ja, vi↔zh (22 câu)
 
 ---
 
@@ -94,15 +108,15 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 
 ---
 
-## 3. Ưu tiên 2 — chưa bắt đầu
+## 3. Ưu tiên 2
 
-| Việc                                          | Ghi chú                                                                                                                                                                                 |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Màn hình đánh giá trong app** (biên bản 3d) | Việc lớn nhất còn lại về code. Thầy muốn: chọn câu mẫu có bản dịch tham chiếu, chạy qua hệ thống, app tự tính độ trễ **và** chất lượng. Dữ liệu lấy từ `scripts/fleurs.py` (đã có sẵn). |
-| **Quyết giữ hay bỏ ràng buộc Google Meet**    | Thầy gợi ý cân nhắc bỏ (biên bản 4.3), phụ thuộc việc xử lý được silence detection hay không. Giờ đã sửa xong phần tách câu → **quyết được sau khi làm xong mục 2**.                    |
-| **Cải thiện dịch Nhật → Việt**                | Làm sau `eval-mt`: cần biết chiều ja→vi đang tệ cỡ nào trước khi sửa, không thì không biết sửa có ăn thua không.                                                                        |
-| **Kiểm tra ổn định trên Windows 11**          | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                                        |
-| **Chạy thật trên Google Meet**                | Phụ thuộc quyết định ở dòng 2.                                                                                                                                                          |
+| Việc                                              | Ghi chú                                                                                                                                                              |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`21`](21_man-danh-gia-va-backend-thu-ba.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`25`](25_ket-qua-chay-thu-e2e.md) mục 4.                       |
+| **Quyết giữ hay bỏ ràng buộc Google Meet**        | Thầy gợi ý cân nhắc bỏ (biên bản 4.3), phụ thuộc việc xử lý được silence detection hay không. Giờ đã sửa xong phần tách câu → **quyết được sau khi làm xong mục 2**. |
+| **Cải thiện dịch Nhật → Việt**                    | Làm sau `eval-mt`: cần biết chiều ja→vi đang tệ cỡ nào trước khi sửa, không thì không biết sửa có ăn thua không.                                                     |
+| **Kiểm tra ổn định trên Windows 11**              | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                     |
+| **Chạy thật trên Google Meet**                    | Phụ thuộc quyết định ở dòng 2.                                                                                                                                       |
 
 ---
 
@@ -161,7 +175,9 @@ Code đã xong và test sạch, phần **chạy thật thì chưa**:
 
 - [ ] **Đo MLX so với whisper.cpp trên máy Apple Silicon.** Đây mới là lý do thêm backend
       thứ hai — thêm một cột vào bảng của [`17`](17_bo-danh-gia-fleurs.md):
-      `make setup-mlx && LLVT_ASR_ADAPTER=mlx_whisper make eval-asr`.
+      `make setup-mlx && LLVT_ASR_ADAPTER=mlx_whisper make eval-asr`. **Đã có một nửa:**
+      [`25`](25_ket-qua-chay-thu-e2e.md) cho số của MLX large-v3-turbo fp16 (ASR
+      780–897 ms, RTF p90 0,818); còn thiếu cột whisper.cpp trên cùng bộ mẫu để so.
 - [ ] **Chạy thử diarization trên một bản ghi họp nhiều người thật**, xem nhãn có khớp
       người nói không. Cần `make setup-diarization`, một access token HuggingFace (dán ở
       màn Cài đặt) và đồng ý điều khoản repo pyannote trên huggingface.co — cả hai chỉ

@@ -12,6 +12,7 @@ export interface Dict {
   serviceDownSub: string
   notSupported: string
   notSupportedYet: string
+  cannotChangeWhileActive: string
   recoverT: string
   recoverS: string
   recoverBtn: string
@@ -159,7 +160,6 @@ export interface Dict {
   confirmDeleteOne: string
   customSub: string
   browseTitle: string
-  browseSub: string
   browseDisabled: string
   catalogWrongPlatform: string
   searchPh: string
@@ -435,6 +435,7 @@ const vi: Dict = {
   serviceDownSub: 'Chạy `make service` rồi thử lại.',
   notSupported: 'Chưa hỗ trợ',
   notSupportedYet: 'Tính năng này cần API tương ứng bên AI service — chưa có trong bản này.',
+  cannotChangeWhileActive: 'Đang có phiên dịch chạy — dừng phiên rồi mới đổi được model.',
   recoverT: 'Khôi phục phiên chưa lưu?',
   recoverS: 'Ứng dụng đã đóng khi đang ghi. Cuộc họp sau vẫn còn:',
   recoverBtn: 'Xem lại',
@@ -587,7 +588,6 @@ const vi: Dict = {
   delOneTip: 'Xoá model này',
   confirmDeleteOne: 'Xoá model này khỏi đĩa? Lần nạp sau sẽ phải tải lại.',
   browseTitle: 'Tìm & tải model từ Hugging Face',
-  browseSub: 'Danh mục tham khảo theo docs/02 — tải về chưa nối với AI service.',
   browseDisabled: 'Tải model từ giao diện chưa hỗ trợ.',
   catalogWrongPlatform: 'Model này không chạy trên hệ điều hành hiện tại.',
   searchPh: 'Lọc danh mục, hoặc dán đường dẫn HuggingFace…',
@@ -878,6 +878,7 @@ const en: Dict = {
   serviceDownSub: 'Run `make service` and try again.',
   notSupported: 'Not supported',
   notSupportedYet: 'This needs an AI service endpoint that does not exist in this build yet.',
+  cannotChangeWhileActive: 'A translation session is running — stop it before changing models.',
   recoverT: 'Recover unsaved session?',
   recoverS: 'The app closed while recording. This meeting is still available:',
   recoverBtn: 'Review',
@@ -1031,7 +1032,6 @@ const en: Dict = {
   delOneTip: 'Remove this model',
   confirmDeleteOne: 'Remove this model from disk? The next load will re-download it.',
   browseTitle: 'Search & download from Hugging Face',
-  browseSub: 'Reference catalog from docs/02 — downloading is not wired to the AI service.',
   browseDisabled: 'Downloading models from the UI is not supported.',
   catalogWrongPlatform: 'This model does not run on the current operating system.',
   searchPh: 'Filter the catalogue, or paste a HuggingFace path…',
