@@ -104,6 +104,7 @@ def print_table(results: list[DirectionResult]) -> None:
 
 
 async def main_async(args: argparse.Namespace) -> None:
+    metrics.require("sacrebleu")
     cfg = get_preset_config(Preset(args.preset))
     translator = NllbTranslator(cfg.mt_model, models_dir=str(get_settings().models_dir / "nllb"))
     print(f"Nạp MT: {cfg.mt_model} (preset {args.preset})…", flush=True)

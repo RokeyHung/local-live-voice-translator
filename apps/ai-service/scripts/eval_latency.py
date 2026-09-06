@@ -28,6 +28,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import fleurs
+import metrics
 
 from llvt_ai_service.application.evaluation import percentile
 from llvt_ai_service.application.model_manager import ModelManager, ProviderSet
@@ -148,6 +149,7 @@ def print_table(samples: list[Sample], direction: str) -> dict[str, float]:
 
 
 async def main_async(args: argparse.Namespace) -> None:
+    metrics.require("datasets", "soundfile")
     source, target = Language(args.source), Language(args.target)
     if source == target:
         raise SystemExit("--source và --target phải khác nhau")

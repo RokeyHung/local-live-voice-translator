@@ -43,6 +43,25 @@ def metric_name(language: Language) -> str:
     return "CER" if language in CHARACTER_LANGUAGES else "WER"
 
 
+def require(*modules: str) -> None:
+    """Kiểm tra thư viện đo có mặt — gọi ở ĐẦU script, trước khi nạp model.
+
+    ``jiwer`` và ``sacrebleu`` được import muộn bên trong từng hàm (nhóm ``eval`` là
+    phụ thuộc tuỳ chọn, không phải ai chạy dịch vụ cũng cài). Hệ quả: thiếu thư viện thì
+    ``ModuleNotFoundError`` chỉ nổ ra ở bước chấm điểm — tức là sau khi đã nạp model và
+    dịch xong cả một chiều. Đã mất một lượt chạy 5 phút đúng theo kiểu đó, và với bản
+    đầy đủ thì mất tới nửa tiếng. Hỏng thì hỏng ngay từ giây đầu.
+    """
+    from importlib.util import find_spec
+
+    missing = [name for name in modules if find_spec(name) is None]
+    if missing:
+        raise SystemExit(
+            f"Thiếu thư viện của nhóm 'eval': {', '.join(missing)}.\n"
+            "Chạy `make setup-eval` để cài, hoặc gọi script qua `uv run --group eval`."
+        )
+
+
 def normalize(text: str, language: Language) -> str:
     """Đưa câu về dạng so sánh được với ``transcription`` của FLEURS.
 
