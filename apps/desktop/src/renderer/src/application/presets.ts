@@ -165,7 +165,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   {
     stage: 'ASR',
     name: 'mlx-community/whisper-large-v3-turbo-asr-4bit',
-    detail: 'mlx-community · mlx-audio',
+    detail: 'mlx-community · mlx-audio · preset Fast',
     size: '468 MB',
     platform: 'darwin',
     extra: 'mlx'
@@ -197,7 +197,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   {
     stage: 'ASR',
     name: 'mlx-community/whisper-small-asr-8bit',
-    detail: 'mlx-community · mlx-audio · preset Fast',
+    detail: 'mlx-community · mlx-audio · không khuyến nghị',
     size: '263 MB',
     platform: 'darwin',
     extra: 'mlx'
@@ -205,7 +205,7 @@ export const MODEL_CATALOG: CatalogEntry[] = [
   {
     stage: 'ASR',
     name: 'mlx-community/whisper-small-asr-fp16',
-    detail: 'mlx-community · mlx-audio · fp16',
+    detail: 'mlx-community · mlx-audio · không khuyến nghị',
     size: '486 MB',
     platform: 'darwin',
     extra: 'mlx'

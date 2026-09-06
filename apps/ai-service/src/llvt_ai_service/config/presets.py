@@ -64,7 +64,13 @@ PRESETS: dict[Preset, PresetConfig] = {
         # small-q5 giải mã rất nhanh → cắt sớm, ưu tiên độ trễ thấp.
         vad=VadTuning(soft_max_ms=2200, max_speech_ms=4500, min_silence_ms=280),
         asr_alternatives={
-            "mlx_whisper": "mlx-community/whisper-small-asr-8bit",
+            # KHÔNG dùng `mlx-community/whisper-small-asr-*` ở đây dù đó mới là bản
+            # "cùng cỡ" với ggml-small: đo trên 20 câu FLEURS thì cả bản 8bit lẫn fp16
+            # đều hỏng — WER 125–162%, một nửa số câu trả rỗng, phần còn lại kẹt vòng
+            # lặp lặp chữ (adapter tắt fallback nhiệt độ nên không có đường thoát).
+            # turbo-4bit nhỏ hơn 2 lần so với bản small fp16, nhanh hơn (RTF 0,08 so
+            # với 0,28) và WER 8,9% thay vì 125%. Xem docs/19 mục 2.2b.
+            "mlx_whisper": "mlx-community/whisper-large-v3-turbo-asr-4bit",
             "faster_whisper": "Systran/faster-whisper-small",
         },
     ),
