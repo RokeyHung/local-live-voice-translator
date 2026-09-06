@@ -12,6 +12,14 @@ báo hai chỉ số thầy yêu cầu:
     uv run python scripts/eval_latency.py --limit 20
     uv run python scripts/eval_latency.py --source vi --target ja --json do-tre.json
 
+    # đo độ trễ của ĐÚNG cấu hình đã đo WER ở eval_asr.py
+    uv run python scripts/eval_latency.py --adapter mlx_whisper \
+        --model mlx-community/whisper-large-v3-asr-8bit --limit 50
+
+``--adapter``/``--model`` là bắt buộc khi model đã đo WER không trùng model của preset
+nào — bảng độ trễ và bảng WER phải nói về cùng một cấu hình, nếu không thì hai bảng
+trong báo cáo mô tả hai hệ thống khác nhau.
+
 Bảng còn tách riêng cột **chờ chốt** — thời gian từ lúc người nói dứt câu tới lúc VAD
 nhả câu ra. Đó KHÔNG phải thời gian tính toán nên không nằm trong RTF, nhưng người dùng
 vẫn phải ngồi chờ, nên báo cáo cần có cả hai con số chứ không chỉ RTF.
@@ -24,14 +32,21 @@ import asyncio
 import json
 import statistics
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 import fleurs
 import metrics
 
 from llvt_ai_service.application.evaluation import percentile
-from llvt_ai_service.application.model_manager import ModelManager, ProviderSet
+from llvt_ai_service.application.model_manager import (
+    ASR_REGISTRY,
+    ModelManager,
+    ProviderSet,
+    asr_adapter_name,
+    asr_model,
+)
+from llvt_ai_service.config.presets import get_preset_config
 from llvt_ai_service.domain.enums import Language, Preset
 
 CHUNK_MS = 100  # desktop gửi audio lên theo khối 100 ms
@@ -154,9 +169,15 @@ async def main_async(args: argparse.Namespace) -> None:
     if source == target:
         raise SystemExit("--source và --target phải khác nhau")
 
+    cfg = get_preset_config(Preset(args.preset))
+    adapter = args.adapter or asr_adapter_name(cfg)
+    model = args.model or asr_model(cfg, adapter)
+    cfg = replace(cfg, asr_adapter=adapter, asr_model=model)
+
     manager = ModelManager()
     print(f"Nạp preset {args.preset} (VAD + ASR + MT + TTS)…", flush=True)
-    providers = await manager.load_preset(Preset(args.preset))
+    print(f"  ASR: {model} qua {adapter}", flush=True)
+    providers = await manager.load_preset(Preset(args.preset), cfg)
 
     samples = []
     for index, item in enumerate(fleurs.load_audio(source, limit=args.limit), start=1):
@@ -175,6 +196,8 @@ async def main_async(args: argparse.Namespace) -> None:
             "dataset": "google/fleurs",
             "split": "test",
             "preset": args.preset,
+            "adapter": adapter,
+            "asr_model": model,
             "direction": direction,
             "rtf_definition": "Total Inference Time / thời lượng audio đầu vào",
             "summary": summary,
@@ -193,6 +216,15 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=20, help="số mẫu (mặc định 20)")
     parser.add_argument(
         "--preset", default=Preset.balanced.value, choices=[p.value for p in Preset]
+    )
+    parser.add_argument(
+        "--adapter",
+        choices=sorted(ASR_REGISTRY),
+        help="runtime ASR (mặc định: LLVT_ASR_ADAPTER nếu có, không thì của preset)",
+    )
+    parser.add_argument(
+        "--model",
+        help="model ASR đúng theo runtime đó — để đo độ trễ của ĐÚNG cấu hình đã đo WER",
     )
     parser.add_argument("--json", help="ghi kết quả ra file JSON")
     asyncio.run(main_async(parser.parse_args()))

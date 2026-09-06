@@ -248,10 +248,17 @@ class ModelManager:
             return self._providers
         return await self.load_preset(self._preset or get_settings().default_preset)
 
-    async def load_preset(self, preset: Preset) -> ProviderSet:
+    async def load_preset(self, preset: Preset, cfg: PresetConfig | None = None) -> ProviderSet:
+        """Nạp đủ bốn khâu của ``preset``.
+
+        ``cfg`` là cửa cho **script đo**: `eval_latency.py` cần đo đúng model đã đo WER
+        ở `eval_asr.py`, mà model đó không phải model preset nào đang trỏ tới. Truyền
+        thẳng một `PresetConfig` đã sửa vào đây rẻ hơn nhiều so với đẻ thêm preset chỉ
+        để chạy một phép đo. Dịch vụ luôn gọi không kèm `cfg`.
+        """
         await self.unload()
         settings = get_settings()
-        cfg = get_preset_config(preset)
+        cfg = cfg or get_preset_config(preset)
         asr_adapter = asr_adapter_name(cfg)
         providers = ProviderSet(
             vad=VAD_REGISTRY[cfg.vad_adapter](cfg),
