@@ -44,9 +44,13 @@ wav 16 kHz mono — `brew install ffmpeg` / `winget install Gyan.FFmpeg`.
 ```bash
 git clone <repo> local-live-voice-translator
 cd local-live-voice-translator
-make setup      # uv sync (Python) + npm install (desktop)
+make setup-min  # chỉ phụ thuộc cần để chạy app (uv sync + npm install)
 make dev        # chạy AI service + desktop, Ctrl+C dừng cả hai
 ```
+
+Chỉ dùng app thì `make setup-min` là đủ. `make setup` cài **thêm** bộ đánh giá FLEURS và
+các backend tuỳ chọn (MLX, faster-whisper, tách người nói) — dành cho máy phát triển,
+nặng hơn vài trăm MB.
 
 Trên Windows không có `make`: chạy hai lệnh trong hai cửa sổ terminal —
 

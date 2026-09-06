@@ -23,26 +23,28 @@ Hai tiến trình giao tiếp qua REST + WebSocket trên `127.0.0.1` (chỉ loca
 Cách nhanh nhất — cần `uv` và `npm` trên PATH (nếu vừa cài uv: `source "$HOME/.local/bin/env"` hoặc mở lại terminal):
 
 ```bash
-make setup     # cài phụ thuộc cho cả hai app (lần đầu)
+make setup     # cài đầy đủ cho cả hai app (lần đầu) — thêm make setup-min nếu chỉ chạy app
 make dev       # chạy đồng thời AI service + desktop (Ctrl+C dừng cả hai)
 ```
 
 Các lệnh khác: `make help` để xem đầy đủ.
 
-| Lệnh                            | Tác dụng                              |
-| ------------------------------- | ------------------------------------- |
-| `make setup`                    | Cài phụ thuộc (uv sync + npm install) |
-| `make dev`                      | Chạy AI service + desktop cùng lúc    |
-| `make service` / `make desktop` | Chạy riêng từng phần                  |
-| `make build`                    | Typecheck + build desktop             |
-| `make test`                     | Chạy pytest cho AI service            |
-| `make lint` / `make format`     | Lint / format cả hai app              |
-| `make health`                   | Gọi thử `GET /health`                 |
-| `make bench`                    | Đo độ trễ từng khâu trên máy này      |
-| `make accuracy`                 | Đo WER/chrF trên bộ câu kiểm thử      |
-| `make soak MINUTES=60`          | Chạy liên tục kiểm tra ổn định        |
-| `make segment MEDIA=x.mov`      | Cắt bản ghi dài thành bộ câu đo WER   |
-| `make clean`                    | Xóa venv, node_modules, build output  |
+| Lệnh                            | Tác dụng                                   |
+| ------------------------------- | ------------------------------------------ |
+| `make setup`                    | Cài đầy đủ (lõi + eval + backend tuỳ chọn) |
+| `make setup-min`                | Chỉ phụ thuộc để chạy app                  |
+| `make dev`                      | Chạy AI service + desktop cùng lúc         |
+| `make service` / `make desktop` | Chạy riêng từng phần                       |
+| `make build`                    | Typecheck + build desktop                  |
+| `make test`                     | Chạy pytest cho AI service                 |
+| `make lint` / `make format`     | Lint / format cả hai app                   |
+| `make health`                   | Gọi thử `GET /health`                      |
+| `make bench`                    | Đo độ trễ từng khâu trên máy này           |
+| `make accuracy`                 | Đo WER/chrF trên bộ câu kiểm thử           |
+| `make soak MINUTES=60`          | Chạy liên tục kiểm tra ổn định             |
+| `make segment MEDIA=x.mov`      | Cắt bản ghi dài thành bộ câu đo WER        |
+| `make fetch-fleurs`             | Tải trước dữ liệu đánh giá FLEURS          |
+| `make clean`                    | Xóa venv, node_modules, build output       |
 
 `make bench` và `make soak` cần AI service **đang chạy** (`make service`) và model đã tải.
 
@@ -78,6 +80,9 @@ Cửa sổ Electron sẽ hiển thị trạng thái kết nối REST + WebSocket
 | `~/.llvt/models/`       | Model đã tải (whisper.cpp, NLLB, voice TTS, Kokoro tiếng Nhật) | `LLVT_MODELS_DIR` |
 | `~/.llvt/history.db`    | Lịch sử phiên: câu gốc, bản dịch, độ trễ                       | `LLVT_DB_PATH`    |
 | `~/.llvt/settings.json` | Tuỳ chọn đổi trong app (thư mục lưu model)                     | —                 |
+| `fleurs-cache/`         | Dữ liệu FLEURS cho bộ đánh giá (`make fetch-fleurs`, ~2,3 GB)  | `FLEURS_CACHE`    |
+
+`fleurs-cache/` chỉ phục vụ bộ đánh giá ([docs/17](docs/17_bo-danh-gia-fleurs.md)), không liên quan tới lúc dùng app — xoá lúc nào cũng được, `make fetch-fleurs` tải lại.
 
 Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Quyền riêng tư** (hoặc `LLVT_HISTORY_ENABLED=false`); xóa từng phiên hoặc xóa tất cả ở màn **Lịch sử**.
 

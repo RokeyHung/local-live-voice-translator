@@ -8,7 +8,7 @@ Near-real-time, **fully local** speech translation desktop app (đồ án tốt 
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
 
-The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models, each with a note in `docs/` (`04`–`10`); `11` covers the post-T8 batch (history, settings, model lifecycle), `16` the file-import screen, `17` the FLEURS evaluation suite, `18` the running list of what is still open, `19` the second ASR backend (MLX) + speaker diarization, `20` review-before-speaking + the model-management actions that used to be disabled, `21` the in-app evaluation screen + the third ASR backend (faster-whisper), `22` the switch to real upstream paths as model names, `23` "choosing a model is not loading a model" (preset clicks stop loading, per-runtime model lists, downloading any HF repo), `24` partial downloads (a killed download must not count as installed), and `25` the end-to-end measurement run on real hardware (latency + WER/chrF across all six directions, with the caveats that keep those numbers honest). Meeting minutes live in `docs/meetings/`. End-user docs: `12` install, `13` virtual mic + Google Meet. Remaining: running the `docs/17` evaluation suite end-to-end on real hardware, real Google Meet + Windows 11 runs, a 60-minute soak with real models, and T9 (report, packaging, demo).
+The authoritative spec lives in `docs/`: `00_project-outline.md` (đề cương — source of truth), `01`/`02` SPECs, `03_week1-survey-and-foundation.md`. When a decision conflicts, docs/00 wins. Work is organized week-by-week (see the plan table in docs/00): VAD=T2, ASR=T3, MT=T4, TTS=T5, desktop UI=T6, two-way/virtual mic=T7, measurement=T8 — all implemented with real models, each with a note in `docs/` (`04`–`10`); `11` covers the post-T8 batch (history, settings, model lifecycle), `16` the file-import screen, `17` the FLEURS evaluation suite, `18` the running list of what is still open, `19` the second ASR backend (MLX) + speaker diarization, `20` review-before-speaking + the model-management actions that used to be disabled, `21` the in-app evaluation screen + the third ASR backend (faster-whisper), `22` the switch to real upstream paths as model names, `23` "choosing a model is not loading a model" (preset clicks stop loading, per-runtime model lists, downloading any HF repo), `24` partial downloads (a killed download must not count as installed), `25` the end-to-end measurement run on real hardware (latency + WER/chrF across all six directions, with the caveats that keep those numbers honest), and `26` what the four metrics the advisor assigned actually mean (WER/CER, spBLEU/chrF++, COMET, RTF) — formulas, interpretation traps, the proposed real-time thresholds, and the citation list; §5 is the part to send the advisor. Meeting minutes live in `docs/meetings/`. End-user docs: `12` install, `13` virtual mic + Google Meet. Remaining: running the `docs/17` evaluation suite end-to-end on real hardware, real Google Meet + Windows 11 runs, a 60-minute soak with real models, and T9 (report, packaging, demo).
 
 ## Repository layout
 
@@ -22,7 +22,8 @@ Two processes under `apps/`, communicating over REST + WebSocket on `127.0.0.1` 
 Prefer the root `Makefile` (needs `uv` and `npm` on PATH; if `uv` was just installed: `source "$HOME/.local/bin/env"`):
 
 ```bash
-make setup     # install deps for both apps (uv sync + npm install)
+make setup     # full install for both apps: core + the eval group + every optional backend the platform supports
+make setup-min # core deps only (what running the app needs); the granular setup-* targets below install exactly one thing
 make dev       # run AI service + desktop together (Ctrl+C stops both)
 make service   # run AI service only (http://127.0.0.1:8756)
 make desktop   # run desktop only (electron-vite dev)
@@ -42,6 +43,7 @@ make setup-eval    # install the FLEURS evaluation deps (datasets, sacrebleu, ji
 make setup-mlx     # optional MLX ASR backend (mlx-audio; macOS + Apple Silicon only)
 make setup-diarization  # optional speaker diarization (pyannote.audio)
 make setup-ctranslate2  # optional faster-whisper ASR backend (CPU int8 / CUDA fp16)
+make fetch-fleurs  # pre-download the FLEURS test data (~2.3 GB; LANGS="vi en" for one at a time)
 make eval-asr / eval-mt / eval-comet / eval-latency  # the GVHD evaluation suite (docs/17)
 make clean     # remove .venv, node_modules, build output
 ```
@@ -62,6 +64,10 @@ npx vitest run src/renderer/src/application/model-names.test.ts   # single file
 npm run e2e                    # build + Playwright against the real Electron app
 npm run dev
 ```
+
+FLEURS evaluation data (`make fetch-fleurs`, `scripts/fetch_fleurs.sh`) lands in `fleurs-cache/` at the repo root — gitignored, `FLEURS_CACHE` moves it. The `eval-*` targets point **both** `HF_HUB_CACHE` (files from the Hub) and `HF_DATASETS_CACHE` (the arrow that `datasets` unpacks from parquet) at it; setting only the first splits the data across two places since the second defaults to `~/.cache`. Models are unaffected — every adapter passes its own `cache_dir`. Two traps the script exists to avoid: `datasets.load_dataset()` reads the auto-converted parquet on the `refs/convert/parquet` branch, **not** `data/<config>/audio/test.tar.gz` on `main`; and `hf download --include` silently drops the whole `--include` when a pattern gets parsed as the positional `filenames` argument, which once left Vietnamese — the pivot language of all six directions — missing with no error. Use `snapshot_download`.
+
+`uv sync` syncs the venv to **exactly** what the command names, so `make setup-mlx` after `make setup-eval` silently uninstalls sacrebleu. That is why the `eval-*` targets pass `--group eval` to `uv run` themselves instead of trusting that `make setup-eval` was run, and why the eval scripts open with `metrics.require(...)` — the metric libraries are imported lazily inside the scoring functions, so without a preflight a missing one surfaces only after a whole direction has been translated (a full `eval-mt` throws away half an hour that way).
 
 ## Architecture — both apps use Hexagonal (Ports & Adapters)
 
