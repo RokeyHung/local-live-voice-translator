@@ -50,6 +50,13 @@ có model nào dùng chung được**. Gộp một danh sách là mời người
 Đây là lỗi do chính đợt trước tự tạo ra, kèm một comment giải thích _sai_; ghi lại để
 đừng gộp lại lần nữa.
 
+Còn một nửa nữa chỉ lộ ra khi có test ở mức màn hình: đổi runtime thì bản nháp mới
+chỉ _bỏ_ model cũ đi, nên ô model rơi về giá trị service đang giữ — model của runtime
+**cũ**. Người dùng nhìn thấy sẵn một tổ hợp không tồn tại đang được chọn, bấm Lưu là
+ăn 400 mà không hiểu vì sao. Giờ đổi runtime ghi thẳng model đầu tiên của runtime mới
+vào bản nháp, nên thứ nhìn thấy đúng bằng thứ sẽ lưu, và lượt `PUT` mang cả hai
+trường thay vì để service tự đoán một mặc định khác.
+
 ## 3. Tìm kiếm model tải được cả repo ngoài danh mục
 
 **Trước:** ô tìm kiếm chỉ lọc trong danh mục dựng sẵn. Gõ một đường dẫn HuggingFace

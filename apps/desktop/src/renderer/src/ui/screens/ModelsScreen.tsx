@@ -468,9 +468,16 @@ export function ModelsScreen(): JSX.Element {
                 choices={customChoice.asrAdapterChoices}
                 disabled={busy || active}
                 onChange={(v) =>
-                  // Đổi runtime là đổi luôn họ model, nên bỏ model đang chọn dở: giữ
-                  // lại sẽ ra một tổ hợp không tồn tại và chỉ gãy lúc nạp.
-                  setCustomDraft({ asrAdapter: v, mtModel: customDraft.mtModel })
+                  // Đổi runtime là đổi luôn họ model. Phải CHỌN SẴN model đầu tiên của
+                  // runtime mới chứ không chỉ bỏ model cũ đi: bỏ trống thì ô model rơi
+                  // về giá trị service đang giữ — model của runtime CŨ — và người dùng
+                  // nhìn thấy một tổ hợp không tồn tại đang được chọn sẵn, bấm Lưu là
+                  // ăn 400. Ghi thẳng vào bản nháp để thứ nhìn thấy đúng bằng thứ sẽ lưu.
+                  setCustomDraft({
+                    asrAdapter: v,
+                    asrModel: customChoice?.asrModelChoices[v]?.[0] ?? '',
+                    mtModel: customDraft.mtModel
+                  })
                 }
               />
               <CustomPicker
