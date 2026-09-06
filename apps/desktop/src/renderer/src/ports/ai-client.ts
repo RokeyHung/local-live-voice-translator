@@ -50,7 +50,9 @@ export interface AiClient {
   cancelLoadModels(): Promise<void>
   // Tải một model về đĩa, KHÔNG nạp vào bộ nhớ. `kind` chỉ cần khi model nằm ngoài
   // danh mục (một repo HuggingFace bất kỳ) — service không suy ra được runtime.
-  downloadModel(name: string, kind?: string): Promise<DownloadedModel>
+  // `force` xoá bản đang có rồi tải lại từ đầu — lối thoát cho bản tải dở, vì
+  // service bỏ qua model "đã có".
+  downloadModel(name: string, kind?: string, force?: boolean): Promise<DownloadedModel>
   // Xoá đúng một model đã tải, theo `path` mà GET /api/models trả về.
   deleteInstalledModel(path: string): Promise<DeletedModels>
   // Lưu access token HuggingFace ở phía service (chuỗi rỗng = gỡ token đã lưu).

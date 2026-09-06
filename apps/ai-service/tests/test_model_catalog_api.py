@@ -91,7 +91,7 @@ def test_download_endpoint_reports_where_the_model_landed(
 ):
     called: list[str] = []
 
-    def fake_download(name: str, models_dir: Path, _kind: str = "") -> Path:
+    def fake_download(name: str, models_dir: Path, _kind: str = "", _force: bool = False) -> Path:
         called.append(name)
         return models_dir / "whisper-cpp" / "ggml-small-q5_1.bin"
 
@@ -121,7 +121,7 @@ def test_a_gated_repo_is_403_not_503(client: TestClient, monkeypatch: pytest.Mon
     import httpx
     from huggingface_hub.errors import GatedRepoError
 
-    def gated(_name: str, _dir: Path, _kind: str = "") -> Path:
+    def gated(_name: str, _dir: Path, _kind: str = "", _force: bool = False) -> Path:
         # Dựng đúng như thư viện dựng: nó cần `response`, thiếu thì chính hàm khởi tạo
         # ném TypeError và test lại đi kiểm nhánh "lỗi bất kỳ" thay vì nhánh gated.
         raise GatedRepoError(
@@ -148,7 +148,7 @@ def test_a_mistyped_repo_path_is_404_not_503(client: TestClient, monkeypatch: py
     import httpx
     from huggingface_hub.errors import RepositoryNotFoundError
 
-    def missing(_name: str, _dir: Path, _kind: str = "") -> Path:
+    def missing(_name: str, _dir: Path, _kind: str = "", _force: bool = False) -> Path:
         raise RepositoryNotFoundError(
             "404 Client Error. Repository Not Found",
             response=httpx.Response(404, request=httpx.Request("GET", "https://hf.co")),
@@ -165,7 +165,7 @@ def test_a_mistyped_repo_path_is_404_not_503(client: TestClient, monkeypatch: py
 
 def test_download_failure_is_503_not_500(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     # Mất mạng là lỗi môi trường, không phải lỗi của request.
-    def boom(_name: str, _dir: Path, _kind: str = "") -> Path:
+    def boom(_name: str, _dir: Path, _kind: str = "", _force: bool = False) -> Path:
         raise OSError("Network is unreachable")
 
     monkeypatch.setattr(model_download, "download", boom)

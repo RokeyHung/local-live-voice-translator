@@ -145,6 +145,9 @@ export interface InstalledModel {
   stage: Stage
   path: string
   sizeBytes: number
+  // false = tải dở dang: có trên đĩa nhưng thiếu file, nạp sẽ hỏng. Không được tính
+  // là "đã tải" ở bất cứ đâu — phải xoá hoặc tải lại.
+  complete: boolean
 }
 
 // Dung lượng đĩa service đang chiếm (GET /api/storage). `key` mở rộng được nên để

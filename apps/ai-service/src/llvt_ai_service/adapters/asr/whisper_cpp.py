@@ -14,7 +14,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import shutil
 import time
+from pathlib import Path
 from typing import Any, Callable, Protocol
 
 import numpy as np
@@ -140,9 +143,50 @@ def _accel_from_system_info(info: str) -> str:
     return "CPU"
 
 
+def download_ggml(model_id: str, target_dir: Path) -> Path:
+    """Tải file GGML về ``target_dir``, chỉ đặt vào chỗ khi đã tải XONG.
+
+    pywhispercpp ghi thẳng vào đường dẫn cuối cùng và chỉ dọn dẹp khi *bắt được*
+    exception. Bị kill giữa chừng (đóng app, mất điện, hết pin) thì nó để lại một
+    file ``.bin`` cụt ngay tại chỗ — và lần sau chính nó thấy "file đã có" nên
+    không bao giờ tải lại nữa. Model đó hỏng vĩnh viễn mà nhìn thì vẫn như đã tải.
+
+    Tải vào thư mục tạm rồi đổi tên là cách duy nhất khiến "có file" đồng nghĩa với
+    "đã tải xong": ``os.replace`` trong cùng một phân vùng là thao tác nguyên tử,
+    không có trạng thái ở giữa.
+    """
+    from pywhispercpp.utils import download_model
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    ready = target_dir / f"ggml-{model_id}.bin"
+    if ready.is_file():
+        return ready
+
+    staging = target_dir / ".incomplete"
+    staging.mkdir(parents=True, exist_ok=True)
+    try:
+        fetched = download_model(model_id, str(staging))
+        if not fetched:
+            # pywhispercpp trả None cho tên lạ (chỉ log rồi bỏ qua), không ném lỗi.
+            raise ValueError(
+                f"whisper.cpp không có model {model_id!r}. Xem danh sách file GGML "
+                "trong repo ggerganov/whisper.cpp."
+            )
+        done = target_dir / Path(fetched).name
+        os.replace(fetched, done)
+    finally:
+        # Xoá phần tải dở: pywhispercpp không tải tiếp được, giữ lại chỉ tổ chiếm đĩa.
+        shutil.rmtree(staging, ignore_errors=True)
+    return done
+
+
 def _default_loader(model_id: str, models_dir: str | None) -> WhisperModel:
     from pywhispercpp.model import Model
 
+    # Tải trước bằng đường có staging: để `Model()` tự tải thì nó dùng thẳng
+    # pywhispercpp, và một lượt nạp bị ngắt sẽ để lại file .bin cụt.
+    if models_dir:
+        download_ggml(model_id, Path(models_dir))
     # redirect logs để không làm nhiễu log của service; greedy (mặc định) cho low-latency.
     return Model(model_id, models_dir=models_dir, redirect_whispercpp_logs_to=None)
 

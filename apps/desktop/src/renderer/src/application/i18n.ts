@@ -117,6 +117,9 @@ export interface Dict {
   clearModelsBtn: string
   cancelLoad: string
   dldOk: string
+  partialLbl: string
+  partialTip: string
+  redownload: string
   noModelsOnDisk: string
   loadIdle: string
   loadedLbl: string
@@ -540,6 +543,10 @@ const vi: Dict = {
   clearModelsBtn: 'Xóa tất cả',
   cancelLoad: 'Hủy nạp',
   dldOk: 'Đã tải',
+  partialLbl: 'Tải chưa xong',
+  partialTip:
+    'Model này tải dở dang (bị ngắt giữa chừng) nên thiếu file — nạp sẽ hỏng. Tải lại từ đầu, hoặc xoá đi.',
+  redownload: 'Tải lại',
   noModelsOnDisk: 'Chưa có model nào trên đĩa — service sẽ tự tải khi nạp preset.',
   loadIdle: 'Chưa nạp',
   loadedLbl: 'Đã nạp',
@@ -980,6 +987,10 @@ const en: Dict = {
   clearModelsBtn: 'Delete all',
   cancelLoad: 'Cancel load',
   dldOk: 'Downloaded',
+  partialLbl: 'Incomplete',
+  partialTip:
+    'This download was interrupted, so files are missing — loading it will fail. Download it again, or delete it.',
+  redownload: 'Re-download',
   noModelsOnDisk: 'No model files yet — the service downloads them when a preset loads.',
   loadIdle: 'Not loaded',
   loadedLbl: 'Loaded',

@@ -12,6 +12,7 @@ lệch nhau (khác thư mục đích, khác cách giải nén).
 from __future__ import annotations
 
 import logging
+import shutil
 from pathlib import Path
 
 from llvt_ai_service.adapters.asr.faster_whisper import MODEL_MAP as FW_MODELS
@@ -27,13 +28,25 @@ class UnknownModelError(ValueError):
     """Tên model không có trong danh mục nào."""
 
 
-def _download_whisper_cpp(name: str, models_dir: Path) -> Path:
-    from pywhispercpp.utils import download_model
+def _ggml_key(name: str) -> str:
+    """Tên file GGML chuẩn hoá.
 
-    target = models_dir / "whisper-cpp"
-    target.mkdir(parents=True, exist_ok=True)
-    model_id = WHISPER_MODELS.get(name, name)
-    return Path(download_model(model_id, str(target)))
+    ``GET /api/models`` trả tên KHÔNG có ``.bin`` (nó là ``Path.stem``), nên nút "Tải
+    lại" gửi lên đúng chuỗi đó. Nhận cả hai dạng để cùng một model không có hai cái
+    tên tuỳ theo nó đến từ danh mục hay từ danh sách trên đĩa.
+    """
+    return name if name in WHISPER_MODELS else f"{name}.bin"
+
+
+def _download_whisper_cpp(name: str, models_dir: Path) -> Path:
+    from llvt_ai_service.adapters.asr.whisper_cpp import download_ggml
+
+    model_id = WHISPER_MODELS.get(_ggml_key(name), name)
+    try:
+        return download_ggml(model_id, models_dir / "whisper-cpp")
+    except ValueError as exc:
+        # Tên GGML gõ tay không có thật — lỗi của yêu cầu, không phải sự cố tải.
+        raise UnknownModelError(str(exc)) from exc
 
 
 def _snapshot(repo_id: str, models_dir: Path, sub_dir: str) -> Path:
@@ -80,7 +93,7 @@ def resolve(name: str, kind: str = "") -> tuple[str, str]:
     nên client chỉ rõ. Tên có trong danh mục thì bỏ qua ``kind`` — danh mục biết rõ hơn.
     """
     clean = name.strip()
-    if clean in WHISPER_MODELS:
+    if _ggml_key(clean) in WHISPER_MODELS:
         return "ASR", "whisper_cpp"
     if clean in MLX_MODELS:
         return "ASR", "mlx"
@@ -118,13 +131,51 @@ def resolve(name: str, kind: str = "") -> tuple[str, str]:
     )
 
 
-def download(name: str, models_dir: Path, kind: str = "") -> Path:
+def _artifact(resolved: str, clean: str, models_dir: Path) -> Path | None:
+    """Chỗ model nằm trên đĩa — để xoá đi trước khi tải lại (``force``)."""
+    if resolved == "whisper_cpp":
+        model_id = WHISPER_MODELS.get(_ggml_key(clean), clean)
+        return models_dir / "whisper-cpp" / f"ggml-{model_id}.bin"
+    if resolved == "kokoro":
+        return models_dir / "kokoro-ja"
+    if resolved == "sherpa":
+        return models_dir / "sherpa-tts" / clean
+    repos = {"mlx": MLX_MODELS, "faster_whisper": FW_MODELS, "nllb": NLLB_MODELS}
+    sub_dirs = {"mlx": "mlx-whisper", "faster_whisper": "faster-whisper", "nllb": "nllb"}
+    repo_id = repos.get(resolved, {}).get(clean, clean)
+    sub_dir = sub_dirs.get(resolved, "pyannote")
+    return models_dir / sub_dir / f"models--{repo_id.replace('/', '--')}"
+
+
+def _discard(target: Path) -> None:
+    """Xoá bản đã có trên đĩa. Không ném lỗi: tải lại vẫn chạy được nếu xoá hụt."""
+    try:
+        if target.is_dir():
+            shutil.rmtree(target)
+        elif target.exists():
+            target.unlink()
+    except OSError:
+        logger.warning("Không xoá được %s trước khi tải lại", target, exc_info=True)
+
+
+def download(name: str, models_dir: Path, kind: str = "", force: bool = False) -> Path:
     """Tải model về ``models_dir``; trả đường dẫn đã tải. Blocking (I/O mạng).
 
     Model đã có sẵn thì các hàm bên dưới đều tự bỏ qua, nên gọi lại là rẻ.
+
+    ``force`` xoá bản đang có rồi tải lại từ đầu. Đây là lối thoát cho một bản tải
+    dở mà máy không tự nhận ra được — ví dụ file GGML bị cắt cụt từ trước khi có
+    staging, hay một repo HF chết đúng khe giữa hai file nên không để lại
+    ``.incomplete`` nào. Không có ``force`` thì những bản đó hỏng vĩnh viễn, vì mọi
+    đường tải đều bỏ qua model "đã có".
     """
     clean = name.strip()
     _stage, resolved = resolve(clean, kind)
+    if force:
+        target = _artifact(resolved, clean, models_dir)
+        if target is not None:
+            logger.info("Tải lại %s: xoá bản đang có ở %s", clean, target)
+            _discard(target)
     logger.info("Tải model %s (%s)", clean, resolved)
     if resolved == "whisper_cpp":
         return _download_whisper_cpp(clean, models_dir)

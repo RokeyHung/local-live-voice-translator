@@ -109,12 +109,12 @@ export class HttpAiClient implements AiClient {
     if (!res.ok) throw new Error(`Dừng nạp model thất bại: HTTP ${res.status}`)
   }
 
-  async downloadModel(name: string, kind = ''): Promise<DownloadedModel> {
+  async downloadModel(name: string, kind = '', force = false): Promise<DownloadedModel> {
     // `kind` chỉ cần khi model nằm ngoài danh mục — service tự biết với model có sẵn.
     const res = await fetch(`${AI_BASE_URL}/api/models/download`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, kind })
+      body: JSON.stringify({ name, kind, force })
     })
     if (!res.ok) {
       // Service nói rõ lý do (tên lạ, mất mạng, thiếu token cho model gated).

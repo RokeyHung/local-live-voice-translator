@@ -169,16 +169,17 @@ export function useCancelLoadModels(): UseMutationResult<void, Error, void> {
   return useMutation({ mutationFn: () => client.cancelLoadModels(), retry: false })
 }
 
-// Tải một model trong danh mục về đĩa (không nạp vào bộ nhớ, không đổi preset).
+// Tải một model về đĩa (không nạp vào bộ nhớ, không đổi preset). `force` = xoá bản
+// đang có rồi tải lại, dùng cho model tải dở.
 export function useDownloadModel(): UseMutationResult<
   DownloadedModel,
   Error,
-  { name: string; kind?: string }
+  { name: string; kind?: string; force?: boolean }
 > {
   const queryClient = useQueryClient()
   return useMutation({
     // Tải hàng GB trong một request — đừng tự thử lại, sẽ tải chồng lên nhau.
-    mutationFn: ({ name, kind }) => client.downloadModel(name, kind),
+    mutationFn: ({ name, kind, force }) => client.downloadModel(name, kind, force),
     retry: false,
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['installed-models'] })

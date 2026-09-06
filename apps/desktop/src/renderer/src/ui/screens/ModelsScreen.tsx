@@ -1,5 +1,5 @@
-// Màn Quản lý Model: dải trạng thái lớn (khởi động / nạp lại / giải phóng), bộ chọn
-// cấu hình hiệu năng, tiến trình nạp theo khâu, và hai cột "model đã cài" + "danh mục".
+// Màn Quản lý Model: bộ chọn cấu hình hiệu năng (kèm nút khởi động / nạp lại / giải
+// phóng), tiến trình nạp theo khâu, và hai cột "model đã cài" + "danh mục".
 //
 // Bốn thao tác từng phải để vô hiệu vì thiếu API — huỷ giữa chừng, cấu hình tự chọn
 // từng khâu, tải model từ danh mục, xoá lẻ một model — nay đã nối thẳng vào service.
@@ -212,6 +212,18 @@ function guessDownloadKind(query: string): DownloadKind {
   return 'mlx'
 }
 
+/** Runtime của một model ĐÃ nằm trên đĩa — suy từ thư mục service đặt nó vào. */
+function kindFromPath(path: string): DownloadKind | undefined {
+  const p = path.replace(/\\/g, '/')
+  if (p.includes('/whisper-cpp/')) return 'whisper_cpp'
+  if (p.includes('/mlx-whisper/')) return 'mlx'
+  if (p.includes('/faster-whisper/')) return 'faster_whisper'
+  if (p.includes('/nllb/')) return 'nllb'
+  if (p.includes('/pyannote/')) return 'pyannote'
+  // sherpa-tts và kokoro-ja: service tự nhận ra từ tên, không cần nói runtime.
+  return undefined
+}
+
 /** Tiêu đề của một tấm trong lưới hai cột. */
 function PanelHeader({ children }: { children: ReactNode }): JSX.Element {
   return <div className="border-b border-line bg-surface px-4 py-3.25">{children}</div>
@@ -277,7 +289,9 @@ export function ModelsScreen(): JSX.Element {
   // Tên model đang tải, để chỉ ô đó hiện vòng xoay (service chạy một lượt một lúc).
   const downloadingNow = downloadModel.isPending ? (downloadModel.variables?.name ?? null) : null
   const installedList = installed.data ?? []
-  const installedNames = new Set(installedList.map((m) => m.name))
+  // CHỈ bản tải đủ mới được tính là "đã tải". Đếm cả bản dở thì danh mục gắn nhãn
+  // xanh cho một model sẽ gãy lúc nạp, và giấu mất nút Tải đúng lúc cần nó nhất.
+  const installedNames = new Set(installedList.filter((m) => m.complete).map((m) => m.name))
   const totalBytes = installedList.reduce((sum, m) => sum + m.sizeBytes, 0)
   const serviceUp = health.isSuccess
 
@@ -620,7 +634,8 @@ export function ModelsScreen(): JSX.Element {
 
           <div className="cs max-h-85 overflow-y-auto">
             {installedList.map((model) => {
-              const loaded = isLoadedOnDisk(model.name)
+              const loaded = model.complete && isLoadedOnDisk(model.name)
+              const retrying = downloadingNow === model.name
               return (
                 <div
                   key={model.path}
@@ -644,18 +659,48 @@ export function ModelsScreen(): JSX.Element {
                       <span>{formatBytes(model.sizeBytes)}</span>
                     </div>
                   </div>
-                  <span
-                    className={`inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold ${
-                      loaded ? 'text-ac-grn' : 'text-fg-4'
-                    }`}
-                  >
-                    {loaded ? (
-                      <Icon name="check" size={13} strokeWidth={2.6} />
-                    ) : (
-                      <Dot color="var(--text5)" size={7} glow={false} />
-                    )}
-                    {loaded ? L.loadedLbl : L.loadIdle}
-                  </span>
+                  {/* Tải dở: nói thẳng ra nó hỏng và đưa ngay nút tải lại. Nếu chỉ
+                      hiện như model bình thường thì người dùng sẽ đi bấm Nạp và nhận
+                      một lỗi runtime chẳng liên quan gì tới việc tải. */}
+                  {model.complete ? (
+                    <span
+                      className={`inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold ${
+                        loaded ? 'text-ac-grn' : 'text-fg-4'
+                      }`}
+                    >
+                      {loaded ? (
+                        <Icon name="check" size={13} strokeWidth={2.6} />
+                      ) : (
+                        <Dot color="var(--text5)" size={7} glow={false} />
+                      )}
+                      {loaded ? L.loadedLbl : L.loadIdle}
+                    </span>
+                  ) : (
+                    <>
+                      <span
+                        className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[#fb923c]"
+                        title={L.partialTip}
+                      >
+                        <Icon name="warning" size={13} strokeWidth={2.4} />
+                        {L.partialLbl}
+                      </span>
+                      <button
+                        className={`${GHOST_BUTTON} h-7 shrink-0 text-sm`}
+                        disabled={downloadModel.isPending || busy || active}
+                        title={L.partialTip}
+                        onClick={() =>
+                          downloadModel.mutate({
+                            name: model.name,
+                            kind: kindFromPath(model.path),
+                            force: true
+                          })
+                        }
+                      >
+                        <Icon name={retrying ? 'spinner' : 'download'} size={13} spin={retrying} />
+                        {retrying ? L.dlWorking : L.redownload}
+                      </button>
+                    </>
+                  )}
                   <button
                     disabled={busy || active}
                     title={L.delOneTip}

@@ -84,6 +84,9 @@ class InstalledModelSchema(BaseModel):
     stage: str
     path: str
     sizeBytes: int
+    # False = tải dở dang: có trên đĩa nhưng chưa đủ file, nạp sẽ hỏng. Giao diện phải
+    # gắn nhãn riêng và không được tính nó là "đã tải".
+    complete: bool = True
 
 
 class StageProgressSchema(BaseModel):
@@ -154,6 +157,10 @@ class DownloadRequest(BaseModel):
     # `org/repo` nào cũng giống nhau nên service không suy ra được. Giá trị:
     # whisper_cpp | mlx | faster_whisper | nllb | pyannote.
     kind: str = ""
+    # Xoá bản đang có rồi tải lại từ đầu. Cần cho bản tải dở mà máy không tự nhận ra
+    # được — mọi đường tải đều bỏ qua model "đã có", nên nếu không có cờ này thì một
+    # file cụt sẽ nằm đó vĩnh viễn.
+    force: bool = False
 
 
 class DownloadedModel(BaseModel):

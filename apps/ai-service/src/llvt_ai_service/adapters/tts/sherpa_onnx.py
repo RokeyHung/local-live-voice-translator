@@ -16,6 +16,8 @@ ngôn ngữ đó (tránh tải cả ba voice khi chỉ dùng một). Một ``Ser
 from __future__ import annotations
 
 import logging
+import os
+import shutil
 import tarfile
 import time
 import urllib.request
@@ -66,22 +68,32 @@ VoiceDownloader = Callable[[str, Path], Path]
 
 
 def _download_voice(voice: str, models_dir: Path) -> Path:
-    """Tải + giải nén voice model nếu chưa có; trả thư mục model."""
+    """Tải + giải nén voice model nếu chưa có; trả thư mục model.
+
+    Giải nén vào thư mục tạm rồi mới đổi tên sang chỗ thật. Giải nén thẳng vào
+    ``models_dir`` thì một lần bị ngắt để lại thư mục voice mới được nửa số file,
+    mà bảng "model đã tải" không phân biệt được với bản đủ — nó chỉ thấy có thư mục.
+    ``os.replace`` nguyên tử nên thư mục voice hoặc chưa có, hoặc đã đủ.
+    """
     dest = models_dir / voice
     if dest.is_dir():
         return dest
     models_dir.mkdir(parents=True, exist_ok=True)
     url = f"{VOICE_URL_BASE}{voice}.tar.bz2"
     tmp = models_dir / f"{voice}.tar.bz2.tmp"
+    staging = models_dir / f".incomplete-{voice}"
     logger.info("Tải voice model %s từ %s", voice, url)
-    urllib.request.urlretrieve(url, tmp)  # noqa: S310 (URL cố định, https k2-fsa)
     try:
+        urllib.request.urlretrieve(url, tmp)  # noqa: S310 (URL cố định, https k2-fsa)
         with tarfile.open(tmp, "r:bz2") as tar:
-            tar.extractall(models_dir, filter="data")  # chống path traversal
+            tar.extractall(staging, filter="data")  # chống path traversal
+        extracted = staging / voice
+        if not extracted.is_dir():
+            raise RuntimeError(f"Giải nén {voice} không tạo thư mục {extracted}")
+        os.replace(extracted, dest)
     finally:
         tmp.unlink(missing_ok=True)
-    if not dest.is_dir():
-        raise RuntimeError(f"Giải nén {voice} không tạo thư mục {dest}")
+        shutil.rmtree(staging, ignore_errors=True)
     return dest
 
 

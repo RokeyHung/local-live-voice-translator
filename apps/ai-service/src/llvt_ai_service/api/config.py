@@ -305,12 +305,23 @@ async def update_config(
     summary="Model đã tải trên đĩa",
     description=(
         "Quét thư mục model thật (`whisper-cpp/*.bin`, cache HuggingFace của NLLB, "
-        "thư mục voice của sherpa-onnx) và trả dung lượng thật của từng cái."
+        "thư mục voice của sherpa-onnx) và trả dung lượng thật của từng cái.\n\n"
+        "`complete: false` = **tải dở dang**: model có trên đĩa nhưng thiếu file, nạp "
+        "sẽ hỏng. Nó vẫn được liệt kê (nếu giấu đi thì người dùng thấy đĩa đầy mà "
+        "không có cách nào xoá) nhưng không được tính là đã tải — hoặc xoá bằng "
+        "`DELETE /api/models/one`, hoặc tải lại bằng `POST /api/models/download` với "
+        "`force: true`."
     ),
 )
 def installed_models() -> list[InstalledModelSchema]:
     return [
-        InstalledModelSchema(name=m.name, stage=m.stage, path=m.path, sizeBytes=m.size_bytes)
+        InstalledModelSchema(
+            name=m.name,
+            stage=m.stage,
+            path=m.path,
+            sizeBytes=m.size_bytes,
+            complete=m.complete,
+        )
         for m in scan(get_settings().models_dir)
     ]
 
@@ -332,6 +343,8 @@ def installed_models() -> list[InstalledModelSchema]:
         "Model **ngoài danh mục** (một repo HuggingFace bất kỳ) cũng tải được, nhưng "
         "phải kèm `kind` để service biết đặt vào thư mục nào và runtime nào sẽ chạy "
         "nó — `org/repo` nhìn từ ngoài thì repo nào cũng như repo nào.\n\n"
+        "`force: true` xoá bản đang có rồi tải lại từ đầu — lối thoát cho một bản tải "
+        'dở, vì mọi đường tải đều bỏ qua model "đã có".\n\n'
         "**Chặn tới khi tải xong** — hàng GB nên có thể mất vài phút. Trả 400 nếu tên "
         "không có trong danh mục, **404** nếu đường dẫn không tồn tại trên "
         "HuggingFace (thường là gõ sai), **403** nếu đó là repo *gated* mà tài khoản "
@@ -352,8 +365,11 @@ async def download_model(
         # Tải là I/O mạng blocking → đẩy ra khỏi event loop, nếu không cả service
         # đứng hình (kể cả /health) suốt lúc tải.
         path = await asyncio.to_thread(
-            model_download.download, body.name, settings.models_dir, body.kind
+            model_download.download, body.name, settings.models_dir, body.kind, body.force
         )
+    except model_download.UnknownModelError as exc:
+        # Tên hợp lệ về hình thức nhưng runtime không có model đó (file GGML gõ tay).
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except GatedRepoError as exc:
         # Repo gated: token hợp lệ nhưng tài khoản CHƯA được cấp quyền. Đây là việc
         # người dùng phải làm trên web, không phải sự cố tạm thời — trả 403 chứ không
