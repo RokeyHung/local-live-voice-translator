@@ -28,6 +28,8 @@ import io
 from dataclasses import dataclass
 from typing import Iterator
 
+import numpy as np
+
 from llvt_ai_service.domain.enums import Language
 
 REPO = "google/fleurs"
@@ -101,6 +103,15 @@ def parallel(source: Language, target: Language, split: str = "test") -> list[tu
     return [(src[key].raw, tgt[key].raw) for key in sorted(src.keys() & tgt.keys())]
 
 
+def to_pcm16(samples: np.ndarray) -> np.ndarray:
+    """Mẫu float [-1, 1] → PCM signed 16-bit, đúng định dạng ASR của dự án.
+
+    Tách riêng để test được: đây là chỗ đã từng làm hỏng cả bảng đánh giá ASR mà
+    không ném ra lỗi nào.
+    """
+    return np.clip(np.round(samples * 32767.0), -32768, 32767).astype(np.int16)
+
+
 def load_audio(
     language: Language, split: str = "test", limit: int | None = None
 ) -> Iterator[AudioItem]:
@@ -126,11 +137,26 @@ def load_audio(
         if blob is None:  # bản tải hẳn về đĩa chỉ đưa đường dẫn
             with open(row["audio"]["path"], "rb") as handle:
                 blob = handle.read()
-        samples, rate = sf.read(io.BytesIO(blob), dtype="int16", always_2d=False)
+        # ĐỌC FLOAT rồi tự nhân thang, KHÔNG dùng dtype="int16".
+        #
+        # Audio FLEURS là WAV FLOAT 32-bit. libsndfile khi đọc file float thành số
+        # nguyên thì mặc định KHÔNG nhân thang — mọi mẫu nằm trong [-1, 1] bị cắt
+        # thẳng xuống 0. Kết quả là Whisper được cho nghe 11 giây im lặng, trả về
+        # chuỗi rỗng, và bảng WER ra đúng 100% cho cả bốn ngôn ngữ mà không có dấu
+        # hiệu nào cho thấy đó là lỗi nạp dữ liệu chứ không phải lỗi mô hình.
+        samples, rate = sf.read(io.BytesIO(blob), dtype="float32", always_2d=False)
         if rate != SAMPLE_RATE:
             raise SystemExit(f"FLEURS {config} có sample rate {rate}, chờ đợi {SAMPLE_RATE}")
         if samples.ndim > 1:
             samples = samples[:, 0]
+        samples = to_pcm16(samples)
+        if not samples.any():
+            # Không có đoạn FLEURS nào im lặng tuyệt đối. Im lặng = đường giải mã hỏng,
+            # và hỏng kiểu đó thì bảng WER vẫn in ra bình thường nên phải chặn tại đây.
+            raise SystemExit(
+                f"FLEURS {config} câu {row['id']}: audio giải mã ra toàn số 0 — "
+                "đường đọc audio hỏng, đừng tin bảng WER sinh ra từ đây."
+            )
         yield AudioItem(
             id=int(row["id"]),
             file_name=str(row["path"]),
