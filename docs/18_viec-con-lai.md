@@ -89,9 +89,15 @@ trên máy nào thì chỉ đúng cho máy đó, và báo cáo phải ghi kèm c
 `fleurs-cache/`, model whisper.cpp, NLLB và COMET đều đã có sẵn — không phải tải gì thêm.
 Chi tiết cách tải và chỗ dữ liệu nằm ở [`17` mục 2](17_bo-danh-gia-fleurs.md).
 
-**Mục (b) đã xong.** `make eval-mt` + `make eval-comet` chạy đầy đủ 2.022 cặp câu, bảng
-sáu chiều kèm phần đọc số ở [`17` mục 8](17_bo-danh-gia-fleurs.md). Còn lại mục (a)
-`eval-asr` (~55 phút) và mục (c) `eval-latency` (sáu chiều, ~15 phút).
+**Mục (a) và (b) đã xong**, bảng số và phần đọc số ở [`17` mục 8](17_bo-danh-gia-fleurs.md):
+
+- (a) ASR: 3.099 bản thu, 10,22 giờ audio, 86 phút, `mlx-community/whisper-large-v3-asr-8bit`
+  — vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7% · RTF gộp 0,141 · **0 câu rỗng**.
+- (b) MT: 2.022 cặp câu, sáu chiều, có cả điểm COMET.
+
+Còn lại mục (c) `eval-latency` (sáu chiều, ~15 phút). Muốn có thêm **cột so sánh
+whisper.cpp với MLX** thì chạy `make eval-asr JSON=eval-asr-ggml.json` bản đầy đủ
+(~55 phút) — hiện whisper.cpp mới có số trên 20 câu nên chưa so cùng thang được.
 
 ### Xong là khi nào
 

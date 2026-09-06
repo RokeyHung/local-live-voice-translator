@@ -308,7 +308,7 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 ## 7. Việc còn lại của Ưu tiên 1
 
 - [x] Tải dữ liệu FLEURS về máy (`make fetch-fleurs`) — 4 ngôn ngữ, split `test`, 2,2 GB
-- [ ] Chạy `make eval-asr` bản đầy đủ trên máy macOS (Metal) → bảng WER/CER
+- [x] Chạy `make eval-asr` bản đầy đủ trên máy macOS (Metal) → bảng WER/CER (mục 8)
 - [x] Chạy `make eval-mt` + `make eval-comet` bản đầy đủ → bảng 6 chiều (mục 8 dưới đây)
 - [ ] Chạy `make eval-latency` cho ít nhất 2 chiều → Total Inference Time + RTF
 - [x] Tra công thức RTF, ngưỡng real-time và ba độ đo còn lại, có trích nguồn —
@@ -319,7 +319,51 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 
 ---
 
-## 8. Kết quả mục (b): MT trên toàn bộ FLEURS `test` — 06/09/2026
+## 8. Kết quả mục (a): ASR trên toàn bộ FLEURS `test` — 07/09/2026
+
+**3.099 bản thu, 10,22 giờ audio, 86 phút chạy.** Không bỏ câu nào, **0 câu rỗng** ở cả
+bốn ngôn ngữ.
+
+| Điều kiện     | Giá trị                                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| Model         | `mlx-community/whisper-large-v3-asr-8bit` (chọn theo [`19` mục 2.2b](19_backend-asr-va-tach-nguoi-noi.md)) |
+| Runtime       | mlx-audio, Metal, Apple M4                                                                                 |
+| Bộ lọc câu ma | TẮT — đo mô hình, không đo lớp sản phẩm sau nó                                                             |
+
+| Ngôn ngữ | Chỉ số | Giá trị |   Bản thu |         Audio |           ASR | RTF       | Câu rỗng |
+| -------- | ------ | ------: | --------: | ------------: | ------------: | --------- | -------: |
+| vi       | WER    |    8,8% |       857 |      10.814 s |       1.589 s | 0,15      |        0 |
+| en       | WER    |    4,8% |       647 |       6.388 s |         911 s | 0,14      |        0 |
+| zh       | CER    |    8,1% |       945 |      11.065 s |       1.577 s | 0,14      |        0 |
+| ja       | CER    |    4,7% |       650 |       8.511 s |       1.105 s | 0,13      |        0 |
+| **Gộp**  |        |         | **3.099** | **10,22 giờ** | **86,4 phút** | **0,141** |    **0** |
+
+### Đọc số
+
+**Cột "câu rỗng" bằng 0 ở cả bốn ngôn ngữ** là thứ phải nhìn trước tiên. Nó là chốt chặn
+chống đo hỏng (sai mã ngôn ngữ, sai đường đọc audio — đúng loại lỗi từng làm cả bảng
+thành 100%), và nó cũng là bằng chứng model MLX này **không** dính vòng lặp lặp chữ như
+họ `small` ở [`19` mục 2.2c](19_backend-asr-va-tach-nguoi-noi.md).
+
+**Tiếng Việt (8,8%) khó hơn tiếng Anh (4,8%) gần gấp đôi.** Đây là chiều quan trọng nhất
+của đề tài, và con số này là mức sàn — FLEURS là giọng đọc rõ ràng, ít nhiễu, không có
+từ đệm. WER trong một cuộc họp thật sẽ cao hơn (xem mục 6).
+
+**Đừng so trực tiếp với bảng 20 câu ở [`19` mục 2.2b](19_backend-asr-va-tach-nguoi-noi.md).**
+Cùng model đó, 20 câu đầu cho WER 6,7% còn toàn bộ 857 bản thu cho 8,8% — chênh 2,1
+điểm. 20 câu đầu chỉ đủ để **chọn** model (xếp hạng tương đối giữa các bản), không đủ
+làm con số báo cáo.
+
+**RTF 0,14 là của riêng khâu ASR**, không phải RTF toàn hệ thống — cái đó đo ở mục (c)
+bằng `eval-latency` và sẽ cao hơn vì gồm cả VAD/MT/TTS.
+
+Chưa so được MLX với whisper.cpp trên cùng thang: bảng này chạy đầy đủ bằng MLX, còn
+whisper.cpp mới có số trên 20 câu. Muốn cột so sánh thật thì phải chạy
+`make eval-asr JSON=eval-asr-ggml.json` bản đầy đủ (~55 phút).
+
+---
+
+## 8b. Kết quả mục (b): MT trên toàn bộ FLEURS `test` — 06/09/2026
 
 Lượt chạy đầy đủ đầu tiên. **2.022 cặp câu**, không giới hạn, 27,6 phút.
 
