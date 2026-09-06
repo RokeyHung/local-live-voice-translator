@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10,<3.13"
-# dependencies = ["unbabel-comet>=2.2.7"]
+# dependencies = ["unbabel-comet>=2.2.7", "setuptools<81"]
 # ///
 """Chấm COMET cho kết quả dịch của ``eval_mt.py`` — mục 3(b) biên bản GVHD 19/08.
 
@@ -16,8 +16,16 @@ tới ``.venv`` của dự án.
 Script đọc file JSON do ``eval_mt.py`` xuất ra (đã có sẵn từng cặp src/mt/ref cho mỗi
 chiều), chấm điểm rồi ghi ngược lại vào chính file đó dưới khoá ``comet``.
 
-Lần chạy đầu tải ``Unbabel/wmt22-comet-da`` (~2,3 GB). Chấm trên CPU khá chậm — vài
-phút cho mỗi trăm câu.
+Lần chạy đầu tải ``Unbabel/wmt22-comet-da`` (~2,3 GB). Chấm trên CPU: đo thật trên
+MacBook Apple Silicon được ~120 câu trong 13 giây (cộng ~10 giây nạp model), tức toàn bộ
+2.022 câu của FLEURS mất khoảng 4 phút — rẻ hơn nhiều so với bước dịch sinh ra chúng.
+
+**Vì sao ghim ``setuptools<81``.** ``unbabel-comet`` 2.2.7 ghim ``torchmetrics<0.11``,
+mà bản đó vẫn ``from pkg_resources import ...``. Từ setuptools 81 trở đi ``pkg_resources``
+bị gỡ khỏi gói, nên môi trường mới dựng sẽ chết ngay ở bước import với
+``ModuleNotFoundError: No module named 'pkg_resources'`` — không liên quan gì tới COMET
+hay dữ liệu. Ghim ở đây chứ không sửa chỗ khác được: chuỗi ràng buộc
+comet → torchmetrics → pkg_resources nằm hoàn toàn trong môi trường riêng này.
 """
 
 from __future__ import annotations
@@ -37,6 +45,11 @@ def main() -> None:
     parser.add_argument(
         "--gpus", type=int, default=0, help="0 = chấm trên CPU (mặc định), 1 = dùng GPU"
     )
+    # Phải > 0 trên máy Mac có MPS: COMET đặt multiprocessing_context="fork" bất cứ khi
+    # nào MPS khả dụng, nhưng lại để num_workers mặc định = 2 * gpus = 0 khi chấm trên
+    # CPU. torch bản mới coi cặp đó là lỗi cấu hình và ném ValueError ngay trước khi
+    # chấm câu đầu tiên. Đặt 2 worker là hết mâu thuẫn.
+    parser.add_argument("--num-workers", type=int, default=2, help="số worker của DataLoader")
     args = parser.parse_args()
 
     payload = json.loads(args.report.read_text(encoding="utf-8"))
@@ -56,7 +69,13 @@ def main() -> None:
     for entry in directions:
         rows = entry["sentences_detail"]
         print(f"  {entry['direction']}: {len(rows)} câu…", flush=True)
-        output = model.predict(rows, batch_size=args.batch_size, gpus=args.gpus, progress_bar=False)
+        output = model.predict(
+            rows,
+            batch_size=args.batch_size,
+            gpus=args.gpus,
+            num_workers=args.num_workers,
+            progress_bar=False,
+        )
         entry["comet"] = round(float(output.system_score), 4)
 
     payload["comet_model"] = MODEL
