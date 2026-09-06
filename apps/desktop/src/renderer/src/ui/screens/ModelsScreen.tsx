@@ -299,49 +299,6 @@ export function ModelsScreen(): JSX.Element {
     deleteModels.mutate()
   }
 
-  // Dải trạng thái lớn đầu màn: bốn trạng thái (service chết / đang nạp / đã nạp /
-  // chưa nạp) đổi cả màu viền, icon lẫn nút bên phải. Lúc chưa nạp thì tiêu đề để màu
-  // chữ thường — chưa nạp model không phải là một tình trạng bất thường.
-  const hero = !serviceUp
-    ? {
-        icon: 'warning' as IconName,
-        color: '#fb923c',
-        title: L.mbDownT,
-        titleColor: '#fb923c',
-        border: 'rgba(251,146,60,.3)',
-        bg: 'rgba(251,146,60,.07)',
-        body: L.mbDownS
-      }
-    : loading
-      ? {
-          icon: 'spinner' as IconName,
-          color: '#22d3ee',
-          title: setPreset.isPending ? L.applyingPreset : L.mbLoadT,
-          titleColor: '#22d3ee',
-          border: 'rgba(34,211,238,.3)',
-          bg: 'rgba(34,211,238,.07)',
-          body: L.mbLoadS
-        }
-      : modelsLoaded
-        ? {
-            icon: 'check-circle' as IconName,
-            color: '#22c55e',
-            title: L.mbReadyT,
-            titleColor: 'var(--ac-grn)',
-            border: 'rgba(34,197,94,.3)',
-            bg: 'rgba(34,197,94,.07)',
-            body: L.mbReadyS
-          }
-        : {
-            icon: 'box' as IconName,
-            color: 'var(--text3)',
-            title: L.mbIdleT,
-            titleColor: 'var(--text)',
-            border: 'var(--line)',
-            bg: 'var(--surface)',
-            body: L.mbIdleS
-          }
-
   // Cảnh báo bộ nhớ: deviceMemory bị chặn trần 8 GB nên chỉ cảnh báo mềm khi chạm trần.
   const ramWarning = useMemo(() => {
     if (!meta || !compute?.ramGb) return null
@@ -374,83 +331,7 @@ export function ModelsScreen(): JSX.Element {
         tint="rgba(168,85,247,.12)"
       />
 
-      {/* dải trạng thái lớn */}
-      <div
-        className="flex flex-wrap items-center gap-4.5 rounded-3xl border px-5.5 py-5 backdrop-blur-xl"
-        style={{ borderColor: hero.border, background: hero.bg }}
-      >
-        <span className="inline-flex size-13 shrink-0 items-center justify-center rounded-xl border border-line bg-surface">
-          <span className="flex" style={{ color: hero.color }}>
-            <Icon
-              name={hero.icon}
-              size={20}
-              spin={hero.icon === 'spinner'}
-              strokeWidth={hero.icon === 'spinner' ? 2.6 : 2.2}
-            />
-          </span>
-        </span>
-        <div className="min-w-45 flex-1">
-          <div className="text-xl font-extrabold" style={{ color: hero.titleColor }}>
-            {hero.title}
-          </div>
-          <div className="mt-0.75 text-base text-fg-3">{hero.body}</div>
-          {loading && (
-            <div className="mt-3 flex max-w-105">
-              <Meter value={overallPercent / 100} color="#a855f7" to="#6366f1" height={6} />
-            </div>
-          )}
-        </div>
-
-        {serviceUp && (
-          <div className="flex items-center gap-2.5">
-            {loading ? (
-              <>
-                <span className="font-mono text-2xl font-extrabold text-[#22d3ee]">
-                  {Math.round(overallPercent)}%
-                </span>
-                {/* Dừng ở ranh giới khâu kế tiếp: khâu đang tải phải tải nốt (không
-                    giết ngang được worker thread), nhưng những khâu SAU thì cứu được. */}
-                <button
-                  disabled={loadProgress.data?.cancelling === true || cancelLoad.isPending}
-                  onClick={() => cancelLoad.mutate()}
-                  title={L.cancelLoad}
-                  className={`${DANGER_BUTTON} inline-flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  <Icon name="x" size={12} strokeWidth={2.4} />
-                  {loadProgress.data?.cancelling ? L.cancelling : L.cancelLoad}
-                </button>
-              </>
-            ) : modelsLoaded ? (
-              <>
-                <button
-                  className={GHOST_BUTTON}
-                  disabled={busy || active}
-                  onClick={() => loadModels.mutate(true)}
-                >
-                  <Icon name="refresh" size={14} />
-                  {L.reloadModels}
-                </button>
-                <button
-                  className={GHOST_BUTTON}
-                  disabled={busy || active}
-                  onClick={() => unloadModels.mutate()}
-                >
-                  {L.unloadModels}
-                </button>
-              </>
-            ) : (
-              <button
-                disabled={busy}
-                onClick={() => loadModels.mutate(false)}
-                className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border-none bg-linear-[135deg,#22d3ee,#3b82f6] px-5.5 text-md font-extrabold text-[#04121a] shadow-[0_6px_20px_rgba(34,211,238,.32)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Icon name="play" size={16} />
-                {L.startModels}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      {!serviceUp && <Notice tone="warn" icon="warning" title={L.mbDownT} body={L.mbDownS} />}
 
       {setPreset.isError && (
         <Notice
@@ -467,9 +348,69 @@ export function ModelsScreen(): JSX.Element {
         <Notice tone="error" icon="warning" title={L.dirClear} body={deleteModels.error.message} />
       )}
 
-      {/* bộ chọn cấu hình hiệu năng */}
+      {/* Bộ chọn cấu hình hiệu năng. Nút nạp/giải phóng nằm ngay trên hàng tiêu đề của
+          chính panel này: chọn preset và nạp preset đó là hai nửa của cùng một việc,
+          tách ra thành một dải riêng đầu màn chỉ đẩy mọi thứ khác xuống dưới nếp gấp. */}
       <div className="panel px-4.5 py-4">
-        <div className="label-caps mb-2.75">{L.chooseProfile}</div>
+        <div className="mb-2.75 flex min-h-8 flex-wrap items-center justify-between gap-2.5">
+          <span className="label-caps">{L.chooseProfile}</span>
+          {serviceUp && (
+            <div className="flex items-center gap-2.5">
+              {loading ? (
+                <>
+                  <span className="font-mono text-md font-extrabold text-[#22d3ee]">
+                    {Math.round(overallPercent)}%
+                  </span>
+                  {/* Dừng ở ranh giới khâu kế tiếp: khâu đang tải phải tải nốt (không
+                      giết ngang được worker thread), nhưng những khâu SAU thì cứu được. */}
+                  <button
+                    disabled={loadProgress.data?.cancelling === true || cancelLoad.isPending}
+                    onClick={() => cancelLoad.mutate()}
+                    title={L.cancelLoad}
+                    className={`${DANGER_BUTTON} inline-flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    <Icon name="x" size={12} strokeWidth={2.4} />
+                    {loadProgress.data?.cancelling ? L.cancelling : L.cancelLoad}
+                  </button>
+                </>
+              ) : modelsLoaded ? (
+                <>
+                  <button
+                    className={GHOST_BUTTON}
+                    disabled={busy || active}
+                    onClick={() => loadModels.mutate(true)}
+                  >
+                    <Icon name="refresh" size={14} />
+                    {L.reloadModels}
+                  </button>
+                  <button
+                    className={GHOST_BUTTON}
+                    disabled={busy || active}
+                    onClick={() => unloadModels.mutate()}
+                  >
+                    {L.unloadModels}
+                  </button>
+                </>
+              ) : (
+                <button
+                  disabled={busy}
+                  onClick={() => loadModels.mutate(false)}
+                  className="inline-flex h-8 cursor-pointer items-center gap-1.75 rounded-md border-none bg-linear-[135deg,#22d3ee,#3b82f6] px-3.5 text-sm font-extrabold text-[#04121a] shadow-[0_4px_14px_rgba(34,211,238,.28)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Icon name="play" size={13} />
+                  {L.startModels}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {loading && (
+          <div className="mb-2.75 flex">
+            <Meter value={overallPercent / 100} color="#a855f7" to="#6366f1" height={5} />
+          </div>
+        )}
+
         <div className="grid grid-cols-4 gap-2.25">
           {PRESETS.map((preset) => {
             const p = PRESET_META[preset]
