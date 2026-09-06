@@ -8,6 +8,14 @@ import { useMemo, useState, type JSX, type ReactNode } from 'react'
 import { PLATFORM } from '../../application/config'
 import { formatBytes } from '../../application/format'
 import { format, type Dict } from '../../application/i18n'
+import {
+  DOWNLOAD_KIND_LABEL,
+  DOWNLOAD_KINDS,
+  guessDownloadKind,
+  isModelLoaded,
+  kindFromPath,
+  looksLikeModelPath
+} from '../../application/model-names'
 import { MODEL_CATALOG, PRESET_META, STAGE_COLORS } from '../../application/presets'
 import type { Preset } from '../../domain/enums'
 import {
@@ -184,59 +192,9 @@ function CustomPicker({
   )
 }
 
-// Runtime chạy được một model tải tay. Nhãn nói rõ khâu + engine vì tên adapter trần
-// (`mlx`, `nllb`) không đủ để người dùng biết mình đang chọn gì.
-const DOWNLOAD_KINDS: DownloadKind[] = ['whisper_cpp', 'mlx', 'faster_whisper', 'nllb', 'pyannote']
-const DOWNLOAD_KIND_LABEL: Record<DownloadKind, string> = {
-  whisper_cpp: 'ASR · whisper.cpp (GGML)',
-  mlx: 'ASR · MLX',
-  faster_whisper: 'ASR · faster-whisper',
-  nllb: 'MT · NLLB',
-  pyannote: 'DIA · pyannote'
-}
-
-/** Chuỗi người dùng gõ có giống một model không: `tổ-chức/tên` hoặc `ggml-*.bin`. */
-function looksLikeModelPath(query: string): boolean {
-  const q = query.trim()
-  return /^[\w.-]+\/[\w.-]+$/.test(q) || /^ggml-[\w.-]+\.bin$/.test(q)
-}
-
-/** Đoán runtime từ chính đường dẫn — người dùng vẫn đổi được ở ô chọn. */
-function guessDownloadKind(query: string): DownloadKind {
-  const q = query.trim().toLowerCase()
-  if (q.startsWith('ggml-')) return 'whisper_cpp'
-  if (q.startsWith('pyannote/')) return 'pyannote'
-  if (q.includes('nllb')) return 'nllb'
-  if (q.startsWith('mlx-community/') || q.includes('-mlx')) return 'mlx'
-  if (q.includes('faster-whisper') || q.includes('ct2')) return 'faster_whisper'
-  return 'mlx'
-}
-
-/** Runtime của một model ĐÃ nằm trên đĩa — suy từ thư mục service đặt nó vào. */
-function kindFromPath(path: string): DownloadKind | undefined {
-  const p = path.replace(/\\/g, '/')
-  if (p.includes('/whisper-cpp/')) return 'whisper_cpp'
-  if (p.includes('/mlx-whisper/')) return 'mlx'
-  if (p.includes('/faster-whisper/')) return 'faster_whisper'
-  if (p.includes('/nllb/')) return 'nllb'
-  if (p.includes('/pyannote/')) return 'pyannote'
-  // sherpa-tts và kokoro-ja: service tự nhận ra từ tên, không cần nói runtime.
-  return undefined
-}
-
 /** Tiêu đề của một tấm trong lưới hai cột. */
 function PanelHeader({ children }: { children: ReactNode }): JSX.Element {
   return <div className="border-b border-line bg-surface px-4 py-3.25">{children}</div>
-}
-
-// Tên model trên đĩa và tên service báo về không giống nhau: đĩa là tên file/thư mục
-// (`ggml-large-v3-turbo-q5_0`, `facebook/nllb-200-distilled-600M`), còn service trả id
-// của adapter (`large-v3-turbo-q5_0`, hoặc danh sách voice ngăn bằng dấu phẩy với TTS).
-// Chuẩn hoá rồi so chứa nhau; không khớp thì coi như CHƯA nạp — báo thiếu còn hơn báo
-// nhầm một model không nằm trong bộ nhớ là đã nạp.
-function normalizeModelName(name: string): string {
-  const last = name.split('/').pop() ?? name
-  return last.replace(/^ggml-/, '').toLowerCase()
 }
 
 export function ModelsScreen(): JSX.Element {
@@ -295,11 +253,8 @@ export function ModelsScreen(): JSX.Element {
   const totalBytes = installedList.reduce((sum, m) => sum + m.sizeBytes, 0)
   const serviceUp = health.isSuccess
 
-  const loadedModels = stages.filter((s) => s.loaded).map((s) => s.model.toLowerCase())
-  const isLoadedOnDisk = (name: string): boolean => {
-    const needle = normalizeModelName(name)
-    return needle.length > 2 && loadedModels.some((m) => m.includes(needle))
-  }
+  const loadedModels = stages.filter((s) => s.loaded).map((s) => s.model)
+  const isLoadedOnDisk = (name: string): boolean => isModelLoaded(name, loadedModels)
 
   const applyPreset = (preset: Preset): void => {
     setPreset.mutate(preset, {

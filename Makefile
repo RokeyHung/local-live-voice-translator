@@ -16,7 +16,8 @@ PREFIX      ?= rec
 .DEFAULT_GOAL := help
 
 .PHONY: help setup setup-service setup-desktop dev service desktop preview \
-        build typecheck lint format format-docs health docs test bench accuracy soak segment \
+        build typecheck lint format format-docs health docs test test-service test-desktop \
+        bench accuracy soak segment \
         endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 \
         eval-asr eval-mt eval-comet eval-latency clean
 
@@ -90,8 +91,13 @@ health: ## Gọi thử endpoint /health của AI service
 docs: ## Mở tài liệu API (Swagger UI, chạy cục bộ không cần mạng)
 	@open http://127.0.0.1:8756/docs 2>/dev/null || echo "Mở http://127.0.0.1:8756/docs"
 
-test: ## Chạy test service (pytest)
+test: test-service test-desktop ## Chạy test CẢ HAI app
+
+test-service: ## Test service (pytest)
 	cd $(AI_DIR) && $(UV) run pytest -q
+
+test-desktop: ## Test desktop (vitest)
+	cd $(DESKTOP_DIR) && $(NPM) test
 
 bench: ## Đo độ trễ từng khâu trên máy này (cần AI service đang chạy)
 	@curl -s -X POST http://127.0.0.1:8756/api/benchmark \
