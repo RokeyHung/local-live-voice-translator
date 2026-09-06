@@ -82,11 +82,12 @@ LLVT_ASR_ADAPTER=mlx_whisper make service
 Chỗ dễ sai nhất: preset là một **mức** nhanh/chất lượng, không phải một model. Tên
 model của hai runtime không thay nhau được (`large-v3-turbo-q5_0` và
 `mlx-community/whisper-large-v3-turbo-asr-8bit`), nên `PresetConfig.asr_alternatives`
-giữ bảng tương đương và `asr_model(cfg, adapter)` tra sang cột đúng:
+giữ bảng tương đương và `asr_model(cfg, adapter)` tra sang cột đúng (dòng Fast không
+cùng cỡ model ở hai cột — lý do ở mục 2.2c):
 
 | Preset   | whisper.cpp                    | mlx_whisper                                     |
 | -------- | ------------------------------ | ----------------------------------------------- |
-| Fast     | `ggml-small-q5_1.bin`          | `mlx-community/whisper-small-asr-8bit`          |
+| Fast     | `ggml-small-q5_1.bin`          | `mlx-community/whisper-large-v3-turbo-asr-4bit` |
 | Balanced | `ggml-large-v3-turbo-q5_0.bin` | `mlx-community/whisper-large-v3-turbo-asr-8bit` |
 | Quality  | `ggml-large-v3-turbo-q8_0.bin` | `mlx-community/whisper-large-v3-turbo-asr-fp16` |
 
@@ -127,8 +128,33 @@ giải mã (`temperature=0`, không fallback), bộ lọc câu ma tắt, trên A
    > `'Đối với Spring Book, trăng này đã giúp đổi tiện cơ thúc chuổi thua 5 trăng liền. Nói chạy ra, đối với Spring Book, trăng này đã giúp đổi tiện cơ thúc chuổi thua'`
 
    Adapter tắt fallback nhiệt độ để WER lặp lại được (mục 2.3), nên model kẹt vòng lặp
-   thì không có đường thoát. Preset **Fast** đang trỏ `mlx_whisper` vào
-   `whisper-small-asr-8bit` — **cần đo lại bản 8bit trước khi tin vào cấu hình đó**.
+   thì không có đường thoát.
+
+### 2.2c. Họ `whisper-small-asr-*` của mlx-community hỏng — preset Fast phải đổi
+
+Bản `small-fp16` hỏng nên đo tiếp đúng bản mà preset **Fast** đang dùng, và đo thêm bản
+GGML cùng cỡ để biết lỗi nằm ở đâu:
+
+| Model                                         | Ngôn ngữ |    WER |  RTF | Câu rỗng |
+| --------------------------------------------- | -------- | -----: | ---: | -------: |
+| MLX `whisper-small-asr-8bit` (preset Fast cũ) | vi       | 125,4% | 0,28 |    10/20 |
+| MLX `whisper-small-asr-8bit`                  | en       | 162,1% | 0,38 |     3/20 |
+| MLX `whisper-small-asr-fp16`                  | vi       | 133,5% | 0,14 |    10/20 |
+| whisper.cpp `ggml-small-q5_1` (cùng cỡ)       | vi       |  20,6% | 0,07 |     0/20 |
+
+Bản GGML cùng cỡ chạy bình thường — kém chính xác (20,6% so với 8,6% của turbo) nhưng
+**hoạt động**. Vậy lỗi không phải "model small quá nhỏ", cũng không phải tham số giải mã
+của mình, mà là **các bản chuyển đổi `whisper-small-asr-*` của mlx-community**. Cả ba
+mức lượng tử đều nên tránh.
+
+Đáng chú ý hơn: bản MLX small còn **chậm hơn** mọi model lớn (RTF 0,28–0,38 so với 0,14
+của large-v3-8bit) — vì kẹt vòng lặp thì nó sinh token tới khi hết hạn mức, tốn thêm rất
+nhiều bước giải mã. Nhỏ hơn mà chậm hơn và sai hơn thì không còn lý do gì để dùng.
+
+**Đã sửa preset Fast** trỏ `mlx_whisper` sang `whisper-large-v3-turbo-asr-4bit`: 447 MB
+(nhỏ hơn bản small fp16), RTF 0,08, WER 8,9%. Nó thắng bản small ở cả ba trục nên đây
+không phải một sự đánh đổi. Danh mục ở màn Quản lý model đánh dấu ba bản small là
+"không khuyến nghị" thay vì gỡ hẳn — người dùng vẫn tự chọn được, nhưng không bị dẫn vào.
 
 **Hai giới hạn của bảng này**, phải nói kèm khi trích vào báo cáo: chỉ 20 câu và chỉ
 tiếng Việt, nên chênh lệch dưới ~1 điểm WER (8,1% với 8,6%) chưa kết luận được; và dòng
