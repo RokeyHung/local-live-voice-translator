@@ -247,7 +247,10 @@ export function DiagnosticsScreen(): JSX.Element {
             label={L.serviceCpu}
             value={resources.data ? resources.data.cpuPercent.toFixed(0) : '—'}
             unit="%"
-            note={resources.data ? `${resources.data.cpuCount} ${L.cores}` : L.serviceDown}
+            // Chưa có số ĐO ĐƯỢC không đồng nghĩa với mất kết nối: query này chỉ bật
+            // khi màn Chẩn đoán đang mở, nên lần đầu mở ra bao giờ cũng có một nhịp
+            // chưa có dữ liệu. Nói "Chưa kết nối AI service" lúc đó là báo sai.
+            note={resources.data ? `${resources.data.cpuCount} ${L.cores}` : undefined}
             color="#22d3ee"
           />
           <InfoTile

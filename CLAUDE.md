@@ -29,6 +29,7 @@ make desktop   # run desktop only (electron-vite dev)
 make preview   # build desktop, then run service + the built app (electron-vite preview, no HMR)
 make build     # typecheck + build desktop
 make test      # BOTH suites (pytest + vitest); make test-service / make test-desktop for one
+make e2e       # Playwright on the REAL Electron app + a REAL service (rebuilds desktop first)
 make lint      # eslint (desktop) + ruff check (service)
 make format    # sort imports + format BOTH apps and docs/ (ianvs prettier plugin + ruff isort)
 make format-docs  # prettier over docs/*.md + root *.md only (root .prettierrc.yaml)
@@ -58,6 +59,7 @@ uv run llvt-ai-service         # start server
 npm run typecheck              # tsc for both node + web configs
 npm test                       # vitest (jsdom); npm run test:watch to iterate
 npx vitest run src/renderer/src/application/model-names.test.ts   # single file
+npm run e2e                    # build + Playwright against the real Electron app
 npm run dev
 ```
 
@@ -91,7 +93,7 @@ Models are loaded **on demand**, never at startup (startup is ~0.4s instead of ~
 
 Same layering: `domain/` (enums/events/models), `ports/` (`AiClient`, `SessionChannel`), `adapters/` (`HttpAiClient` REST, `WsSessionChannel` WebSocket), `application/` (`config.ts`, `SessionController`, `model-names.ts` — the pure name rules that reconcile the three ways one model gets spelled), `stores/` (Zustand `session-store`), `hooks/` (`use-health`, `use-session` — bridge React↔application), `ui/` (presentational `App` + components).
 
-Tests are **vitest + jsdom**, config in `apps/desktop/vitest.config.ts`, files live next to the code as `*.test.ts(x)`. jsdom is required, not a convenience: `application/config.ts` reads `window.llvt` at module load, so anything importing an adapter dies at import time without a `window`. Component tests use `@testing-library/react` (see `ui/components/primitives.test.tsx`). Keep pure rules in `application/` rather than inside a screen — that is what makes them testable without a React harness.
+Two test layers, and the split is deliberate. **vitest + jsdom** (`vitest.config.ts`, files next to the code as `*.test.ts(x)`) stubs `fetch` and never touches a real service — fast and deterministic; `test/harness.tsx` gives screens a real react-query + zustand environment behind a fake service that records every call. **Playwright** (`playwright.config.ts`, `e2e/*.e2e.ts`) launches the built Electron app against a real `llvt-ai-service` on a temp models dir and downloads a real model — the only layer that proves main + renderer + Python actually fit together. It needs `out/` built first (`npm run e2e` does that), runs `workers: 1` because the service binds a fixed port, and must strip `ELECTRON_RUN_AS_NODE` from the env — VS Code's terminal sets it, and with it Electron boots as plain Node and dies on `electron.app` being undefined. jsdom is required, not a convenience: `application/config.ts` reads `window.llvt` at module load, so anything importing an adapter dies at import time without a `window`. Component tests use `@testing-library/react` (see `ui/components/primitives.test.tsx`). Keep pure rules in `application/` rather than inside a screen — that is what makes them testable without a React harness.
 
 `App.tsx` mounts **every screen once and keeps it mounted**, switching tabs only toggles `display:none` (`<Screen show>`); screen-local state (the import queue and its in-flight run, search boxes, drafts) must survive tab switches. The cost is that hidden screens keep running their hooks, so any query with a `refetchInterval` has to gate on `useIsScreen('<id>')` — see `useResources` in Diagnostics/Setup and `useSessions` in History. UI/hooks/application depend on **ports**, not concrete adapters. Electron `main/` + `preload/` are minimal; preload exposes `window.llvt` (AI service URLs + platform), consumed by `application/config.ts`.
 

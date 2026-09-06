@@ -4,3 +4,8 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Kết quả chạy E2E (ảnh chụp, video, trace, báo cáo HTML)
+e2e-artifacts
+e2e-report
+test-results

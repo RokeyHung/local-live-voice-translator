@@ -16,7 +16,7 @@ PREFIX      ?= rec
 .DEFAULT_GOAL := help
 
 .PHONY: help setup setup-service setup-desktop dev service desktop preview \
-        build typecheck lint format format-docs health docs test test-service test-desktop \
+        build typecheck lint format format-docs health docs test test-service test-desktop e2e \
         bench accuracy soak segment \
         endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 \
         eval-asr eval-mt eval-comet eval-latency clean
@@ -98,6 +98,9 @@ test-service: ## Test service (pytest)
 
 test-desktop: ## Test desktop (vitest)
 	cd $(DESKTOP_DIR) && $(NPM) test
+
+e2e: ## E2E trên app Electron thật + AI service thật (tự build lại desktop trước)
+	cd $(DESKTOP_DIR) && $(NPM) run e2e
 
 bench: ## Đo độ trễ từng khâu trên máy này (cần AI service đang chạy)
 	@curl -s -X POST http://127.0.0.1:8756/api/benchmark \
