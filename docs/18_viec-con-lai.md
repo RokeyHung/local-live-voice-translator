@@ -95,9 +95,17 @@ Chi tiết cách tải và chỗ dữ liệu nằm ở [`17` mục 2](17_bo-danh
   — vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7% · RTF gộp 0,141 · **0 câu rỗng**.
 - (b) MT: 2.022 cặp câu, sáu chiều, có cả điểm COMET.
 
-Còn lại mục (c) `eval-latency` (sáu chiều, ~15 phút). Muốn có thêm **cột so sánh
-whisper.cpp với MLX** thì chạy `make eval-asr JSON=eval-asr-ggml.json` bản đầy đủ
-(~55 phút) — hiện whisper.cpp mới có số trên 20 câu nên chưa so cùng thang được.
+- (c) Độ trễ: 50 mẫu × sáu chiều, cùng cấu hình đã đo WER — **RTF p90 < 1 ở cả sáu**
+  (xấu nhất vi→ja 0,786), nhưng ngưỡng chặt hơn 0,5 thì chỉ ba chiều đạt.
+
+**Cả ba mục (a)(b)(c) của biên bản đã có số thật.** Việc còn lại của khối đo:
+
+- [ ] Cột so sánh **whisper.cpp với MLX** trên cùng thang: `make eval-asr JSON=eval-asr-ggml.json`
+      bản đầy đủ (~55 phút). Hiện whisper.cpp mới có số trên 20 câu.
+- [ ] Ba chiều **nguồn tiếng Việt** chưa đạt ngưỡng RTF p90 ≤ 0,5. Theo [`17` mục 8c](17_bo-danh-gia-fleurs.md)
+      thì hai chỗ đáng sửa là ASR cho nguồn tiếng Việt (chiếm 58–75% tổng thời gian) và
+      TTS cho đích tiếng Nhật (chiếm 28,3%) — **không phải MT**, vốn ổn định ~1 giây ở
+      cả sáu chiều.
 
 ### Xong là khi nào
 

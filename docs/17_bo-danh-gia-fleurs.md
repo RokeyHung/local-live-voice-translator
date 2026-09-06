@@ -310,7 +310,8 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 - [x] Tải dữ liệu FLEURS về máy (`make fetch-fleurs`) — 4 ngôn ngữ, split `test`, 2,2 GB
 - [x] Chạy `make eval-asr` bản đầy đủ trên máy macOS (Metal) → bảng WER/CER (mục 8)
 - [x] Chạy `make eval-mt` + `make eval-comet` bản đầy đủ → bảng 6 chiều (mục 8 dưới đây)
-- [ ] Chạy `make eval-latency` cho ít nhất 2 chiều → Total Inference Time + RTF
+- [x] Chạy `make eval-latency` cho ít nhất 2 chiều → Total Inference Time + RTF
+      (đã chạy đủ **sáu** chiều, 50 mẫu mỗi chiều — mục 8c)
 - [x] Tra công thức RTF, ngưỡng real-time và ba độ đo còn lại, có trích nguồn —
       [`26`](26_do-do-danh-gia-wer-bleu-comet-rtf.md)
 - [ ] Gửi thầy [`26` mục 5](26_do-do-danh-gia-wer-bleu-comet-rtf.md) (công thức RTF +
@@ -360,6 +361,51 @@ bằng `eval-latency` và sẽ cao hơn vì gồm cả VAD/MT/TTS.
 Chưa so được MLX với whisper.cpp trên cùng thang: bảng này chạy đầy đủ bằng MLX, còn
 whisper.cpp mới có số trên 20 câu. Muốn cột so sánh thật thì phải chạy
 `make eval-asr JSON=eval-asr-ggml.json` bản đầy đủ (~55 phút).
+
+---
+
+## 8c. Kết quả mục (c): độ trễ + RTF đủ sáu chiều — 07/09/2026
+
+50 mẫu mỗi chiều, **cùng cấu hình đã đo WER ở mục 8** (`mlx-community/whisper-large-v3-asr-8bit`
+trên mlx-audio/Metal) — bảng độ trễ và bảng WER phải nói về cùng một hệ thống.
+
+| Chiều | Mẫu |  VAD |     ASR |      MT |     TTS | Tổng TB  | Tổng p90  | RTF TB | RTF p90   | Chờ chốt |
+| ----- | --: | ---: | ------: | ------: | ------: | -------- | --------- | -----: | --------- | -------: |
+| vi→en |  50 | 53ms | 4.595ms | 1.129ms |   318ms | 6.095 ms | 10.176 ms |  0,486 | 0,580     |    256ms |
+| en→vi |  50 | 46ms | 2.421ms |   953ms |   273ms | 3.693 ms | 5.511 ms  |  0,392 | **0,496** |    202ms |
+| vi→zh |  50 | 52ms | 4.598ms | 1.134ms | 1.693ms | 7.478 ms | 12.593 ms |  0,595 | 0,727     |    256ms |
+| zh→vi |  50 | 48ms | 2.623ms |   965ms |   274ms | 3.911 ms | 5.460 ms  |  0,375 | 0,509     |    200ms |
+| vi→ja |  50 | 55ms | 4.646ms | 1.025ms | 2.261ms | 7.987 ms | 13.256 ms |  0,639 | **0,786** |    256ms |
+| ja→vi |  50 | 55ms | 2.859ms | 1.052ms |   290ms | 4.255 ms | 6.367 ms  |  0,324 | **0,395** |    211ms |
+
+### Đọc số
+
+**Đạt ngưỡng "cần" ở cả sáu chiều: RTF p90 < 1**, chiều xấu nhất là vi→ja với 0,786.
+Nhưng ngưỡng "đủ để nói chuyện thoải mái" ở mục 5 là **RTF p90 ≤ 0,5**, và chỉ **ba
+chiều đạt**: ja→vi (0,395), en→vi (0,496), zh→vi (0,509 — sát mép). Ba chiều **có tiếng
+Việt ở đầu vào** đều trượt: 0,580 · 0,727 · 0,786.
+
+**Hai nguyên nhân tách bạch được, và chúng nằm ở hai đầu khác nhau:**
+
+1. **Nguồn là tiếng Việt thì ASR đắt gần gấp đôi** — 4.6 giây so với 2,4–2,9 giây, và
+   ASR chiếm 58–75% tổng thời gian ở mọi chiều. Khớp với bảng WER ở mục 8 (vi 8,8% so
+   với en 4,8%): tiếng Việt vừa khó hơn vừa tốn hơn cho cùng một model.
+2. **Đích là tiếng Trung/Nhật thì TTS đắt gấp 6–8 lần** — 1.693 ms cho zh và 2.261 ms
+   cho ja, so với 273–318 ms cho vi/en. Tính theo tỷ trọng: TTS chiếm 22,6% tổng thời
+   gian ở vi→zh và **28,3%** ở vi→ja, trong khi ở bốn chiều còn lại chỉ 5–7%. Tiếng Nhật
+   đi qua Kokoro + G2P OpenJTalk chứ không phải sherpa-onnx ([`07`](07_week5-tts.md)),
+   nên đây là cái giá của việc sherpa-onnx không đọc được tiếng Nhật.
+
+Vậy nếu cần kéo vi→ja xuống dưới 0,5 thì **hai chỗ đáng sửa là ASR cho nguồn tiếng Việt
+và TTS cho đích tiếng Nhật** — không phải MT, vốn ổn định 950–1.130 ms ở cả sáu chiều.
+
+**Cột "chờ chốt câu" (200–256 ms) không nằm trong RTF** vì nó là thời gian chờ VAD xác
+nhận người nói đã dứt, không phải thời gian tính toán. Nhưng người dùng vẫn phải ngồi
+chờ, nên báo cáo phải in cả hai. Con số này chỉ phụ thuộc ngôn ngữ **nguồn** đúng như
+mong đợi (vi 256 ms ở cả ba chiều xuất phát từ vi).
+
+**Tổng p90 lên tới 10–13 giây** ở ba chiều nguồn tiếng Việt trông đáng sợ, nhưng đó là
+tổng cho **một câu FLEURS dài ~12 giây** — RTF mới là con số so sánh được, và nó vẫn < 1.
 
 ---
 
