@@ -1,10 +1,14 @@
-# Việc còn lại — trạng thái sau đợt 06/09/2026
+# Việc còn lại — trạng thái sau đợt 07/09/2026
 
-**Cập nhật:** 06/09/2026 · **Nhánh:** `main`
+**Cập nhật:** 07/09/2026 · **Nhánh:** `main`
 **Nguồn yêu cầu:** [biên bản họp GVHD 19/08/2026](meetings/bien-ban-hop-GVHD-2026-08-19.md)
 
 > Biên bản họp là **bản ghi thầy đã nói gì**, giữ nguyên không sửa. Tài liệu này là
 > **trạng thái làm được tới đâu** — mở file này ra trước khi làm tiếp.
+>
+> Ngoại lệ duy nhất: **mục 7 "Việc cần làm tiếp"** của biên bản đã được tick trạng thái
+> ngày 07/09 — đó là checklist việc chứ không phải lời thầy. Mục 1–6 vẫn nguyên văn.
+> Biên bản cho cái nhìn nhanh "xong/chưa xong", file này giải thích **vì sao** còn treo.
 
 Tóm tắt một câu: **đã có bộ số đo thật đầu tiên** trên macOS Apple Silicon
 ([`25`](25_ket-qua-chay-thu-e2e.md)) — độ trễ đủ sáu chiều và WER/chrF, chạy tự động
@@ -20,8 +24,9 @@ những thứ **cần người quyết** (nhắn thầy, chốt ngưỡng RTF).
 - Đặt tên model theo đường dẫn thượng nguồn — [`22`](22_dat-ten-model-theo-duong-dan-that.md)
 - Chọn model không còn là nạp model; tải được repo HF bất kỳ — [`23`](23_chon-model-khong-phai-nap-model.md)
 - Model tải dở không còn bị tính là đã tải — [`24`](24_tai-do-dang-khong-phai-da-tai.md)
-- **Ba lớp test**: pytest (298) · vitest cho renderer (44) · Playwright trên app Electron
-  thật + service thật (11). `make test` chạy hai lớp đầu, `make e2e` chạy lớp thứ ba.
+- **Ba lớp test**: pytest (302 pass, 4 skip) · vitest cho renderer (44) · Playwright trên
+  app Electron thật + service thật (11). `make test` chạy hai lớp đầu, `make e2e` chạy
+  lớp thứ ba. _(Số pytest đo lại ngày 07/09.)_
 - **Bộ mẫu đánh giá phủ đủ sáu chiều** vi↔en, vi↔ja, vi↔zh (22 câu)
 
 ---
@@ -31,7 +36,7 @@ những thứ **cần người quyết** (nhắn thầy, chốt ngưỡng RTF).
 Hai việc chỉ cần nhắn tin, nhưng đang trễ:
 
 - [ ] **Nhắc thầy về baseline cloud.** Biên bản mục 7, Ưu tiên 3 ghi rõ _"nhắc thầy sau
-      2 tuần"_. Họp 19/08 → tính tới 04/09 là **16 ngày**.
+      2 tuần"_. Họp 19/08 → tính tới 07/09 là **19 ngày**.
 - [ ] **Báo cáo thầy công thức RTF và ngưỡng "đạt".** Thầy dặn tự tra rồi báo lại (biên
       bản mục 3c và câu hỏi số 2). Nội dung đã soạn xong, có trích nguồn đầy đủ, ở
       [`26_do-do-danh-gia-wer-bleu-comet-rtf.md` mục 5](26_do-do-danh-gia-wer-bleu-comet-rtf.md) —
