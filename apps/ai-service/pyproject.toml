@@ -22,6 +22,9 @@ dependencies = [
     "pyopenjtalk-plus>=0.4.1.post9",
     "pywhispercpp>=1.5.0",
     "sentencepiece>=0.2.2",
+    # Ghim cứng, KHÔNG nâng mà chưa thử `dlopen` trên macOS: wheel 1.10.46 bundle sẵn
+    # libonnxruntime + C-API dylib, còn 1.13.x tham chiếu libonnxruntime.1.27.0.dylib
+    # không kèm trong wheel nên adapter TTS chết ngay lúc import.
     "sherpa-onnx==1.10.46",
     "silero-vad>=6.2.1",
     "sqlalchemy>=2.0.51",

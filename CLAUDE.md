@@ -52,7 +52,7 @@ make test      # BOTH suites (pytest + vitest); make test-service / make test-de
 make e2e       # Playwright on the REAL Electron app + a REAL service (rebuilds desktop first)
 make lint      # eslint (desktop) + ruff check (service)
 make format    # sort imports + format BOTH apps and docs/ (ianvs prettier plugin + ruff isort)
-make format-docs  # prettier over docs/*.md + root *.md only (root .prettierrc.yaml)
+make format-docs  # prettier over docs/*.md + root *.md + apps/*/ARCHITECTURE.md (root .prettierrc.yaml)
 make health    # curl GET /health
 make bench     # per-stage latency (service must be running)
 make accuracy  # WER/chrF over scripts/accuracy_corpus.json

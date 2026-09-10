@@ -105,9 +105,9 @@ format: format-docs ## Sort imports + format cả hai app và tài liệu Markdo
 	cd $(DESKTOP_DIR) && $(NPM) run format
 	cd $(AI_DIR) && $(UV) run ruff check --select I --fix . && $(UV) run ruff format .
 
-format-docs: ## Format Markdown ở docs/ và thư mục gốc (prettier, cấu hình .prettierrc.yaml)
+format-docs: ## Format Markdown ở docs/, ARCHITECTURE.md và thư mục gốc (prettier, cấu hình .prettierrc.yaml)
 	@test -x $(PRETTIER) || { echo "Chưa có prettier — chạy 'make setup-desktop' trước."; exit 1; }
-	$(PRETTIER) --write "docs/**/*.md" "*.md"
+	$(PRETTIER) --write "docs/**/*.md" "*.md" "apps/*/ARCHITECTURE.md"
 
 health: ## Gọi thử endpoint /health của AI service
 	@curl -s http://127.0.0.1:8756/health && echo

@@ -11,6 +11,9 @@ ngôn ngữ đó (tránh tải cả ba voice khi chỉ dùng một). Một ``Ser
 
 Đầu ra: PCM signed 16-bit, mono, sample rate theo model. Định tuyến ra loa/tai nghe
 là việc phía desktop.
+
+Phiên bản ``sherpa-onnx`` bị **ghim cứng** ở ``pyproject.toml`` — lỗi ``dlopen`` lúc
+import gần như luôn là do ai đó nâng nó lên; lý do đầy đủ ghi cạnh dòng ghim.
 """
 
 from __future__ import annotations
