@@ -145,7 +145,7 @@ _(Đây là gợi ý cần cân nhắc, chưa phải quyết định chốt — 
 
 > **Đã đánh dấu trạng thái ngày 07/09/2026.** Phần lời thầy nói ở mục 1–6 giữ nguyên,
 > không sửa; chỉ checklist dưới đây được cập nhật. Trạng thái chi tiết và lý do vì sao
-> một việc còn treo nằm ở [`18_viec-con-lai.md`](../18_viec-con-lai.md).
+> một việc còn treo nằm ở [`08_viec-con-lai.md`](../08_viec-con-lai.md).
 >
 > Quy ước: `[x]` = xong, có bằng chứng dẫn link. `[ ]` kèm _(code xong — chờ chạy thật)_
 > nghĩa là phần lập trình đã đóng, chỉ còn chờ phần cứng/dữ liệu chưa có; những việc đó
@@ -153,17 +153,17 @@ _(Đây là gợi ý cần cân nhắc, chưa phải quyết định chốt — 
 
 ### Ưu tiên 1 — Bộ đánh giá (làm trước, làm xong mới sang phần khác)
 
-- [x] Kiểm tra lại link FLEURS, xác nhận có đủ vi/en/zh/ja và có split `test` — [`17` mục 1](../17_bo-danh-gia-fleurs.md)
-- [x] Tự tìm hiểu các thuật ngữ/độ đo mới: WER, BLEU, COMET, RTF — viết thành [`26`](../26_do-do-danh-gia-wer-bleu-comet-rtf.md): công thức, ví dụ tính tay, cái bẫy khi diễn giải, nguồn trích dẫn
-- [x] Viết code đánh giá ASR trên từng ngôn ngữ → bảng WER — **đã chạy đầy đủ**: 3.099 bản thu, 10,22 giờ audio ([`17` mục 8](../17_bo-danh-gia-fleurs.md)) · vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7%
-- [x] Viết code đánh giá MT trên 6 chiều → bảng BLEU + COMET (`Unbabel/wmt22-comet-da`) — **đã chạy đầy đủ**: 2.022 cặp câu, đủ sáu chiều, có điểm COMET ([`17` mục 8b](../17_bo-danh-gia-fleurs.md))
-- [x] Đo end-to-end latency → Total Inference Time + RTF — 50 mẫu × sáu chiều, cùng cấu hình đã đo WER; RTF p90 0,395–0,786 ([`17` mục 8c](../17_bo-danh-gia-fleurs.md))
-- [x] Tra công thức RTF và ngưỡng real-time — [`26` mục 5](../26_do-do-danh-gia-wer-bleu-comet-rtf.md)
-- [ ] **Báo cáo lại cho thầy** phần trên — nội dung đã soạn xong, chỉ còn việc gửi: copy [`26` mục 5](../26_do-do-danh-gia-wer-bleu-comet-rtf.md) (công thức + ngưỡng đề xuất) và [`26` mục 8](../26_do-do-danh-gia-wer-bleu-comet-rtf.md) (5 điểm cần thầy chốt). **Đang trễ.**
+- [x] Kiểm tra lại link FLEURS, xác nhận có đủ vi/en/zh/ja và có split `test` — [`05` mục 1](../05_bo-danh-gia-fleurs.md)
+- [x] Tự tìm hiểu các thuật ngữ/độ đo mới: WER, BLEU, COMET, RTF — viết thành [`06`](../06_bon-do-do-wer-bleu-comet-rtf.md): công thức, ví dụ tính tay, cái bẫy khi diễn giải, nguồn trích dẫn
+- [x] Viết code đánh giá ASR trên từng ngôn ngữ → bảng WER — **đã chạy đầy đủ**: 3.099 bản thu, 10,22 giờ audio ([`05` mục 8](../05_bo-danh-gia-fleurs.md)) · vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7%
+- [x] Viết code đánh giá MT trên 6 chiều → bảng BLEU + COMET (`Unbabel/wmt22-comet-da`) — **đã chạy đầy đủ**: 2.022 cặp câu, đủ sáu chiều, có điểm COMET ([`05` mục 8b](../05_bo-danh-gia-fleurs.md))
+- [x] Đo end-to-end latency → Total Inference Time + RTF — 50 mẫu × sáu chiều, cùng cấu hình đã đo WER; RTF p90 0,395–0,786 ([`05` mục 8c](../05_bo-danh-gia-fleurs.md))
+- [x] Tra công thức RTF và ngưỡng real-time — công thức ở [`06` mục 6](../06_bon-do-do-wer-bleu-comet-rtf.md), ngưỡng đề xuất ở [báo cáo GVHD mục 3](../gvhd/bao-cao-bo-danh-gia.md)
+- [ ] **Báo cáo lại cho thầy** phần trên — nội dung đã soạn xong, chỉ còn việc gửi: [báo cáo GVHD](../gvhd/bao-cao-bo-danh-gia.md) (mục 3 công thức + ngưỡng đề xuất, mục 9 năm điểm cần thầy chốt) kèm phụ lục lý thuyết [`06`](../06_bon-do-do-wer-bleu-comet-rtf.md). **Đang trễ.**
 
 Số liệu thô của cả ba lượt chạy nằm ở [`docs/results/`](../results/README.md) để kiểm lại được từng con số.
 
-**Hai chỗ làm khác kế hoạch, phải nói với thầy khi báo cáo** (chi tiết ở [`18` mục 5](../18_viec-con-lai.md)):
+**Hai chỗ làm khác kế hoạch, phải nói với thầy khi báo cáo** (chi tiết ở [`08` mục 5](../08_viec-con-lai.md)):
 kế hoạch ghi WER cho cả bốn ngôn ngữ, nhưng **zh/ja phải dùng CER** vì hai thứ tiếng này
 không tách từ bằng khoảng trắng (bài báo FLEURS cũng vậy); và **COMET không cài chung môi
 trường với dịch vụ được** (`unbabel-comet` ghim `numpy<2`, NLLB cần `numpy>=2.4`) nên phải
@@ -174,7 +174,7 @@ tách thành script chạy môi trường riêng.
 - [ ] Xử lý hallucination trên đoạn im lặng (silence timeout, ngưỡng VAD) — _(code xong — chờ chạy thật)_ bộ lọc câu ma ở `adapters/asr/hallucination.py`, dùng chung cho cả ba backend ASR, có test đơn vị; nhưng test không chứng minh được Whisper thật sự bớt bịa, cần một bản ghi có khoảng lặng dài + tiếng ồn nền
 - [ ] Cải thiện cơ chế tách câu khi người nói nói nhanh/liên tục — _(code xong — chờ chạy thật)_ hai ngưỡng im lặng + cắt cứng có lùi, kèm công cụ `make endpointing` để in bảng "chờ chốt"; cần một bản ghi giọng người nói liên tục ≥ 30 giây (giọng tổng hợp không dùng được: Silero ngừng coi là giọng nói sau ~3,5 giây)
 - [ ] Quyết định giữ hay bỏ ràng buộc Google Meet — quyết được ngay sau khi hai việc trên có bằng chứng trên giọng thật
-- [x] Thêm màn hình đánh giá vào trong app (latency + chất lượng trên câu mẫu) — [`21`](../21_man-danh-gia-va-backend-thu-ba.md); đã chạy thật đủ 22 câu / sáu chiều
+- [x] Thêm màn hình đánh giá vào trong app (latency + chất lượng trên câu mẫu) — [`04`](../04_cac-dot-bo-sung.md); đã chạy thật đủ 22 câu / sáu chiều
 - [ ] Cải thiện chất lượng dịch Nhật → Việt — **đo xong thì thấy đề bài sai chỗ**: ja→vi không phải chiều tệ nhất (spBLEU 19,91 · COMET 0,8191). Chiều yếu nhất là **vi→zh** (spBLEU 17,15 · COMET 0,7729), cả hai độ đo cùng chỉ vào đó → sẽ nhắm vào vi→zh, báo thầy khi trao đổi lần tới
 - [ ] Kiểm tra ứng dụng chạy ổn định trên Windows 11 — máy đã có, chạy được ngay sau khi tải model; lưu ý whisper.cpp trên Windows không có Metal nên RTF sẽ khác macOS
 - [ ] Chạy thật trên Google Meet (nếu giữ hướng này) — phụ thuộc quyết định ở trên
@@ -182,7 +182,7 @@ tách thành script chạy môi trường riêng.
 ### Ưu tiên 3 — Sau khi xong ưu tiên 1 và 2
 
 - [ ] Tích hợp baseline cloud để đối chứng _(thầy hướng dẫn ở buổi sau — **nhắc thầy sau 2 tuần**)_ — họp 19/08, tính tới 07/09 là **19 ngày**, **đang trễ**
-- [ ] Tích hợp thêm mô hình khác, lập bảng so sánh chất lượng/độ trễ — hạ tầng xong: **ba backend ASR** (whisper.cpp, MLX, faster-whisper) cùng chạy được qua `make eval-asr --adapter`, đã có bảng so 7 bản MLX ([`19` mục 2.2b](../19_backend-asr-va-tach-nguoi-noi.md)). Còn thiếu lượt **đầy đủ** của whisper.cpp để so cùng thang với MLX (hiện mới có 20 câu), và cột faster-whisper trên Windows + NVIDIA
+- [ ] Tích hợp thêm mô hình khác, lập bảng so sánh chất lượng/độ trễ — hạ tầng xong: **ba backend ASR** (whisper.cpp, MLX, faster-whisper) cùng chạy được qua `make eval-asr --adapter`, đã có bảng so 7 bản MLX ([`04` mục 3.3](../04_cac-dot-bo-sung.md)). Còn thiếu lượt **đầy đủ** của whisper.cpp để so cùng thang với MLX (hiện mới có 20 câu), và cột faster-whisper trên Windows + NVIDIA
 - [ ] Thiết kế option nhanh–nhẹ / chất lượng cao cho người dùng — đã có một nửa: ba preset Fast/Balanced/Quality, mỗi preset mang một `VadTuning` riêng (4,5 / 6 / 8 giây); còn thiếu phần đo để chứng minh sự đánh đổi
 - [ ] Báo cáo, đóng gói cài đặt, video demo — Tuần 9 (10/09 – 23/09)
 - [ ] **Báo cáo thử một lần trước khi bảo vệ** để lấy góp ý và chuẩn bị bộ câu hỏi dự phòng cho hội đồng

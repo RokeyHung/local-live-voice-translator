@@ -1,7 +1,7 @@
 # Kết quả đo thô — chép vào repo để báo cáo tra lại được
 
-Toàn bộ số trong [`17` mục 8/8b/8c](../17_bo-danh-gia-fleurs.md) và
-[`19` mục 2.2b/2.2c](../19_backend-asr-va-tach-nguoi-noi.md) sinh ra từ đúng những file
+Toàn bộ số trong [`05` mục 8/8b/8c](../05_bo-danh-gia-fleurs.md) và
+[`04` mục 3.3](../04_cac-dot-bo-sung.md) sinh ra từ đúng những file
 này. Chép vào repo vì bảng trong tài liệu chỉ có phần tổng hợp: người đọc muốn kiểm lại
 một con số, hay muốn soi câu nào dịch sai, thì phải có file gốc.
 
@@ -49,7 +49,7 @@ báo cáo (cùng model đó, 20 câu cho WER 6,7% còn toàn bộ 857 bản thu 
 | `asr-20cau-mlx-small-8bit-en.json` | `whisper-small-asr-8bit`              | en WER **162,1 %** |
 | `asr-20cau-ggml-small-q5.json`     | `ggml-small-q5_1` (whisper.cpp)       | vi WER 20,6 %      |
 
-Ba file `small` của mlx-community là bằng chứng cho [`19` mục 2.2c](../19_backend-asr-va-tach-nguoi-noi.md):
+Ba file `small` của mlx-community là bằng chứng cho [`04` mục 3.3](../04_cac-dot-bo-sung.md):
 họ model đó hỏng (một nửa số câu trả rỗng, phần còn lại kẹt vòng lặp lặp chữ), trong khi
 bản GGML **cùng cỡ** chạy bình thường — nên lỗi nằm ở bản chuyển đổi chứ không phải ở
 cỡ model hay tham số giải mã. Đó là lý do preset Fast phải đổi model MLX.
@@ -61,7 +61,7 @@ make fetch-fleurs
 make eval-asr ADAPTER=mlx_whisper MODEL=mlx-community/whisper-large-v3-asr-8bit \
   JSON=eval-asr-fleurs-full.json
 make eval-mt && make eval-comet
-# độ trễ: xem lệnh sáu chiều ở docs/17 mục 2
+# độ trễ: xem lệnh sáu chiều ở docs/05 mục 2
 ```
 
 Chạy lại trên máy khác sẽ ra **RTF khác** (gắn với phần cứng) nhưng **WER/BLEU/COMET

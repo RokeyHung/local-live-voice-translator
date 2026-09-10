@@ -7,7 +7,7 @@ header: 'Dịch giọng nói gần thời gian thực bằng AI chạy cục b�
 footer: 'Ngô Mạnh Hùng – 24410300 · CBHD: ThS. Nguyễn Thành Luân'
 ---
 
-<!-- Xuất file: npx @marp-team/marp-cli docs/14_slides-bao-cao.md -o slides.pdf (thêm --pptx nếu cần PowerPoint) -->
+<!-- Xuất file: npx @marp-team/marp-cli docs/10_slides-bao-cao.md -o slides.pdf (thêm --pptx nếu cần PowerPoint) -->
 
 <!-- _paginate: false -->
 <!-- _header: '' -->
@@ -242,7 +242,7 @@ Không phải vẽ cho đẹp — ba tình huống có thật trong quá trình 
 
 Mục 11 đo trên bộ câu tự dựng. Đây là số trên **FLEURS** (bản tiếng nói của FLoRes,
 Google) — dữ liệu công khai, có tham chiếu do người gõ, nên **so sánh được với các công
-bố khác**. Chi tiết ở [`17` mục 8](17_bo-danh-gia-fleurs.md).
+bố khác**. Chi tiết ở [`05` mục 8](05_bo-danh-gia-fleurs.md).
 
 **(a) ASR** — `whisper-large-v3-asr-8bit` trên MLX/Metal, **3.099 bản thu, 10,2 giờ
 audio**, chạy hết 86 phút, **0 câu rỗng**:
@@ -315,7 +315,7 @@ audio**, chạy hết 86 phút, **0 câu rỗng**:
 7. **Trọng tâm báo cáo:** nghiêng về kiến trúc hệ thống hay về phần mô hình AI?
 8. **Cách trích dẫn TranscriptionSuite** (nguồn tham khảo kiến trúc) cho đúng mực.
 
-→ Chi tiết từng câu kèm phương án em đề xuất: `docs/15_cau-hoi-can-thay-ho-tro.md`
+→ Thầy đã trả lời nhóm câu này ở buổi họp 19/08: `docs/meetings/bien-ban-hop-GVHD-2026-08-19.md`
 
 ---
 
@@ -324,4 +324,4 @@ audio**, chạy hết 86 phút, **0 câu rỗng**:
 ## Em xin cảm ơn thầy
 
 **Ngô Mạnh Hùng** – 24410300
-Mã nguồn, tài liệu tuần và hướng dẫn cài đặt: `docs/00` → `docs/13`
+Mã nguồn, tài liệu tuần và hướng dẫn cài đặt: `docs/00` → `docs/11`

@@ -54,7 +54,7 @@ def test_model_name_maps_to_ggml_id():
 
 
 def test_runtime_info_reports_the_upstream_path_not_the_internal_id():
-    """Một model chỉ được có MỘT cái tên (docs/22).
+    """Một model chỉ được có MỘT cái tên (docs/04).
 
     pywhispercpp nhận `small-q5_1`, nhưng đó là chi tiết bên trong runtime. Danh mục,
     ô chọn model, `POST /api/models/download` và bảng tiến trình đều dùng

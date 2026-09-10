@@ -14,7 +14,7 @@
 > BlackHole/VB-CABLE hoặc định tuyến âm thanh vào Google Meet đều là **bản ghi của
 > thiết kế ban đầu**, không mô tả bản đang chạy. Bản hiện tại phát bản dịch ra
 > loa/tai nghe; thu microphone, thu âm thanh hệ thống và sáu chiều dịch giữ nguyên.
-> Lý do bỏ và cách bật lại: [`13_google-meet-and-virtual-mic.md`](13_google-meet-and-virtual-mic.md).
+> Lý do bỏ và cách bật lại: [`11_pham-vi-da-bo-google-meet.md`](11_pham-vi-da-bo-google-meet.md).
 
 ---
 

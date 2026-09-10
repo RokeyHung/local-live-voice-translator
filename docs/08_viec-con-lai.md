@@ -11,19 +11,19 @@
 > Biên bản cho cái nhìn nhanh "xong/chưa xong", file này giải thích **vì sao** còn treo.
 
 Tóm tắt một câu: **đã có bộ số đo thật đầu tiên** trên macOS Apple Silicon
-([`25`](25_ket-qua-chay-thu-e2e.md)) — độ trễ đủ sáu chiều và WER/chrF, chạy tự động
+([`07`](07_ket-qua-chay-thu-e2e.md)) — độ trễ đủ sáu chiều và WER/chrF, chạy tự động
 trên app đóng gói. Việc còn lại chia làm hai loại rạch ròi: những thứ chỉ cần **chạy
 trên phần cứng/dữ liệu chưa có** (Windows, giọng người thật, FLEURS), và
 những thứ **cần người quyết** (nhắn thầy, chốt ngưỡng RTF).
 
 Đã xong từ 04/09 tới nay, không cần làm lại:
 
-- Màn hình đánh giá trong app (biên bản 3d) — [`21`](21_man-danh-gia-va-backend-thu-ba.md)
-- Backend ASR thứ hai (MLX) và thứ ba (faster-whisper), tách người nói — [`19`](19_backend-asr-va-tach-nguoi-noi.md), [`21`](21_man-danh-gia-va-backend-thu-ba.md)
-- Duyệt trước khi gửi, các thao tác quản lý model từng bị vô hiệu — [`20`](20_duyet-truoc-khi-gui-va-quan-ly-model.md)
-- Đặt tên model theo đường dẫn thượng nguồn — [`22`](22_dat-ten-model-theo-duong-dan-that.md)
-- Chọn model không còn là nạp model; tải được repo HF bất kỳ — [`23`](23_chon-model-khong-phai-nap-model.md)
-- Model tải dở không còn bị tính là đã tải — [`24`](24_tai-do-dang-khong-phai-da-tai.md)
+Sáu việc dưới đây đã đóng, chi tiết ở [`04_cac-dot-bo-sung.md`](04_cac-dot-bo-sung.md):
+màn hình đánh giá trong app (biên bản 3d); backend ASR thứ hai (MLX) và thứ ba
+(faster-whisper) cùng khâu tách người nói; duyệt trước khi gửi và các thao tác quản lý
+model từng bị vô hiệu; đặt tên model theo đường dẫn thượng nguồn; chọn model không còn là
+nạp model và tải được repo HF bất kỳ; model tải dở không còn bị tính là đã tải. Kèm theo:
+
 - **Ba lớp test**: pytest (302 pass, 4 skip) · vitest cho renderer (44) · Playwright trên
   app Electron thật + service thật (11). `make test` chạy hai lớp đầu, `make e2e` chạy
   lớp thứ ba. _(Số pytest đo lại ngày 07/09.)_
@@ -38,16 +38,17 @@ Hai việc chỉ cần nhắn tin, nhưng đang trễ:
 - [ ] **Nhắc thầy về baseline cloud.** Biên bản mục 7, Ưu tiên 3 ghi rõ _"nhắc thầy sau
       2 tuần"_. Họp 19/08 → tính tới 07/09 là **19 ngày**.
 - [ ] **Báo cáo thầy công thức RTF và ngưỡng "đạt".** Thầy dặn tự tra rồi báo lại (biên
-      bản mục 3c và câu hỏi số 2). Nội dung đã soạn xong, có trích nguồn đầy đủ, ở
-      [`26_do-do-danh-gia-wer-bleu-comet-rtf.md` mục 5](26_do-do-danh-gia-wer-bleu-comet-rtf.md) —
-      **copy nguyên mục 5 gửi thầy**. Kèm theo là mục 8 của tài liệu đó: **5 điểm cần
-      thầy chốt**, trong đó có ngưỡng RTF p90 < 1 (điều kiện cần) hay chặt hơn ở 0,5.
+      bản mục 3c và câu hỏi số 2). Nội dung đã soạn xong, có trích nguồn đầy đủ:
+      **gửi [báo cáo GVHD](gvhd/bao-cao-bo-danh-gia.md)** — mục 3 là công thức RTF +
+      ngưỡng đề xuất, mục 9 là **5 điểm cần thầy chốt** (trong đó có ngưỡng RTF p90 < 1
+      là điều kiện cần, hay chặt hơn ở 0,5). Phần lý thuyết đầy đủ của cả bốn độ đo đi
+      kèm làm phụ lục: [`06`](06_bon-do-do-wer-bleu-comet-rtf.md).
 
 Kèm theo, nên báo thầy hai điều đã phát hiện khi làm (chi tiết ở mục 5 dưới): **zh/ja
 phải dùng CER chứ không phải WER**, và **COMET không cài chung môi trường được**.
 
 Việc thứ ba trong Ưu tiên 1 — _"tự tìm hiểu các thuật ngữ/độ đo mới: WER, BLEU, COMET,
-RTF"_ — đã xong, viết ở [`26`](26_do-do-danh-gia-wer-bleu-comet-rtf.md): công thức, ví dụ
+RTF"_ — đã xong, viết ở [`06`](06_bon-do-do-wer-bleu-comet-rtf.md): công thức, ví dụ
 tính tay, cái bẫy khi diễn giải, ngưỡng đề xuất và danh sách nguồn trích dẫn.
 
 ---
@@ -55,7 +56,7 @@ tính tay, cái bẫy khi diễn giải, ngưỡng đề xuất và danh sách n
 ## 1. Chạy thật bộ đánh giá — việc lớn nhất
 
 Đây là thứ chặn gần như mọi việc còn lại. Code đã xong ở
-[`17_bo-danh-gia-fleurs.md`](17_bo-danh-gia-fleurs.md).
+[`05_bo-danh-gia-fleurs.md`](05_bo-danh-gia-fleurs.md).
 
 ```bash
 make setup                         # cài đầy đủ, gồm nhóm eval (một lần)
@@ -92,9 +93,9 @@ trên máy nào thì chỉ đúng cho máy đó, và báo cáo phải ghi kèm c
 
 **Trạng thái 06/09:** phần FLEURS (2,2 GB, cả bốn ngôn ngữ, split `test`) đã tải xong về
 `fleurs-cache/`, model whisper.cpp, NLLB và COMET đều đã có sẵn — không phải tải gì thêm.
-Chi tiết cách tải và chỗ dữ liệu nằm ở [`17` mục 2](17_bo-danh-gia-fleurs.md).
+Chi tiết cách tải và chỗ dữ liệu nằm ở [`05` mục 2](05_bo-danh-gia-fleurs.md).
 
-**Mục (a) và (b) đã xong**, bảng số và phần đọc số ở [`17` mục 8](17_bo-danh-gia-fleurs.md):
+**Mục (a) và (b) đã xong**, bảng số và phần đọc số ở [`05` mục 8](05_bo-danh-gia-fleurs.md):
 
 - (a) ASR: 3.099 bản thu, 10,22 giờ audio, 86 phút, `mlx-community/whisper-large-v3-asr-8bit`
   — vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7% · RTF gộp 0,141 · **0 câu rỗng**.
@@ -107,7 +108,7 @@ Chi tiết cách tải và chỗ dữ liệu nằm ở [`17` mục 2](17_bo-danh
 
 - [ ] Cột so sánh **whisper.cpp với MLX** trên cùng thang: `make eval-asr JSON=eval-asr-ggml.json`
       bản đầy đủ (~55 phút). Hiện whisper.cpp mới có số trên 20 câu.
-- [ ] Ba chiều **nguồn tiếng Việt** chưa đạt ngưỡng RTF p90 ≤ 0,5. Theo [`17` mục 8c](17_bo-danh-gia-fleurs.md)
+- [ ] Ba chiều **nguồn tiếng Việt** chưa đạt ngưỡng RTF p90 ≤ 0,5. Theo [`05` mục 8c](05_bo-danh-gia-fleurs.md)
       thì hai chỗ đáng sửa là ASR cho nguồn tiếng Việt (chiếm 58–75% tổng thời gian) và
       TTS cho đích tiếng Nhật (chiếm 28,3%) — **không phải MT**, vốn ổn định ~1 giây ở
       cả sáu chiều.
@@ -146,12 +147,12 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 
 ## 3. Ưu tiên 2
 
-| Việc                                              | Ghi chú                                                                                                                                                                                                                                                                                                                      |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`21`](21_man-danh-gia-va-backend-thu-ba.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`25`](25_ket-qua-chay-thu-e2e.md) mục 4.                                                                                                                                                                               |
-| ~~**Quyết giữ hay bỏ ràng buộc Google Meet**~~    | ✅ **Đã quyết 10/09/2026: bỏ.** Hai vấn đề ở mục 2 có mã xử lý nhưng chưa kiểm chứng được trên giọng người thật trước hạn nộp, nên giữ một tính năng chưa chắc ổn định lúc bảo vệ là rủi ro không cần thiết. Mã nguồn giữ nguyên, tắt ở lớp giao diện — [`13`](13_google-meet-and-virtual-mic.md) ghi lý do và cách bật lại. |
-| **Cải thiện dịch — nhưng là chiều vi→zh**         | `eval-mt` + `eval-comet` đã chạy đầy đủ ([`17` mục 8](17_bo-danh-gia-fleurs.md)): ja→vi hoá ra **không** phải chiều tệ nhất (spBLEU 19,91 · COMET 0,8191). Chiều yếu nhất là **vi→zh** — cả spBLEU (17,15) lẫn COMET (0,7729) cùng chỉ vào đó. Nhắm vào vi→zh chứ đừng nhắm ja→vi.                                           |
-| **Kiểm tra ổn định trên Windows 11**              | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                                                                                                                                                                             |
+| Việc                                              | Ghi chú                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`04`](04_cac-dot-bo-sung.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`07`](07_ket-qua-chay-thu-e2e.md) mục 4.                                                                                                                                                                                            |
+| ~~**Quyết giữ hay bỏ ràng buộc Google Meet**~~    | ✅ **Đã quyết 10/09/2026: bỏ.** Hai vấn đề ở mục 2 có mã xử lý nhưng chưa kiểm chứng được trên giọng người thật trước hạn nộp, nên giữ một tính năng chưa chắc ổn định lúc bảo vệ là rủi ro không cần thiết. Mã nguồn giữ nguyên, tắt ở lớp giao diện — [`11`](11_pham-vi-da-bo-google-meet.md) ghi lý do và cách bật lại. |
+| **Cải thiện dịch — nhưng là chiều vi→zh**         | `eval-mt` + `eval-comet` đã chạy đầy đủ ([`05` mục 8](05_bo-danh-gia-fleurs.md)): ja→vi hoá ra **không** phải chiều tệ nhất (spBLEU 19,91 · COMET 0,8191). Chiều yếu nhất là **vi→zh** — cả spBLEU (17,15) lẫn COMET (0,7729) cùng chỉ vào đó. Nhắm vào vi→zh chứ đừng nhắm ja→vi.                                         |
+| **Kiểm tra ổn định trên Windows 11**              | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                                                                                                                                                                           |
 
 ---
 
@@ -203,20 +204,20 @@ script độc lập chạy ở môi trường riêng (`uv run --no-project scrip
 
 ---
 
-## 7. Đợt 05/09 — backend ASR thứ hai + tách người nói
+## 7. Việc còn treo từ các đợt bổ sung 05/09
 
-Chi tiết ở [`19_backend-asr-va-tach-nguoi-noi.md`](19_backend-asr-va-tach-nguoi-noi.md).
-Code đã xong và test sạch, phần **chạy thật thì chưa**:
+Code đã xong và test sạch ([`04_cac-dot-bo-sung.md`](04_cac-dot-bo-sung.md)), phần **chạy
+thật thì chưa**:
 
 - [ ] **Đo MLX so với whisper.cpp trên máy Apple Silicon.** Đây mới là lý do thêm backend
-      thứ hai — thêm một cột vào bảng của [`17`](17_bo-danh-gia-fleurs.md):
+      thứ hai — thêm một cột vào bảng của [`05`](05_bo-danh-gia-fleurs.md):
       `make eval-asr ADAPTER=mlx_whisper MODEL=<repo mlx> JSON=eval-asr-mlx.json`
       (`eval_asr.py` giờ nhận `--adapter`/`--model`, dựng adapter qua `ASR_REGISTRY`).
       Đã chọn xong model bằng bảng đo 7 bản MLX ở
-      [`19` mục 2.2b](19_backend-asr-va-tach-nguoi-noi.md): dùng
+      [`04` mục 3.3](04_cac-dot-bo-sung.md): dùng
       `whisper-large-v3-asr-8bit` (WER 6,7% · RTF 0,14 · 1,2 GB — bằng chất lượng bản
       fp16 mà nhẹ hơn 2,3 lần). **Đã có một nửa:**
-      [`25`](25_ket-qua-chay-thu-e2e.md) cho số của MLX large-v3-turbo fp16 (ASR
+      [`07`](07_ket-qua-chay-thu-e2e.md) cho số của MLX large-v3-turbo fp16 (ASR
       780–897 ms, RTF p90 0,818); còn thiếu cột whisper.cpp trên cùng bộ mẫu để so.
 - [ ] **Chạy thử diarization trên một bản ghi họp nhiều người thật**, xem nhãn có khớp
       người nói không. Cần `make setup-diarization`, một access token HuggingFace (dán ở
@@ -230,52 +231,20 @@ Code đã xong và test sạch, phần **chạy thật thì chưa**:
       khởi động thay vì service tự đọc.
 - [ ] **Quyết có đóng gói `--extra mlx` / `--extra diarization` vào bản cài không.** Hiện
       cả hai là phần cài thêm; nếu đưa vào bản phát hành thì phải cập nhật
-      [`12_install-guide.md`](12_install-guide.md) và tính lại dung lượng bản cài.
-
----
-
-## 8. Đợt 05/09 (2) — nhóm A: tính năng có chỗ trong UI nhưng thiếu backend
-
-Chi tiết ở [`20_duyet-truoc-khi-gui-va-quan-ly-model.md`](20_duyet-truoc-khi-gui-va-quan-ly-model.md).
-Rà toàn bộ `DisabledButton` / `notSupported` / enum không ai phát ra thì còn đúng năm
-chỗ, đã đóng cả năm. Còn phải thử tay:
+      [`09_huong-dan-cai-dat.md`](09_huong-dan-cai-dat.md) và tính lại dung lượng bản cài.
 
 - [ ] **Duyệt trước khi gửi trong một cuộc họp thật** — đếm ngược 5 giây có đủ để đọc
       và sửa không, hay phải dài hơn. Bật ở màn Cài đặt.
 - [ ] **Nút Huỷ nạp model** mới thử được nhánh "không có gì đang chạy". Muốn thử đúng
       đường dừng-giữa-chừng thì phải xoá model đi rồi bấm nạp lại.
 
----
-
-## 9. Đợt 05/09 (3) — nhóm B và C: hai việc code cuối cùng
-
-Chi tiết ở [`21_man-danh-gia-va-backend-thu-ba.md`](21_man-danh-gia-va-backend-thu-ba.md).
-
-**Màn Đánh giá trong app** (mục 3d thầy giao, dòng đầu bảng ở mục 3 trên) — đã xong.
-**Adapter `faster_whisper`** — đã hiện thực thật, không còn stub nào trong dự án.
-
-Còn phải chạy thật:
-
 - [ ] **Thay bộ câu mẫu 10 câu bằng câu thoại họp thật, có thu âm giọng người.** Đây
       là việc quyết định giá trị của mọi con số trên màn Đánh giá — bộ đi kèm chỉ để
       màn hình có thứ chạy được ngay, và nó chạy bằng giọng tổng hợp nên số lạc quan
       hơn thực tế.
 - [ ] **Đo faster-whisper trên máy Windows + NVIDIA**, thêm cột thứ ba vào bảng của
-      [`17`](17_bo-danh-gia-fleurs.md): `make setup-ctranslate2` rồi
+      [`05`](05_bo-danh-gia-fleurs.md): `make setup-ctranslate2` rồi
       `LLVT_ASR_ADAPTER=faster_whisper make eval-asr`.
 
-**Từ đây, dự án không còn việc code nào đang treo.** Toàn bộ phần còn lại là chạy
-thật, đo số, và Tuần 9 (báo cáo / đóng gói / demo).
-
----
-
-## Phụ lục — đã làm gì trong đợt 04/09
-
-| Commit    | Nội dung                                                                                                          |
-| --------- | ----------------------------------------------------------------------------------------------------------------- |
-| `d0e700a` | Tách câu hai ngưỡng im lặng + cắt cứng có lùi (mục 4.2); lọc câu ma của Whisper (mục 4.1); `make endpointing`     |
-| `e0b3180` | Bộ đánh giá FLEURS: `eval-asr` / `eval-mt` / `eval-comet` / `eval-latency`; [`docs/17`](17_bo-danh-gia-fleurs.md) |
-
-Đã kiểm thử: 141 test pass, ruff sạch, `tsc` sạch. Đã kiểm chứng thật: đọc văn bản và
-audio FLEURS, độ chính xác từng độ đo, ghép cặp 6 chiều, nhịp ngắt 0,2s không băm câu
-còn 0,8s thì tách câu (chạy trên model Silero thật).
+**Dự án không còn việc code nào đang treo.** Toàn bộ phần còn lại là chạy thật, đo số, và
+Tuần 9 (báo cáo / đóng gói / demo).

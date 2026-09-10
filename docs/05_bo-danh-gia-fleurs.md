@@ -167,11 +167,11 @@ make eval-asr ADAPTER=mlx_whisper \
 
 `MODEL` phải đúng tên của runtime đang chọn — GGML là tên file trong repo whisper.cpp,
 MLX và CTranslate2 là repo id đã chuyển đổi sẵn, ba loại **không** thay nhau được (mục
-đích của `asr_alternatives` trong preset, xem [`23`](23_chon-model-khong-phai-nap-model.md)).
+đích của `asr_alternatives` trong preset, xem [`04`](04_cac-dot-bo-sung.md)).
 Đặt `JSON=` khác đi khi đo backend thứ hai, nếu không nó ghi đè bảng của backend thứ nhất.
 
 Bảng đo bảy model MLX (WER · RTF · dung lượng, trên cùng 20 câu tiếng Việt) nằm ở
-[`19` mục 2.2b](19_backend-asr-va-tach-nguoi-noi.md) — dùng nó để chọn model trước khi
+[`04` mục 3.3](04_cac-dot-bo-sung.md) — dùng nó để chọn model trước khi
 tốn một tiếng rưỡi chạy bản đầy đủ.
 
 Khi so hai dòng kết quả với nhau, nhớ là **đổi backend thường kèm đổi luôn cỡ model**:
@@ -244,8 +244,9 @@ của FLEURS.
 ### Công thức RTF — phần thầy dặn tra lại và báo cáo
 
 > Bản đầy đủ, có trích nguồn cho từng khẳng định, nằm ở
-> [`26` mục 5](26_do-do-danh-gia-wer-bleu-comet-rtf.md) — đó mới là phần gửi thầy. Mục
-> này giữ lại bản tóm tắt để đọc liền mạch với phần code.
+> [`06` mục 6](06_bon-do-do-wer-bleu-comet-rtf.md); phần ngưỡng đề xuất và lý do lấy p90
+> ở [báo cáo GVHD mục 3](gvhd/bao-cao-bo-danh-gia.md) — đó mới là phần gửi thầy. Mục này
+> giữ lại bản tóm tắt để đọc liền mạch với phần code.
 
 $$\text{RTF} = \frac{\text{thời gian xử lý}}{\text{thời lượng audio đầu vào}}$$
 
@@ -313,10 +314,10 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 - [x] Chạy `make eval-latency` cho ít nhất 2 chiều → Total Inference Time + RTF
       (đã chạy đủ **sáu** chiều, 50 mẫu mỗi chiều — mục 8c)
 - [x] Tra công thức RTF, ngưỡng real-time và ba độ đo còn lại, có trích nguồn —
-      [`26`](26_do-do-danh-gia-wer-bleu-comet-rtf.md)
-- [ ] Gửi thầy [`26` mục 5](26_do-do-danh-gia-wer-bleu-comet-rtf.md) (công thức RTF +
-      ngưỡng đề xuất) và [`26` mục 8](26_do-do-danh-gia-wer-bleu-comet-rtf.md) (5 điểm
-      cần chốt)
+      [`06`](06_bon-do-do-wer-bleu-comet-rtf.md)
+- [ ] Gửi thầy [báo cáo GVHD](gvhd/bao-cao-bo-danh-gia.md) — mục 3 (công thức RTF +
+      ngưỡng đề xuất) và mục 9 (5 điểm cần chốt), kèm phụ lục
+      [`06`](06_bon-do-do-wer-bleu-comet-rtf.md)
 
 ---
 
@@ -329,11 +330,11 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 **3.099 bản thu, 10,22 giờ audio, 86 phút chạy.** Không bỏ câu nào, **0 câu rỗng** ở cả
 bốn ngôn ngữ.
 
-| Điều kiện     | Giá trị                                                                                                    |
-| ------------- | ---------------------------------------------------------------------------------------------------------- |
-| Model         | `mlx-community/whisper-large-v3-asr-8bit` (chọn theo [`19` mục 2.2b](19_backend-asr-va-tach-nguoi-noi.md)) |
-| Runtime       | mlx-audio, Metal, Apple M4                                                                                 |
-| Bộ lọc câu ma | TẮT — đo mô hình, không đo lớp sản phẩm sau nó                                                             |
+| Điều kiện     | Giá trị                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Model         | `mlx-community/whisper-large-v3-asr-8bit` (chọn theo [`04` mục 3.3](04_cac-dot-bo-sung.md)) |
+| Runtime       | mlx-audio, Metal, Apple M4                                                                  |
+| Bộ lọc câu ma | TẮT — đo mô hình, không đo lớp sản phẩm sau nó                                              |
 
 | Ngôn ngữ | Chỉ số | Giá trị |   Bản thu |         Audio |           ASR | RTF       | Câu rỗng |
 | -------- | ------ | ------: | --------: | ------------: | ------------: | --------- | -------: |
@@ -348,13 +349,13 @@ bốn ngôn ngữ.
 **Cột "câu rỗng" bằng 0 ở cả bốn ngôn ngữ** là thứ phải nhìn trước tiên. Nó là chốt chặn
 chống đo hỏng (sai mã ngôn ngữ, sai đường đọc audio — đúng loại lỗi từng làm cả bảng
 thành 100%), và nó cũng là bằng chứng model MLX này **không** dính vòng lặp lặp chữ như
-họ `small` ở [`19` mục 2.2c](19_backend-asr-va-tach-nguoi-noi.md).
+họ `small` ở [`04` mục 3.3](04_cac-dot-bo-sung.md).
 
 **Tiếng Việt (8,8%) khó hơn tiếng Anh (4,8%) gần gấp đôi.** Đây là chiều quan trọng nhất
 của đề tài, và con số này là mức sàn — FLEURS là giọng đọc rõ ràng, ít nhiễu, không có
 từ đệm. WER trong một cuộc họp thật sẽ cao hơn (xem mục 6).
 
-**Đừng so trực tiếp với bảng 20 câu ở [`19` mục 2.2b](19_backend-asr-va-tach-nguoi-noi.md).**
+**Đừng so trực tiếp với bảng 20 câu ở [`04` mục 3.3](04_cac-dot-bo-sung.md).**
 Cùng model đó, 20 câu đầu cho WER 6,7% còn toàn bộ 857 bản thu cho 8,8% — chênh 2,1
 điểm. 20 câu đầu chỉ đủ để **chọn** model (xếp hạng tương đối giữa các bản), không đủ
 làm con số báo cáo.
@@ -397,7 +398,7 @@ Việt ở đầu vào** đều trượt: 0,580 · 0,727 · 0,786.
 2. **Đích là tiếng Trung/Nhật thì TTS đắt gấp 6–8 lần** — 1.693 ms cho zh và 2.261 ms
    cho ja, so với 273–318 ms cho vi/en. Tính theo tỷ trọng: TTS chiếm 22,6% tổng thời
    gian ở vi→zh và **28,3%** ở vi→ja, trong khi ở bốn chiều còn lại chỉ 5–7%. Tiếng Nhật
-   đi qua Kokoro + G2P OpenJTalk chứ không phải sherpa-onnx ([`07`](07_week5-tts.md)),
+   đi qua Kokoro + G2P OpenJTalk chứ không phải sherpa-onnx ([`03`](03_nhat-ky-tuan-1-8.md)),
    nên đây là cái giá của việc sherpa-onnx không đọc được tiếng Nhật.
 
 Vậy nếu cần kéo vi→ja xuống dưới 0,5 thì **hai chỗ đáng sửa là ASR cho nguồn tiếng Việt
@@ -422,10 +423,10 @@ trên **không** kiểm chứng được các mốc đó, và đặt cạnh nhau
   thời gian cho một câu;
 - SPEC nói về **độ trễ người dùng cảm nhận** (từ lúc dứt câu tới lúc có phụ đề), còn cột
   "Tổng" ở đây là **thời gian tính toán**. Hai đại lượng khác nhau — mục 5.4 của
-  [`26`](26_do-do-danh-gia-wer-bleu-comet-rtf.md) nói kỹ chỗ này.
+  [`06`](06_bon-do-do-wer-bleu-comet-rtf.md) nói kỹ chỗ này.
 
 Số đối chiếu được với SPEC 14.1 là bộ đo trên **audio 3 giây** ở
-[`14` mục 11](14_slides-bao-cao.md): ASR 991–1.060 ms · MT 460–579 ms · TTS 141–969 ms ·
+[`10` mục 11](10_slides-bao-cao.md): ASR 991–1.060 ms · MT 460–579 ms · TTS 141–969 ms ·
 tổng 1,8–2,6 giây — **đạt cả bốn mốc**. Bảng FLEURS trả lời một câu hỏi khác: hệ thống
 có theo kịp luồng nói liên tục không (RTF), chứ không phải một câu mất bao lâu.
 

@@ -41,7 +41,7 @@ _Độc Lập - Tự Do - Hạnh Phúc_
 > không nghỉ. Cả hai đã có mã xử lý nhưng **chưa kiểm chứng được trên giọng người
 > thật** trước hạn nộp, nên chốt bỏ thay vì giữ một tính năng chưa chắc ổn định lúc
 > bảo vệ. Phân tích đầy đủ, kèm cách bật lại, ở
-> [`13_google-meet-and-virtual-mic.md`](13_google-meet-and-virtual-mic.md).
+> [`11_pham-vi-da-bo-google-meet.md`](11_pham-vi-da-bo-google-meet.md).
 >
 > Phần hiện thực đã làm xong ở Tuần 5 và Tuần 7 vẫn còn trong mã nguồn, chỉ tắt ở lớp
 > giao diện — nên đây là **thu hẹp phạm vi nghiệm thu**, không phải một hạng mục bỏ dở.

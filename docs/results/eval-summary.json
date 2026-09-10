@@ -2,7 +2,7 @@
   "generated": "2026-09-07",
   "may": "Apple M4, macOS 26.6",
   "dataset": "google/fleurs, split test",
-  "ghi_chu": "Ba khối đo tách bạch: ASR trên audio, MT trên văn bản (không qua ASR), độ trễ trên cả chuỗi VAD→ASR→MT→TTS. Xem docs/17 mục 8, 8b, 8c.",
+  "ghi_chu": "Ba khối đo tách bạch: ASR trên audio, MT trên văn bản (không qua ASR), độ trễ trên cả chuỗi VAD→ASR→MT→TTS. Xem docs/05 mục 8, 8b, 8c.",
   "asr": {
     "adapter": "mlx_whisper",
     "model": "mlx-community/whisper-large-v3-asr-8bit",

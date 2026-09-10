@@ -83,7 +83,7 @@ utterances_table = Table(
 )
 
 # Phiên bản schema, ghi vào `PRAGMA user_version` của chính file SQLite.
-#   1 = schema gốc (docs/11)
+#   1 = schema gốc (docs/04)
 #   2 = thêm cột `utterances.speaker` (diarization)
 SCHEMA_VERSION = 2
 

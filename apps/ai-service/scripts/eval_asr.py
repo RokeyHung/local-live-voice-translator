@@ -6,14 +6,14 @@ ngôn ngữ một** (vi, en, zh, ja).
     uv run python scripts/eval_asr.py --limit 20            # chạy thử, tải ít
     uv run python scripts/eval_asr.py --json bao-cao-asr.json
 
-    # đổi runtime và/hoặc model (bảng so sánh backend ở docs/19)
+    # đổi runtime và/hoặc model (bảng so sánh backend ở docs/04)
     uv run python scripts/eval_asr.py --adapter mlx_whisper \
         --model mlx-community/whisper-large-v3-asr-fp16 --json asr-mlx.json
 
 Adapter được dựng qua ``ASR_REGISTRY`` chứ không import thẳng một lớp cụ thể, nên thêm
 backend mới vào registry là đo được ngay, không phải sửa script này. ``--model`` phải là
 tên đúng theo runtime đang chọn: GGML là tên file trong repo whisper.cpp, MLX và
-CTranslate2 là repo id đã chuyển đổi sẵn — chúng KHÔNG thay nhau được (xem docs/23).
+CTranslate2 là repo id đã chuyển đổi sẵn — chúng KHÔNG thay nhau được (xem docs/04).
 
 Hai lưu ý về phương pháp:
 

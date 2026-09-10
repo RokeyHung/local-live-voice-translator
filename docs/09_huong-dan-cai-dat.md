@@ -6,20 +6,20 @@ Hướng dẫn cài và chạy ứng dụng từ mã nguồn, trên **macOS 13+ 
 > **Phạm vi (chốt 10/09/2026):** ứng dụng dịch giọng nói và phát bản dịch ra loa/tai
 > nghe. Phần đẩy tiếng dịch ngược vào Google Meet qua microphone ảo **đã bỏ**, nên
 > không phải cài driver âm thanh ảo nào. Lý do bỏ ghi ở
-> [`13_google-meet-and-virtual-mic.md`](13_google-meet-and-virtual-mic.md).
+> [`11_pham-vi-da-bo-google-meet.md`](11_pham-vi-da-bo-google-meet.md).
 
 ---
 
 ## 1. Yêu cầu
 
-| Hạng mục      | Tối thiểu                                  | Ghi chú                                                                                               |
-| ------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Hệ điều hành  | macOS 13+ (Apple Silicon) / Windows 11 x64 | Thu âm thanh hệ thống cần ScreenCaptureKit (macOS 13+) hoặc WASAPI loopback (Windows 10 1903+).       |
-| RAM           | 8 GB, khuyến nghị 16 GB                    | Riêng tiến trình AI service chiếm ~2 GB khi đã nạp đủ model (đo ở [Tuần 8](10_week8-experiments.md)). |
-| Ổ cứng trống  | ~5 GB                                      | Model chiếm ~4 GB; xem dung lượng thật ở màn **Quản lý model**.                                       |
-| Python        | 3.11 hoặc 3.12                             | `uv` tự tải đúng bản, không cần cài Python sẵn.                                                       |
-| Node.js       | ≥ 20                                       | Cho phần desktop (Electron + Vite).                                                                   |
-| Mạng Internet | Chỉ lần đầu                                | Để tải model. Sau đó chạy hoàn toàn offline.                                                          |
+| Hạng mục      | Tối thiểu                                  | Ghi chú                                                                                              |
+| ------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Hệ điều hành  | macOS 13+ (Apple Silicon) / Windows 11 x64 | Thu âm thanh hệ thống cần ScreenCaptureKit (macOS 13+) hoặc WASAPI loopback (Windows 10 1903+).      |
+| RAM           | 8 GB, khuyến nghị 16 GB                    | Riêng tiến trình AI service chiếm ~2 GB khi đã nạp đủ model (đo ở [Tuần 8](03_nhat-ky-tuan-1-8.md)). |
+| Ổ cứng trống  | ~5 GB                                      | Model chiếm ~4 GB; xem dung lượng thật ở màn **Quản lý model**.                                      |
+| Python        | 3.11 hoặc 3.12                             | `uv` tự tải đúng bản, không cần cài Python sẵn.                                                      |
+| Node.js       | ≥ 20                                       | Cho phần desktop (Electron + Vite).                                                                  |
+| Mạng Internet | Chỉ lần đầu                                | Để tải model. Sau đó chạy hoàn toàn offline.                                                         |
 
 GPU không bắt buộc: whisper.cpp dùng Metal trên Apple Silicon, NLLB chạy MPS/CPU.
 Máy không có tăng tốc vẫn chạy được nhưng độ trễ sẽ cao hơn số đo trong Tuần 8.
@@ -88,6 +88,19 @@ hơn); **Quality** dùng `ggml-large-v3-turbo-q8_0.bin`. Đổi ở màn **Cài 
 Đổi ở màn **Cài đặt → Thư mục lưu model**; model đã tải **không** tự chuyển sang chỗ
 mới, tải lại từ đầu. Xoá model đã tải cũng ở màn đó — chỉ bốn thư mục do app tạo
 (`whisper-cpp/`, `nllb/`, `sherpa-tts/`, `kokoro-ja/`) bị xoá.
+
+## 4b. Cấp quyền (chỉ macOS, lần đầu)
+
+| Quyền            | Vì sao cần                                 | Cấp ở đâu                                                                                                          |
+| ---------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| **Microphone**   | Thu giọng của bạn                          | System Settings → Privacy & Security → Microphone                                                                  |
+| **Ghi màn hình** | Thu âm thanh hệ thống (tiếng phía bên kia) | System Settings → Privacy & Security → Screen Recording (macOS 15 đổi tên thành "Screen & System Audio Recording") |
+
+Quyền Ghi màn hình chỉ được hỏi ở **lần đầu bắt đầu phiên** ở chế độ Nghe hoặc Hai chiều.
+Chưa cấp thì chiều nghe không chạy (chiều nói vẫn hoạt động bình thường), và sau khi cấp
+phải **mở lại ứng dụng**.
+
+Windows không cần bước này: WASAPI loopback không đòi quyền riêng.
 
 ## 5. Chạy không cần Internet
 

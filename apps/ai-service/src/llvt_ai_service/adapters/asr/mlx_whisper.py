@@ -5,7 +5,7 @@ whisper.cpp là C++ + Metal shader tự viết, MLX là framework mảng của A
 unified memory. Có hai lý do giữ cả hai:
 
 * Đo được. Đồ án phải trả lời "chọn runtime nào trên máy Apple Silicon" bằng số chứ
-  không bằng cảm tính — hai adapter sau cùng một port nên bộ đánh giá ở ``docs/17``
+  không bằng cảm tính — hai adapter sau cùng một port nên bộ đánh giá ở ``docs/05``
   chạy được cả hai mà không sửa pipeline.
 * Đây đúng là ví dụ "thêm backend mới" mà ARCHITECTURE.md mô tả: một file adapter,
   một dòng trong ``ASR_REGISTRY``, không đụng vào pipeline hay transport.

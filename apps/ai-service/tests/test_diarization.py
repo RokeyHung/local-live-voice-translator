@@ -2,7 +2,7 @@
 
 Toàn bộ dùng diarizer giả. Model pyannote thật là repo *gated* (cần token
 HuggingFace) và nặng vài trăm MB — không thể là điều kiện để chạy được test suite.
-Phần thật được kiểm bằng tay theo docs/19.
+Phần thật được kiểm bằng tay theo docs/04.
 """
 
 from __future__ import annotations

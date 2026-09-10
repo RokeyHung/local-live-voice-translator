@@ -4,11 +4,11 @@
 
 Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Loa`.
 
-> **Hướng dẫn dùng:** [cài đặt](docs/12_install-guide.md)
+> **Hướng dẫn dùng:** [cài đặt](docs/09_huong-dan-cai-dat.md)
 >
-> **Phạm vi (chốt 10/09/2026):** ứng dụng dịch và phát ra loa/tai nghe, **không** đẩy tiếng dịch ngược vào phần mềm họp qua microphone ảo. Lý do bỏ phần đó: [docs/13](docs/13_google-meet-and-virtual-mic.md).
+> **Phạm vi (chốt 10/09/2026):** ứng dụng dịch và phát ra loa/tai nghe, **không** đẩy tiếng dịch ngược vào phần mềm họp qua microphone ảo. Lý do bỏ phần đó: [docs/11](docs/11_pham-vi-da-bo-google-meet.md).
 >
-> **Tài liệu kỹ thuật:** [đề cương](docs/00_project-outline.md) · [SPEC](docs/01_spec-realtime-voice-translation.md) · [SPEC Addendum](docs/02_spec-addendum-os-stack-models.md) · ghi chú từng tuần: [T1](docs/03_week1-survey-and-foundation.md) · [T2](docs/04_week2-audio-capture-and-vad.md) · [T3](docs/05_week3-asr.md) · [T4](docs/06_week4-mt.md) · [T5](docs/07_week5-tts.md) · [T6](docs/08_week6-desktop.md) · [T7](docs/09_week7-two-way.md) · [T8](docs/10_week8-experiments.md) · [bổ sung](docs/11_hardening-history-settings-models.md)
+> **Tài liệu kỹ thuật** (`docs/`): [đề cương](docs/00_project-outline.md) · [SPEC](docs/01_spec-realtime-voice-translation.md) + [Addendum](docs/02_spec-addendum-os-stack-models.md) · [nhật ký tuần 1–8](docs/03_nhat-ky-tuan-1-8.md) · [các đợt bổ sung](docs/04_cac-dot-bo-sung.md) · [bộ đánh giá FLEURS](docs/05_bo-danh-gia-fleurs.md) · [bốn độ đo](docs/06_bon-do-do-wer-bleu-comet-rtf.md) · [kết quả chạy thử](docs/07_ket-qua-chay-thu-e2e.md) · [việc còn lại](docs/08_viec-con-lai.md) · [slides](docs/10_slides-bao-cao.md) · [biên bản họp](docs/meetings/) · [báo cáo gửi GVHD](docs/gvhd/)
 
 ## Cấu trúc
 
@@ -84,7 +84,7 @@ Cửa sổ Electron sẽ hiển thị trạng thái kết nối REST + WebSocket
 | `~/.llvt/settings.json` | Tuỳ chọn đổi trong app (thư mục lưu model)                     | —                 |
 | `fleurs-cache/`         | Dữ liệu FLEURS cho bộ đánh giá (`make fetch-fleurs`, ~2,3 GB)  | `FLEURS_CACHE`    |
 
-`fleurs-cache/` chỉ phục vụ bộ đánh giá ([docs/17](docs/17_bo-danh-gia-fleurs.md)), không liên quan tới lúc dùng app — xoá lúc nào cũng được, `make fetch-fleurs` tải lại.
+`fleurs-cache/` chỉ phục vụ bộ đánh giá ([docs/05](docs/05_bo-danh-gia-fleurs.md)), không liên quan tới lúc dùng app — xoá lúc nào cũng được, `make fetch-fleurs` tải lại.
 
 Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Quyền riêng tư** (hoặc `LLVT_HISTORY_ENABLED=false`); xóa từng phiên hoặc xóa tất cả ở màn **Lịch sử**.
 
@@ -94,7 +94,7 @@ Không lưu file âm thanh. Tắt lưu lịch sử ở màn **Cài đặt → Qu
 
 Pipeline chạy **model thật** đầy đủ: VAD (Tuần 2) → ASR (Tuần 3) → MT (Tuần 4) → TTS (Tuần 5), giao diện desktop 8 màn (Tuần 6), dịch hai chiều + microphone ảo + thu âm thanh hệ thống (Tuần 7), đo độ trễ/tài nguyên/độ chính xác (Tuần 8), lịch sử phiên lưu SQLite, TTS đủ bốn ngôn ngữ (tiếng Nhật dùng Kokoro + G2P OpenJTalk vì sherpa-onnx không đọc được tiếng Nhật).
 
-Đã có **bộ số đo trên FLEURS** (bộ dữ liệu chuẩn, tham chiếu do người gõ) — chi tiết ở [docs/17 mục 8](docs/17_bo-danh-gia-fleurs.md):
+Đã có **bộ số đo trên FLEURS** (bộ dữ liệu chuẩn, tham chiếu do người gõ) — chi tiết ở [docs/05 mục 8](docs/05_bo-danh-gia-fleurs.md):
 
 | Khâu                                | Kết quả                                               |
 | ----------------------------------- | ----------------------------------------------------- |

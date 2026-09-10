@@ -13,7 +13,7 @@ trong thư mục model — nếu không, đổi thư mục model xong là mất 
 File này chứa **access token HuggingFace** nên được ghi với quyền ``0600`` (chỉ chủ
 sở hữu đọc được). Token nằm ở dạng thường, giống hệt cách ``huggingface_hub`` lưu
 ``~/.cache/huggingface/token``; đây là máy cá nhân một người dùng, và chỗ duy nhất
-chặt hơn được là keychain của hệ điều hành — ghi vào `docs/18` để cân nhắc sau.
+chặt hơn được là keychain của hệ điều hành — ghi vào `docs/08` để cân nhắc sau.
 """
 
 from __future__ import annotations

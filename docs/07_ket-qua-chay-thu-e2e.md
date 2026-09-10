@@ -100,12 +100,12 @@ p90 **856 ms** · dịch p90 **396 ms** · tổng p90 **1.227 ms** · **RTF p90 
 
 > **RTF ở đây tính trên phạm vi hẹp: chỉ ASR + MT**, không gồm VAD và TTS — vì màn Đánh
 > giá chấm chất lượng dịch nên không chạy TTS. Hai con số không thay thế được nhau; báo
-> cáo phải ghi rõ phạm vi. Xem [`26` mục 5.6](26_do-do-danh-gia-wer-bleu-comet-rtf.md).
+> cáo phải ghi rõ phạm vi. Xem [báo cáo GVHD mục 7](gvhd/bao-cao-bo-danh-gia.md).
 >
 > **Cập nhật 07/09 — dự đoán ở đây sai.** Chỗ này từng viết rằng RTF của
 > `make eval-latency` (cả chuỗi VAD→ASR→MT→TTS) sẽ **cao hơn** 0,818 vì nó gồm nhiều
 > khâu hơn. Đo thật thì ngược lại: RTF p90 nằm trong **0,395–0,786**, tức thấp hơn
-> ([`17` mục 8c](17_bo-danh-gia-fleurs.md)). Lý do là hai lượt chạy khác nhau **cả model
+> ([`05` mục 8c](05_bo-danh-gia-fleurs.md)). Lý do là hai lượt chạy khác nhau **cả model
 > lẫn dữ liệu** — lượt kia dùng `whisper-large-v3-turbo-fp16` trên 22 câu tự dựng, lượt
 > này dùng `whisper-large-v3-asr-8bit` trên FLEURS. Bài học đúng vẫn là bài học cũ, chỉ
 > mạnh hơn: **RTF chỉ so được khi cùng phạm vi, cùng model và cùng dữ liệu** — thêm một
@@ -150,7 +150,7 @@ số liệu chính thức về độ chính xác ASR**, vì:
    phải con số chất lượng dịch tuyệt đối. Điều này đã ghi vào `_note` của bộ mẫu.
 4. **chrF ở đây là bản cài đặt thuần Python trong ứng dụng**, không phải sacrebleu.
    Bảng đưa vào báo cáo chính thức nên lấy từ `make eval-asr` / `make eval-mt` (jiwer +
-   spBLEU) để so được với số công bố của NLLB-200 — xem docs/17.
+   spBLEU) để so được với số công bố của NLLB-200 — xem docs/05.
 5. Bộ mẫu chỉ **22 câu**, và là câu hội thoại họp ngắn. Đủ để so cấu hình với nhau,
    chưa đủ để kết luận về chất lượng hệ thống.
 
@@ -171,8 +171,8 @@ mã nguồn):
 
 - Điền bản chép + bản dịch cho 20 đoạn ghi âm giọng người thật → chạy lại mục 4.
 - Chạy `make eval-asr` / `make eval-mt` trên FLEURS để có bảng số so sánh được với
-  công bố của NLLB-200 (docs/17).
+  công bố của NLLB-200 (docs/05).
 - Lặp lại toàn bộ tài liệu này trên **Windows 11 + NVIDIA** với runtime faster-whisper;
   `report.e2e.ts` chạy nguyên xi, chỉ cần đổi `LLVT_REAL_MODELS_DIR`.
-- Một phiên soak 60 phút (docs/18). _(Hạng mục "chạy thật trên Google Meet" đã bỏ khỏi
-  phạm vi ngày 10/09 — xem [`13`](13_google-meet-and-virtual-mic.md).)_
+- Một phiên soak 60 phút (docs/08). _(Hạng mục "chạy thật trên Google Meet" đã bỏ khỏi
+  phạm vi ngày 10/09 — xem [`11`](11_pham-vi-da-bo-google-meet.md).)_

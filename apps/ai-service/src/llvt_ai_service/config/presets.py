@@ -69,7 +69,7 @@ PRESETS: dict[Preset, PresetConfig] = {
             # đều hỏng — WER 125–162%, một nửa số câu trả rỗng, phần còn lại kẹt vòng
             # lặp lặp chữ (adapter tắt fallback nhiệt độ nên không có đường thoát).
             # turbo-4bit nhỏ hơn 2 lần so với bản small fp16, nhanh hơn (RTF 0,08 so
-            # với 0,28) và WER 8,9% thay vì 125%. Xem docs/19 mục 2.2b.
+            # với 0,28) và WER 8,9% thay vì 125%. Xem docs/04 mục 3.3.
             "mlx_whisper": "mlx-community/whisper-large-v3-turbo-asr-4bit",
             "faster_whisper": "Systran/faster-whisper-small",
         },

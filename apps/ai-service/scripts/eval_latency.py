@@ -6,7 +6,7 @@ báo hai chỉ số thầy yêu cầu:
 * **Total Inference Time** — tổng thời gian tính toán để biến một đoạn tiếng nói đầu
   vào thành tiếng nói đã dịch.
 * **RTF (Real-Time Factor)** = Total Inference Time ÷ thời lượng audio đầu vào.
-  RTF < 1 nghĩa là xử lý nhanh hơn thời gian thực. Xem ``docs/17`` về công thức và
+  RTF < 1 nghĩa là xử lý nhanh hơn thời gian thực. Xem ``docs/05`` về công thức và
   ngưỡng.
 
     uv run python scripts/eval_latency.py --limit 20
