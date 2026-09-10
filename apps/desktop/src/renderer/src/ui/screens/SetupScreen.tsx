@@ -1,15 +1,15 @@
-// Màn Thiết bị âm thanh: chọn/kiểm tra 4 đường tín hiệu, xem phần cứng và thiết
+// Màn Thiết bị âm thanh: chọn/kiểm tra 3 đường tín hiệu, xem phần cứng và thiết
 // bị tính toán thật của từng khâu, cảnh báo vòng lặp âm thanh.
+//
+// Đường thứ tư — microphone ảo đẩy tiếng dịch vào Google Meet — đã bỏ khỏi phạm vi
+// đồ án (chốt với GVHD): ứng dụng chỉ dịch và phát ra loa/tai nghe, không tích hợp
+// với phần mềm họp nào. Phần hiện thực vẫn còn (`TtsPlayer.setSink`,
+// `looksLikeVirtualMic`, `uiStore.virtualMicDeviceId`) nên bật lại chỉ là dựng lại
+// thẻ chọn thiết bị ở đây.
 
 import { useState, type JSX } from 'react'
-import {
-  looksLikeHeadphones,
-  looksLikeVirtualMic,
-  playTestTone,
-  type AudioDevice
-} from '../../adapters/audio-devices'
+import { looksLikeHeadphones, playTestTone, type AudioDevice } from '../../adapters/audio-devices'
 import { prettyGpuName } from '../../adapters/compute-probe'
-import { PLATFORM } from '../../application/config'
 import type { Dict } from '../../application/i18n'
 import { PRESET_META } from '../../application/presets'
 import { useResources, useServiceConfig } from '../../hooks/use-config'
@@ -355,10 +355,8 @@ export function SetupScreen(): JSX.Element {
 
   const inputDeviceId = useUiStore((s) => s.inputDeviceId)
   const outputDeviceId = useUiStore((s) => s.outputDeviceId)
-  const virtualMicDeviceId = useUiStore((s) => s.virtualMicDeviceId)
   const setInputDeviceId = useUiStore((s) => s.setInputDeviceId)
   const setOutputDeviceId = useUiStore((s) => s.setOutputDeviceId)
-  const setVirtualMicDeviceId = useUiStore((s) => s.setVirtualMicDeviceId)
 
   const [testing, setTesting] = useState(false)
   // Khi phiên đang chạy, mic đã được SessionController thu — không mở stream thứ hai.
@@ -372,8 +370,6 @@ export function SetupScreen(): JSX.Element {
     serviceStages.filter((s) => s.loaded).map((s) => tileOfAccel(s.accel))
   )
   const outputLabel = outputs.find((d) => d.deviceId === outputDeviceId)?.label ?? ''
-  const virtualMics = outputs.filter((d) => looksLikeVirtualMic(d.label))
-  const vmicSelected = virtualMicDeviceId !== ''
 
   const loop = !outputLabel
     ? { tone: 'warn' as const, icon: 'warning' as IconName, msg: L.loopUnknown }
@@ -429,38 +425,25 @@ export function SetupScreen(): JSX.Element {
           level={systemLevel * 4}
           L={L}
         />
-        <DeviceCard
-          icon="speaker"
-          color="#fb923c"
-          title={L.spkCard}
-          role={L.spkRole}
-          status={{
-            text: outputs.length ? L.ready : L.noDevice,
-            color: outputs.length ? 'var(--ac-grn)' : 'var(--text4)'
-          }}
-          devices={outputs}
-          value={outputDeviceId}
-          onChange={setOutputDeviceId}
-          level={testing ? 0.7 : 0}
-          onTest={() => void test(outputDeviceId)}
-          L={L}
-        />
-        <DeviceCard
-          icon="mic-dot"
-          color="#d946ef"
-          title={L.vmicCard}
-          role={L.vmicRole}
-          status={{
-            text: vmicSelected ? L.connected : L.noDevice,
-            color: vmicSelected ? 'var(--ac-grn)' : 'var(--text4)'
-          }}
-          devices={virtualMics.length ? virtualMics : outputs}
-          value={virtualMicDeviceId}
-          onChange={setVirtualMicDeviceId}
-          level={0}
-          onTest={() => void test(virtualMicDeviceId)}
-          L={L}
-        />
+        {/* Còn ba đường tín hiệu nên ô loa chiếm trọn hàng thứ hai. */}
+        <div className="col-span-2">
+          <DeviceCard
+            icon="speaker"
+            color="#fb923c"
+            title={L.spkCard}
+            role={L.spkRole}
+            status={{
+              text: outputs.length ? L.ready : L.noDevice,
+              color: outputs.length ? 'var(--ac-grn)' : 'var(--text4)'
+            }}
+            devices={outputs}
+            value={outputDeviceId}
+            onChange={setOutputDeviceId}
+            level={testing ? 0.7 : 0}
+            onTest={() => void test(outputDeviceId)}
+            L={L}
+          />
+        </div>
       </div>
 
       {/* phần cứng phát hiện được */}
@@ -576,28 +559,11 @@ export function SetupScreen(): JSX.Element {
               color="var(--ac-sky)"
             />
             <StatusRow
-              icon="mic"
-              label={L.vmicStatus}
-              value={outputs.find((d) => d.deviceId === virtualMicDeviceId)?.label ?? L.noDevice}
-              color={vmicSelected ? 'var(--ac-grn)' : 'var(--text4)'}
+              icon="speaker"
+              label={L.spkCard}
+              value={outputLabel || L.noDevice}
+              color={outputLabel ? 'var(--ac-grn)' : 'var(--text4)'}
             />
-          </div>
-        </div>
-
-        <div className="flex min-w-70 flex-1 gap-3 rounded-2xl border border-[rgba(251,146,60,.25)] bg-[rgba(251,146,60,.06)] px-4.5 py-4 backdrop-blur-xl">
-          <span className="mt-0.5 flex text-[#fb923c]">
-            <Icon name="warning" size={20} />
-          </span>
-          <div>
-            <div className="mb-1.25 text-base font-bold text-ac-org-2">{L.tipTitle}</div>
-            <div className="text-[12px] leading-normal text-ac-org">
-              {L.tipBody}
-              {PLATFORM === 'darwin'
-                ? ' (BlackHole 2ch)'
-                : PLATFORM === 'win32'
-                  ? ' (VB-CABLE)'
-                  : ''}
-            </div>
           </div>
         </div>
       </div>

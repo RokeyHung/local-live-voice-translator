@@ -35,12 +35,12 @@ Báo cáo ý tưởng · hiện trạng · các điểm cần thầy cho ý ki�
 
 ## 2. Ý tưởng
 
-Ứng dụng desktop demo, **dịch giọng nói hai chiều ngay trong Google Meet**, mọi xử lý AI chạy **cục bộ trên máy** — không gọi API cloud trong lúc phiên dịch.
+Ứng dụng desktop demo, **dịch giọng nói hai chiều**: vừa nghe micro của người dùng, vừa nghe âm thanh đang phát trên máy (cuộc gọi, video, bài giảng). Mọi xử lý AI chạy **cục bộ trên máy** — không gọi API cloud trong lúc phiên dịch.
 
-| Chiều               | Luồng                                                 | Đầu ra                                                   |
-| ------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
-| **Nghe** (incoming) | Âm thanh hệ thống (tiếng đối phương) → VAD → ASR → MT | **Phụ đề song ngữ** trên màn hình                        |
-| **Nói** (outgoing)  | Microphone → VAD → ASR → MT → TTS                     | Giọng đã dịch đẩy vào **microphone ảo** → Meet nghe thấy |
+| Chiều               | Luồng                                                 | Đầu ra                                    |
+| ------------------- | ----------------------------------------------------- | ----------------------------------------- |
+| **Nghe** (incoming) | Âm thanh hệ thống (tiếng đối phương) → VAD → ASR → MT | **Phụ đề song ngữ** trên màn hình         |
+| **Nói** (outgoing)  | Microphone → VAD → ASR → MT → TTS                     | **Phụ đề + đọc bản dịch** ra loa/tai nghe |
 
 Ngôn ngữ: **tiếng Việt ↔ Anh / Nhật / Trung** (6 chiều dịch).
 Nền tảng: **Windows 11 x64** và **macOS 13+ Apple Silicon**.
@@ -60,17 +60,27 @@ Nền tảng: **Windows 11 x64** và **macOS 13+ Apple Silicon**.
 - Không đề xuất mô hình/thuật toán AI mới — đề tài là **tích hợp hệ thống**.
 - Không dịch đồng thời theo từng từ; đơn vị xử lý là **một đoạn phát ngôn** sau khi người nói ngắt câu.
 - Không voice cloning, không giữ giọng người nói, không tách nhiều người nói (diarization).
-- Không tự viết driver âm thanh — dùng **BlackHole** (macOS) / **VB-CABLE** (Windows).
-- **Không đọc bản dịch ra loa cho chính người dùng nghe** — người dùng đọc phụ đề; TTS
-  chỉ dùng để đưa giọng đã dịch vào cuộc họp qua microphone ảo.
+- **Không tích hợp với phần mềm họp.** Bản dịch phát ra loa/tai nghe, không đẩy ngược
+  vào Google Meet qua microphone ảo.
+
+> **Chỗ này đã đổi so với đề cương — nên nói chủ động, đừng để hội đồng hỏi.** Phần đẩy
+> tiếng dịch vào Google Meet đã **hiện thực xong và chạy được** ở Tuần 5 + Tuần 7, rồi
+> **bỏ khỏi phạm vi ngày 10/09/2026**. GVHD gợi ý cân nhắc bỏ ngay từ buổi họp 19/08
+> (biên bản mục 4.3): kịch bản nói liên tục trong cuộc họp làm lộ rõ hai điểm yếu —
+> Whisper bịa chữ trên đoạn im lặng, và không tìm được điểm ngắt câu khi người ta nói
+> không nghỉ. Cả hai đã có mã xử lý nhưng chưa kiểm chứng được trên giọng người thật
+> trước hạn nộp, nên bỏ an toàn hơn là giữ. Mã nguồn giữ nguyên, chỉ tắt ở giao diện.
+>
+> Điều **không** đổi: ứng dụng vẫn thu được âm thanh hệ thống, nên vẫn dịch được cả hai
+> phía của một cuộc gọi — chỉ là bản dịch không đi ngược vào cuộc gọi.
 
 ---
 
 ## 4. Pipeline xử lý
 
 ```
-Chiều NÓI — mình nói, phía bên kia nghe thấy bản dịch
-  Microphone ─► VAD ─► ASR ─► MT ─► TTS ─► Microphone ảo ─► Google Meet
+Chiều NÓI — mình nói, máy đọc lại bản dịch
+  Microphone ─► VAD ─► ASR ─► MT ─► TTS ─► Loa / tai nghe
                 Silero  whisper  NLLB  sherpa-onnx
                         .cpp     -200   / Kokoro
                           │       │
@@ -81,12 +91,12 @@ Chiều NGHE — đối phương nói, mình đọc phụ đề
 ```
 
 - **VAD** cắt câu theo khoảng lặng → quyết định khi nào một "utterance" kết thúc.
-- **Đầu ra cho người dùng là văn bản.** Ứng dụng **không phát tiếng ra loa/tai nghe** —
-  người dùng vẫn nghe giọng gốc từ Meet và **đọc phụ đề song ngữ**.
-- TTS chỉ xuất hiện ở **một chỗ duy nhất**: đẩy giọng đã dịch vào **microphone ảo** cho
-  phía bên kia nghe. Người nói không cần nghe lại bản dịch của chính mình.
-- Không phát ra loa còn tránh một lỗi thật: tiếng TTS ra loa sẽ bị **loopback thu ngược**
-  vào chiều nghe → hệ thống tự dịch lại chính mình.
+- **Hai chiều có hai kiểu đầu ra khác nhau**, cố ý: chiều nói đọc bản dịch thành tiếng,
+  chiều nghe chỉ hiện phụ đề. Đọc thành tiếng cả hai chiều thì tiếng máy sẽ chồng lên
+  tiếng người thật đang nói.
+- **Phải đeo tai nghe.** Ứng dụng thu toàn bộ đầu ra của hệ điều hành để lấy tiếng phía
+  bên kia, nên phát ra loa ngoài thì chính bản dịch bị thu lại, dịch tiếp, đọc tiếp —
+  vòng lặp không có điểm dừng. Màn Thiết bị âm thanh có mục kiểm tra riêng cho việc này.
 
 ---
 
@@ -112,7 +122,7 @@ Chiều NGHE — đối phương nói, mình đọc phụ đề
 │                          │      đo đạc          │                          │
 │ • Giao diện, phụ đề      │                      │ • VAD / ASR / MT / TTS   │
 │ • Thu mic + system audio │  WebSocket /ws       │ • Vòng đời model         │
-│ • Định tuyến ra mic ảo   │◄─── audio.chunk ────►│ • Lịch sử + đo đạc       │
+│ • Định tuyến ra loa      │◄─── audio.chunk ────►│ • Lịch sử + đo đạc       │
 │                          │     asr / mt / tts   │                          │
 └──────────────────────────┘                      └──────────────────────────┘
               chỉ lắng nghe trên 127.0.0.1 — không mở ra LAN
@@ -120,7 +130,7 @@ Chiều NGHE — đối phương nói, mình đọc phụ đề
 
 **Vì sao tách làm hai tiến trình thay vì gói hết vào Electron:**
 
-- Hệ sinh thái model AI (pywhispercpp, transformers, sherpa-onnx, Silero) **chỉ có ở Python**; còn thu âm thanh hệ thống, chọn thiết bị và đẩy ra mic ảo lại là thứ **Electron/Chromium làm sẵn**.
+- Hệ sinh thái model AI (pywhispercpp, transformers, sherpa-onnx, Silero) **chỉ có ở Python**; còn thu âm thanh hệ thống và chọn thiết bị vào/ra lại là thứ **Electron/Chromium làm sẵn**.
 - Model chiếm ~2 GB RAM và chặn CPU hàng giây — để chung tiến trình thì **giao diện đơ** mỗi lần dịch một câu.
 - Service chết thì cửa sổ ứng dụng vẫn sống để báo lỗi, và khởi động lại được.
 
@@ -180,10 +190,11 @@ Không phải vẽ cho đẹp — ba tình huống có thật trong quá trình 
 **Âm thanh hai chiều**
 
 - ✅ Thu **đồng thời** microphone và âm thanh hệ thống (ScreenCaptureKit trên macOS, WASAPI loopback trên Windows).
-- ✅ Đẩy giọng đã dịch vào **microphone ảo** (BlackHole / VB-CABLE) để Meet nhận như một micro.
 - ✅ **Push-to-talk** + mute; nhả phím giữa câu thì câu đang nói dở vẫn được chốt và dịch nốt.
 - ✅ **Chặn vòng lặp âm thanh**: trong lúc TTS đang phát thì khung âm thanh hệ thống bị bỏ qua.
-- ⬜ Chạy thật trong một cuộc Google Meet có người thứ hai — **việc duy nhất còn thiếu ở phần này**.
+- ◻️ Đẩy giọng đã dịch vào **microphone ảo** (BlackHole / VB-CABLE) để Meet nhận như một
+  micro — **đã hiện thực và chạy được, nhưng bỏ khỏi phạm vi ngày 10/09**; mã nguồn giữ
+  lại, chỉ tắt ở giao diện.
 
 ---
 
@@ -276,13 +287,12 @@ audio**, chạy hết 86 phút, **0 câu rỗng**:
 
 ## 13. Còn lại phải làm
 
-| Việc                                                          | Cản trở                                                                              |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Chạy thật trong **Google Meet** (2 người, mic ảo, chống loop) | Cần máy thật + người thứ hai                                                         |
-| Đo lại toàn bộ trên **Windows 11**                            | Chưa có máy Windows để đo                                                            |
-| **Soak 60 phút** với model thật                               | Cần một máy rảnh 1 giờ (script đã sẵn)                                               |
-| **Bộ câu giọng người thật** (WER trong điều kiện họp thật)    | Đã cắt sẵn 115 đoạn từ bản ghi 8 phút; phần **gõ lời tham chiếu không tự động được** |
-| **T9**: báo cáo, đóng gói cài đặt, video demo                 | Tuần 10/09 – 23/09                                                                   |
+| Việc                                                       | Cản trở                                                                              |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Đo lại toàn bộ trên **Windows 11**                         | Chưa có máy Windows để đo                                                            |
+| **Soak 60 phút** với model thật                            | Cần một máy rảnh 1 giờ (script đã sẵn)                                               |
+| **Bộ câu giọng người thật** (WER trong điều kiện họp thật) | Đã cắt sẵn 115 đoạn từ bản ghi 8 phút; phần **gõ lời tham chiếu không tự động được** |
+| **T9**: báo cáo, đóng gói cài đặt, video demo              | Tuần 10/09 – 23/09                                                                   |
 
 > **Số cho báo cáo đã có** — mục 11b, đo trên FLEURS. Con số WER 12,5% / chrF 53,4% của
 > chế độ **round-trip qua TTS** không dùng làm kết quả chính (giọng máy sạch nên lạc

@@ -88,7 +88,7 @@ không phải "hơi chậm" mà là hệ thống hỏng theo kiểu tích luỹ.
 **RTF ≤ 0,5 là mức nên nhắm để dùng thật.** RTF ≈ 1,0 quá sát trong triển khai thật.
 Nghiên cứu ASR trên thiết bị của Apple (2023) lập luận rằng vì người dùng còn chạy việc
 khác và hệ điều hành còn chiếm CPU nền, RTF ít nhất 0,5 mới là mục tiêu hợp lý. Đề tài
-này còn ba lý do riêng để đòi thêm dư địa: máy đang chạy Google Meet cùng lúc, pipeline
+này còn ba lý do riêng để đòi thêm dư địa: máy còn chạy phần mềm họp hoặc trình duyệt cùng lúc, pipeline
 có bốn model nối tiếp, và hai chiều nghe/nói chạy đồng thời tranh tài nguyên.
 
 **Lấy p90 chứ không lấy trung bình.** Trung bình 0,8 mà 10% số câu vượt 1 thì hệ thống

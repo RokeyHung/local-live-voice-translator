@@ -1,6 +1,9 @@
 // Port: phát audio TTS ra thiết bị đầu ra. Hiện thực đặt phía adapter.
-// Đầu ra có thể trỏ tới microphone ảo (BlackHole/VB-CABLE) để Google Meet nhận
-// như micro của người dùng — chọn thiết bị qua setSink().
+// Chọn loa/tai nghe qua setSink().
+//
+// setSink() từng dùng để trỏ đầu ra tới microphone ảo (BlackHole/VB-CABLE) cho
+// Google Meet nhận như micro của người dùng. Đường đó đã bỏ khỏi phạm vi đồ án —
+// bản thân cơ chế vẫn giữ nguyên vì chọn loa/tai nghe cũng đi qua đây.
 
 export interface TtsChunk {
   pcm: Int16Array

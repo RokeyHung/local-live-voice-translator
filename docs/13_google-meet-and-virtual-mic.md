@@ -1,15 +1,64 @@
-# Hướng dẫn cấu hình microphone ảo và dùng với Google Meet
+# Tích hợp Google Meet qua microphone ảo — phần đã làm rồi bỏ
 
-Tài liệu cho **người dùng cuối** (tiêu chí nghiệm thu 17). Phần cài ứng dụng nằm ở
-[`12_install-guide.md`](12_install-guide.md).
+> **Trạng thái: ĐÃ BỎ khỏi phạm vi đồ án, chốt 10/09/2026.** Tài liệu này không còn
+> là hướng dẫn sử dụng. Nó ghi lại phần tích hợp Google Meet đã **hiện thực và chạy
+> được**, vì sao bỏ, và cách bật lại — đó là câu trả lời sẵn nếu hội đồng hỏi "sao
+> không đẩy được tiếng dịch vào cuộc họp".
+>
+> Hướng dẫn dùng bản hiện tại nằm ở [`12_install-guide.md`](12_install-guide.md).
 
 ---
 
-## 1. Vì sao phải có microphone ảo
+## 0. Bỏ cái gì, giữ cái gì
+
+| Đường tín hiệu                                | Trạng thái                                    |
+| --------------------------------------------- | --------------------------------------------- |
+| Micro của bạn → dịch → phụ đề + đọc ra loa    | **Giữ**                                       |
+| Âm thanh hệ thống → dịch → phụ đề             | **Giữ** — vẫn nghe được phía bên kia nói gì   |
+| Tiếng dịch → microphone ảo → Google Meet nhận | **Bỏ** — đây là toàn bộ nội dung tài liệu này |
+
+Nói ngắn: ứng dụng vẫn dịch được cả hai chiều của một cuộc gọi, chỉ là **bản dịch
+không đi ngược vào cuộc gọi** nữa mà phát ra loa/tai nghe của bạn.
+
+### Vì sao bỏ
+
+Thầy hướng dẫn gợi ý cân nhắc bỏ ràng buộc Google Meet ngay ở buổi họp 19/08/2026
+(biên bản mục 4.3), với lý do: kịch bản **nói liên tục trong cuộc họp** làm lộ rõ hai
+điểm yếu — Whisper bịa chữ trên đoạn im lặng, và hệ thống không tìm được điểm ngắt câu
+hợp lý khi người ta nói không nghỉ. Mô hình "nói — dừng — dịch" thì ổn định hơn và dễ
+demo hơn.
+
+Tới 10/09/2026 thì chốt bỏ, vì hai điểm yếu đó **chưa kiểm chứng được trên giọng
+người thật**: cần một bản ghi có người nói liên tục ≥ 30 giây, mà tín hiệu tổng hợp
+không dùng được (Silero ngừng coi âm thanh nhân tạo là giọng nói sau ~3,5 giây). Giữ
+một tính năng chưa chứng minh được là ổn định vào ngày bảo vệ thì rủi ro hơn là bỏ.
+
+Ba lý do phụ, đáng nói nếu bị hỏi sâu:
+
+- **Phụ thuộc driver bên thứ ba.** Người chấm phải cài BlackHole hoặc VB-CABLE rồi
+  khởi động lại máy mới thấy được tính năng — một rào cản không liên quan gì tới phần
+  AI, vốn là nội dung của đề tài.
+- **Người trong cuộc họp nghe bản dịch thay cho giọng gốc của bạn**, vì micro của Meet
+  lúc đó là thiết bị ảo. Đây là hành vi gây khó hiểu, và sửa cho đúng thì phải trộn hai
+  nguồn bằng công cụ ngoài.
+- **Không đo được.** Toàn bộ số liệu trong báo cáo dừng ở đầu ra TTS; phần truyền qua
+  mic ảo vào Meet không nằm trong RTF và cũng chưa có cách đo.
+
+### Bật lại thì làm gì
+
+Phần hiện thực **vẫn còn nguyên trong mã nguồn**, chỉ tắt ở lớp giao diện:
+`TtsPlayer.setSink` (vẫn dùng, giờ để chọn loa), `looksLikeVirtualMic`,
+`uiStore.virtualMicDeviceId` và khoá tương ứng trong `StoredPreferences`. Bật lại =
+dựng lại một thẻ chọn thiết bị ở màn Thiết bị âm thanh và cho `SessionController` ưu
+tiên `virtualMicDeviceId` khi gọi `setSink`. Các mục dưới đây mô tả nó đã chạy thế nào.
+
+---
+
+## 1. Vì sao khi đó phải có microphone ảo
 
 Google Meet chạy trong trình duyệt và chỉ nhận âm thanh từ **một thiết bị microphone
 của hệ điều hành**. Không có cách nào "đẩy" âm thanh từ ứng dụng khác vào Meet. Nên
-ứng dụng này phát giọng đã dịch ra một **thiết bị âm thanh ảo**, rồi bạn chọn đúng
+ứng dụng phát giọng đã dịch ra một **thiết bị âm thanh ảo**, rồi người dùng chọn đúng
 thiết bị đó làm microphone trong Meet — Meet tưởng đó là một cái micro bình thường.
 
 ```mermaid
@@ -27,6 +76,15 @@ Hệ quả cần biết trước: **người trong Meet nghe bản dịch, khôn
 bạn** — micro của Meet lúc này là thiết bị ảo, không phải micro thật. Chiều ngược lại
 thì ngược lại: giọng phía họp **không** được đọc thành tiếng, chỉ hiện phụ đề (nếu đọc
 thành tiếng thì tiếng máy sẽ chồng lên tiếng người thật đang nói).
+
+---
+
+> **Từ đây trở xuống là bản ghi cách phần đã bỏ từng chạy**, giữ lại làm bằng chứng
+> nó đã được hiện thực thật chứ không dừng ở ý tưởng. Đừng làm theo như một hướng dẫn
+> cho bản hiện tại.
+>
+> Ngoại lệ: **mục 3 (quyền trên macOS) vẫn đúng với bản hiện tại**, vì thu âm thanh hệ
+> thống được giữ lại — nó cần quyền Ghi màn hình y như trước.
 
 ## 2. Cài thiết bị âm thanh ảo
 

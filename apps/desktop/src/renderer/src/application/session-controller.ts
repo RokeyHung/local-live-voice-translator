@@ -118,8 +118,10 @@ export class SessionController {
     store.setMuted(false)
     store.setPtt(false)
     store.clearTranscript()
-    // Trỏ đầu ra TTS tới thiết bị đã chọn (microphone ảo) trước khi phát.
-    await this.output?.setSink(ui.virtualMicDeviceId || ui.outputDeviceId)
+    // Trỏ đầu ra TTS tới loa/tai nghe đã chọn trước khi phát. Trước đây chỗ này ưu
+    // tiên `ui.virtualMicDeviceId` để đẩy tiếng dịch vào Google Meet; đường đó đã bỏ
+    // khỏi phạm vi đồ án nên đầu ra chỉ còn một.
+    await this.output?.setSink(ui.outputDeviceId)
     const title = defaultTitle(dict(ui.uiLanguage).meetingPrefix, new Date())
     // "Duyệt trước khi gửi" là tuỳ chọn người dùng (màn Cài đặt) chứ không phải một
     // phần của cặp ngôn ngữ, nên nó sống ở ui-store; chốt lại tại đây, lúc mở phiên.

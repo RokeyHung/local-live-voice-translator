@@ -3,8 +3,9 @@
 // Mỗi đoạn PCM16 mono được dựng thành AudioBuffer ở đúng sampleRate của model
 // (WebAudio tự resample về sampleRate của AudioContext) và start nối đuôi đoạn trước.
 //
-// setSink() trỏ đầu ra tới một thiết bị cụ thể (vd microphone ảo BlackHole/VB-CABLE)
-// qua AudioContext.setSinkId — nhờ đó Google Meet nhận âm thanh TTS như micro.
+// setSink() trỏ đầu ra tới một thiết bị cụ thể qua AudioContext.setSinkId. Trước đây
+// nó còn dùng để đẩy tiếng dịch vào microphone ảo (BlackHole/VB-CABLE) cho Google
+// Meet; đường đó đã bỏ khỏi phạm vi đồ án nên giờ chỉ còn chọn loa/tai nghe.
 
 import type { AudioOutput, TtsChunk } from '../ports/audio-output'
 

@@ -20,8 +20,8 @@ recognizing → translating → synthesizing → completed.
 
 `TranslationPipeline` giờ tách bước tổng hợp giọng ra thành `_speak()`. Bật `review`
 thì luồng dừng **sau khâu MT**, treo câu lại và báo `WaitingForConfirmation`; TTS chỉ
-chạy khi client gửi `control.confirm`. Cái phát ra micro ảo vì thế đúng là cái người
-dùng đã duyệt.
+chạy khi client gửi `control.confirm`. Cái được đọc thành tiếng vì thế đúng là cái
+người dùng đã duyệt.
 
 Chỉ áp cho chiều **outgoing**: câu của phía bên kia không phải của mình mà sửa, và
 chiều incoming vốn không tổng hợp giọng nên chẳng có gì để duyệt. `review and

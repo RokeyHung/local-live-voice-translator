@@ -4,6 +4,12 @@
 **Mục tiêu tuần:** Kết hợp incoming + outgoing pipeline; hoàn thiện Push-to-talk, mute và hàng đợi; kiểm tra audio loopback khi dùng Google Meet.
 **Kết quả mong đợi (đề cương `00` §5):** Thực hiện được kịch bản dịch hai chiều gần thời gian thực trong Google Meet.
 
+> **Ghi chú 10/09/2026 — phần Google Meet trong tuần này đã bỏ khỏi phạm vi.** Nội dung
+> dưới đây giữ nguyên làm bản ghi: đường TTS → microphone ảo → Meet đã hiện thực và
+> chạy được thật. Bản hiện tại phát bản dịch ra loa/tai nghe; thu âm thanh hệ thống,
+> push-to-talk, mute và chống vòng lặp thì giữ nguyên. Lý do và cách bật lại:
+> [`13`](13_google-meet-and-virtual-mic.md).
+
 > Backend đã có sẵn bộ khung hai chiều từ Tuần 6: `SessionController.start()` dựng
 > `_incoming` (nguồn system, **không** tổng hợp giọng) và `_outgoing` (nguồn mic, có
 > TTS), phân luồng theo `chunk.source`. Tuần này làm phần OS-native còn thiếu ở
@@ -15,13 +21,13 @@
 
 Tuần này chia thành 5 việc nhỏ; **4/5 xong**, việc còn lại chỉ kiểm chứng được trên máy thật.
 
-| Mã       | Việc                               | Trạng thái                      |
-| -------- | ---------------------------------- | ------------------------------- |
-| **W7-0** | Định tuyến TTS ra microphone ảo    | ✅ xong                         |
-| **W7-1** | Thu âm thanh hệ thống (chiều nghe) | ✅ xong                         |
-| **W7-2** | Push-to-talk + mute + chốt câu dở  | ✅ xong                         |
-| **W7-3** | Chống vòng lặp âm thanh            | ✅ xong                         |
-| **W7-4** | Chạy thật trong Google Meet        | ⬜ cần máy thật + người thứ hai |
+| Mã       | Việc                               | Trạng thái                    |
+| -------- | ---------------------------------- | ----------------------------- |
+| **W7-0** | Định tuyến TTS ra microphone ảo    | ✅ xong                       |
+| **W7-1** | Thu âm thanh hệ thống (chiều nghe) | ✅ xong                       |
+| **W7-2** | Push-to-talk + mute + chốt câu dở  | ✅ xong                       |
+| **W7-3** | Chống vòng lặp âm thanh            | ✅ xong                       |
+| **W7-4** | Chạy thật trong Google Meet        | ◻️ bỏ khỏi phạm vi 10/09/2026 |
 
 ```mermaid
 flowchart LR

@@ -137,15 +137,11 @@ trên GPU NVIDIA?
 
 ---
 
-### C2. Kịch bản Google Meet cần người thứ hai
+### ~~C2. Kịch bản Google Meet cần người thứ hai~~ — không còn cần
 
-**Bối cảnh.** Hạng mục cuối của Tuần 7 (W7-4) là chạy thật trong một cuộc Meet: cài mic ảo,
-chọn nó làm micro trong Meet, đeo tai nghe, và kiểm tra không bị vọng âm. Việc này **bắt buộc
-có người thứ hai ở đầu bên kia**.
-
-**Cần thầy hỗ trợ.** Thầy có thể dành ~20 phút vào một buổi để làm người đối thoại trong
-phiên Meet thử (đồng thời là dịp thầy nghiệm thu trực tiếp) không? Nếu không, em nhờ người
-quen và quay lại toàn bộ màn hình + audio làm bằng chứng.
+**Đã khép lại 10/09/2026:** phần tích hợp Google Meet qua microphone ảo đã bỏ khỏi phạm vi
+đồ án, nên không còn hạng mục nào phải chạy thử trong một cuộc Meet thật và không cần người
+thứ hai. Lý do bỏ ở [`13`](13_google-meet-and-virtual-mic.md).
 
 ---
 
@@ -185,8 +181,8 @@ TranscriptionSuite (đã ghi ở tài liệu tham khảo [1]). Em **không** dù
 nhưng có học cách họ tách tiến trình và cách tự tải model.
 
 **Cần thầy quyết.** Cần trình bày ở mức nào để rõ ràng: một đoạn trong chương khảo sát, hay
-một bảng "cái gì tham khảo / cái gì tự làm thêm" (MT, TTS, định tuyến âm thanh hai chiều,
-mic ảo, đo đạc)?
+một bảng "cái gì tham khảo / cái gì tự làm thêm" (MT, TTS, thu và định tuyến âm thanh
+hai chiều, đo đạc)?
 
 ---
 

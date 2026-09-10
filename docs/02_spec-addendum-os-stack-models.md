@@ -1,5 +1,17 @@
 # Bổ sung SPEC: Hệ điều hành, Technology Stack và AI Models
 
+---
+
+> **Điều chỉnh phạm vi — 10/09/2026: bỏ phần tích hợp Google Meet qua microphone ảo.**
+>
+> Văn bản SPEC bên dưới giữ nguyên như đã viết, nên mọi chỗ nói tới microphone ảo,
+> BlackHole/VB-CABLE hoặc định tuyến âm thanh vào Google Meet đều là **bản ghi của
+> thiết kế ban đầu**, không mô tả bản đang chạy. Bản hiện tại phát bản dịch ra
+> loa/tai nghe; thu microphone, thu âm thanh hệ thống và sáu chiều dịch giữ nguyên.
+> Lý do bỏ và cách bật lại: [`13_google-meet-and-virtual-mic.md`](13_google-meet-and-virtual-mic.md).
+
+---
+
 ## 1. Phân tích TranscriptionSuite
 
 ### 1.1. Kiến trúc hiện tại

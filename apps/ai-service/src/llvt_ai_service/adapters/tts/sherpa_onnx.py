@@ -9,8 +9,8 @@ Nạp **lười theo ngôn ngữ**: chỉ tải/khởi tạo voice khi thật s�
 ngôn ngữ đó (tránh tải cả ba voice khi chỉ dùng một). Một ``SerialExecutor`` nội bộ
 đẩy tải + generate (blocking) sang worker thread và tuần tự hóa.
 
-Đầu ra: PCM signed 16-bit, mono, sample rate theo model. Định tuyến ra loa/mic ảo
-(BlackHole/VB-CABLE) là việc phía desktop (tuần tích hợp sau).
+Đầu ra: PCM signed 16-bit, mono, sample rate theo model. Định tuyến ra loa/tai nghe
+là việc phía desktop.
 """
 
 from __future__ import annotations

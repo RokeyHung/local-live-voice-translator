@@ -200,7 +200,6 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
   const glossary = useUiStore((s) => s.glossary)
   const reviewCountdownSec = useUiStore((s) => s.reviewCountdownSec)
   const outputDeviceId = useUiStore((s) => s.outputDeviceId)
-  const virtualMicDeviceId = useUiStore((s) => s.virtualMicDeviceId)
 
   const config = useSessionStore((s) => s.config)
   const setConfig = useSessionStore((s) => s.setConfig)
@@ -263,7 +262,9 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
 
   const outputLabel = outputs.find((d) => d.deviceId === outputDeviceId)?.label ?? ''
   const loopRisk = active && outputLabel !== '' && !looksLikeHeadphones(outputLabel)
-  const vmicOn = active && !muted && virtualMicDeviceId !== ''
+  // Đèn báo đầu ra: trước đây là "mic ảo" (đẩy tiếng dịch vào Google Meet), giờ chỉ
+  // còn loa/tai nghe vì đường mic ảo đã bỏ khỏi phạm vi đồ án.
+  const spkOn = active && !muted
   const pttDisabled = !active || muted || config.mode === 'listen'
 
   const ms = (value: number | null): string => (value == null ? '—' : String(value))
@@ -499,8 +500,8 @@ export function SessionScreen({ actions }: { actions: SessionActions }): JSX.Ele
             <span className="text-fg-3">{L.mic}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Dot color={vmicOn ? '#d946ef' : 'var(--text5)'} size={7} glow={vmicOn} />
-            <span className="text-fg-3">{L.vmic}</span>
+            <Dot color={spkOn ? '#fb923c' : 'var(--text5)'} size={7} glow={spkOn} />
+            <span className="text-fg-3">{L.spk}</span>
           </div>
           <span className="text-fg-5">|</span>
           <span className="text-ac-cyan">ASR {ms(metrics.lastAsrMs)}ms</span>

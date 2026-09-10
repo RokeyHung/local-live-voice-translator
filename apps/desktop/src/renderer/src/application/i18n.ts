@@ -44,7 +44,7 @@ export interface Dict {
   vizRemote: string
   vizMe: string
   mic: string
-  vmic: string
+  spk: string
   waitRemote: string
   waitMe: string
   idleHint: string
@@ -65,14 +65,11 @@ export interface Dict {
   sysRole: string
   spkCard: string
   spkRole: string
-  vmicCard: string
-  vmicRole: string
   deviceDefault: string
   noDevice: string
   test: string
   active: string
   ready: string
-  connected: string
   deferred: string
   sysHint: string
   sysCapturing: string
@@ -101,9 +98,6 @@ export interface Dict {
   sysStatus: string
   models: string
   compute: string
-  vmicStatus: string
-  tipTitle: string
-  tipBody: string
   loopCheckT: string
   loopOk: string
   loopWarnSetup: string
@@ -467,7 +461,7 @@ const vi: Dict = {
   vizRemote: 'Tín hiệu Remote',
   vizMe: 'Tín hiệu của bạn',
   mic: 'Mic',
-  vmic: 'Mic ảo',
+  spk: 'Loa',
   waitRemote: 'Đang chờ giọng nói từ cuộc họp…',
   waitMe: 'Nhấn giữ để nói…',
   idleHint: 'Nhấn Bắt đầu để mở phiên dịch',
@@ -488,14 +482,11 @@ const vi: Dict = {
   sysRole: 'Giọng từ cuộc họp',
   spkCard: 'Loa / Tai nghe',
   spkRole: 'Phát bản dịch cho bạn',
-  vmicCard: 'Microphone ảo',
-  vmicRole: 'Đưa giọng dịch vào Meet',
   deviceDefault: 'Thiết bị mặc định',
   noDevice: 'Không tìm thấy thiết bị',
   test: 'Kiểm tra',
   active: 'Hoạt động',
   ready: 'Sẵn sàng',
-  connected: 'Đã kết nối',
   deferred: 'Chưa bật',
   sysHint:
     'Thu qua loopback của hệ điều hành, tự bật khi bắt đầu phiên ở chế độ Nghe hoặc Hai chiều. macOS cần cấp quyền Ghi màn hình cho ứng dụng.',
@@ -526,10 +517,6 @@ const vi: Dict = {
   sysStatus: 'Trạng thái hệ thống',
   models: 'Model',
   compute: 'Tính toán',
-  vmicStatus: 'Mic ảo',
-  tipTitle: 'Cấu hình Google Meet',
-  tipBody:
-    'Trong Meet, chọn micro là microphone ảo đã cấu hình và giữ loa là tai nghe vật lý để tránh vọng âm.',
   loopCheckT: 'Kiểm tra vòng lặp âm thanh',
   loopOk: 'An toàn — đầu ra là tai nghe',
   loopWarnSetup: 'Loa đang phát ra tiếng có thể lọt lại vào mic. Dùng tai nghe để tránh vọng âm.',
@@ -910,7 +897,7 @@ const en: Dict = {
   vizRemote: 'Remote signal',
   vizMe: 'Your signal',
   mic: 'Mic',
-  vmic: 'Virtual Mic',
+  spk: 'Speaker',
   waitRemote: 'Waiting for meeting audio…',
   waitMe: 'Hold to talk…',
   idleHint: 'Press Start to open a session',
@@ -931,14 +918,11 @@ const en: Dict = {
   sysRole: 'Voice from the meeting',
   spkCard: 'Speaker / Headphones',
   spkRole: 'Plays translation to you',
-  vmicCard: 'Virtual microphone',
-  vmicRole: 'Sends translated voice to Meet',
   deviceDefault: 'System default',
   noDevice: 'No device found',
   test: 'Test',
   active: 'Active',
   ready: 'Ready',
-  connected: 'Connected',
   deferred: 'Off',
   sysHint:
     'Captured through the OS loopback; starts automatically in Listen or Two-way mode. On macOS the app needs Screen Recording permission.',
@@ -970,10 +954,6 @@ const en: Dict = {
   sysStatus: 'System status',
   models: 'Models',
   compute: 'Compute',
-  vmicStatus: 'Virtual mic',
-  tipTitle: 'Google Meet setup',
-  tipBody:
-    'In Meet, set the microphone to your virtual microphone and keep output on physical headphones to avoid echo.',
   loopCheckT: 'Audio-loop check',
   loopOk: 'Safe — output is headphones',
   loopWarnSetup: 'Speaker output may leak back into the mic. Use headphones to avoid echo.',

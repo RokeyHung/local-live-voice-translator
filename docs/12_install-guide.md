@@ -1,8 +1,12 @@
 # Tài liệu cài đặt
 
 Hướng dẫn cài và chạy ứng dụng từ mã nguồn, trên **macOS 13+ (Apple Silicon)** và
-**Windows 11 x64**. Phần cấu hình microphone ảo + Google Meet nằm ở tài liệu riêng:
-[`13_google-meet-and-virtual-mic.md`](13_google-meet-and-virtual-mic.md).
+**Windows 11 x64**.
+
+> **Phạm vi (chốt 10/09/2026):** ứng dụng dịch giọng nói và phát bản dịch ra loa/tai
+> nghe. Phần đẩy tiếng dịch ngược vào Google Meet qua microphone ảo **đã bỏ**, nên
+> không phải cài driver âm thanh ảo nào. Lý do bỏ ghi ở
+> [`13_google-meet-and-virtual-mic.md`](13_google-meet-and-virtual-mic.md).
 
 ---
 
@@ -130,16 +134,15 @@ make accuracy               # WER/chrF trên bộ câu kiểm thử
 
 ## 9. Sự cố thường gặp
 
-| Hiện tượng                                        | Nguyên nhân / cách xử lý                                                                                                                |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `uv: command not found` ngay sau khi cài          | Terminal chưa nạp PATH mới: `source "$HOME/.local/bin/env"` hoặc mở lại terminal.                                                       |
-| Giao diện báo "Không kết nối được service"        | AI service chưa chạy hoặc cổng 8756 bị chiếm. Kiểm tra `make health`, đổi cổng bằng `LLVT_PORT`.                                        |
-| Câu đầu tiên của phiên chờ rất lâu                | Bình thường: model đang được nạp (lần đầu còn tải về). Bấm **Khởi động model** trước khi họp để tránh.                                  |
-| Tải model lỗi giữa chừng                          | Xoá model ở màn **Quản lý model** rồi tải lại; file tải dở không được dùng lại.                                                         |
-| `nodename nor servname provided` khi tải model    | DNS trượt nhất thời. Kiểm tra mạng, **khởi động lại service** rồi bấm lại — xem ghi chú bên dưới bảng.                                  |
-| Hết chỗ trên ổ hệ thống                           | **Cài đặt → Thư mục lưu model**, trỏ sang ổ khác rồi tải lại.                                                                           |
-| macOS không cho thu âm thanh hệ thống             | Cấp quyền **Ghi màn hình** cho ứng dụng trong System Settings → Privacy & Security, rồi mở lại app.                                     |
-| Không thấy microphone ảo trong danh sách thiết bị | Chưa cài BlackHole/VB-CABLE hoặc chưa khởi động lại máy — xem [`13_google-meet-and-virtual-mic.md`](13_google-meet-and-virtual-mic.md). |
+| Hiện tượng                                     | Nguyên nhân / cách xử lý                                                                               |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `uv: command not found` ngay sau khi cài       | Terminal chưa nạp PATH mới: `source "$HOME/.local/bin/env"` hoặc mở lại terminal.                      |
+| Giao diện báo "Không kết nối được service"     | AI service chưa chạy hoặc cổng 8756 bị chiếm. Kiểm tra `make health`, đổi cổng bằng `LLVT_PORT`.       |
+| Câu đầu tiên của phiên chờ rất lâu             | Bình thường: model đang được nạp (lần đầu còn tải về). Bấm **Khởi động model** trước khi họp để tránh. |
+| Tải model lỗi giữa chừng                       | Xoá model ở màn **Quản lý model** rồi tải lại; file tải dở không được dùng lại.                        |
+| `nodename nor servname provided` khi tải model | DNS trượt nhất thời. Kiểm tra mạng, **khởi động lại service** rồi bấm lại — xem ghi chú bên dưới bảng. |
+| Hết chỗ trên ổ hệ thống                        | **Cài đặt → Thư mục lưu model**, trỏ sang ổ khác rồi tải lại.                                          |
+| macOS không cho thu âm thanh hệ thống          | Cấp quyền **Ghi màn hình** cho ứng dụng trong System Settings → Privacy & Security, rồi mở lại app.    |
 
 **Vì sao mất mạng lúc tải model lại phải khởi động lại service:** `huggingface_hub`
 dùng chung một client `httpx` cho cả tiến trình. Lần gọi đầu hỏng vì DNS thì client đó

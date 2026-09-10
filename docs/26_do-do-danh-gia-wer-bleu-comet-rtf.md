@@ -379,7 +379,7 @@ mục tiêu hợp lý**. Các hệ thống dịch nói cũng nhắm RTF tích lu
 
 Với đề tài, còn ba lý do riêng để đòi thêm dư địa:
 
-1. Máy người dùng đang **chạy Google Meet cùng lúc** — Meet ăn CPU cho video/echo cancellation.
+1. Máy người dùng đang **chạy phần mềm họp hoặc trình duyệt cùng lúc** — chúng ăn CPU cho video/echo cancellation.
 2. Pipeline có **bốn model** nối tiếp, không phải một; TTS tiếng Nhật/Trung tốn thêm ~700 ms
    (xem [`25`](25_ket-qua-chay-thu-e2e.md) mục 3).
 3. **Hai chiều chạy đồng thời** (nghe + nói), tức là hai luồng cùng tranh tài nguyên.

@@ -24,6 +24,30 @@ _Độc Lập - Tự Do - Hạnh Phúc_
 
 ---
 
+> ## Điều chỉnh phạm vi — 10/09/2026
+>
+> **Bỏ phần tích hợp Google Meet qua microphone ảo.** Toàn bộ văn bản đề cương bên
+> dưới giữ nguyên như đã nộp; mục này ghi lại chỗ đã thay đổi so với kế hoạch ban đầu.
+>
+> | Đề cương ghi                                                               | Thực tế chốt lại                                                    |
+> | -------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+> | Truyền âm thanh TTS ra VB-CABLE / BlackHole để Google Meet nhận (2.1, 3.4) | **Bỏ.** Bản dịch phát ra loa/tai nghe của người dùng                |
+> | Kiểm thử các luồng chính với Google Meet (Nội dung 5)                      | **Bỏ.** Đo trên FLEURS và trên bản ghi thật, không qua phần mềm họp |
+> | Thu microphone + system audio, phụ đề song ngữ, sáu chiều dịch             | **Giữ nguyên** — vẫn dịch được cả hai phía của một cuộc gọi         |
+>
+> **Lý do:** GVHD gợi ý cân nhắc bỏ ràng buộc Google Meet ngay ở buổi họp 19/08/2026
+> (biên bản mục 4.3), vì kịch bản nói liên tục trong cuộc họp làm lộ rõ hai vấn đề —
+> Whisper bịa chữ trên đoạn im lặng, và không tìm được điểm ngắt câu khi người nói
+> không nghỉ. Cả hai đã có mã xử lý nhưng **chưa kiểm chứng được trên giọng người
+> thật** trước hạn nộp, nên chốt bỏ thay vì giữ một tính năng chưa chắc ổn định lúc
+> bảo vệ. Phân tích đầy đủ, kèm cách bật lại, ở
+> [`13_google-meet-and-virtual-mic.md`](13_google-meet-and-virtual-mic.md).
+>
+> Phần hiện thực đã làm xong ở Tuần 5 và Tuần 7 vẫn còn trong mã nguồn, chỉ tắt ở lớp
+> giao diện — nên đây là **thu hẹp phạm vi nghiệm thu**, không phải một hạng mục bỏ dở.
+
+---
+
 ## 1. Nội dung đề tài
 
 Trong bối cảnh làm việc và học tập trực tuyến ngày càng phổ biến, nhu cầu giao tiếp giữa những người sử dụng các ngôn ngữ khác nhau trên các nền tảng hội họp như Google Meet, Microsoft Teams hoặc Zoom ngày càng tăng. Các giải pháp dịch giọng nói hiện nay phần lớn phụ thuộc vào dịch vụ điện toán đám mây, yêu cầu kết nối Internet ổn định và có thể phát sinh các vấn đề về chi phí, độ trễ cũng như quyền riêng tư của nội dung hội thoại.

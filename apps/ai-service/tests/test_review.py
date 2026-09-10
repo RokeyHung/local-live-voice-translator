@@ -220,7 +220,7 @@ async def test_confirming_twice_is_refused_rather_than_speaking_twice():
 
 
 @pytest.mark.anyio
-async def test_discard_never_reaches_the_virtual_mic():
+async def test_discard_is_never_spoken():
     recorder, tts = Recorder(), FakeTts()
     pipeline = _pipeline(recorder, tts, review=True)
     await _speak_once(pipeline)

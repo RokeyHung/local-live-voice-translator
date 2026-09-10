@@ -13,7 +13,7 @@
 Tóm tắt một câu: **đã có bộ số đo thật đầu tiên** trên macOS Apple Silicon
 ([`25`](25_ket-qua-chay-thu-e2e.md)) — độ trễ đủ sáu chiều và WER/chrF, chạy tự động
 trên app đóng gói. Việc còn lại chia làm hai loại rạch ròi: những thứ chỉ cần **chạy
-trên phần cứng/dữ liệu chưa có** (Windows, Google Meet, giọng người thật, FLEURS), và
+trên phần cứng/dữ liệu chưa có** (Windows, giọng người thật, FLEURS), và
 những thứ **cần người quyết** (nhắn thầy, chốt ngưỡng RTF).
 
 Đã xong từ 04/09 tới nay, không cần làm lại:
@@ -146,13 +146,12 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 
 ## 3. Ưu tiên 2
 
-| Việc                                              | Ghi chú                                                                                                                                                                                                                                                                            |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`21`](21_man-danh-gia-va-backend-thu-ba.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`25`](25_ket-qua-chay-thu-e2e.md) mục 4.                                                                                                                                     |
-| **Quyết giữ hay bỏ ràng buộc Google Meet**        | Thầy gợi ý cân nhắc bỏ (biên bản 4.3), phụ thuộc việc xử lý được silence detection hay không. Giờ đã sửa xong phần tách câu → **quyết được sau khi làm xong mục 2**.                                                                                                               |
-| **Cải thiện dịch — nhưng là chiều vi→zh**         | `eval-mt` + `eval-comet` đã chạy đầy đủ ([`17` mục 8](17_bo-danh-gia-fleurs.md)): ja→vi hoá ra **không** phải chiều tệ nhất (spBLEU 19,91 · COMET 0,8191). Chiều yếu nhất là **vi→zh** — cả spBLEU (17,15) lẫn COMET (0,7729) cùng chỉ vào đó. Nhắm vào vi→zh chứ đừng nhắm ja→vi. |
-| **Kiểm tra ổn định trên Windows 11**              | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                                                                                                                                   |
-| **Chạy thật trên Google Meet**                    | Phụ thuộc quyết định ở dòng 2.                                                                                                                                                                                                                                                     |
+| Việc                                              | Ghi chú                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`21`](21_man-danh-gia-va-backend-thu-ba.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`25`](25_ket-qua-chay-thu-e2e.md) mục 4.                                                                                                                                                                               |
+| ~~**Quyết giữ hay bỏ ràng buộc Google Meet**~~    | ✅ **Đã quyết 10/09/2026: bỏ.** Hai vấn đề ở mục 2 có mã xử lý nhưng chưa kiểm chứng được trên giọng người thật trước hạn nộp, nên giữ một tính năng chưa chắc ổn định lúc bảo vệ là rủi ro không cần thiết. Mã nguồn giữ nguyên, tắt ở lớp giao diện — [`13`](13_google-meet-and-virtual-mic.md) ghi lý do và cách bật lại. |
+| **Cải thiện dịch — nhưng là chiều vi→zh**         | `eval-mt` + `eval-comet` đã chạy đầy đủ ([`17` mục 8](17_bo-danh-gia-fleurs.md)): ja→vi hoá ra **không** phải chiều tệ nhất (spBLEU 19,91 · COMET 0,8191). Chiều yếu nhất là **vi→zh** — cả spBLEU (17,15) lẫn COMET (0,7729) cùng chỉ vào đó. Nhắm vào vi→zh chứ đừng nhắm ja→vi.                                           |
+| **Kiểm tra ổn định trên Windows 11**              | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                                                                                                                                                                             |
 
 ---
 

@@ -22,6 +22,11 @@ interface UiState {
   glossary: GlossaryEntry[]
   inputDeviceId: string
   outputDeviceId: string
+  // Thiết bị microphone ảo (BlackHole/VB-CABLE) để đẩy tiếng dịch vào Google Meet.
+  // Đường này đã bỏ khỏi phạm vi đồ án nên **không màn hình nào ghi vào nữa** và
+  // `SessionController` luôn phát ra `outputDeviceId`. Giữ lại state + setter để bật
+  // lại chỉ cần dựng lại thẻ chọn thiết bị ở màn Thiết bị âm thanh; giá trị cũ của
+  // người dùng cũng không bị xoá khỏi localStorage.
   virtualMicDeviceId: string
 
   setScreen: (screen: ScreenId) => void

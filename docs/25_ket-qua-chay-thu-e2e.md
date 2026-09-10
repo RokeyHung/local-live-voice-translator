@@ -174,4 +174,5 @@ mã nguồn):
   công bố của NLLB-200 (docs/17).
 - Lặp lại toàn bộ tài liệu này trên **Windows 11 + NVIDIA** với runtime faster-whisper;
   `report.e2e.ts` chạy nguyên xi, chỉ cần đổi `LLVT_REAL_MODELS_DIR`.
-- Chạy thật trên Google Meet và một phiên soak 60 phút (docs/18).
+- Một phiên soak 60 phút (docs/18). _(Hạng mục "chạy thật trên Google Meet" đã bỏ khỏi
+  phạm vi ngày 10/09 — xem [`13`](13_google-meet-and-virtual-mic.md).)_

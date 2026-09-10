@@ -1,10 +1,12 @@
 # Local Live Voice Translator
 
-Ứng dụng desktop dịch giọng nói **gần thời gian thực**, chạy hoàn toàn bằng mô hình AI **cục bộ** (không dùng cloud khi phiên dịch). Hỗ trợ dịch hai chiều Việt ↔ Anh / Nhật / Trung trong các cuộc họp trực tuyến (Google Meet…), trên **Windows 11 x64** và **macOS 13+ Apple Silicon**.
+Ứng dụng desktop dịch giọng nói **gần thời gian thực**, chạy hoàn toàn bằng mô hình AI **cục bộ** (không dùng cloud khi phiên dịch). Dịch hai chiều Việt ↔ Anh / Nhật / Trung: vừa nghe micro của bạn, vừa nghe âm thanh đang phát trên máy (cuộc gọi, video, bài giảng). Chạy trên **Windows 11 x64** và **macOS 13+ Apple Silicon**.
 
-Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Virtual Mic`.
+Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TTS (sherpa-onnx) → Loa`.
 
-> **Hướng dẫn dùng:** [cài đặt](docs/12_install-guide.md) · [microphone ảo + Google Meet](docs/13_google-meet-and-virtual-mic.md)
+> **Hướng dẫn dùng:** [cài đặt](docs/12_install-guide.md)
+>
+> **Phạm vi (chốt 10/09/2026):** ứng dụng dịch và phát ra loa/tai nghe, **không** đẩy tiếng dịch ngược vào phần mềm họp qua microphone ảo. Lý do bỏ phần đó: [docs/13](docs/13_google-meet-and-virtual-mic.md).
 >
 > **Tài liệu kỹ thuật:** [đề cương](docs/00_project-outline.md) · [SPEC](docs/01_spec-realtime-voice-translation.md) · [SPEC Addendum](docs/02_spec-addendum-os-stack-models.md) · ghi chú từng tuần: [T1](docs/03_week1-survey-and-foundation.md) · [T2](docs/04_week2-audio-capture-and-vad.md) · [T3](docs/05_week3-asr.md) · [T4](docs/06_week4-mt.md) · [T5](docs/07_week5-tts.md) · [T6](docs/08_week6-desktop.md) · [T7](docs/09_week7-two-way.md) · [T8](docs/10_week8-experiments.md) · [bổ sung](docs/11_hardening-history-settings-models.md)
 
@@ -100,4 +102,4 @@ Pipeline chạy **model thật** đầy đủ: VAD (Tuần 2) → ASR (Tuần 3)
 | MT (2.022 cặp câu, 6 chiều)         | spBLEU 11,0–37,1 · COMET 0,773–0,853                  |
 | Độ trễ cả chuỗi (50 mẫu × 6 chiều)  | RTF p90 **0,395–0,786** — dưới 1 ở mọi chiều          |
 
-Còn lại: chạy thử thật trong Google Meet và trên Windows 11, thu bộ câu bằng giọng người thật để biết WER trong điều kiện họp thật cao hơn bao nhiêu, và Tuần 9 (báo cáo, đóng gói, video demo).
+Còn lại: chạy thử thật trên Windows 11, thu bộ câu bằng giọng người thật để biết WER trong điều kiện họp thật cao hơn bao nhiêu, và Tuần 9 (báo cáo, đóng gói, video demo).

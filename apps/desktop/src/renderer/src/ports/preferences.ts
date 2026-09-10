@@ -12,6 +12,7 @@ export interface StoredPreferences {
   glossary: GlossaryEntry[]
   inputDeviceId: string
   outputDeviceId: string
+  // Không còn màn hình nào đặt giá trị này — xem ghi chú ở `stores/ui-store.ts`.
   virtualMicDeviceId: string
 }
 
