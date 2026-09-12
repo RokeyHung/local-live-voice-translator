@@ -95,22 +95,26 @@ nhả Push-to-talk, client ngừng gửi audio nên VAD sẽ không bao giờ th
 
 Model blocking không được chạy trên event loop. Nhưng hai runtime đòi hai kiểu thread khác nhau:
 
-- `SerialExecutor` — `asyncio.to_thread` + lock. Dùng cho whisper.cpp, NLLB, sherpa-onnx: chỉ
-  cần **tuần tự hoá** vì context của chúng không thread-safe.
+- `SerialExecutor` — `asyncio.to_thread` + lock. Mặc định, dùng cho **mọi adapter trừ MLX**
+  (whisper.cpp, faster-whisper, NLLB, sherpa-onnx, Kokoro, pyannote): chúng chỉ cần được
+  **tuần tự hoá** vì context không thread-safe, còn chạy ở thread nào thì không quan trọng.
 - `PinnedExecutor` — pool đúng **một** worker cố định. Bắt buộc cho MLX: nó gắn GPU stream vào
   chính thread đã tạo ra stream đó, nên `load()` và `transcribe()` rơi vào hai thread khác nhau
   là ném `RuntimeError: There is no stream (gpu,0) in current thread`.
 
 ### 3. Nạp theo yêu cầu, và `stages: []` là tín hiệu ở mức giao thức
 
-Nạp lúc khởi động làm service mất ~45 giây mới mở. Giờ model vào bộ nhớ ở đúng ba lối vào, cả
-ba đi qua `ModelManager.ensure_loaded()`; **chọn preset không phải là một trong ba lối đó**:
+Nạp lúc khởi động làm service mất ~45 giây mới mở. Giờ **mọi** đường cần tới model đều đi qua
+đúng một cửa là `ModelManager.ensure_loaded()` — thêm một màn hình cần model thì gọi cửa đó
+chứ không tự nạp. **Chọn preset không nằm trong số đó**:
 
 ```mermaid
 flowchart LR
     B1["POST /api/models/load<br/>nút Khởi động model"] --> EL
     B2["session.start<br/>bắt đầu phiên dịch"] --> EL
     B3["POST /api/benchmark<br/>nút Chạy test"] --> EL
+    B4["POST /api/transcribe<br/>màn Nhập tệp"] --> EL
+    B5["POST /api/evaluate<br/>màn Đánh giá"] --> EL
     EL["ModelManager.ensure_loaded()"] --> Q{"đã có ProviderSet<br/>trong bộ nhớ?"}
     Q -->|rồi| REUSE["dùng lại, trả về ngay"]
     Q -->|chưa| LOAD["tải model còn thiếu<br/>rồi load() từng khâu"]
@@ -119,6 +123,10 @@ flowchart LR
     SEL --> EMPTY["GET /api/config trả stages: []"]
     EMPTY --> UI["giao diện biết chắc<br/>'chưa có gì trong bộ nhớ'"]
 ```
+
+Năm lối vào ở trên là con số **tại thời điểm viết** — đếm lại bằng
+`grep -rn ensure_loaded src/`, đừng tin con số này. Hai lối cuối (Nhập tệp, Đánh giá) ra đời
+sau ba lối đầu, và tài liệu đã có lúc nói "ba lối vào" trong khi code đã là năm.
 
 `LLVT_PRELOAD_MODELS=true` khôi phục hành vi nạp sẵn cho lần chạy headless. Mảng `stages`
 **rỗng** là tín hiệu ở mức giao thức — giao diện đọc nó chứ không đoán.
