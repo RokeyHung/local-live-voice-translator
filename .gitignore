@@ -36,6 +36,10 @@ eval-*.json
 # Cache dữ liệu FLEURS tải về (scripts/fetch_fleurs.sh) — vài GB audio, tải lại được.
 fleurs-cache/
 
+# Bản Word xuất từ docs/ (make docx). Nhị phân, không xem được bằng git diff, và dựng
+# lại được từ file .md nguồn — nguồn duy nhất vẫn là Markdown.
+docs/word/
+
 # Bản ghi nguồn thả tạm vào repo để cắt bộ câu.
 *.mov
 *.mp4

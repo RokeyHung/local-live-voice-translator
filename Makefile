@@ -22,6 +22,8 @@ EVAL_ENV     := HF_HUB_CACHE=$(FLEURS_CACHE) HF_DATASETS_CACHE=$(FLEURS_CACHE)/d
 # Tên file kết quả của `make eval-asr`. Đổi khi đo backend thứ hai để không ghi đè bảng
 # cũ: make eval-asr ADAPTER=mlx_whisper MODEL=... JSON=eval-asr-mlx.json
 JSON         ?= eval-asr.json
+# Nơi để các bản Word xuất từ Markdown (make docx). Không commit: dựng lại được từ docs/.
+WORD_DIR     ?= docs/word
 # mlx-audio chỉ có bản cho macOS trên chip Apple; thêm extra này ở máy khác thì uv giải
 # phụ thuộc không ra và cả lệnh setup hỏng theo.
 MLX_EXTRA    := $(if $(filter Darwin-arm64,$(shell uname -s)-$(shell uname -m)),--extra mlx)
@@ -31,7 +33,7 @@ FULL_DEPS    := --group eval --extra diarization --extra ctranslate2 $(MLX_EXTRA
 .DEFAULT_GOAL := help
 
 .PHONY: help setup setup-service setup-min setup-desktop dev service desktop preview \
-        build typecheck lint format format-docs health docs test test-service test-desktop e2e \
+        build typecheck lint format format-docs health docs docx test test-service test-desktop e2e \
         bench accuracy soak segment \
         endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 \
         fetch-fleurs eval-asr eval-mt eval-comet eval-latency clean
@@ -108,6 +110,10 @@ format: format-docs ## Sort imports + format cả hai app và tài liệu Markdo
 format-docs: ## Format Markdown ở docs/, ARCHITECTURE.md và thư mục gốc (prettier, cấu hình .prettierrc.yaml)
 	@test -x $(PRETTIER) || { echo "Chưa có prettier — chạy 'make setup-desktop' trước."; exit 1; }
 	$(PRETTIER) --write "docs/**/*.md" "*.md" "apps/*/ARCHITECTURE.md"
+
+docx: ## Xuất báo cáo đánh giá (gvhd/bao-cao-danh-gia.md) ra Word kèm mục lục
+	@$(UV) run --no-project tools/md_to_docx.py docs/gvhd/bao-cao-danh-gia.md \
+		--out $(WORD_DIR)/bao-cao-danh-gia.docx --toc
 
 health: ## Gọi thử endpoint /health của AI service
 	@curl -s http://127.0.0.1:8756/health && echo

@@ -1,0 +1,21 @@
+# Cấu hình markdownlint cho tài liệu Markdown của dự án (docs/, README.md…).
+# Mục đích: để linter nói về lỗi thật, thay vì báo lại những quy ước mà tài liệu ở đây
+# cố tình dùng. Bốn rule dưới đây bị tắt/nới đều vì lý do cụ thể, không phải để cho im.
+
+# Độ dài dòng: prettier là công cụ định dạng chính thức (.prettierrc.yaml, printWidth 100,
+# proseWrap: preserve). Đặt ngưỡng 80 ở đây là hai công cụ đánh nhau trên cùng một file,
+# và bảng số liệu hay URL trích dẫn thì không xuống dòng được.
+MD013: false
+
+# HTML trong dòng: `<br>` là cách duy nhất để xuống dòng trong một ô bảng GFM —
+# docs/00 và docs/03 dùng nó trong các bảng kế hoạch.
+MD033: false
+
+# Nhãn đậm đứng riêng một dòng ("**Lưu ý:**", "**Độ đo ASR**") là nhãn của đoạn hoặc của
+# danh sách ngay dưới nó, không phải tiêu đề mục — đưa lên heading thì chúng lọt vào mục lục.
+MD036: false
+
+# Tiêu đề trùng tên: các mục "### Đọc số" lặp lại ở những phần kết quả khác nhau là có ý,
+# chỉ cấm trùng khi hai tiêu đề nằm cùng một cấp trong cùng một mục cha.
+MD024:
+  siblings_only: true
