@@ -10,11 +10,22 @@ docstring của chính adapter đó.
 
 ## Quy tắc phụ thuộc
 
-```
-adapters ─▶ ports ◀─ application ─▶ domain
-   (hạ tầng)  (interface)  (use-case)   (thuần)
-      ▲                                    ▲
-   transport (api, ws) ────────────────────┘
+```mermaid
+flowchart LR
+    subgraph outer["Vòng ngoài — thay được"]
+        TR["transport<br/>api/ · ws/"]
+        AD["adapters/<br/>hạ tầng"]
+    end
+    subgraph core["Lõi — không biết gì về hạ tầng"]
+        AP["application/<br/>use-case"]
+        PO["ports/<br/>interface (ABC)"]
+        DO["domain/<br/>thuần"]
+    end
+    TR --> AP
+    AD --> PO
+    AP --> PO
+    AP --> DO
+    PO --> DO
 ```
 
 **Chiều phụ thuộc luôn hướng vào trong.** `domain` không import gì; `application` chỉ biết
@@ -34,13 +45,35 @@ adapters ─▶ ports ◀─ application ─▶ domain
 
 ## Luồng runtime
 
-1. `app.py` (lifespan) dựng `Container` = Settings + Repository + ModelManager +
-   SessionService, gắn vào `app.state`.
-2. Lifespan gọi `ModelManager.select_preset()` — **ghi nhận** preset chứ **không nạp** model
-   nào (xem "Nạp theo yêu cầu" bên dưới). Service mở trong ~0,4 giây.
-3. WebSocket `/ws` tạo một `SessionController` cho mỗi kết nối; message → controller →
-   `TranslationPipeline` (VAD→ASR→MT→TTS) → phát `PipelineEvent`.
-4. `ws/protocol.py` dịch event → JSON gửi client.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Desktop client
+    participant L as app.py (lifespan)
+    participant S as SessionController
+    participant P as TranslationPipeline
+    participant W as ws/protocol.py
+
+    L->>L: dựng Container (Settings, Repository, ModelManager, SessionService)
+    L->>L: ModelManager.select_preset() — ghi nhận preset, KHÔNG nạp model
+    Note over L: service mở trong ~0,4 giây
+
+    C->>S: mở WebSocket /ws (một controller cho mỗi kết nối)
+    C->>S: session.start
+    S->>P: ensure_loaded() rồi dựng pipeline
+    Note over S,P: lần đầu mới nạp model — câu đầu tiên phải chờ
+
+    loop mỗi khung audio
+        C->>S: audio.chunk (PCM16 mono 16 kHz)
+        S->>P: đẩy vào VadStream (nếu PTT đang giữ)
+    end
+
+    P->>P: VAD cắt câu → ASR → MT → TTS
+    P->>W: PipelineEvent
+    W->>C: state / asr.final / mt.result / tts.audio / metrics
+```
+
+Model blocking không chạy trên event loop — xem "Hai loại executor" bên dưới.
 
 ## Chín quyết định định hình mã nguồn
 
@@ -71,12 +104,24 @@ Model blocking không được chạy trên event loop. Nhưng hai runtime đòi
 ### 3. Nạp theo yêu cầu, và `stages: []` là tín hiệu ở mức giao thức
 
 Nạp lúc khởi động làm service mất ~45 giây mới mở. Giờ model vào bộ nhớ ở đúng ba lối vào, cả
-ba đi qua `ModelManager.ensure_loaded()`: `POST /api/models/load`, `session.start`, và
-`POST /api/benchmark`. `LLVT_PRELOAD_MODELS=true` khôi phục hành vi cũ cho lần chạy headless.
+ba đi qua `ModelManager.ensure_loaded()`; **chọn preset không phải là một trong ba lối đó**:
 
-Kéo theo: **chọn preset không phải là nạp preset.** `PUT /api/config` chỉ `unload()` rồi
-`select_preset()`. Mảng `stages` **rỗng** trong `GET /api/config` là cách giao diện biết "chưa
-có gì trong bộ nhớ" — nó không đoán.
+```mermaid
+flowchart LR
+    B1["POST /api/models/load<br/>nút Khởi động model"] --> EL
+    B2["session.start<br/>bắt đầu phiên dịch"] --> EL
+    B3["POST /api/benchmark<br/>nút Chạy test"] --> EL
+    EL["ModelManager.ensure_loaded()"] --> Q{"đã có ProviderSet<br/>trong bộ nhớ?"}
+    Q -->|rồi| REUSE["dùng lại, trả về ngay"]
+    Q -->|chưa| LOAD["tải model còn thiếu<br/>rồi load() từng khâu"]
+
+    CFG["PUT /api/config<br/>đổi preset"] --> SEL["unload() + select_preset()<br/>chỉ GHI NHẬN lựa chọn"]
+    SEL --> EMPTY["GET /api/config trả stages: []"]
+    EMPTY --> UI["giao diện biết chắc<br/>'chưa có gì trong bộ nhớ'"]
+```
+
+`LLVT_PRELOAD_MODELS=true` khôi phục hành vi nạp sẵn cho lần chạy headless. Mảng `stages`
+**rỗng** là tín hiệu ở mức giao thức — giao diện đọc nó chứ không đoán.
 
 ### 4. Một model có đúng một chuỗi định danh: đường dẫn thật ở thượng nguồn
 
@@ -120,9 +165,25 @@ diarization không được đụng ASR. `ProviderSet.diarizer` là `Optional` �
 chạy đủ, và khâu `DIA` nạp hỏng thì bị đánh dấu `failed` chứ không kéo bốn khâu kia theo.
 
 `application/speaker_labels.py` là hàm thuần vì đây là chỗ **hai cách cắt âm thanh gặp nhau và
-chúng không trùng nhau**: VAD cắt theo khoảng lặng (một câu), diarization cắt theo giọng (một
-lượt nói, có thể chồng lấn). Không tra được theo mốc bắt đầu — phải hỏi "trong khoảng thời gian
-của câu này ai chiếm nhiều thời lượng nhất". Tách ra nên test được mà không cần model gated.
+chúng không trùng nhau** — nhìn rõ nhất ở chỗ hai nhánh dưới đây chập lại:
+
+```mermaid
+flowchart LR
+    PCM["PCM cả tệp"]
+    PCM --> DIA["diarize()<br/>cắt theo GIỌNG"]
+    PCM --> VAD["VAD<br/>cắt theo KHOẢNG LẶNG"]
+    DIA --> TURNS["[SpeakerTurn]<br/>một lượt nói, có thể chồng lấn"]
+    TURNS --> REN["rename_by_first_appearance()<br/>SPEAKER_03 → speaker-1, speaker-2…"]
+    VAD --> SEG["từng đoạn = một câu"]
+    SEG --> ASR --> MT
+    REN --> LBL{"label_for(đoạn, turns)<br/>trong khoảng của câu này<br/>ai chiếm nhiều thời lượng nhất?"}
+    MT --> LBL
+    LBL -->|"≥ 25%"| OK["TranscriptSegment + speaker"]
+    LBL -->|"không ai quá 25%"| NONE["bỏ trống — câu rơi đúng chỗ chuyển lượt"]
+```
+
+Vì hai nhánh cắt khác nhau nên **không tra được theo mốc bắt đầu**; phải hỏi theo độ chồng lấn
+thời lượng. Tách thành hàm thuần nên test được mà không cần tải model gated về.
 
 ### 8. Duyệt trước khi gửi cắt pipeline làm hai
 

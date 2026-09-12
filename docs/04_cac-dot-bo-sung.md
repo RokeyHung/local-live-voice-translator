@@ -482,8 +482,24 @@ Ba việc phải làm, không thay thế được cho nhau:
 
 **(1) Tải xong mới đặt vào chỗ thật.** Thư viện tải của whisper.cpp ghi thẳng vào đường dẫn cuối cùng
 và chỉ dọn dẹp khi _bắt được_ exception — bị kill thì không có exception nào để bắt, nên nó để lại một
-`.bin` cụt đúng chỗ file thật, và lần sau chính nó thấy file tồn tại là bỏ qua. Sửa bằng cách tải vào
-thư mục tạm rồi đổi tên nguyên tử: file hoặc chưa có, hoặc đã đủ.
+`.bin` cụt đúng chỗ file thật, và lần sau chính nó thấy file tồn tại là bỏ qua.
+
+```mermaid
+flowchart LR
+    REQ["yêu cầu tải một model"] --> TMP["ghi vào .incomplete/<br/>thư mục tạm cùng phân vùng"]
+    TMP -->|"tải đủ"| MV["os.replace()<br/>đổi tên NGUYÊN TỬ"]
+    MV --> REAL["chỗ thật trong models_dir<br/>→ scan() đếm là 'đã tải'"]
+    TMP -->|"bị kill / rớt mạng"| DEAD["rác nằm lại trong .incomplete/"]
+    DEAD --> EMPTY["chỗ thật vẫn TRỐNG<br/>→ scan() trả rỗng, lần sau tải lại"]
+
+    OLD["cách cũ: ghi thẳng chỗ thật"] -.->|"bị kill"| BAD[".bin cụt nằm đúng chỗ file thật<br/>→ mọi đường tải đều bỏ qua vì 'đã có'"]
+    style OLD stroke-dasharray: 4 4
+    style BAD stroke-dasharray: 4 4
+```
+
+Điểm mấu chốt là `os.replace()` trong cùng một phân vùng là **nguyên tử**: file hoặc chưa có, hoặc đã
+đủ, không có trạng thái ở giữa. sherpa-onnx cũng đổi sang giải nén vào thư mục tạm rồi đổi tên; cache
+HuggingFace vốn đã làm đúng nên không đụng.
 
 **(2) Nhận ra bản dở đã lỡ nằm trên đĩa.** Model dở **vẫn được liệt kê** — giấu đi thì người dùng thấy
 đĩa đầy mà không có cách nào xoá — nhưng không được tính là đã tải ở bất cứ đâu.

@@ -114,16 +114,29 @@ Phải đặt cả hai, nếu không dữ liệu đánh giá bị chẻ làm hai
 nằm ở `~/.cache`. Model **không** bị ảnh hưởng: adapter truyền `cache_dir` riêng nên
 whisper.cpp/NLLB vẫn nằm ở `models_dir`.
 
-**Hai nguồn, hai nhánh khác nhau — không gộp được:**
+**Hai nguồn, hai nhánh khác nhau — không gộp được.** Đây là chỗ dễ tải nhầm nhất, nên vẽ
+ra cho rõ nhánh nào nuôi độ đo nào:
 
-| Thứ     | Nhánh                  | Đường dẫn                 |
-| ------- | ---------------------- | ------------------------- |
-| Văn bản | `main`                 | `data/<config>/test.tsv`  |
-| Audio   | `refs/convert/parquet` | `<config>/test/*.parquet` |
+```mermaid
+flowchart LR
+    HF["google/fleurs<br/>trên HuggingFace"]
+    HF --> MAIN["nhánh main<br/>data/&lt;config&gt;/test.tsv"]
+    HF --> PARQ["nhánh refs/convert/parquet<br/>&lt;config&gt;/test/*.parquet"]
+    HF -.-> TRAP["nhánh main<br/>data/&lt;config&gt;/audio/test.tar.gz"]
 
-`datasets.load_dataset()` đọc bản parquet tự chuyển đổi, **không** đọc
-`data/<config>/audio/test.tar.gz` trên `main`. Tải nhầm nhánh là tải thừa vài GB mà
-`eval-asr` vẫn đi tải lại từ đầu.
+    MAIN -->|"chỉ văn bản<br/>~600 KB/ngôn ngữ"| MT["make eval-mt<br/>spBLEU + chrF++"]
+    MT --> COMET["make eval-comet<br/>Unbabel/wmt22-comet-da"]
+    PARQ -->|"audio<br/>383–663 MB/ngôn ngữ"| ASR["make eval-asr<br/>WER (vi/en) · CER (zh/ja)"]
+    PARQ --> LAT["make eval-latency<br/>Total Inference Time + RTF"]
+
+    TRAP -.->|"KHÔNG ai đọc nhánh này"| X["tải thừa vài GB<br/>eval-asr vẫn tải lại từ đầu"]
+
+    style TRAP stroke-dasharray: 4 4
+    style X stroke-dasharray: 4 4
+```
+
+`datasets.load_dataset()` đọc bản parquet **tự chuyển đổi**, không đọc tarball audio trên
+`main` — đó là nhánh gạch đứt trong sơ đồ, tải về là phí công.
 
 **Vì sao script dùng `snapshot_download` chứ không dùng `hf download --include`:** CLI
 nhận `repo_id [filenames...]` là tham số vị trí, nên khi truyền nhiều mẫu sau
