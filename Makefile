@@ -6,6 +6,7 @@ AI_DIR      := apps/ai-service
 DESKTOP_DIR := apps/desktop
 UV          ?= uv
 NPM         ?= npm
+NPX         ?= npx
 # Prettier dùng chung cho Markdown (đến từ node_modules của desktop)
 PRETTIER    := $(DESKTOP_DIR)/node_modules/.bin/prettier
 # Thời lượng của `make soak` (đổi bằng: make soak MINUTES=5)
@@ -34,6 +35,7 @@ FULL_DEPS    := --group eval --extra diarization --extra ctranslate2 $(MLX_EXTRA
 
 .PHONY: help setup setup-service setup-min setup-desktop dev service desktop preview \
         build typecheck lint format format-docs health docs docx test test-service test-desktop e2e \
+        icons bundle-service dist \
         bench accuracy soak segment \
         endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 \
         fetch-fleurs eval-asr eval-mt eval-comet eval-latency clean
@@ -98,6 +100,24 @@ build: ## Build desktop (typecheck + electron-vite build)
 
 typecheck: ## Typecheck desktop
 	cd $(DESKTOP_DIR) && $(NPM) run typecheck
+
+icons: ## Sinh lại icon app từ apps/desktop/build/icon-source.png (chỉ macOS)
+	tools/make_icons.sh
+
+# Bản cài macOS mang theo MLX (+~430 MB): đó là backend đã dùng để đo bảng WER trong
+# báo cáo (docs/05 mục 8), nên bản giao nộp phải chạy lại được chính con số đó. Máy
+# khác không có mlx-audio nên biến này rỗng, và giao diện tự ẩn runtime đó đi.
+BUNDLE_EXTRAS ?= $(if $(filter Darwin-arm64,$(shell uname -s)-$(shell uname -m)),--with-mlx)
+
+bundle-service: ## Gói AI service Python thành cây tự chạy ở dist/service (BUNDLE_EXTRAS=...)
+	tools/bundle_service.sh $(BUNDLE_EXTRAS)
+
+dist: bundle-service build ## Bộ cài hoàn chỉnh → dist/installer (macOS: .dmg, Windows: .exe)
+	@echo "▶ Đóng gói… (bước này chép ~1,5 GB, mất vài phút)"
+	cd $(DESKTOP_DIR) && $(NPX) electron-builder --$(if $(filter Darwin,$(shell uname -s)),mac,win)
+	@echo "✓ Bộ cài ở dist/installer:"
+	@find dist/installer -maxdepth 1 \( -name '*.dmg' -o -name '*.exe' \) -exec du -h {} + 2>/dev/null \
+		| while read -r size path; do echo "   $$size  $$(basename "$$path")"; done
 
 lint: ## Lint desktop (eslint) + service (ruff)
 	cd $(DESKTOP_DIR) && $(NPM) run lint
@@ -166,6 +186,7 @@ endpointing: ## So ngưỡng tách câu của VAD trên một bản ghi (make en
 	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make endpointing MEDIA=ban-ghi.mov"; exit 1; }
 	cd $(AI_DIR) && $(UV) run python scripts/endpointing.py $(abspath $(MEDIA))
 
-clean: ## Xóa venv, node_modules và build output
+clean: ## Xóa venv, node_modules và build output (kể cả bundle service + bộ cài)
 	rm -rf $(AI_DIR)/.venv
 	rm -rf $(DESKTOP_DIR)/node_modules $(DESKTOP_DIR)/out $(DESKTOP_DIR)/dist
+	rm -rf dist/service dist/installer

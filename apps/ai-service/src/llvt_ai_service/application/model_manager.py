@@ -115,6 +115,37 @@ ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
         min_confidence=get_settings().asr_min_confidence,
     ),
 }
+
+# Runtime mà mỗi adapter ASR cần có mặt trong môi trường. whisper_cpp không nằm
+# đây vì pywhispercpp là phụ thuộc lõi — luôn có. Hai cái còn lại là extra tuỳ
+# chọn (`uv sync --extra mlx` / `--extra ctranslate2`), và bản đóng gói có thể
+# được dựng không kèm chúng: xem tools/bundle_service.sh.
+ASR_REQUIRED_MODULE: dict[str, str] = {
+    "mlx_whisper": "mlx_audio",
+    "faster_whisper": "faster_whisper",
+}
+
+
+def available_asr_adapters() -> list[str]:
+    """Những adapter ASR môi trường này THẬT SỰ chạy được, giữ nguyên thứ tự registry.
+
+    Dùng ``find_spec`` chứ không ``import``: chỉ cần biết gói có nằm đó không, mà
+    nạp thật thì MLX khởi tạo luôn stream GPU — đắt và có tác dụng phụ cho một
+    câu hỏi chỉ để dựng danh sách trong giao diện.
+
+    Không có hàm này thì giao diện chào cả ba runtime trên mọi máy, và người dùng
+    chỉ phát hiện ra thiếu lúc bấm nạp model — đúng lỗi đã gặp trên bản cài macOS
+    đầu tiên, vốn được gói không kèm MLX.
+    """
+    from importlib.util import find_spec
+
+    return [
+        name
+        for name in ASR_REGISTRY
+        if (module := ASR_REQUIRED_MODULE.get(name)) is None or find_spec(module) is not None
+    ]
+
+
 DIARIZATION_REGISTRY: dict[str, Callable[[], SpeakerDiarizer]] = {
     "pyannote": lambda: PyannoteDiarizer(
         get_settings().diarization_model,

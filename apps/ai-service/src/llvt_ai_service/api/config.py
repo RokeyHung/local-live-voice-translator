@@ -28,8 +28,10 @@ from llvt_ai_service.application.installed_models import (
 from llvt_ai_service.application.load_progress import progress
 from llvt_ai_service.application.model_manager import (
     ASR_REGISTRY,
+    ASR_REQUIRED_MODULE,
     ModelLoadCancelled,
     ModelLoadError,
+    available_asr_adapters,
 )
 from llvt_ai_service.config import runtime_config
 from llvt_ai_service.config.presets import custom_config
@@ -102,12 +104,29 @@ def _custom_choices(settings) -> CustomChoiceSchema:
     active = custom_config(
         settings.custom_asr_adapter, settings.custom_asr_model, settings.custom_mt_model
     )
+    available = available_asr_adapters()
+
+    # Cấu hình đã lưu có thể trỏ vào runtime mà môi trường này không có — hay gặp
+    # nhất là settings.json mang từ máy phát triển (có MLX) sang bản đóng gói chỉ
+    # có phụ thuộc lõi. Trả về runtime hỏng thì giao diện hiện một lựa chọn bấm
+    # vào là lỗi, nên lùi về mặc định.
+    asr_adapter = active.asr_adapter
+    asr_model = active.asr_model
+    if asr_adapter not in available:
+        fallback = custom_config().asr_adapter
+        logger.warning(
+            "Runtime ASR đã lưu (%s) không có trong môi trường này, dùng %s",
+            asr_adapter,
+            fallback,
+        )
+        asr_adapter, asr_model = fallback, custom_config(fallback).asr_model
+
     return CustomChoiceSchema(
-        asrAdapter=active.asr_adapter,
-        asrModel=active.asr_model,
+        asrAdapter=asr_adapter,
+        asrModel=asr_model,
         mtModel=active.mt_model,
-        asrAdapterChoices=list(ASR_REGISTRY),
-        asrModelChoices=ASR_MODELS_BY_ADAPTER,
+        asrAdapterChoices=available,
+        asrModelChoices={k: v for k, v in ASR_MODELS_BY_ADAPTER.items() if k in available},
         mtModelChoices=list(NLLB_MODELS),
     )
 
@@ -227,6 +246,18 @@ def _apply_custom(body: ConfigUpdate) -> bool:
     adapter = adapter or custom_config().asr_adapter
     if adapter not in ASR_REGISTRY:
         raise HTTPException(status_code=400, detail=f"Không có adapter ASR tên {adapter!r}.")
+
+    # Có trong registry chưa đủ — thư viện của nó phải thật sự nằm trong môi
+    # trường. Chặn ở đây để lỗi hiện ngay lúc bấm Lưu, kèm tên gói còn thiếu, chứ
+    # không phải vài phút sau ở màn nạp model với một thông báo chung chung.
+    if adapter not in available_asr_adapters():
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Runtime {adapter!r} chưa được cài trong bản này. "
+                f"Thiếu gói {ASR_REQUIRED_MODULE.get(adapter, adapter)!r}."
+            ),
+        )
 
     # Model phải thuộc ĐÚNG runtime đang chọn. Trước đây chỉ kiểm "có tồn tại ở đâu
     # đó", nên chọn mlx_whisper + một file GGML vẫn lưu được, rồi lúc nạp thì MLX đi

@@ -48,6 +48,9 @@ make service   # run AI service only (http://127.0.0.1:8756)
 make desktop   # run desktop only (electron-vite dev)
 make preview   # build desktop, then run service + the built app (electron-vite preview, no HMR)
 make build     # typecheck + build desktop
+make dist      # the shippable installer → dist/installer (macOS .dmg / Windows .exe)
+make bundle-service  # just the self-contained Python tree → dist/service (EXTRAS="--with-mlx")
+make icons     # regenerate .icns/.ico/.png from apps/desktop/build/icon-source.png (macOS only)
 make test      # BOTH suites (pytest + vitest); make test-service / make test-desktop for one
 make e2e       # Playwright on the REAL Electron app + a REAL service (rebuilds desktop first)
 make lint      # eslint (desktop) + ruff check (service)
@@ -105,6 +108,8 @@ Model names are the **real upstream paths** everywhere — HF repo ids (`mlx-com
 
 The three ASR runtimes share **no** model: GGML is a file inside `ggerganov/whisper.cpp`, MLX and CTranslate2 are pre-converted repos. So `custom.asrModelChoices` is a `dict[adapter → models]`, `PUT /api/config` rejects a cross-runtime pair with 400, and changing the runtime clears a stored model that doesn't belong to the new one. See docs/04.
 
+Two of those runtimes are **optional extras**, so `custom.asrAdapterChoices` and `asrModelChoices` are filtered by `available_asr_adapters()` (a `find_spec` on `ASR_REQUIRED_MODULE`, no import — loading MLX for real spins up a GPU stream). Three consequences the UI depends on: a runtime the environment lacks is never offered, `PUT /api/config` rejects one with a 400 naming the missing package instead of letting it fail minutes later at load time, and a _saved_ choice that is no longer available falls back to whisper.cpp rather than bricking the Custom preset. That last one is not hypothetical — a dev-machine `settings.json` holding `custom_asr_adapter=mlx_whisper` is what made the first packaged macOS build fail with "Nạp model thất bại". Adding an ASR backend therefore means one more line in `ASR_REQUIRED_MODULE` when it isn't a core dependency.
+
 - `api/` + `ws/` — thin transport. `app.py` builds the `Container` in the FastAPI **lifespan** and attaches it to `app.state`; routes get it via `api/deps.py`.
 
 Key flow: lifespan → `ModelManager.select_preset(default)` (records the preset, loads **nothing**) → WS `/ws` creates a `SessionController` per connection → messages drive `TranslationPipeline` → domain `PipelineEvent`s are converted to JSON by `ws/protocol.py` and streamed back.
@@ -122,6 +127,14 @@ Same layering: `domain/` (enums/events/models), `ports/` (`AiClient`, `SessionCh
 Two test layers, and the split is deliberate. **vitest + jsdom** (`vitest.config.ts`, files next to the code as `*.test.ts(x)`) stubs `fetch` and never touches a real service — fast and deterministic; `test/harness.tsx` gives screens a real react-query + zustand environment behind a fake service that records every call. **Playwright** (`playwright.config.ts`, `e2e/*.e2e.ts`) launches the built Electron app against a real `llvt-ai-service` on a temp models dir and downloads a real model — the only layer that proves main + renderer + Python actually fit together. It needs `out/` built first (`npm run e2e` does that), runs `workers: 1` because the service binds a fixed port, and must strip `ELECTRON_RUN_AS_NODE` from the env — VS Code's terminal sets it, and with it Electron boots as plain Node and dies on `electron.app` being undefined. jsdom is required, not a convenience: `application/config.ts` reads `window.llvt` at module load, so anything importing an adapter dies at import time without a `window`. Component tests use `@testing-library/react` (see `ui/components/primitives.test.tsx`). Keep pure rules in `application/` rather than inside a screen — that is what makes them testable without a React harness.
 
 `App.tsx` mounts **every screen once and keeps it mounted**, switching tabs only toggles `display:none` (`<Screen show>`); screen-local state (the import queue and its in-flight run, search boxes, drafts) must survive tab switches. The cost is that hidden screens keep running their hooks, so any query with a `refetchInterval` has to gate on `useIsScreen('<id>')` — see `useResources` in Diagnostics/Setup and `useSessions` in History. UI/hooks/application depend on **ports**, not concrete adapters. Electron `main/` + `preload/` are minimal; preload exposes `window.llvt` (AI service URLs + platform), consumed by `application/config.ts`.
+
+## Packaging
+
+`make dist` = `tools/bundle_service.sh` (self-contained Python tree → `dist/service`) + `make build` + electron-builder, output in `dist/installer`. The bundle is a **copy of uv's standalone CPython with the service pip-installed into it** — not PyInstaller, not a venv. A venv is non-relocatable (`pyvenv.cfg` holds an absolute `home`), and freezing torch + sherpa-onnx + pywhispercpp + pyopenjtalk means declaring every bundled dylib by hand; a copied standalone interpreter resolves its prefix from `sys.executable`, so it runs wherever it lands. Two traps the script encodes: uv hands back a path through the `cpython-3.12-…` → `cpython-3.12.13-…` symlink and `cp -R` follows it, so the "copy" still reports the cache as its prefix (fixed with `pwd -P`); and the copy carries an `EXTERNALLY-MANAGED` marker that makes uv refuse to install into it.
+
+`main/service.ts` spawns that interpreter (`-m llvt_ai_service`) in `app.whenReady`, but **only when `app.isPackaged`** — in dev, `make dev` already runs the service, and a second one just fights for port 8756. `LLVT_SPAWN_SERVICE=1|0` overrides. It health-checks 8756 first and skips spawning if something already answers, kills the child on `will-quit` (otherwise uvicorn survives as an orphan holding the port), and logs to `userData/ai-service.log` because a packaged app has no terminal to print to.
+
+macOS builds are **ad-hoc signed** by `build/after-pack.js`, not Developer-ID signed: adding 1.6 GB to `Contents/Resources` breaks the seal on Electron's own signature, and an unsealed bundle is rejected outright on another machine. Ad-hoc re-sealing gets it to "right-click → Open" instead. `hardenedRuntime` is deliberately **off** — it only means something alongside Apple notarization, and switching it on over an ad-hoc signature only risks dylib loading. Get an Apple Developer account and the fix is to drop `identity: null` and delete the hook. Cross-compiling is not possible (native wheels), so the Windows installer has to be built on Windows, under Git Bash.
 
 ## Contract sync (important)
 

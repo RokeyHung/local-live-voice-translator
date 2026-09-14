@@ -213,6 +213,29 @@ describe('bộ tự chọn', () => {
     )
   })
 
+  it('chỉ chào runtime ASR mà service báo là cài được', async () => {
+    // Bản đóng gói có thể không kèm MLX/faster-whisper, nên service lọc danh sách
+    // trước khi trả về. Màn hình phải vẽ đúng thứ nhận được — chào một runtime
+    // không có thì người dùng bấm vào và ăn "Nạp model thất bại".
+    const svc = fakeService()
+    svc.config = {
+      ...svc.config,
+      preset: 'custom',
+      custom: {
+        asrAdapter: 'whisper_cpp',
+        asrModel: 'ggml-small-q5_1.bin',
+        mtModel: 'facebook/nllb-200-distilled-600M',
+        asrAdapterChoices: ['whisper_cpp'],
+        asrModelChoices: { whisper_cpp: ['ggml-tiny-q5_1.bin', 'ggml-small-q5_1.bin'] },
+        mtModelChoices: ['facebook/nllb-200-distilled-600M']
+      }
+    }
+    renderScreen(<ModelsScreen />)
+
+    const runtime = (await screen.findByLabelText('Runtime ASR')) as HTMLSelectElement
+    expect([...runtime.options].map((o) => o.value)).toEqual(['whisper_cpp'])
+  })
+
   it('chọn model chỉ là bản nháp, phải bấm Lưu mới gửi lên service', async () => {
     const svc = fakeService()
     svc.config = { ...svc.config, preset: 'custom' }

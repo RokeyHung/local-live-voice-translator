@@ -8,5 +8,16 @@
     <true/>
     <key>com.apple.security.cs.allow-dyld-environment-variables</key>
     <true/>
+
+    <!-- Bắt buộc cho bộ Python đi kèm: torch, sherpa-onnx, pywhispercpp và
+         pyopenjtalk nạp .dylib của riêng chúng lúc chạy. Hardened runtime mặc
+         định chỉ cho nạp thư viện ký cùng Team ID, nên thiếu khoá này thì
+         service chết ngay ở `import torch`. -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+
+    <!-- Micro (giọng người dùng) và thu âm thanh hệ thống (giọng phía bên kia). -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
   </dict>
 </plist>

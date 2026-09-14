@@ -1,43 +1,76 @@
-appId: com.electron.app
-productName: desktop
+appId: com.rokeyhung.voicetranslator
+productName: Voice Translator
+copyright: © 2026 RokeyHung
 directories:
   buildResources: build
+  output: ../../dist/installer
+# Ký ad-hoc lại bundle sau khi service Python đã được chép vào Resources.
+afterPack: build/after-pack.js
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!e2e/*'
+  - '!test/*'
+  - '!**/*.test.{ts,tsx}'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{playwright.config.ts,vitest.config.ts}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+
+# AI service Python, do tools/bundle_service.sh dựng sẵn. Nằm ngoài asar vì
+# đây là bộ thông dịch thật phải chạy được bằng exec, không phải file để đọc.
+# Thiếu thư mục này thì electron-builder dừng ngay chứ không ra một bản cài câm.
+extraResources:
+  - from: ../../dist/service
+    to: service
+
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [arm64]
+  # macOS 13+ (Ventura) — mốc của SPEC, cũng là mốc ScreenCaptureKit cho phép
+  # thu âm thanh hệ thống.
+  minimumSystemVersion: '13.0'
+  # Hardened runtime chỉ có nghĩa khi đi cùng công chứng của Apple; bật nó trên
+  # một chữ ký ad-hoc chỉ đổi lấy nguy cơ bị chặn nạp dylib mà không được gì.
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # Không có tài khoản Apple Developer nên bản này ký ad-hoc và không công
+  # chứng được; docs/09 hướng dẫn người cài mở lần đầu bằng chuột phải → Mở.
+  identity: null
+  notarize: false
+  extendInfo:
+    NSMicrophoneUsageDescription: Ứng dụng cần micro để nghe và dịch giọng nói của bạn.
+    NSCameraUsageDescription: Ứng dụng không dùng camera.
+    NSDocumentsFolderUsageDescription: Ứng dụng cần quyền này để mở tệp âm thanh/video bạn nhập vào.
+    NSDownloadsFolderUsageDescription: Ứng dụng cần quyền này để mở tệp âm thanh/video bạn nhập vào.
+
+dmg:
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
 win:
-  executableName: desktop
+  executableName: voice-translator
+  target:
+    - target: nsis
+      arch: [x64]
+
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${productName}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
-mac:
-  entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: false
-dmg:
-  artifactName: ${name}-${version}.${ext}
-linux:
-  target:
-    - AppImage
-    - snap
-    - deb
-  maintainer: electronjs.org
-  category: Utility
-appImage:
-  artifactName: ${name}-${version}.${ext}
+  # Bản cài ~1,5 GB: để người dùng chọn ổ đĩa thay vì ép vào ổ C.
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
+# Không có máy chủ phát hành nào — app cũng không tự cập nhật. Khai báo publish
+# trỏ vào example.com (mặc định của scaffold) sẽ làm electron-builder sinh kèm
+# latest.yml vô nghĩa.
+publish: null

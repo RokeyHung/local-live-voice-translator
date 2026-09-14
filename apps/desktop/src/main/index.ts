@@ -11,6 +11,7 @@ import {
   systemPreferences
 } from 'electron'
 import icon from '../../resources/icon.png?asset'
+import { startAiService, stopAiService } from './service'
 
 function createWindow(): void {
   // Create the browser window.
@@ -53,9 +54,14 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.rokeyhung.voicetranslator')
+
+  // Bản đóng gói tự chạy AI service Python trong Resources trước khi mở cửa sổ,
+  // để renderer không hỏi /health vào khoảng không. Lúc dev thì hàm này không
+  // làm gì — `make dev` đã chạy service rồi.
+  await startAiService()
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -134,6 +140,10 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+// Service Python là tiến trình con: không dừng tay thì nó sống sót thành tiến
+// trình mồ côi vẫn giữ cổng 8756, và lần mở app sau sẽ tưởng đã có service chạy.
+app.on('will-quit', stopAiService)
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

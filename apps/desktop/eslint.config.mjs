@@ -18,6 +18,15 @@ export default defineConfig(
     }
   },
   {
+    // Hook của electron-builder (build/after-pack.js): electron-builder nạp nó
+    // bằng require(), và package.json không đặt "type": "module", nên file này
+    // buộc phải là CommonJS.
+    files: ['build/*.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off'
+    }
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     plugins: {
       'react-hooks': eslintPluginReactHooks,

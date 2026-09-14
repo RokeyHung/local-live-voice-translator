@@ -166,7 +166,14 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 - [ ] Thiết kế option nhanh–nhẹ / chất lượng cao cho người dùng. Đã có một nửa: mỗi
       preset giờ mang một `VadTuning` riêng (4,5 / 6 / 8 giây), còn thiếu phần đo để
       chứng minh sự đánh đổi.
-- [ ] Báo cáo, đóng gói cài đặt, video demo
+- [ ] Báo cáo, video demo
+- [x] ~~Đóng gói cài đặt~~ — **bản macOS xong 15/09**: `make dist` ra
+      `Voice Translator-1.0.0-arm64.dmg` (506 MB), mang sẵn AI service Python nên máy
+      đích không cần uv/Node/Python. Đã chạy thử từ chính file `.dmg`: service tự lên
+      sau 6 giây, renderer gọi được `/api/config` + WebSocket, thoát app thì service
+      chết theo và nhả cổng. Cách gói ghi ở [`09` mục 3a](09_huong-dan-cai-dat.md).
+      **Còn lại: bản Windows** — phải dựng trên chính máy Windows vì thư viện native
+      không biên dịch chéo được.
 - [ ] **Báo cáo thử một lần trước khi bảo vệ** để lấy góp ý và chuẩn bị bộ câu hỏi dự phòng
 
 ---
@@ -229,9 +236,19 @@ thật thì chưa**:
       người dùng. Chặt hơn được thì phải qua `safeStorage` của Electron (Keychain trên
       macOS, DPAPI trên Windows), đổi lại desktop phải gửi token sang service mỗi lần
       khởi động thay vì service tự đọc.
-- [ ] **Quyết có đóng gói `--extra mlx` / `--extra diarization` vào bản cài không.** Hiện
-      cả hai là phần cài thêm; nếu đưa vào bản phát hành thì phải cập nhật
-      [`09_huong-dan-cai-dat.md`](09_huong-dan-cai-dat.md) và tính lại dung lượng bản cài.
+- [x] ~~**Quyết có đóng gói `--extra mlx` / `--extra diarization` vào bản cài không.**~~
+      **Quyết 15/09: gói MLX, không gói diarization.** MLX là backend đã dùng để đo
+      bảng WER ở [`05` mục 8](05_bo-danh-gia-fleurs.md), nên bản giao nộp phải chạy
+      lại được đúng con số đó — giá là +430 MB (DMG 506 → 592 MB). Diarization thì
+      không: nó cần model gated trên HF, đi ngược tinh thần "chạy hoàn toàn cục bộ",
+      và chỉ dùng ở màn Nhập tệp. Bật/tắt bằng `make dist BUNDLE_EXTRAS="…"`, mặc
+      định trên Apple Silicon đã gồm MLX.
+
+      Kèm theo, đã sửa một lỗi lộ ra từ đây: giao diện chào cả ba runtime ASR kể cả
+          khi môi trường không có, nên chọn Custom trên bản cài đầu tiên là "Nạp model
+          thất bại". Giờ `/api/config` chỉ trả về runtime thật sự import được, `PUT` trả
+          400 kèm tên gói còn thiếu, và lựa chọn đã lưu mà không còn chạy được thì lùi về
+          whisper.cpp thay vì làm hỏng preset Custom.
 
 - [ ] **Duyệt trước khi gửi trong một cuộc họp thật** — đếm ngược 5 giây có đủ để đọc
       và sửa không, hay phải dài hơn. Bật ở màn Cài đặt.
