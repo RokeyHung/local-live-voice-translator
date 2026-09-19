@@ -15,7 +15,12 @@ from typing import Any
 import numpy as np
 import pytest
 
-from llvt_ai_service.adapters.asr.whisper_cpp import MODEL_MAP, WhisperCppAsr
+from llvt_ai_service.adapters.asr.whisper_cpp import (
+    MODEL_MAP,
+    WhisperCppAsr,
+    gpu_backend_from_log,
+    pick_gpu_device,
+)
 from llvt_ai_service.domain.enums import Language
 
 
@@ -66,6 +71,50 @@ def test_runtime_info_reports_the_upstream_path_not_the_internal_id():
 
     assert asr.runtime_info()["model"] == "ggml-small-q5_1.bin"
     assert asr._model_id == "small-q5_1", "vẫn phải gọi runtime bằng id của nó"
+
+
+def test_gpu_backend_read_from_init_log():
+    """Backend Vulkan không khai trong system_info(), nên thiết bị lấy từ log lúc nạp."""
+    log = (
+        "whisper_init_with_params_no_state: use gpu    = 1\n"
+        "whisper_backend_init_gpu: using Vulkan0 backend\n"
+    )
+    assert gpu_backend_from_log(log) == "Vulkan"
+    assert gpu_backend_from_log("whisper_backend_init_gpu: using CUDA0 backend") == "CUDA"
+    assert gpu_backend_from_log("whisper_backend_init_gpu: using MTL0 backend") == "Metal"
+    # Bản build Vulkan trên máy không có card: ggml lùi về CPU.
+    assert gpu_backend_from_log("whisper_backend_init_gpu: no GPU found\n") is None
+    assert gpu_backend_from_log("") is None
+
+
+def test_discrete_gpu_wins_over_the_integrated_one_listed_first():
+    """Laptop hybrid: ggml liệt kê Iris Xe trước RTX 4060, whisper.cpp lấy cái đầu."""
+    devices = [("Vulkan0", 2), ("Vulkan1", 1), ("CPU", 0)]
+    assert pick_gpu_device(devices) == {"gpu_device": 1}
+
+
+def test_default_kept_when_the_first_gpu_is_already_discrete():
+    assert pick_gpu_device([("Vulkan0", 1), ("Vulkan1", 2), ("CPU", 0)]) is None
+    assert pick_gpu_device([("MTL0", 1), ("CPU", 0)]) is None
+
+
+def test_integrated_gpu_only_is_still_used():
+    """Iris Xe vẫn nhanh hơn CPU (~9,9 s so với ~17 s), nên không ép về CPU."""
+    assert pick_gpu_device([("Vulkan0", 2), ("CPU", 0)]) is None
+
+
+def test_no_device_list_keeps_whisper_default():
+    assert pick_gpu_device([]) is None
+    assert pick_gpu_device([("CPU", 0)]) is None
+
+
+def test_runtime_info_prefers_the_device_seen_at_load_time():
+    model = RecordingModel([])
+    model.llvt_gpu_backend = "Vulkan"  # type: ignore[attr-defined]
+    asr = WhisperCppAsr("ggml-small-q5_1.bin", loader=lambda _i, _d: model)
+    asyncio.run(asr.load())
+
+    assert asr.runtime_info()["accel"] == "Vulkan"
 
 
 def test_loader_receives_mapped_id_and_dir():

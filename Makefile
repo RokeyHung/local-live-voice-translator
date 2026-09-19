@@ -107,7 +107,9 @@ icons: ## Sinh lại icon app từ apps/desktop/build/icon-source.png (chỉ mac
 # Bản cài macOS mang theo MLX (+~430 MB): đó là backend đã dùng để đo bảng WER trong
 # báo cáo (docs/05 mục 8), nên bản giao nộp phải chạy lại được chính con số đó. Máy
 # khác không có mlx-audio nên biến này rỗng, và giao diện tự ẩn runtime đó đi.
-BUNDLE_EXTRAS ?= $(if $(filter Darwin-arm64,$(shell uname -s)-$(shell uname -m)),--with-mlx)
+# Bản Windows thay whisper.cpp CPU bằng bản Vulkan (tools/build_whisper_vulkan.sh):
+# chạy GPU trên mọi card NVIDIA/AMD/Intel mà không phải kèm thư viện CUDA.
+BUNDLE_EXTRAS ?= $(if $(filter Darwin-arm64,$(shell uname -s)-$(shell uname -m)),--with-mlx)$(if $(filter MINGW% MSYS%,$(shell uname -s)),--with-vulkan)
 
 bundle-service: ## Gói AI service Python thành cây tự chạy ở dist/service (BUNDLE_EXTRAS=...)
 	tools/bundle_service.sh $(BUNDLE_EXTRAS)

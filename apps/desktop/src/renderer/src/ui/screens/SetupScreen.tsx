@@ -173,7 +173,9 @@ const COMPUTE_TILES: ComputeTileDef[] = [
     color: '#a855f7',
     label: (L) => L.devVulkan,
     sub: () => '',
-    available: (kind) => kind === 'amd' || kind === 'intel'
+    // Vulkan nằm trong driver của cả NVIDIA — bản cài Windows chạy whisper.cpp qua
+    // Vulkan trên mọi card (tools/build_whisper_vulkan.sh).
+    available: (kind) => kind === 'nvidia' || kind === 'amd' || kind === 'intel'
   },
   {
     id: 'cpu',
@@ -369,6 +371,8 @@ export function SetupScreen(): JSX.Element {
   const accelsInUse = new Set(
     serviceStages.filter((s) => s.loaded).map((s) => tileOfAccel(s.accel))
   )
+  // Đã có khâu chạy GPU (vd. Vulkan trên card NVIDIA) thì đừng gợi ý ô GPU khác nữa.
+  const gpuInUse = ['cuda', 'metal', 'vulkan'].some((id) => accelsInUse.has(id))
   const outputLabel = outputs.find((d) => d.deviceId === outputDeviceId)?.label ?? ''
 
   const loop = !outputLabel
@@ -517,6 +521,7 @@ export function SetupScreen(): JSX.Element {
                     recommended={
                       available &&
                       !inUse &&
+                      !gpuInUse &&
                       ((compute.kind === 'nvidia' && tile.id === 'cuda') ||
                         (compute.kind === 'apple' && tile.id === 'metal'))
                     }

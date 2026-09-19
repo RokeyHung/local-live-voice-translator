@@ -53,7 +53,7 @@ cần** uv, Node hay Python.
 | Hệ điều hành            | File                               | Dung lượng                          |
 | ----------------------- | ---------------------------------- | ----------------------------------- |
 | macOS 13+ Apple Silicon | `Voice Translator-1.0.0-arm64.dmg` | ~506 MB tải về, ~1,7 GB sau khi cài |
-| Windows 11 x64          | `Voice Translator-1.0.0-setup.exe` | tương đương                         |
+| Windows 11 x64          | `Voice Translator-1.0.0-setup.exe` | ~371 MB tải về, ~1,8 GB sau khi cài |
 
 **macOS.** Mở `.dmg`, kéo **Voice Translator** vào Applications. Lần đầu mở phải
 **chuột phải lên app → Mở → Mở**, chứ không phải nháy đúp.
@@ -67,9 +67,10 @@ cần** uv, Node hay Python.
 > xattr -dr com.apple.quarantine "/Applications/Voice Translator.app"
 > ```
 
-**Windows.** Chạy `.exe`, chọn thư mục cài (bản cài ~1,5 GB nên có thể muốn đổi khỏi ổ
+**Windows.** Chạy `.exe`, chọn thư mục cài (bản cài ~1,8 GB nên có thể muốn đổi khỏi ổ
 C). SmartScreen sẽ cảnh báo vì bộ cài chưa mua chứng chỉ ký — bấm **More info → Run
-anyway**.
+anyway**. Bước giải nén mất vài phút vì bộ Python đi kèm có hàng chục nghìn file nhỏ;
+thanh tiến trình đứng lâu là bình thường.
 
 Mở app xong là dùng được ngay: AI service tự chạy nền, không phải mở terminal. Nếu app
 báo service không lên, log nằm ở:
@@ -91,8 +92,23 @@ vì hai script là bash).
 
 Bản macOS trên Apple Silicon **mặc định mang theo backend MLX** (+~430 MB): đó là backend
 đã dùng để đo bảng WER trong báo cáo ([`05` mục 8](05_bo-danh-gia-fleurs.md)), nên bản
-giao nộp phải chạy lại được đúng con số đó. Máy khác thì biến tự rỗng. Thêm bớt bằng
+giao nộp phải chạy lại được đúng con số đó. Thêm bớt bằng
 `make dist BUNDLE_EXTRAS="--with-mlx --with-diarization"` (rỗng = chỉ phụ thuộc lõi).
+
+Bản Windows **mặc định chạy whisper.cpp trên GPU qua Vulkan** (`--with-vulkan`): Vulkan
+có sẵn trong driver của mọi card NVIDIA/AMD/Intel nên bộ cài chỉ nặng thêm ~6 MB, thay
+vì ~1 GB nếu gói CUDA. Trên RTX 4060 Laptop, ASR 3 s audio giảm từ ~17 s (CPU) xuống
+~0,4 s. Máy có cả GPU tích hợp lẫn card rời thì app tự chọn card rời; máy không có
+driver Vulkan thì tự chạy CPU. Lần build đầu phải có thêm trên máy build (người dùng
+thì không cần):
+
+```powershell
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+winget install KhronosGroup.VulkanSDK
+```
+
+Wheel dựng xong (~6 phút) được giữ ở `dist/wheels/vulkan/`, các lần `make dist` sau
+dùng lại.
 
 Backend nào không có trong bản cài thì **giao diện tự ẩn đi**: service chỉ trả về những
 runtime thật sự import được, nên không còn chuyện chọn xong mới biết là thiếu.
@@ -121,8 +137,8 @@ cd apps\ai-service ; uv sync ; uv run llvt-ai-service
 cd apps\desktop    ; npm install ; npm run dev
 ```
 
-Kiểm tra service sống: mở http://127.0.0.1:8756/health → `{"status":"ok", ...}`
-(hoặc `make health`). Tài liệu API đầy đủ ở http://127.0.0.1:8756/docs — trang này
+Kiểm tra service sống: mở <http://127.0.0.1:8756/health> → `{"status":"ok", ...}`
+(hoặc `make health`). Tài liệu API đầy đủ ở <http://127.0.0.1:8756/docs> — trang này
 chạy được cả khi không có mạng vì Swagger UI được đóng gói sẵn trong repo.
 
 ## 4. Tải model (lần đầu, cần Internet)

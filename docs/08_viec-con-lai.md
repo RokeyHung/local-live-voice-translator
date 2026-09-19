@@ -129,7 +129,9 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 
 - [ ] **Tách câu.** Cần một bản ghi có người nói liên tục ≥ 30 giây, rồi:
 
-      make endpointing MEDIA=ban-ghi.mov
+  ```bash
+  make endpointing MEDIA=ban-ghi.mov
+  ```
 
   Bảng in ra có cột **chờ chốt** (thời gian từ lúc nói xong tới lúc VAD nhả câu) và dòng
   so sánh với ngưỡng cũ 20 giây. Đó là bằng chứng cho mục 4.2.
@@ -172,8 +174,30 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
       đích không cần uv/Node/Python. Đã chạy thử từ chính file `.dmg`: service tự lên
       sau 6 giây, renderer gọi được `/api/config` + WebSocket, thoát app thì service
       chết theo và nhả cổng. Cách gói ghi ở [`09` mục 3a](09_huong-dan-cai-dat.md).
-      **Còn lại: bản Windows** — phải dựng trên chính máy Windows vì thư viện native
-      không biên dịch chéo được.
+      **Bản Windows xong 19/09**: `make dist` trong Git Bash ra
+      `Voice Translator-1.0.0-setup.exe` (371 MB, ~1,8 GB sau khi cài). Đã cài im lặng
+      bằng chính file `.exe`: service tự lên sau 12 giây, renderer gọi được REST +
+      WebSocket, đóng app thì service chết theo và nhả cổng, gỡ cài sạch. Chạy service
+      từ bundle đã nạp đủ bốn khâu preset Balanced và chạy benchmark được. Lỗi lộ ra và
+      đã sửa: stdout bị pipe trên Windows là cp1252, log tiếng Việt của service thành
+      "Logging error" → spawn với `PYTHONUTF8=1`. Toàn bộ quy trình kiểm, số đo và
+      phần chưa kiểm được ghi ở [`04` mục 7](04_cac-dot-bo-sung.md).
+      **ASR trên GPU qua Vulkan (19/09).** Bản đầu chạy whisper.cpp bằng CPU: ~17 s
+      cho 3 s audio với large-v3-turbo-q5_0, tăng `n_threads` lên 12 cũng chỉ còn
+      ~11 s. Thay vì gói CUDA (+~1 GB), bản cài Windows giờ mang pywhispercpp build
+      với `GGML_VULKAN=1` (`tools/build_whisper_vulkan.sh`, +6 MB bộ cài) — Vulkan có
+      sẵn trong driver của mọi card, ý tưởng lấy từ TranscriptionSuite. Đo trên chính
+      bản cài (i5-12500H + RTX 4060 Laptop, preset Balanced, 3 s audio), ASR / MT / TTS /
+      tổng: vi→en 437 / 1742 / 187 / 2489 ms · en→vi 480 / 1703 / 190 / 2492 ms · vi→ja
+      362 / 1368 / 912 / 2824 ms. Hai lỗi lộ ra và đã sửa: laptop hybrid liệt kê Iris Xe
+      trước RTX 4060 nên whisper.cpp chạy trên iGPU (~9,9 s) — giờ chọn card rời trước;
+      và backend Vulkan không hiện trong `system_info()` nên app báo "CPU" — giờ đọc
+      thiết bị thật từ log lúc nạp. Lần transcribe đầu tiên trên một máy mất ~12 s để
+      driver biên dịch shader (sau đó có cache, ~0,2 s), nên được làm nóng ngay lúc nạp
+      model. **Còn mở:** khâu chậm nhất giờ là **MT** (NLLB chạy CPU, ~1,7 s) — torch bản
+      Windows trên PyPI chỉ có CPU. Và 13 test pytest hỏng sẵn trên Windows (tạo symlink
+      cần quyền admin — `WinError 1314`), không liên quan đợt này.
+
 - [ ] **Báo cáo thử một lần trước khi bảo vệ** để lấy góp ý và chuẩn bị bộ câu hỏi dự phòng
 
 ---
@@ -243,12 +267,11 @@ thật thì chưa**:
       không: nó cần model gated trên HF, đi ngược tinh thần "chạy hoàn toàn cục bộ",
       và chỉ dùng ở màn Nhập tệp. Bật/tắt bằng `make dist BUNDLE_EXTRAS="…"`, mặc
       định trên Apple Silicon đã gồm MLX.
-
       Kèm theo, đã sửa một lỗi lộ ra từ đây: giao diện chào cả ba runtime ASR kể cả
-              khi môi trường không có, nên chọn Custom trên bản cài đầu tiên là "Nạp model
-              thất bại". Giờ `/api/config` chỉ trả về runtime thật sự import được, `PUT` trả
-              400 kèm tên gói còn thiếu, và lựa chọn đã lưu mà không còn chạy được thì lùi về
-              whisper.cpp thay vì làm hỏng preset Custom.
+      khi môi trường không có, nên chọn Custom trên bản cài đầu tiên là "Nạp model
+      thất bại". Giờ `/api/config` chỉ trả về runtime thật sự import được, `PUT` trả
+      400 kèm tên gói còn thiếu, và lựa chọn đã lưu mà không còn chạy được thì lùi về
+      whisper.cpp thay vì làm hỏng preset Custom.
 
 - [ ] **Duyệt trước khi gửi trong một cuộc họp thật** — đếm ngược 5 giây có đủ để đọc
       và sửa không, hay phải dài hơn. Bật ở màn Cài đặt.

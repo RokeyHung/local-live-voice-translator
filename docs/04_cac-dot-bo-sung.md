@@ -1,6 +1,6 @@
 # Các đợt bổ sung ngoài lịch tuần
 
-**Phạm vi:** 18/08 – 06/09/2026 · **Nguồn yêu cầu:** nợ kỹ thuật của Tuần 6–8, SPEC, bản
+**Phạm vi:** 18/08 – 19/09/2026 · **Nguồn yêu cầu:** nợ kỹ thuật của Tuần 6–8, SPEC, bản
 thiết kế giao diện, và [biên bản họp GVHD 19/08](meetings/bien-ban-hop-GVHD-2026-08-19.md).
 
 > Không việc nào thuộc một tuần trong đề cương [`00`](00_project-outline.md) — chúng phát
@@ -20,6 +20,7 @@ thiết kế giao diện, và [biên bản họp GVHD 19/08](meetings/bien-ban-h
 | 4   | 05/09 | Duyệt trước khi gửi + bốn nút quản lý model bị vô hiệu |
 | 5   | 05/09 | Màn Đánh giá trong app + backend ASR thứ ba            |
 | 6   | 06/09 | Ba lần sửa cùng một chỗ: cách đặt tên và tải model     |
+| 7   | 19/09 | Bộ cài Windows, whisper.cpp chạy GPU qua Vulkan        |
 
 ---
 
@@ -526,3 +527,148 @@ Kiểm chứng trên service thật, thư mục model tạm:
 | Cắt file còn 5 MB rồi tải lại **không** `force` | 200 nhưng vẫn 5,0 MB — đúng cái bug cũ                |
 | Cắt file còn 5 MB rồi tải lại **có** `force`    | 32,2 MB                                               |
 | Quét thư mục model thật (6 model)               | không có báo nhầm nào                                 |
+
+---
+
+## 7. Bộ cài Windows và whisper.cpp chạy GPU qua Vulkan — 19/09
+
+Bản macOS đã đóng gói xong từ 15/09 ([`09` mục 3a](09_huong-dan-cai-dat.md)). Bản Windows phải
+dựng trên chính máy Windows vì torch, sherpa-onnx và pywhispercpp đều mang thư viện native, không
+biên dịch chéo được. Script đóng gói vốn đã viết sẵn nhánh Windows nhưng **chưa từng chạy**. Mục này
+ghi lại những gì đã làm để biết bộ cài chạy thật, chứ không chỉ build ra được một file `.exe`.
+
+Máy dùng để dựng và kiểm: Windows 11 Pro (build 26200), Intel i5-12500H (16 luồng), hai GPU là Intel
+Iris Xe (tích hợp) và NVIDIA RTX 4060 Laptop 8 GB (driver 610.88). Build chạy trong Git Bash.
+
+### 7.1. Kiểm theo bốn tầng, từ trong ra ngoài
+
+Mỗi tầng loại bớt một nhóm nguyên nhân, để khi có lỗi thì biết nó nằm ở đâu:
+
+| Tầng | Kiểm gì                             | Cách kiểm                                                                                                          | Loại được lỗi nào                                   |
+| ---- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| 1    | Bộ Python đóng gói (`dist/service`) | `bundle_service.sh` tự import torch, transformers, sherpa_onnx, pywhispercpp, silero_vad                           | thiếu DLL, wheel sai nền tảng                       |
+| 2    | Service chạy từ bộ Python đó        | chạy `python.exe -m llvt_ai_service`, gọi `/health`, `/api/config`, `POST /api/models/load`, `POST /api/benchmark` | model không nạp được, native lib chết lúc chạy thật |
+| 3    | Bộ cài `.exe` thật                  | cài im lặng `/S /D=<thư mục tạm>`, mở app, đọc log, đóng app, gỡ cài `/S`                                          | sai đường dẫn Resources, service không tự lên/tắt   |
+| 4    | Tốc độ trên chính bản cài           | gọi `/api/models/load` + `/api/benchmark` vào service mà app tự khởi động                                          | chạy được nhưng chậm tới mức không dùng được        |
+
+Tầng 4 không có trong kế hoạch ban đầu. Nó được thêm vào sau khi tầng 2 cho thấy bản cài chạy đúng
+mà vẫn không dùng được (lỗi 2 ở mục 7.3).
+
+### 7.2. Kết quả trên bộ cài thật
+
+| Việc                                      | Kết quả                                                                                         |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `make dist`                               | `Voice Translator-1.0.0-setup.exe` 371 MB; cài xong 1,8 GB                                      |
+| Cài im lặng bằng chính file `.exe`        | exit 0, khoảng 5 phút (bộ Python có hàng chục nghìn file nhỏ)                                   |
+| Mở app                                    | service tự chạy, trả lời `/health` sau 12 giây                                                  |
+| Renderer nối vào service                  | log service ghi `GET /api/config`, `/api/models`, `/api/sessions` và `WebSocket /ws [accepted]` |
+| Log tiếng Việt                            | ghi đúng (`model=chưa nạp (nạp khi cần)`), không còn "Logging error"                            |
+| `POST /api/models/load` (preset Balanced) | 34 giây, đủ bốn khâu; ASR báo `accel = Vulkan`                                                  |
+| Đóng app                                  | không còn tiến trình `voice-translator` hay `python.exe` nào; cổng 8756 được nhả                |
+| Gỡ cài `/S`                               | exit 0                                                                                          |
+
+Benchmark trên chính bản cài, preset Balanced, 3 giây audio (ms):
+
+| Chiều | VAD | ASR | MT   | TTS | Tổng |
+| ----- | --- | --- | ---- | --- | ---- |
+| vi→en | 122 | 437 | 1742 | 187 | 2489 |
+| en→vi | 119 | 480 | 1703 | 190 | 2492 |
+| vi→ja | 182 | 362 | 1368 | 912 | 2824 |
+
+Trước khi chuyển sang Vulkan, cùng phép đo vi→en ra ASR 17.573 ms và tổng 19.164 ms.
+
+### 7.3. Bảy lỗi lộ ra nhờ kiểm, đều đã sửa
+
+| #   | Triệu chứng                                                          | Nguyên nhân                                                                                                      | Sửa                                                                                              | Lộ ra ở |
+| --- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------- |
+| 1   | Bước kiểm import của script chết vì dấu `✓`                          | stdout của Python bị pipe trên Windows mặc định là cp1252; log tiếng Việt của service cũng thành "Logging error" | chạy Python với `PYTHONUTF8=1`, cả trong script lẫn lúc `main/service.ts` spawn service          | tầng 1  |
+| 2   | ASR mất 17,6 s cho 3 s audio                                         | wheel pywhispercpp trên PyPI chỉ có CPU, mặc định 4 luồng; tăng lên 12 luồng cũng chỉ còn 11,2 s                 | chuyển whisper.cpp sang GPU qua Vulkan (mục 7.4)                                                 | tầng 2  |
+| 3   | Build Vulkan báo "No CMAKE_C_COMPILER could be found" dù MSVC đã cài | đường dẫn build vượt 260 ký tự; lỗi thật (`FTK1011`) chỉ nằm trong `CMakeConfigureLog.yaml`                      | build trong thư mục ngắn `C:\llvtvk`                                                             | build   |
+| 4   | `tar` báo "Cannot connect to C: resolve failed"                      | `tar` hiểu `C:/…` là `máy:đường-dẫn`                                                                             | dùng đường dẫn dạng `/c/…`                                                                       | build   |
+| 5   | Có Vulkan mà ASR vẫn mất ~9,9 s, GPU NVIDIA dùng 0%                  | laptop hybrid: ggml liệt kê Iris Xe trước RTX 4060, whisper.cpp lấy GPU đầu tiên                                 | liệt kê thiết bị ggml trước khi nạp, ưu tiên card rời (`pick_gpu_device`)                        | tầng 4  |
+| 6   | Giao diện báo ASR chạy "CPU" dù đang chạy GPU                        | backend Vulkan không khai gì trong `system_info()`                                                               | đọc thiết bị thật từ log whisper.cpp lúc nạp (`gpu_backend_from_log`); ô "Vulkan" bật cho NVIDIA | tầng 4  |
+| 7   | Lần transcribe đầu tiên mất 11,7 s                                   | driver biên dịch shader Vulkan ở lần dùng đầu (sau đó có cache trên đĩa, chỉ còn 0,2 s)                          | làm nóng bằng 1 s im lặng ngay lúc nạp model, để khoảng chờ rơi vào bước có thanh tiến trình     | tầng 4  |
+
+Lỗi 1 ảnh hưởng cả người dùng. Log là thứ duy nhất đọc được khi bản cài lỗi trên máy người khác, và
+không sửa thì mọi dòng tiếng Việt trong đó đều mất.
+
+### 7.4. Vì sao Vulkan chứ không phải CUDA
+
+| Cách                                            | Bộ cài nặng thêm        | Card chạy được     | Model                  |
+| ----------------------------------------------- | ----------------------- | ------------------ | ---------------------- |
+| whisper.cpp CUDA dựng sẵn (bản phát hành b5130) | 273–675 MB (kèm cuBLAS) | NVIDIA             | giữ nguyên GGML        |
+| faster-whisper + CUDA                           | ~1 GB (cuBLAS + cuDNN)  | NVIDIA             | phải tải bộ model khác |
+| **whisper.cpp Vulkan tự build**                 | **6 MB**                | NVIDIA, AMD, Intel | **giữ nguyên GGML**    |
+
+Ý tưởng lấy từ [TranscriptionSuite](https://github.com/homelab-00/TranscriptionSuite): họ chạy
+whisper.cpp bản Vulkan cho card AMD/Intel trên Windows. Vulkan có sẵn trong driver của mọi card, nên
+không phải mang thư viện runtime nào theo. Cái giá là phải tự build, vì whisper.cpp không phát hành
+bản Vulkan cho Windows: máy build cần thêm VS Build Tools và Vulkan SDK, mỗi lần build mất khoảng 6
+phút. Máy người dùng không cần gì thêm. Wheel dựng ra nặng 19 MB, so với 1,4 MB của bản CPU.
+
+`repairwheel` gom luôn `vulkan-1.dll` (bộ nạp Vulkan) vào wheel. File này được **giữ lại có chủ ý**:
+bộ nạp vẫn tìm driver của máy qua registry như bình thường, còn trên máy không có driver Vulkan thì
+thiếu nó là cả whisper.cpp chết ngay lúc import.
+
+### 7.5. Một kết luận sai đã phải rút lại
+
+Lần đo đầu trên Iris Xe ra văn bản `'.'`. Kết luận ban đầu là "GPU tích hợp giải mã ra rác", kèm
+theo luật "chỉ có iGPU thì ép chạy CPU". Kiểm lại mới thấy **5 giây đầu của file mẫu là im lặng**
+(RMS ≈ 0), và cả CPU lẫn RTX 4060 cũng ra `'.'` trên đúng đoạn đó. Trên đoạn có lời nói (giây 5–12),
+GPU và CPU cho cùng một câu: _"Hello? Hello. Oh, hello. I didn't know you were there…"_. Iris Xe cũng
+không chậm hơn CPU (khoảng 9,9 s so với 17 s). Luật đã được sửa: có card rời thì dùng card rời, không
+có thì để whisper.cpp tự chọn.
+
+Bài học cho các lần đo sau: kiểm đầu vào trước khi đổ lỗi cho thiết bị.
+
+### 7.6. Số đo trung gian
+
+Đo bằng large-v3-turbo-q5_0, cùng máy. Ghi rõ đầu vào vì nó ảnh hưởng thời gian giải mã:
+
+| Cấu hình                   | Đầu vào     | Thời gian ASR                  |
+| -------------------------- | ----------- | ------------------------------ |
+| CPU, 4 luồng (mặc định)    | 3 s nhiễu   | 17,1 s                         |
+| CPU, 8 luồng               | 3 s nhiễu   | 13,2 s                         |
+| CPU, 12 luồng              | 3 s nhiễu   | 11,2 s                         |
+| Vulkan trên Iris Xe        | 3 s nhiễu   | 9,8–9,9 s                      |
+| Vulkan trên RTX 4060       | 5 s im lặng | 0,13 s (GPU 100%, 1,2 GB VRAM) |
+| Vulkan trên RTX 4060       | 7 s lời nói | 0,17–0,19 s                    |
+| Làm nóng, lần đầu trên máy | 1 s im lặng | 11,7 s                         |
+| Làm nóng, các lần sau      | 1 s im lặng | 0,2 s                          |
+
+### 7.7. Chưa kiểm được
+
+Ghi rõ để không bị hiểu là đã kiểm:
+
+- **Chưa chạy một phiên dịch thật trong bản cài** (mic hoặc âm thanh hệ thống, rồi nghe ra loa). Tầng
+  4 chỉ gọi `/api/benchmark` qua REST. Đường thu âm WASAPI loopback của bản đóng gói chưa được thử.
+- **Chỉ thử trên một máy.** Chưa có máy chỉ có GPU AMD/Intel, máy không có GPU, hay máy ảo không có
+  driver Vulkan. Hành vi "không có thiết bị thì chạy CPU" mới suy ra từ mã nguồn ggml, chưa chạy thật.
+- **SmartScreen chưa được thử.** Bộ cài chưa ký và mới cài trên chính máy build, nơi file không mang
+  cờ "tải từ Internet". Trên máy khác sẽ hiện cảnh báo như [`09` mục 3a](09_huong-dan-cai-dat.md) mô tả.
+- **Chỉ cài im lặng**, chưa đi qua các màn hình của trình cài NSIS (chọn thư mục, shortcut).
+- **Playwright e2e chưa chạy trên Windows**, vitest chưa chạy lại. Pytest trên Windows có 13 test
+  hỏng sẵn (tạo symlink cần quyền admin, `WinError 1314`). Đã đối chiếu: chúng hỏng y hệt trên mã chưa
+  sửa, nên không do đợt này.
+- **Khâu dịch (NLLB) vẫn chạy CPU**, khoảng 1,7 s, và giờ là khâu chậm nhất. Torch bản Windows trên
+  PyPI chỉ có CPU.
+
+### 7.8. Chạy lại
+
+Một lần trên máy build (PowerShell):
+
+```powershell
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+winget install KhronosGroup.VulkanSDK
+```
+
+Sau đó, trong Git Bash:
+
+```bash
+make dist                         # wheel Vulkan được giữ ở dist/wheels/vulkan/ cho lần sau
+cat dist/service/BUNDLE-INFO.txt  # phải có dòng "vulkan: có"
+```
+
+Kiểm bản cài như mục 7.2: cài bằng `"Voice Translator-1.0.0-setup.exe" /S /D=<thư mục>`, mở app, gọi
+`POST /api/models/load` rồi `POST /api/benchmark`. Log service nằm ở
+`%APPDATA%\voice-translator\ai-service.log`, trong đó phải có dòng `whisper.cpp chạy trên Vulkan`.

@@ -2,7 +2,7 @@
 # Gói AI service Python thành một cây thư mục tự chạy, để electron-builder chép
 # vào Resources của bản cài.
 #
-#   tools/bundle_service.sh [--with-mlx] [--with-diarization] [--with-ctranslate2]
+#   tools/bundle_service.sh [--with-mlx] [--with-diarization] [--with-ctranslate2] [--with-vulkan]
 #
 # Kết quả: dist/service/ — một bản CPython standalone (python-build-standalone,
 # do uv quản lý) đã cài sẵn llvt_ai_service và toàn bộ phụ thuộc lõi. Main
@@ -23,8 +23,10 @@ OUT="$ROOT/dist/service"
 PY_VERSION="3.12"
 
 EXTRAS=()
+VULKAN=0
 for arg in "$@"; do
   case "$arg" in
+    --with-vulkan) VULKAN=1 ;;
     --with-mlx) EXTRAS+=("mlx") ;;
     --with-diarization) EXTRAS+=("diarization") ;;
     --with-ctranslate2) EXTRAS+=("ctranslate2") ;;
@@ -72,6 +74,16 @@ else
 fi
 uv pip install --system --python "$BUNDLE_PY" "$SPEC"
 
+if ((VULKAN)); then
+  # Thay wheel pywhispercpp CPU bằng bản build Vulkan cùng phiên bản (xem
+  # tools/build_whisper_vulkan.sh). Wheel được giữ ở dist/wheels để lần đóng gói
+  # sau khỏi build lại.
+  PWC_VERSION="$("$BUNDLE_PY" -c 'import importlib.metadata as m; print(m.version("pywhispercpp"))')"
+  echo "▶ Thay pywhispercpp $PWC_VERSION bằng bản Vulkan…"
+  WHEEL="$("$ROOT/tools/build_whisper_vulkan.sh" "$PWC_VERSION" "$ROOT/dist/wheels" | tail -1)"
+  uv pip install --system --python "$BUNDLE_PY" --reinstall --no-deps "$WHEEL"
+fi
+
 echo "▶ Dọn phần không cần cho lúc chạy…"
 # Bytecode sinh lại được, và test/idlelib/tkinter của chính CPython không đường
 # nào gọi tới — cộng lại khoảng 40 MB.
@@ -88,11 +100,13 @@ build-date: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 platform:   $(uname -s) $(uname -m)
 python:     $("$BUNDLE_PY" -c 'import sys; print(sys.version.split()[0])')
 extras:     ${EXTRAS[*]:-(không)}
+vulkan:     $( ((VULKAN)) && echo có || echo không)
 git:        $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo 'n/a')
 EOF
 
 echo "▶ Kiểm tra bundle nạp được các thư viện có native lib…"
-"$BUNDLE_PY" - <<'PY'
+# PYTHONUTF8: trên Windows stdout bị pipe là cp1252, không in được dấu ✓.
+PYTHONUTF8=1 "$BUNDLE_PY" - <<'PY'
 import importlib
 
 for name in ("llvt_ai_service", "torch", "transformers", "sherpa_onnx", "pywhispercpp", "silero_vad"):

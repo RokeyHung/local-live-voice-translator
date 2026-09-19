@@ -15,7 +15,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import shutil
+import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Callable, Protocol
@@ -130,6 +133,96 @@ def _read_system_info() -> str:
         return ""
 
 
+_GPU_LINE = re.compile(r"whisper_backend_init_gpu: using (\S+) backend")
+# Tên thiết bị ggml ("Vulkan0", "CUDA0", "MTL0") -> tên hiển thị.
+_GPU_NAMES = (("vulkan", "Vulkan"), ("cuda", "CUDA"), ("mtl", "Metal"), ("metal", "Metal"))
+
+
+def gpu_backend_from_log(log: str) -> str | None:
+    """Thiết bị GPU whisper.cpp THẬT SỰ dùng, đọc từ log lúc nạp model.
+
+    Cần thiết vì backend Vulkan không khai báo gì trong ``system_info()`` — bản build
+    Vulkan chạy GPU mà cờ build vẫn trông như CPU. Log thì ghi đúng cả hai trường hợp:
+    ``using Vulkan0 backend`` khi có card, ``no GPU found`` khi không (lúc đó ggml
+    tự lùi về CPU và hàm này trả ``None``).
+    """
+    match = _GPU_LINE.search(log)
+    if not match:
+        return None
+    device = match.group(1)
+    lowered = device.lower()
+    for prefix, name in _GPU_NAMES:
+        if lowered.startswith(prefix):
+            return name
+    return device
+
+
+# enum ggml_backend_dev_type
+_DEV_GPU = 1
+_DEV_IGPU = 2
+
+
+def pick_gpu_device(devices: list[tuple[str, int]]) -> dict[str, Any] | None:
+    """Chọn thiết bị cho whisper.cpp từ danh sách ``(tên, loại)`` của ggml.
+
+    whisper.cpp lấy GPU **đầu tiên** ggml liệt kê, mà trên laptop hybrid đó là GPU
+    tích hợp. Đo trên máy dev (Iris Xe + RTX 4060), large-v3-turbo với 3–5 s audio:
+    Iris Xe ~9,9 s, RTX 4060 ~0,13 s. Nên có card rời thì chọn card rời. Chỉ có GPU
+    tích hợp thì vẫn để nó chạy — Iris Xe vẫn nhanh hơn CPU (~17 s).
+    Trả ``context_params`` cho pywhispercpp, ``None`` = giữ mặc định.
+    """
+    gpus = [kind for _name, kind in devices if kind in (_DEV_GPU, _DEV_IGPU)]
+    if _DEV_GPU not in gpus:
+        return None
+    # gpu_device đếm trong số thiết bị GPU/IGPU, đúng cách whisper.cpp đếm.
+    index = gpus.index(_DEV_GPU)
+    return None if index == 0 else {"gpu_device": index}
+
+
+def _list_ggml_devices() -> list[tuple[str, int]]:
+    """Thiết bị ggml thấy, theo đúng thứ tự whisper.cpp duyệt. Rỗng nếu không hỏi được.
+
+    pywhispercpp không bọc API thiết bị của ggml, nên gọi thẳng vào DLL của nó bằng
+    ctypes — các DLL này đã được nạp sẵn khi import ``_pywhispercpp``. Chỉ làm trên
+    Windows, nơi duy nhất bản cài mang whisper.cpp Vulkan (tools/build_whisper_vulkan.sh);
+    macOS chỉ có một GPU Metal nên mặc định đã đúng.
+    """
+    if sys.platform != "win32":
+        return []
+    try:
+        import ctypes
+        import sysconfig
+
+        import _pywhispercpp  # noqa: F401 — nạp DLL của ggml vào tiến trình
+
+        # repairwheel đổi tên DLL thành "ggml-base-<md5>.dll", nên tìm theo mẫu.
+        root = Path(sysconfig.get_paths()["platlib"])
+
+        def load(prefix: str) -> Any:
+            pattern = re.compile(rf"^{prefix}(-[0-9a-f]{{32}})?\.dll$")
+            path = next(p for p in root.glob("ggml*.dll") if pattern.match(p.name))
+            return ctypes.CDLL(str(path))
+
+        ggml, base = load("ggml"), load("ggml-base")
+        ggml.ggml_backend_dev_count.restype = ctypes.c_size_t
+        ggml.ggml_backend_dev_get.restype = ctypes.c_void_p
+        ggml.ggml_backend_dev_get.argtypes = [ctypes.c_size_t]
+        base.ggml_backend_dev_name.restype = ctypes.c_char_p
+        base.ggml_backend_dev_name.argtypes = [ctypes.c_void_p]
+        base.ggml_backend_dev_type.restype = ctypes.c_int
+        base.ggml_backend_dev_type.argtypes = [ctypes.c_void_p]
+        devices = []
+        for i in range(ggml.ggml_backend_dev_count()):
+            dev = ggml.ggml_backend_dev_get(i)
+            devices.append(
+                (base.ggml_backend_dev_name(dev).decode(), base.ggml_backend_dev_type(dev))
+            )
+        return devices
+    except Exception:  # noqa: BLE001 — không hỏi được thì để whisper.cpp tự chọn như cũ
+        logger.debug("Không liệt kê được thiết bị ggml", exc_info=True)
+        return []
+
+
 def _accel_from_system_info(info: str) -> str:
     """Rút gọn chuỗi cờ build thành tên bộ tăng tốc đang bật."""
     if not info:
@@ -187,8 +280,40 @@ def _default_loader(model_id: str, models_dir: str | None) -> WhisperModel:
     # pywhispercpp, và một lượt nạp bị ngắt sẽ để lại file .bin cụt.
     if models_dir:
         download_ggml(model_id, Path(models_dir))
-    # redirect logs để không làm nhiễu log của service; greedy (mặc định) cho low-latency.
-    return Model(model_id, models_dir=models_dir, redirect_whispercpp_logs_to=None)
+    # Log của whisper.cpp đi vào file tạm thay vì stderr của service: không làm nhiễu
+    # log, mà vẫn đọc lại được để biết model đang chạy GPU nào. Greedy (mặc định)
+    # cho low-latency.
+    devices = _list_ggml_devices()
+    context_params = pick_gpu_device(devices)
+    # Chỉ truyền khi cần đổi thiết bị: đây là tham số mới của pywhispercpp, và
+    # macOS (không bao giờ cần) có thể đang ở bản chưa có nó.
+    extra: dict[str, Any] = {}
+    if context_params is not None:
+        logger.info("Thiết bị ggml %s → nạp whisper.cpp với %s", devices, context_params)
+        extra["context_params"] = context_params
+    fd, log_path = tempfile.mkstemp(prefix="whisper-init-", suffix=".log")
+    os.close(fd)
+    try:
+        model = Model(
+            model_id, models_dir=models_dir, redirect_whispercpp_logs_to=log_path, **extra
+        )
+        init_log = Path(log_path).read_text(encoding="utf-8", errors="replace")
+    finally:
+        Path(log_path).unlink(missing_ok=True)
+    gpu = gpu_backend_from_log(init_log)
+    logger.info("whisper.cpp chạy trên %s", gpu or "CPU")
+    if gpu == "Vulkan":
+        # ggml biên dịch pipeline Vulkan ở lần chạy đầu: lần đầu tiên trên một máy mất
+        # ~12 s (RTX 4060), sau đó driver giữ cache trên đĩa và chỉ còn ~0,2 s. Làm
+        # nóng ở đây để khoảng chờ đó rơi vào bước nạp model — có thanh tiến trình —
+        # chứ không phải vào câu nói đầu tiên của người dùng.
+        started = time.perf_counter()
+        model.transcribe(np.zeros(SAMPLE_RATE, dtype=np.float32), **_supported(DECODE_PARAMS))
+        logger.info("Làm nóng Vulkan: %.1f s", time.perf_counter() - started)
+    # Gắn lên chính instance: loader chỉ trả về model, và test tiêm loader giả
+    # không có thuộc tính này thì adapter lùi về đọc cờ build như cũ.
+    model.llvt_gpu_backend = gpu
+    return model
 
 
 class WhisperCppAsr(SpeechToTextProvider):
@@ -241,7 +366,8 @@ class WhisperCppAsr(SpeechToTextProvider):
             # cái tên thứ hai cho cùng một model.
             "model": self._model_name,
             "backend": "whisper.cpp",
-            "accel": _accel_from_system_info(self._system_info),
+            "accel": getattr(self._model, "llvt_gpu_backend", None)
+            or _accel_from_system_info(self._system_info),
         }
 
     async def unload(self) -> None:

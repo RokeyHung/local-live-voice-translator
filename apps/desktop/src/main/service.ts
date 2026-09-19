@@ -93,7 +93,15 @@ export async function startAiService(): Promise<void> {
   child = spawn(python, ['-m', 'llvt_ai_service'], {
     // PYTHONHOME/PYTHONPATH thừa hưởng từ máy người dùng sẽ trỏ bộ thông dịch
     // bundle sang site-packages của một bản Python khác và làm hỏng import.
-    env: { ...process.env, PYTHONHOME: undefined, PYTHONPATH: undefined, PYTHONUNBUFFERED: '1' },
+    // PYTHONUTF8: trên Windows, stdout bị pipe mặc định là cp1252 — log tiếng
+    // Việt của service sẽ thành "--- Logging error ---" thay vì vào file log.
+    env: {
+      ...process.env,
+      PYTHONHOME: undefined,
+      PYTHONPATH: undefined,
+      PYTHONUNBUFFERED: '1',
+      PYTHONUTF8: '1'
+    },
     stdio: ['ignore', 'pipe', 'pipe']
   })
   child.stdout?.on('data', remember)
