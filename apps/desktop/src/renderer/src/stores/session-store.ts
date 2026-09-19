@@ -43,6 +43,8 @@ interface StageMarks {
 interface SessionState {
   wsStatus: WsStatus
   active: boolean
+  // Lúc bấm Bắt đầu (ms epoch) — đồng hồ phiên trên màn Phiên dịch; null khi dừng.
+  startedAt: number | null
   muted: boolean
   ptt: boolean
   config: SessionConfig
@@ -115,6 +117,7 @@ function dropIfEmpty(list: Utterance[], id: string): Utterance[] {
 export const useSessionStore = create<SessionState>((set) => ({
   wsStatus: 'disconnected',
   active: false,
+  startedAt: null,
   muted: false,
   ptt: false,
   config: DEFAULT_SESSION_CONFIG,
@@ -132,7 +135,8 @@ export const useSessionStore = create<SessionState>((set) => ({
   log: [],
 
   setWsStatus: (wsStatus): void => set({ wsStatus }),
-  setActive: (active): void => set({ active }),
+  setActive: (active): void =>
+    set((s) => ({ active, startedAt: active ? (s.active ? s.startedAt : Date.now()) : null })),
   setMuted: (muted): void => set({ muted }),
   setPtt: (ptt): void => set({ ptt }),
   setConfig: (patch): void => set((s) => ({ config: { ...s.config, ...patch } })),
@@ -230,7 +234,10 @@ export const useSessionStore = create<SessionState>((set) => ({
         }
         case 'asr.partial': {
           const a = p as unknown as AsrPartialPayload
-          return { log, partial: { utteranceId: a.utteranceId, text: a.text } }
+          return {
+            log,
+            partial: { utteranceId: a.utteranceId, text: a.text }
+          }
         }
         case 'asr.final': {
           const a = p as unknown as AsrFinalPayload

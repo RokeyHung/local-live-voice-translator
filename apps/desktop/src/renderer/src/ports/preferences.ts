@@ -1,12 +1,11 @@
 // Port: nơi lưu tuỳ chọn người dùng + lịch sử cuộc họp giữa các lần mở app.
 
-import type { SessionLayout, ThemeMode, UiLanguage } from '../domain/enums'
+import type { ThemeMode, UiLanguage } from '../domain/enums'
 import type { GlossaryEntry } from '../domain/models'
 
 export interface StoredPreferences {
   theme: ThemeMode
   uiLanguage: UiLanguage
-  layout: SessionLayout
   reviewBeforeSpeaking: boolean
   reviewCountdownSec: number
   glossary: GlossaryEntry[]

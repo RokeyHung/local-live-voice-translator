@@ -1,102 +1,105 @@
-// Cách hiển thị một câu dịch, dùng chung cho 3 bố cục của màn Phiên dịch.
+// Cách vẽ một câu trên màn Phiên dịch — bố cục duy nhất, dòng thời gian của cuộc họp.
 //
-// Màu theo bên phát (ME xanh / REMOTE tím) và màu theo trạng thái pipeline đều
+// Màu theo bên phát (cuộc họp tím / mình xanh) và màu theo trạng thái pipeline đều
 // tính lúc chạy nên đi qua `style`; bố cục và cỡ chữ là class Tailwind.
 
 import type { JSX } from 'react'
 import type { Dict } from '../../application/i18n'
 import { languageShort } from '../../application/i18n'
+import { bubbleLines } from '../../application/meeting'
 import { formatClock } from '../../application/utterances'
+import type { Side } from '../../domain/enums'
 import { SIDE_COLOR, statusMeta, type ViewUtterance } from '../utterance-view'
 import { Badge } from './primitives'
 
-function directionText(u: ViewUtterance): string {
-  if (!u.sourceLanguage || !u.targetLanguage) return ''
-  return `${languageShort(u.sourceLanguage)} → ${languageShort(u.targetLanguage)}`
-}
-
-function SideTag({ side }: { side: ViewUtterance['side'] }): JSX.Element {
+function SideTag({ side, L }: { side: Side; L: Dict }): JSX.Element {
   const color = SIDE_COLOR[side]
   return (
     <span
-      className="rounded-xs px-2 py-0.5 text-xs font-extrabold tracking-[0.5px]"
+      className="rounded-xs px-2 py-0.5 text-xs font-extrabold tracking-[0.5px] uppercase"
       style={{ color, background: `${color}1a` }}
     >
-      {side === 'me' ? 'Me' : 'Remote'}
+      {side === 'me' ? L.sideMe : L.sideMeeting}
     </span>
   )
 }
 
-// Dạng dòng đơn giản dùng trong hai cột Split.
-export function UtteranceRow({ u, L }: { u: ViewUtterance; L: Dict }): JSX.Element {
-  const status = statusMeta(u.state, L)
-  return (
-    <div className="motion-safe:animate-[fadeup_.3s_ease]">
-      <div className="mb-1.25 flex items-center gap-2">
-        <span className="font-mono text-[10px] text-fg-4">{formatClock(u.at)}</span>
-        <Badge color={status.color}>{status.text}</Badge>
-      </div>
-      <div className="text-[14px] leading-normal text-fg-2">{u.sourceText}</div>
-      {u.displayTarget && (
-        <div className="mt-0.75 text-lg leading-normal font-semibold text-fg">
-          {u.displayTarget}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Dạng bong bóng hai phía dùng trong Timeline.
-export function UtteranceBubble({ u, L }: { u: ViewUtterance; L: Dict }): JSX.Element {
-  const status = statusMeta(u.state, L)
-  const isMe = u.side === 'me'
-  const tag = SIDE_COLOR[u.side]
-
+function Shell({
+  side,
+  header,
+  children
+}: {
+  side: Side
+  header: JSX.Element
+  children: JSX.Element | JSX.Element[]
+}): JSX.Element {
+  const isMe = side === 'me'
+  const tag = SIDE_COLOR[side]
   return (
     <div
       className={`flex motion-safe:animate-[fadeup_.3s_ease] ${isMe ? 'justify-end' : 'justify-start'}`}
     >
       <div
-        className="max-w-[76%] rounded-xl border px-4 py-3.25"
+        className="max-w-[78%] rounded-xl border px-4 py-3.25"
         style={{
           borderColor: `${tag}33`,
           background: isMe ? 'rgba(34,211,238,.06)' : 'rgba(217,70,239,.06)'
         }}
       >
         <div className={`mb-1.5 flex items-center gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-          <SideTag side={u.side} />
-          <span className="font-mono text-[10px] text-fg-4">
-            {directionText(u)} · {formatClock(u.at)}
-          </span>
-          <Badge color={status.color}>{status.text}</Badge>
+          {header}
         </div>
-        <div className="text-md leading-normal text-fg-3">{u.sourceText}</div>
-        {u.displayTarget && (
-          <div className="mt-1 text-[15.5px] leading-normal font-semibold text-fg">
-            {u.displayTarget}
-          </div>
-        )}
+        {children}
       </div>
     </div>
   )
 }
 
-// Câu mới nhất, cỡ chữ lớn — bố cục Focus.
-export function UtteranceFocus({ u, L }: { u: ViewUtterance; L: Dict }): JSX.Element {
+/**
+ * Một câu đã nhận dạng xong. Chữ to luôn là NGÔN NGỮ CỦA MÌNH (xem `bubbleLines`):
+ * câu của cuộc họp in bản dịch to, câu gốc nhỏ để đối chiếu; câu của mình in câu gốc
+ * to, bản dịch sang ngôn ngữ cuộc họp nhỏ bên dưới.
+ */
+export function MeetingBubble({ u, L }: { u: ViewUtterance; L: Dict }): JSX.Element {
   const status = statusMeta(u.state, L)
+  const lines = bubbleLines(u.side, u.sourceText ?? '', u.displayTarget)
+  const done = u.state === 'Completed'
+
   return (
-    <>
-      <div className="mb-4.5 flex items-center gap-2.5">
-        <SideTag side={u.side} />
-        <span className="font-mono text-sm text-fg-3">{directionText(u)}</span>
-        <Badge color={status.color}>{status.text}</Badge>
-      </div>
-      <div className="text-[19px] leading-snug font-medium text-fg-3">{u.sourceText}</div>
-      {u.displayTarget && (
-        <div className="mt-3.5 text-[32px] leading-tight font-extrabold tracking-[-0.5px] text-pretty text-fg">
-          {u.displayTarget}
+    <Shell
+      side={u.side}
+      header={
+        <>
+          <SideTag side={u.side} L={L} />
+          <span className="font-mono text-[10px] text-fg-4">
+            {u.sourceLanguage && u.targetLanguage
+              ? `${languageShort(u.sourceLanguage)} → ${languageShort(u.targetLanguage)} · `
+              : ''}
+            {formatClock(u.at)}
+          </span>
+          {/* Xong rồi thì bỏ nhãn: nhãn "Hoàn tất" lặp lại ở mọi câu chỉ là nhiễu. */}
+          {!done && <Badge color={status.color}>{status.text}</Badge>}
+        </>
+      }
+    >
+      {/* VAD vừa cắt câu, ASR chưa trả chữ: service báo Recognizing trước khi có text.
+          Không có nhận dạng kiểu streaming nên đây là chỗ sớm nhất biết có câu mới. */}
+      {lines.primary ? (
+        <div
+          className={`text-[16px] leading-normal font-semibold ${lines.pending ? 'text-fg-3' : 'text-fg'}`}
+        >
+          {lines.primary}
         </div>
+      ) : (
+        <div className="text-md text-fg-4 italic">{L.recognizingNow}</div>
       )}
-    </>
+      {lines.secondary ? (
+        <div className="mt-1 text-md leading-normal text-fg-3">
+          {u.side === 'me' ? `→ ${lines.secondary}` : lines.secondary}
+        </div>
+      ) : (
+        <></>
+      )}
+    </Shell>
   )
 }

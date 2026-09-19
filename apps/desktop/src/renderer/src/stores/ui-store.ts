@@ -3,7 +3,7 @@
 
 import { create } from 'zustand'
 import { LocalPreferences } from '../adapters/local-preferences'
-import type { ScreenId, SessionLayout, ThemeMode, UiLanguage } from '../domain/enums'
+import type { ScreenId, ThemeMode, UiLanguage } from '../domain/enums'
 import type { GlossaryEntry } from '../domain/models'
 import type { PreferencesRepository } from '../ports/preferences'
 
@@ -14,7 +14,6 @@ interface UiState {
   screen: ScreenId
   theme: ThemeMode
   uiLanguage: UiLanguage
-  layout: SessionLayout
   // SPEC 7.10/7.8 — duyệt bản dịch trước khi đọc ra micro ảo, và số giây tự gửi
   // nếu người dùng không bấm gì (0 = tắt tự gửi, chờ mãi).
   reviewBeforeSpeaking: boolean
@@ -32,7 +31,6 @@ interface UiState {
   setScreen: (screen: ScreenId) => void
   setTheme: (theme: ThemeMode) => void
   setUiLanguage: (uiLanguage: UiLanguage) => void
-  setLayout: (layout: SessionLayout) => void
   setReviewBeforeSpeaking: (on: boolean) => void
   setReviewCountdownSec: (seconds: number) => void
   addGlossary: (source: string, target: string) => void
@@ -49,7 +47,6 @@ export const useUiStore = create<UiState>((set, get) => {
     repo.save({
       theme: s.theme,
       uiLanguage: s.uiLanguage,
-      layout: s.layout,
       reviewBeforeSpeaking: s.reviewBeforeSpeaking,
       reviewCountdownSec: s.reviewCountdownSec,
       glossary: s.glossary,
@@ -67,7 +64,6 @@ export const useUiStore = create<UiState>((set, get) => {
     screen: 'session',
     theme: stored.theme ?? 'system',
     uiLanguage: stored.uiLanguage ?? 'vi',
-    layout: stored.layout ?? 'split',
     reviewBeforeSpeaking: stored.reviewBeforeSpeaking ?? false,
     reviewCountdownSec: stored.reviewCountdownSec ?? 5,
     glossary: stored.glossary ?? [],
@@ -78,7 +74,6 @@ export const useUiStore = create<UiState>((set, get) => {
     setScreen: (screen): void => set({ screen }),
     setTheme: (theme): void => update({ theme }),
     setUiLanguage: (uiLanguage): void => update({ uiLanguage }),
-    setLayout: (layout): void => update({ layout }),
     setReviewBeforeSpeaking: (reviewBeforeSpeaking): void => update({ reviewBeforeSpeaking }),
     setReviewCountdownSec: (reviewCountdownSec): void => update({ reviewCountdownSec }),
     addGlossary: (source, target): void => {

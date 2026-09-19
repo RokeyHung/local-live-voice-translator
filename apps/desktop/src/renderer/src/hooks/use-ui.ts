@@ -1,7 +1,15 @@
 // Hook cầu nối cho phần trình bày: từ điển nhãn, chủ đề đã giải quyết, phần cứng,
 // danh sách thiết bị và mức tín hiệu mic.
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject
+} from 'react'
 import { listInputDevices, listOutputDevices, type AudioDevice } from '../adapters/audio-devices'
 import { probeCompute } from '../adapters/compute-probe'
 import { LevelMeter } from '../adapters/level-meter'
@@ -60,6 +68,48 @@ export function useStickyBottom<T extends HTMLElement>(signature: string): RefOb
   }, [signature])
 
   return ref
+}
+
+/**
+ * Như `useStickyBottom`, kèm trạng thái để hiện nút "Về câu mới nhất": trong cuộc họp
+ * người ta hay cuộn lên đọc lại một câu, rồi cần một đường quay về luồng đang chạy mà
+ * không phải kéo tay qua cả chục câu mới.
+ */
+export function useFollowLatest<T extends HTMLElement>(
+  signature: string
+): { ref: RefObject<T | null>; following: boolean; jump: () => void } {
+  const ref = useRef<T>(null)
+  const [following, setFollowing] = useState(true)
+  const followingRef = useRef(true)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onScroll = (): void => {
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24
+      if (atBottom !== followingRef.current) {
+        followingRef.current = atBottom
+        setFollowing(atBottom)
+      }
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (el && followingRef.current) el.scrollTop = el.scrollHeight
+  }, [signature])
+
+  const jump = useCallback((): void => {
+    const el = ref.current
+    if (!el) return
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    followingRef.current = true
+    setFollowing(true)
+  }, [])
+
+  return { ref, following, jump }
 }
 
 /** Màn này có đang được nhìn thấy không.

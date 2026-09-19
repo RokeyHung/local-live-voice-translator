@@ -28,21 +28,20 @@ export interface Dict {
   importFiles: string
   evaluate: string
   // phiên dịch
-  layout: string
-  vSplit: string
-  vTimeline: string
-  vFocus: string
+  srcMeeting: string
+  srcMeetingSub: string
+  srcMe: string
+  srcMeSub: string
+  srcLastOne: string
+  sideMeeting: string
+  sideMe: string
+  recognizingNow: string
+  jumpLatest: string
+  lineCount: string
+  pttKey: string
   meetingLangLbl: string
   myLangLbl: string
   swapLangs: string
-  listen: string
-  listenSub: string
-  speak: string
-  speakSub: string
-  twoway: string
-  twowaySub: string
-  vizRemote: string
-  vizMe: string
   mic: string
   spk: string
   waitRemote: string
@@ -55,7 +54,6 @@ export interface Dict {
   ptt: string
   recording: string
   loopWarn: string
-  remoteSourceMissing: string
   connecting: string
   // thiết lập
   setupSub: string
@@ -450,25 +448,24 @@ const vi: Dict = {
   importFiles: 'Nhập tệp',
   evaluate: 'Đánh giá',
 
-  layout: 'Bố cục',
-  vSplit: 'Chia đôi',
-  vTimeline: 'Dòng thời gian',
-  vFocus: 'Tập trung',
-  meetingLangLbl: 'Ngôn ngữ cuộc họp',
-  myLangLbl: 'Dịch sang',
+  srcMeeting: 'Nghe cuộc họp',
+  srcMeetingSub: 'Âm thanh hệ thống',
+  srcMe: 'Dịch giọng tôi',
+  srcMeSub: 'Micro · phát ra loa của bạn',
+  srcLastOne: 'Cần bật ít nhất một nguồn để dịch.',
+  sideMeeting: 'Cuộc họp',
+  sideMe: 'Tôi',
+  recognizingNow: 'đang nhận dạng…',
+  jumpLatest: 'Về câu mới nhất',
+  lineCount: '{n} câu',
+  pttKey: 'Space',
+  meetingLangLbl: 'Cuộc họp',
+  myLangLbl: 'Tôi',
   swapLangs: 'Đảo chiều',
-  listen: 'Nghe',
-  listenSub: 'Dịch giọng remote',
-  speak: 'Nói',
-  speakSub: 'Dịch giọng của bạn',
-  twoway: 'Hai chiều',
-  twowaySub: 'Cả hai cùng lúc',
-  vizRemote: 'Tín hiệu Remote',
-  vizMe: 'Tín hiệu của bạn',
   mic: 'Mic',
   spk: 'Loa',
   waitRemote: 'Đang chờ giọng nói từ cuộc họp…',
-  waitMe: 'Nhấn giữ để nói…',
+  waitMe: 'Giữ Space (hoặc nút Nhấn giữ để nói) rồi nói…',
   idleHint: 'Nhấn Bắt đầu để mở phiên dịch',
   start: 'Bắt đầu',
   stop: 'Dừng',
@@ -477,7 +474,6 @@ const vi: Dict = {
   ptt: 'Nhấn giữ để nói',
   recording: 'Đang ghi…',
   loopWarn: 'Đầu ra không phải tai nghe — nguy cơ mic thu lại giọng TTS.',
-  remoteSourceMissing: 'Chế độ Nói chỉ dịch giọng của bạn — không thu tiếng cuộc họp.',
   connecting: 'Đang kết nối…',
 
   setupSub: 'Chọn và kiểm tra thiết bị trước khi bắt đầu phiên.',
@@ -891,25 +887,24 @@ const en: Dict = {
   importFiles: 'Import Files',
   evaluate: 'Evaluation',
 
-  layout: 'Layout',
-  vSplit: 'Split',
-  vTimeline: 'Timeline',
-  vFocus: 'Focus',
-  meetingLangLbl: 'Meeting language',
-  myLangLbl: 'Translate to',
+  srcMeeting: 'Listen to meeting',
+  srcMeetingSub: 'System audio',
+  srcMe: 'Translate my voice',
+  srcMeSub: 'Mic · plays on your speaker',
+  srcLastOne: 'Keep at least one source on.',
+  sideMeeting: 'Meeting',
+  sideMe: 'Me',
+  recognizingNow: 'recognizing…',
+  jumpLatest: 'Jump to latest',
+  lineCount: '{n} lines',
+  pttKey: 'Space',
+  meetingLangLbl: 'Meeting',
+  myLangLbl: 'Me',
   swapLangs: 'Swap',
-  listen: 'Listen',
-  listenSub: 'Translate remote',
-  speak: 'Speak',
-  speakSub: 'Translate you',
-  twoway: 'Two-way',
-  twowaySub: 'Both at once',
-  vizRemote: 'Remote signal',
-  vizMe: 'Your signal',
   mic: 'Mic',
   spk: 'Speaker',
   waitRemote: 'Waiting for meeting audio…',
-  waitMe: 'Hold to talk…',
+  waitMe: 'Hold Space (or the Push to Talk button) and speak…',
   idleHint: 'Press Start to open a session',
   start: 'Start',
   stop: 'Stop',
@@ -918,7 +913,6 @@ const en: Dict = {
   ptt: 'Push to Talk',
   recording: 'Recording…',
   loopWarn: 'Output is not headphones — the mic may pick the TTS voice back up.',
-  remoteSourceMissing: 'Speak mode only translates your voice — meeting audio is not captured.',
   connecting: 'Connecting…',
 
   setupSub: 'Select and test your devices before starting a session.',

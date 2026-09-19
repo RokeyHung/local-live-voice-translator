@@ -71,9 +71,6 @@ export type ThemeMode = 'system' | 'light' | 'dark'
 
 export type UiLanguage = 'vi' | 'en'
 
-// Bố cục màn Phiên dịch.
-export type SessionLayout = 'split' | 'timeline' | 'focus'
-
 // Backend tính toán phát hiện được trên máy.
 export type ComputeKind = 'nvidia' | 'apple' | 'amd' | 'intel' | 'cpu'
 

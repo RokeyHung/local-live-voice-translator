@@ -392,7 +392,10 @@ export interface ComputeInfo {
 }
 
 export const DEFAULT_SESSION_CONFIG: SessionConfig = {
-  mode: 'two_way',
+  // Mặc định chỉ nghe cuộc họp: bỏ micro ảo rồi thì bản dịch giọng mình chỉ phát ra
+  // loa của chính mình, người bên kia không nghe được — nên đó là chiều bật thêm khi
+  // cần (họp trực tiếp cạnh nhau), không phải mặc định.
+  mode: 'listen',
   outgoing: { source: 'vi', target: 'en' },
   incoming: { source: 'en', target: 'vi' },
   preset: 'balanced',
