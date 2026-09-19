@@ -48,3 +48,14 @@ def test_resources_reports_service_process():
         assert body["rssMb"] > 0
         assert body["systemTotalMb"] > 0
         assert body["threads"] >= 1
+
+
+def test_resources_reports_machine_cpu_as_a_real_percentage():
+    """Màn Chẩn đoán từng hiện `cpuPercent` (% MỘT lõi) và ra "400%" trên máy 16 luồng.
+    Số để hiển thị là `systemCpuPercent`, luôn trong 0–100 như Task Manager."""
+    with TestClient(app) as client:
+        body = client.get("/api/resources").json()
+        assert 0 <= body["systemCpuPercent"] <= 100
+        assert isinstance(body["gpus"], list)
+        for gpu in body["gpus"]:
+            assert gpu["name"] and 0 <= gpu["percent"] <= 100

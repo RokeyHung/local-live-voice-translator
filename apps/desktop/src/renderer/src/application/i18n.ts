@@ -179,6 +179,7 @@ export interface Dict {
   serviceCpu: string
   serviceRam: string
   serviceThreads: string
+  serviceShare: string
   systemRam: string
   resourcesT: string
   audioT: string
@@ -602,9 +603,10 @@ const vi: Dict = {
   benchNote:
     'Mỗi khâu chạy với đầu vào cố định nên số đo không phụ thuộc chất lượng khâu trước. Đây là phép đo thời gian, không phải độ chính xác.',
   rtFactor: 'so với thời gian thực',
-  serviceCpu: 'CPU service',
+  serviceCpu: 'CPU máy',
   serviceRam: 'RAM service',
   serviceThreads: 'luồng',
+  serviceShare: 'service {pct}% · {cores} luồng',
   systemRam: 'RAM máy',
   resourcesT: 'Phần cứng',
   audioT: 'Đường tín hiệu audio',
@@ -1043,9 +1045,10 @@ const en: Dict = {
   benchNote:
     'Each stage runs on fixed input, so a stage timing never depends on the previous one. This measures time, not accuracy.',
   rtFactor: 'vs realtime',
-  serviceCpu: 'Service CPU',
+  serviceCpu: 'System CPU',
   serviceRam: 'Service RAM',
   serviceThreads: 'threads',
+  serviceShare: 'service {pct}% · {cores} threads',
   systemRam: 'System RAM',
   resourcesT: 'Hardware',
   audioT: 'Audio path',

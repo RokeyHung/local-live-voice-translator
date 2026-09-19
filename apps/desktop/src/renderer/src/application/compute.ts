@@ -5,7 +5,7 @@
 // dùng để vẽ giao diện (trên laptop hybrid là GPU tích hợp), chặn RAM ở 8 GB, và
 // chuỗi userAgent có "AppleWebKit" khiến máy Windows bị nhận là Apple.
 
-import type { ComputeDevice, ComputeStatus } from '../domain/models'
+import type { ComputeDevice, ComputeStatus, GpuUsage } from '../domain/models'
 
 export const AUTO = 'auto'
 export const CPU_ONLY = 'cpu'
@@ -63,4 +63,20 @@ export function effectiveChoice(status: ComputeStatus): string {
   const { choice, devices } = status
   if (choice === AUTO || choice === CPU_ONLY) return choice
   return devices.some((d) => d.id === choice) ? choice : AUTO
+}
+
+/**
+ * GPU nào đáng hiện trên ô "GPU" của màn Chẩn đoán: cái đang chạy nhận dạng giọng nói
+ * nếu biết, không thì cái đang bận nhất — trên laptop hybrid, GPU tích hợp lúc nào
+ * cũng vài % vì Windows dùng nó vẽ màn hình, nên "GPU đầu tiên" là con số vô nghĩa.
+ */
+export function gpuToShow(gpus: GpuUsage[], running: string | null): GpuUsage | null {
+  if (gpus.length === 0) return null
+  const match = running ? gpus.find((g) => g.name === running) : undefined
+  return match ?? gpus.reduce((a, b) => (b.percent > a.percent ? b : a))
+}
+
+/** Phần CPU toàn máy mà tiến trình service chiếm, 0–100 (psutil báo theo từng lõi). */
+export function serviceCpuShare(cpuPercent: number, cpuCount: number): number {
+  return cpuCount > 0 ? Math.min(100, cpuPercent / cpuCount) : 0
 }

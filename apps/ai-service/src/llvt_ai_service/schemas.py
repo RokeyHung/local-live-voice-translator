@@ -398,11 +398,18 @@ class EvaluationProgressResponse(BaseModel):
     cancelling: bool = False
 
 
+class GpuUsageSchema(BaseModel):
+    name: str
+    percent: float
+
+
 class ResourceResponse(BaseModel):
     """Tài nguyên của chính tiến trình AI service (renderer không tự đọc được)."""
 
-    cpuPercent: float
+    cpuPercent: float  # % MỘT lõi của tiến trình service (vượt 100 được) — cho soak
     cpuCount: int
+    systemCpuPercent: float  # % CPU toàn máy, 0–100, như Task Manager
+    gpus: list[GpuUsageSchema]  # % từng GPU; rỗng nếu hệ điều hành không cho đọc (macOS)
     rssMb: float
     systemTotalMb: float
     systemUsedPercent: float

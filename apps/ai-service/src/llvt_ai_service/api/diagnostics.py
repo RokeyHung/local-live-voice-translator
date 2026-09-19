@@ -9,7 +9,12 @@ from llvt_ai_service.application.benchmark import run_benchmark
 from llvt_ai_service.application.container import Container
 from llvt_ai_service.application.resources import read_usage
 from llvt_ai_service.domain.enums import Language
-from llvt_ai_service.schemas import BenchmarkRequest, BenchmarkResponse, ResourceResponse
+from llvt_ai_service.schemas import (
+    BenchmarkRequest,
+    BenchmarkResponse,
+    GpuUsageSchema,
+    ResourceResponse,
+)
 
 router = APIRouter(prefix="/api", tags=["diagnostics"])
 
@@ -61,7 +66,11 @@ async def benchmark(
     description=(
         "CPU% và RSS của chính tiến trình Python, đọc bằng psutil. Renderer nằm trong "
         "sandbox Chromium nên không tự đo được phần này. Không đo VRAM: Apple Silicon "
-        "dùng bộ nhớ hợp nhất (đã nằm trong RSS)."
+        "dùng bộ nhớ hợp nhất (đã nằm trong RSS).\n\n"
+        "`cpuPercent` là % của MỘT lõi (máy 16 luồng lên được 1600) — giữ cho báo cáo soak. "
+        "Để hiển thị dùng `systemCpuPercent` (0–100, như Task Manager) và `gpus` (% từng "
+        "GPU: card NVIDIA đọc qua NVML như `nvidia-smi`, card khác qua bộ đếm GPU Engine "
+        "của Windows; rỗng trên macOS). Mỗi lần gọi trả số của khoảng từ lần gọi trước."
     ),
 )
 def resources() -> ResourceResponse:
@@ -69,6 +78,8 @@ def resources() -> ResourceResponse:
     return ResourceResponse(
         cpuPercent=usage.cpu_percent,
         cpuCount=usage.cpu_count,
+        systemCpuPercent=usage.system_cpu_percent,
+        gpus=[GpuUsageSchema(name=g.name, percent=g.percent) for g in usage.gpus],
         rssMb=usage.rss_mb,
         systemTotalMb=usage.system_total_mb,
         systemUsedPercent=usage.system_used_percent,

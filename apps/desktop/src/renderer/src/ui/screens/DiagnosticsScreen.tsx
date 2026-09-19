@@ -3,7 +3,8 @@
 
 import type { JSX } from 'react'
 import { FRAME_SAMPLES, TARGET_SAMPLE_RATE } from '../../adapters/pcm16-stream'
-import { autoTarget, prettyDeviceName } from '../../application/compute'
+import { autoTarget, gpuToShow, prettyDeviceName, serviceCpuShare } from '../../application/compute'
+import { format } from '../../application/i18n'
 import { useBenchmark, useComputeStatus, useResources } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
 import { useDict, useIsScreen } from '../../hooks/use-ui'
@@ -97,6 +98,9 @@ export function DiagnosticsScreen(): JSX.Element {
   // cho một biểu đồ không ai nhìn là lãng phí.
   const visible = useIsScreen('diagnostics')
   const resources = useResources(health.isSuccess && visible)
+  const gpuUsage = resources.data
+    ? gpuToShow(resources.data.gpus, compute.data?.activeDevice ?? null)
+    : null
   const config = useSessionStore((s) => s.config)
   const metrics = useSessionStore((s) => s.metrics)
   const log = useSessionStore((s) => s.log)
@@ -257,12 +261,22 @@ export function DiagnosticsScreen(): JSX.Element {
         <div className="grid grid-cols-4 gap-3.5">
           <InfoTile
             label={L.serviceCpu}
-            value={resources.data ? resources.data.cpuPercent.toFixed(0) : '—'}
+            value={resources.data ? resources.data.systemCpuPercent.toFixed(0) : '—'}
             unit="%"
             // Chưa có số ĐO ĐƯỢC không đồng nghĩa với mất kết nối: query này chỉ bật
             // khi màn Chẩn đoán đang mở, nên lần đầu mở ra bao giờ cũng có một nhịp
             // chưa có dữ liệu. Nói "Chưa kết nối AI service" lúc đó là báo sai.
-            note={resources.data ? `${resources.data.cpuCount} ${L.cores}` : undefined}
+            note={
+              resources.data
+                ? format(L.serviceShare, {
+                    pct: serviceCpuShare(
+                      resources.data.cpuPercent,
+                      resources.data.cpuCount
+                    ).toFixed(0),
+                    cores: resources.data.cpuCount
+                  })
+                : undefined
+            }
             color="#22d3ee"
           />
           <InfoTile
@@ -283,7 +297,13 @@ export function DiagnosticsScreen(): JSX.Element {
             }
             color="#fb923c"
           />
-          <InfoTile label={L.gpuLbl} value={gpuLabel} note={gpu?.backend} color="#d946ef" />
+          <InfoTile
+            label={L.gpuLbl}
+            value={gpuUsage ? gpuUsage.percent.toFixed(0) : '—'}
+            unit={gpuUsage ? '%' : undefined}
+            note={gpuUsage ? prettyDeviceName(gpuUsage.name) : gpuLabel}
+            color="#d946ef"
+          />
         </div>
       </div>
 

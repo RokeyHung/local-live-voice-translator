@@ -35,7 +35,6 @@ export interface BenchmarkResponse {
   preset: Preset | null
 }
 
-// Tài nguyên của chính tiến trình AI service (GET /api/resources).
 // GET/PUT /api/compute — mirror của ComputeResponse trong schemas.py.
 // Phần cứng do AI service thấy (chính tiến trình chạy model), không phải renderer.
 export interface ComputeDevice {
@@ -57,9 +56,17 @@ export interface ComputeStatus {
   ramGb: number | null
 }
 
+export interface GpuUsage {
+  name: string
+  percent: number // 0–100
+}
+
+// Tài nguyên máy + tiến trình AI service (GET /api/resources).
 export interface ResourceResponse {
-  cpuPercent: number
+  cpuPercent: number // % MỘT lõi của tiến trình service — vượt 100 được, đừng hiển thị thẳng
   cpuCount: number
+  systemCpuPercent: number // % CPU toàn máy, 0–100, như Task Manager
+  gpus: GpuUsage[] // rỗng khi hệ điều hành không cho đọc (macOS)
   rssMb: number
   systemTotalMb: number
   systemUsedPercent: number

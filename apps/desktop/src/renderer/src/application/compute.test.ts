@@ -6,7 +6,9 @@ import {
   effectiveChoice,
   formatVram,
   gpuSummary,
-  prettyDeviceName
+  gpuToShow,
+  prettyDeviceName,
+  serviceCpuShare
 } from './compute'
 
 const IRIS: ComputeDevice = {
@@ -92,5 +94,33 @@ describe('effectiveChoice', () => {
     expect(effectiveChoice(status({ choice: 'AMD Radeon RX 7900' }))).toBe('auto')
     expect(effectiveChoice(status({ choice: RTX.id }))).toBe(RTX.id)
     expect(effectiveChoice(status({ choice: 'cpu' }))).toBe('cpu')
+  })
+})
+
+describe('gpuToShow', () => {
+  const gpus = [
+    { name: IRIS.id, percent: 6 }, // Windows vẽ màn hình bằng GPU tích hợp
+    { name: RTX.id, percent: 91 }
+  ]
+
+  it('ưu tiên GPU đang chạy nhận dạng giọng nói', () => {
+    expect(gpuToShow(gpus, RTX.id)?.percent).toBe(91)
+    expect(gpuToShow(gpus, IRIS.id)?.percent).toBe(6)
+  })
+
+  it('chưa nạp model thì hiện GPU đang bận nhất, không phải GPU đầu tiên', () => {
+    expect(gpuToShow(gpus, null)?.name).toBe(RTX.id)
+  })
+
+  it('không đọc được GPU (macOS) thì không bịa số', () => {
+    expect(gpuToShow([], RTX.id)).toBeNull()
+  })
+})
+
+describe('serviceCpuShare', () => {
+  it('đổi % theo lõi của psutil ra phần của cả máy — "400%" trên 16 luồng là 25%', () => {
+    expect(serviceCpuShare(400, 16)).toBe(25)
+    expect(serviceCpuShare(2000, 16)).toBe(100)
+    expect(serviceCpuShare(50, 0)).toBe(0)
   })
 })
