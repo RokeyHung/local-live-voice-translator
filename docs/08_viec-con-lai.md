@@ -245,10 +245,10 @@ thật thì chưa**:
       định trên Apple Silicon đã gồm MLX.
 
       Kèm theo, đã sửa một lỗi lộ ra từ đây: giao diện chào cả ba runtime ASR kể cả
-          khi môi trường không có, nên chọn Custom trên bản cài đầu tiên là "Nạp model
-          thất bại". Giờ `/api/config` chỉ trả về runtime thật sự import được, `PUT` trả
-          400 kèm tên gói còn thiếu, và lựa chọn đã lưu mà không còn chạy được thì lùi về
-          whisper.cpp thay vì làm hỏng preset Custom.
+              khi môi trường không có, nên chọn Custom trên bản cài đầu tiên là "Nạp model
+              thất bại". Giờ `/api/config` chỉ trả về runtime thật sự import được, `PUT` trả
+              400 kèm tên gói còn thiếu, và lựa chọn đã lưu mà không còn chạy được thì lùi về
+              whisper.cpp thay vì làm hỏng preset Custom.
 
 - [ ] **Duyệt trước khi gửi trong một cuộc họp thật** — đếm ngược 5 giây có đủ để đọc
       và sửa không, hay phải dài hơn. Bật ở màn Cài đặt.
