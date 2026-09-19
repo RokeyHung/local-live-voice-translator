@@ -61,7 +61,7 @@ uv sync && uv run llvt-ai-service
 # python3 -m venv .venv && source .venv/bin/activate && pip install -e . && llvt-ai-service
 ```
 
-Kiểm tra: mở http://127.0.0.1:8756/health → `{"status":"ok", ...}`.
+Kiểm tra: mở <http://127.0.0.1:8756/health> → `{"status":"ok", ...}`.
 
 Service **không nạp model lúc khởi động** (mở trong ~0,4 giây). Model vào bộ nhớ khi bấm **Khởi động model** ở màn Quản lý model, khi bắt đầu một phiên, hoặc khi chạy đo độ trễ. Muốn nạp sẵn như trước (chạy tự động, đo benchmark): `LLVT_PRELOAD_MODELS=true`.
 

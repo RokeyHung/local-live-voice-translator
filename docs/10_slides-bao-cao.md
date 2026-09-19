@@ -78,7 +78,7 @@ Nền tảng: **Windows 11 x64** và **macOS 13+ Apple Silicon**.
 
 ## 4. Pipeline xử lý
 
-```
+```text
 Chiều NÓI — mình nói, máy đọc lại bản dịch
   Microphone ─► VAD ─► ASR ─► MT ─► TTS ─► Loa / tai nghe
                 Silero  whisper  NLLB  sherpa-onnx
@@ -115,7 +115,7 @@ Chiều NGHE — đối phương nói, mình đọc phụ đề
 
 ## 6. Kiến trúc tổng thể — hai tiến trình
 
-```
+```text
 ┌──────────────────────────┐                      ┌──────────────────────────┐
 │ apps/desktop  (Electron) │  REST — cấu hình,    │ apps/ai-service (Python) │
 │ React + TypeScript       │◄─── model, lịch sử,─►│ FastAPI + SQLite         │
@@ -140,7 +140,7 @@ Chiều NGHE — đối phương nói, mình đọc phụ đề
 
 ## 7. Cả hai app dùng Hexagonal (Ports & Adapters)
 
-```
+```text
         adapters ──────► ports ◄────── application ──────► domain
        (hạ tầng:        (interface     (pipeline,          (dataclass
      whisper.cpp,        ABC cho        ModelManager,       thuần, không

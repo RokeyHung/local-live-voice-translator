@@ -1,3 +1,7 @@
+<!-- markdownlint-disable MD025 MD052 -->
+<!-- Đề cương theo mẫu có trang bìa: tên trường và tên tài liệu đều là tiêu đề cấp 1.
+     [2][3] là trích dẫn kiểu IEEE tới danh mục tài liệu cuối file, không phải link Markdown. -->
+
 # ĐẠI HỌC QUỐC GIA TP. HỒ CHÍ MINH
 
 ## TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN
@@ -201,17 +205,17 @@ Các mục tiêu cụ thể gồm:
 
 ## Tài liệu tham khảo
 
-[1] homelab-00. _TranscriptionSuite: A fully local and private Speech-to-Text application._ GitHub repository, 2026. https://github.com/homelab00/TranscriptionSuite.
+[1] homelab-00. _TranscriptionSuite: A fully local and private Speech-to-Text application._ GitHub repository, 2026. <https://github.com/homelab00/TranscriptionSuite>.
 
 [2] Radford, A., Kim, J. W., Xu, T., Brockman, G., McLeavey, C., & Sutskever, I. (2023). Robust Speech Recognition via Large-Scale Weak Supervision. _Proceedings of the 40th International Conference on Machine Learning_, 202, 28492–28518.
 
-[3] ggml-org. _whisper.cpp: Port of OpenAI's Whisper model in C/C++._ GitHub repository, 2026. https://github.com/ggml-org/whisper.cpp.
+[3] ggml-org. _whisper.cpp: Port of OpenAI's Whisper model in C/C++._ GitHub repository, 2026. <https://github.com/ggml-org/whisper.cpp>.
 
 [4] Costa-jussà, M. R., Cross, J., Çelebi, O., Elbayad, M., Heafield, K., Heffernan, K., et al. (2022). No Language Left Behind: Scaling Human-Centered Machine Translation. _arXiv:2207.04672_.
 
-[5] Silero Team. _Silero VAD: Pre-trained enterprise-grade Voice Activity Detector._ GitHub repository, 2026. https://github.com/snakers4/silero-vad.
+[5] Silero Team. _Silero VAD: Pre-trained enterprise-grade Voice Activity Detector._ GitHub repository, 2026. <https://github.com/snakers4/silero-vad>.
 
-[6] k2-fsa. _sherpa-onnx: Speech-to-text, text-to-speech and audio processing with ONNX Runtime._ Documentation and GitHub repository, 2026. https://k2-fsa.github.io/sherpa/onnx/.
+[6] k2-fsa. _sherpa-onnx: Speech-to-text, text-to-speech and audio processing with ONNX Runtime._ Documentation and GitHub repository, 2026. <https://k2-fsa.github.io/sherpa/onnx/>.
 
 [7] Microsoft. _Loopback Recording - Windows Audio Session API (WASAPI)._ Microsoft Learn, 2025.
 

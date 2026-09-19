@@ -1,3 +1,6 @@
+<!-- markdownlint-disable MD025 -->
+<!-- SPEC gốc đánh số mục bằng tiêu đề cấp 1 (# 2., # 3.…); giữ nguyên cấu trúc tài liệu nguồn. -->
+
 # Bổ sung SPEC: Hệ điều hành, Technology Stack và AI Models
 
 ---

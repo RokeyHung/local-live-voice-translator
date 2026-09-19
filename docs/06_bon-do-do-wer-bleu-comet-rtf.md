@@ -362,49 +362,49 @@ làm con số báo cáo.
 
 - Conneau, A. và cộng sự (2022). _FLEURS: Few-shot Learning Evaluation of Universal
   Representations of Speech._ — bộ dữ liệu của đề tài; dùng CER cho nhóm CJK.
-  https://arxiv.org/pdf/2205.12446
+  <https://arxiv.org/pdf/2205.12446>
 - Radford, A. và cộng sự (2023). _Robust Speech Recognition via Large-Scale Weak
   Supervision_ (Whisper) — quy ước CER cho zh/ja/th/lo/my.
-  https://github.com/openai/whisper
+  <https://github.com/openai/whisper>
 - Thông báo phát hành `large-v3` kèm biểu đồ WER/CER theo ngôn ngữ trên Common Voice 15 +
-  FLEURS. https://github.com/openai/whisper/discussions/1762
+  FLEURS. <https://github.com/openai/whisper/discussions/1762>
 - _Advocating Character Error Rate for Multilingual ASR Evaluation_ (Findings of NAACL
-  2025). https://aclanthology.org/2025.findings-naacl.277.pdf
+  2025). <https://aclanthology.org/2025.findings-naacl.277.pdf>
 
 **Độ đo MT**
 
 - Papineni, K. và cộng sự (2002). _BLEU: a Method for Automatic Evaluation of Machine
-  Translation._ https://aclanthology.org/P02-1040/
+  Translation._ <https://aclanthology.org/P02-1040/>
 - Post, M. (2018). _A Call for Clarity in Reporting BLEU Scores._ WMT 2018 — sacreBLEU;
-  chênh lệch tới 1,8 BLEU chỉ do khác cách tách từ. https://aclanthology.org/W18-6319/
+  chênh lệch tới 1,8 BLEU chỉ do khác cách tách từ. <https://aclanthology.org/W18-6319/>
 - Goyal, N. và cộng sự (2022). _The FLORES-101 Evaluation Benchmark_ — định nghĩa spBLEU.
-  https://arxiv.org/pdf/2106.03193
+  <https://arxiv.org/pdf/2106.03193>
 - NLLB Team (2022). _No Language Left Behind: Scaling Human-Centered Machine Translation_
-  — báo cáo chính bằng chrF++, kèm spBLEU trên FLORES. https://arxiv.org/pdf/2207.04672
+  — báo cáo chính bằng chrF++, kèm spBLEU trên FLORES. <https://arxiv.org/pdf/2207.04672>
 - Rei, R. và cộng sự (2022). _COMET-22: Unbabel-IST 2022 Submission for the Metrics Shared
   Task._ — bài báo của chính checkpoint `Unbabel/wmt22-comet-da`.
-  https://aclanthology.org/2022.wmt-1.52/
+  <https://aclanthology.org/2022.wmt-1.52/>
 - Freitag, M. và cộng sự (2022). _Results of WMT22 Metrics Shared Task: Stop Using BLEU._
-  https://statmt.org/wmt22/pdf/2022.wmt-1.2.pdf
+  <https://statmt.org/wmt22/pdf/2022.wmt-1.2.pdf>
 - Unbabel. _Introducing Unbabel-COMET v2.0_ — vì sao chặn điểm về [0, 1].
-  https://unbabel.com/introducing-unbabel-comet-v2-0-improved-models-and-metrics-for-better-machine-translation-evaluation/
+  <https://unbabel.com/introducing-unbabel-comet-v2-0-improved-models-and-metrics-for-better-machine-translation-evaluation/>
 - Google Cloud Translation. _The BLEU translation quality metric._
-  https://docs.cloud.google.com/translate/docs/bleu-scores
+  <https://docs.cloud.google.com/translate/docs/bleu-scores>
 
 **RTF và độ trễ**
 
-- ExKaldi-RT (2021) — RTF trong hệ ASR trực tuyến. https://arxiv.org/pdf/2104.01384
+- ExKaldi-RT (2021) — RTF trong hệ ASR trực tuyến. <https://arxiv.org/pdf/2104.01384>
 - _Conformer-Based Speech Recognition On Extreme Edge-Computing Devices_ (Apple, 2023) —
-  lập luận RTF ít nhất 0,5 mới là mục tiêu hợp lý. https://arxiv.org/pdf/2312.10359
+  lập luận RTF ít nhất 0,5 mới là mục tiêu hợp lý. <https://arxiv.org/pdf/2312.10359>
 - _Evaluation of real-time transcriptions using end-to-end ASR models_ (2024) — RTF ≤ 1 là
-  điều kiện nhận dạng thời gian thực. https://arxiv.org/html/2409.05674v1
+  điều kiện nhận dạng thời gian thực. <https://arxiv.org/html/2409.05674v1>
 - _Low Latency ASR for Simultaneous Speech Translation_ (2020) — RTF không phản ánh độ trễ
-  người dùng cảm nhận. https://arxiv.org/pdf/2003.09891
+  người dùng cảm nhận. <https://arxiv.org/pdf/2003.09891>
 - _Defining maximum acceptable latency of AI-enhanced CAI tools_ (2022) — phiên dịch viên
-  chịu được ~3 giây độ trễ do công cụ thêm vào. https://arxiv.org/pdf/2201.02792
+  chịu được ~3 giây độ trễ do công cụ thêm vào. <https://arxiv.org/pdf/2201.02792>
 - _Spatial Speech Translation: Translating Across Space With Binaural Hearables_ (2025) —
-  người nghe đa số chọn mức trễ 3–4 giây. https://arxiv.org/pdf/2504.18715
+  người nghe đa số chọn mức trễ 3–4 giây. <https://arxiv.org/pdf/2504.18715>
 - Lee, T.-H. _Ear Voice Span in English into Korean Simultaneous Interpretation_ — EVS
   trung bình ~3 giây trên ~800 câu.
 - ITU-T Recommendation G.114 — mốc 150 ms cho **truyền dẫn thoại**; nêu ở đây để giải
-  thích vì sao **không** dùng. https://www.itu.int/rec/T-REC-G.114
+  thích vì sao **không** dùng. <https://www.itu.int/rec/T-REC-G.114>
