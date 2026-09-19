@@ -32,7 +32,7 @@ function readGpu(): { renderer: string; vendor: string } {
   }
 }
 
-function classify(haystack: string): ComputeKind {
+export function classify(haystack: string): ComputeKind {
   if (/nvidia|geforce|rtx|gtx|quadro|tesla|cuda/.test(haystack)) return 'nvidia'
   if (/apple|metal|m1|m2|m3|m4/.test(haystack)) return 'apple'
   if (/radeon|amd|rx |vega/.test(haystack)) return 'amd'
@@ -51,7 +51,9 @@ const RECOMMENDED: Record<ComputeKind, ComputeBackend> = {
 export function probeCompute(): ComputeInfo {
   const nav = navigator as NavigatorWithMemory
   const { renderer, vendor } = readGpu()
-  const kind = classify(`${renderer} ${vendor} ${navigator.userAgent}`.toLowerCase())
+  // KHÔNG gộp navigator.userAgent vào: userAgent của Chromium trên MỌI hệ điều hành có
+  // "AppleWebKit", khớp /apple/ → máy Windows có RTX 4060 từng bị nhận là Apple Metal.
+  const kind = classify(`${renderer} ${vendor}`.toLowerCase())
   const ramGb = typeof nav.deviceMemory === 'number' ? nav.deviceMemory : null
 
   return {

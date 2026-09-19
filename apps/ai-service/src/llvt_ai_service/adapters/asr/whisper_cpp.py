@@ -13,6 +13,7 @@ blocking sang worker thread và tuần tự hóa bằng lock, nên nhiều pipel
 from __future__ import annotations
 
 import asyncio
+import functools
 import logging
 import os
 import re
@@ -20,8 +21,9 @@ import shutil
 import sys
 import tempfile
 import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, Sequence
 
 import numpy as np
 
@@ -138,6 +140,12 @@ _GPU_LINE = re.compile(r"whisper_backend_init_gpu: using (\S+) backend")
 _GPU_NAMES = (("vulkan", "Vulkan"), ("cuda", "CUDA"), ("mtl", "Metal"), ("metal", "Metal"))
 
 
+def gpu_device_from_log(log: str) -> str | None:
+    """Tên thiết bị ggml whisper.cpp đã nạp model lên ("Vulkan1", "MTL0"), hoặc None."""
+    match = _GPU_LINE.search(log)
+    return match.group(1) if match else None
+
+
 def gpu_backend_from_log(log: str) -> str | None:
     """Thiết bị GPU whisper.cpp THẬT SỰ dùng, đọc từ log lúc nạp model.
 
@@ -146,24 +154,47 @@ def gpu_backend_from_log(log: str) -> str | None:
     ``using Vulkan0 backend`` khi có card, ``no GPU found`` khi không (lúc đó ggml
     tự lùi về CPU và hàm này trả ``None``).
     """
-    match = _GPU_LINE.search(log)
-    if not match:
-        return None
-    device = match.group(1)
-    lowered = device.lower()
+    device = gpu_device_from_log(log)
+    return None if device is None else backend_name(device)
+
+
+def backend_name(ggml_device: str) -> str:
+    """Tên thiết bị ggml ("Vulkan1", "CUDA0", "MTL0") -> tên backend ("Vulkan"…)."""
+    lowered = ggml_device.lower()
     for prefix, name in _GPU_NAMES:
         if lowered.startswith(prefix):
             return name
-    return device
+    return ggml_device
 
 
 # enum ggml_backend_dev_type
-_DEV_GPU = 1
-_DEV_IGPU = 2
+DEV_CPU = 0
+DEV_GPU = 1
+DEV_IGPU = 2
+
+# Lựa chọn thiết bị tính toán (settings.compute_device). Ngoài hai giá trị này thì
+# là tên một GPU, đúng như `GgmlDevice.description`.
+AUTO = "auto"
+CPU_ONLY = "cpu"
 
 
-def pick_gpu_device(devices: list[tuple[str, int]]) -> dict[str, Any] | None:
-    """Chọn thiết bị cho whisper.cpp từ danh sách ``(tên, loại)`` của ggml.
+@dataclass(frozen=True)
+class GgmlDevice:
+    """Một thiết bị ggml thấy. ``name`` là tên nội bộ ("Vulkan1"), ``description``
+    là tên thật của card ("NVIDIA GeForce RTX 4060 Laptop GPU")."""
+
+    name: str
+    description: str
+    kind: int
+    memory_mb: int | None = None
+
+    @property
+    def is_gpu(self) -> bool:
+        return self.kind in (DEV_GPU, DEV_IGPU)
+
+
+def pick_gpu_device(devices: Sequence[GgmlDevice]) -> dict[str, Any] | None:
+    """Chế độ "auto": chọn thiết bị cho whisper.cpp từ danh sách của ggml.
 
     whisper.cpp lấy GPU **đầu tiên** ggml liệt kê, mà trên laptop hybrid đó là GPU
     tích hợp. Đo trên máy dev (Iris Xe + RTX 4060), large-v3-turbo với 3–5 s audio:
@@ -171,24 +202,43 @@ def pick_gpu_device(devices: list[tuple[str, int]]) -> dict[str, Any] | None:
     tích hợp thì vẫn để nó chạy — Iris Xe vẫn nhanh hơn CPU (~17 s).
     Trả ``context_params`` cho pywhispercpp, ``None`` = giữ mặc định.
     """
-    gpus = [kind for _name, kind in devices if kind in (_DEV_GPU, _DEV_IGPU)]
-    if _DEV_GPU not in gpus:
+    gpus = [d.kind for d in devices if d.is_gpu]
+    if DEV_GPU not in gpus:
         return None
     # gpu_device đếm trong số thiết bị GPU/IGPU, đúng cách whisper.cpp đếm.
-    index = gpus.index(_DEV_GPU)
+    index = gpus.index(DEV_GPU)
     return None if index == 0 else {"gpu_device": index}
 
 
-def _list_ggml_devices() -> list[tuple[str, int]]:
+def resolve_device(choice: str, devices: Sequence[GgmlDevice]) -> dict[str, Any] | None:
+    """Đổi lựa chọn của người dùng thành ``context_params`` cho pywhispercpp.
+
+    GPU đã lưu mà không còn trên máy (tháo eGPU, đổi máy mang theo settings.json) thì
+    lùi về auto thay vì làm hỏng lượt nạp.
+    """
+    if choice == CPU_ONLY:
+        return {"use_gpu": False}
+    if choice and choice != AUTO:
+        gpus = [d for d in devices if d.is_gpu]
+        for index, device in enumerate(gpus):
+            if device.description == choice:
+                return None if index == 0 else {"gpu_device": index}
+        logger.warning("Không thấy GPU %r trên máy này — dùng chế độ tự động", choice)
+    return pick_gpu_device(devices)
+
+
+@functools.cache
+def list_ggml_devices() -> tuple[GgmlDevice, ...]:
     """Thiết bị ggml thấy, theo đúng thứ tự whisper.cpp duyệt. Rỗng nếu không hỏi được.
 
     pywhispercpp không bọc API thiết bị của ggml, nên gọi thẳng vào DLL của nó bằng
     ctypes — các DLL này đã được nạp sẵn khi import ``_pywhispercpp``. Chỉ làm trên
     Windows, nơi duy nhất bản cài mang whisper.cpp Vulkan (tools/build_whisper_vulkan.sh);
-    macOS chỉ có một GPU Metal nên mặc định đã đúng.
+    macOS chỉ có một GPU Metal nên mặc định đã đúng. Danh sách cố định suốt đời tiến
+    trình (registry của ggml cũng vậy) nên nhớ lại, khỏi dựng lại mỗi lần gọi API.
     """
     if sys.platform != "win32":
-        return []
+        return ()
     try:
         import ctypes
         import sysconfig
@@ -204,23 +254,39 @@ def _list_ggml_devices() -> list[tuple[str, int]]:
             return ctypes.CDLL(str(path))
 
         ggml, base = load("ggml"), load("ggml-base")
+        size_p = ctypes.POINTER(ctypes.c_size_t)
         ggml.ggml_backend_dev_count.restype = ctypes.c_size_t
         ggml.ggml_backend_dev_get.restype = ctypes.c_void_p
         ggml.ggml_backend_dev_get.argtypes = [ctypes.c_size_t]
-        base.ggml_backend_dev_name.restype = ctypes.c_char_p
-        base.ggml_backend_dev_name.argtypes = [ctypes.c_void_p]
+        for fn in (base.ggml_backend_dev_name, base.ggml_backend_dev_description):
+            fn.restype = ctypes.c_char_p
+            fn.argtypes = [ctypes.c_void_p]
         base.ggml_backend_dev_type.restype = ctypes.c_int
         base.ggml_backend_dev_type.argtypes = [ctypes.c_void_p]
+        base.ggml_backend_dev_memory.restype = None
+        base.ggml_backend_dev_memory.argtypes = [ctypes.c_void_p, size_p, size_p]
+
         devices = []
         for i in range(ggml.ggml_backend_dev_count()):
             dev = ggml.ggml_backend_dev_get(i)
+            kind = base.ggml_backend_dev_type(dev)
+            memory_mb = None
+            if kind != DEV_CPU:
+                free, total = ctypes.c_size_t(0), ctypes.c_size_t(0)
+                base.ggml_backend_dev_memory(dev, ctypes.byref(free), ctypes.byref(total))
+                memory_mb = total.value // (1024 * 1024) or None
             devices.append(
-                (base.ggml_backend_dev_name(dev).decode(), base.ggml_backend_dev_type(dev))
+                GgmlDevice(
+                    name=base.ggml_backend_dev_name(dev).decode(),
+                    description=base.ggml_backend_dev_description(dev).decode().strip(),
+                    kind=kind,
+                    memory_mb=memory_mb,
+                )
             )
-        return devices
+        return tuple(devices)
     except Exception:  # noqa: BLE001 — không hỏi được thì để whisper.cpp tự chọn như cũ
         logger.debug("Không liệt kê được thiết bị ggml", exc_info=True)
-        return []
+        return ()
 
 
 def _accel_from_system_info(info: str) -> str:
@@ -273,7 +339,7 @@ def download_ggml(model_id: str, target_dir: Path) -> Path:
     return done
 
 
-def _default_loader(model_id: str, models_dir: str | None) -> WhisperModel:
+def _default_loader(model_id: str, models_dir: str | None, device: str = AUTO) -> WhisperModel:
     from pywhispercpp.model import Model
 
     # Tải trước bằng đường có staging: để `Model()` tự tải thì nó dùng thẳng
@@ -283,13 +349,13 @@ def _default_loader(model_id: str, models_dir: str | None) -> WhisperModel:
     # Log của whisper.cpp đi vào file tạm thay vì stderr của service: không làm nhiễu
     # log, mà vẫn đọc lại được để biết model đang chạy GPU nào. Greedy (mặc định)
     # cho low-latency.
-    devices = _list_ggml_devices()
-    context_params = pick_gpu_device(devices)
+    devices = list_ggml_devices()
+    context_params = resolve_device(device, devices)
     # Chỉ truyền khi cần đổi thiết bị: đây là tham số mới của pywhispercpp, và
-    # macOS (không bao giờ cần) có thể đang ở bản chưa có nó.
+    # macOS có thể đang ở bản chưa có nó (ở đó chỉ "Chỉ CPU" mới cần tới).
     extra: dict[str, Any] = {}
     if context_params is not None:
-        logger.info("Thiết bị ggml %s → nạp whisper.cpp với %s", devices, context_params)
+        logger.info("Lựa chọn %r, thiết bị ggml %s → %s", device, devices, context_params)
         extra["context_params"] = context_params
     fd, log_path = tempfile.mkstemp(prefix="whisper-init-", suffix=".log")
     os.close(fd)
@@ -312,7 +378,15 @@ def _default_loader(model_id: str, models_dir: str | None) -> WhisperModel:
         logger.info("Làm nóng Vulkan: %.1f s", time.perf_counter() - started)
     # Gắn lên chính instance: loader chỉ trả về model, và test tiêm loader giả
     # không có thuộc tính này thì adapter lùi về đọc cờ build như cũ.
-    model.llvt_gpu_backend = gpu
+    #
+    # "Chỉ CPU" phải được ghi rõ: system_info() là cờ lúc BUILD, bản macOS luôn có
+    # METAL = 1, nên lùi về đó là báo "Metal" cho một model đang chạy CPU.
+    model.llvt_gpu_backend = gpu or ("CPU" if device == CPU_ONLY else None)
+    ggml_name = gpu_device_from_log(init_log)
+    model.llvt_device = next(
+        (d.description for d in devices if d.name == ggml_name),
+        CPU_ONLY if device == CPU_ONLY or not gpu else ggml_name,
+    )
     return model
 
 
@@ -327,11 +401,12 @@ class WhisperCppAsr(SpeechToTextProvider):
         *,
         min_confidence: float = 0.0,
         audio_ctx: int = 0,
+        device: str = AUTO,
     ) -> None:
         self._model_name = model
         self._model_id = MODEL_MAP.get(model, model)
         self._models_dir = models_dir
-        self._loader = loader or _default_loader
+        self._loader = loader or functools.partial(_default_loader, device=device or AUTO)
         self._model: WhisperModel | None = None
         self._exec = SerialExecutor()
         self._system_info = ""
@@ -356,6 +431,12 @@ class WhisperCppAsr(SpeechToTextProvider):
     @property
     def loaded(self) -> bool:
         return self._model is not None
+
+    @property
+    def active_device(self) -> str | None:
+        """Thiết bị model đang chạy: tên GPU thật, ``"cpu"``, hoặc None nếu chưa nạp
+        (hay loader giả trong test không ghi lại)."""
+        return getattr(self._model, "llvt_device", None)
 
     def runtime_info(self) -> dict[str, str]:
         return {

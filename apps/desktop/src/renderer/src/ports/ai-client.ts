@@ -3,6 +3,7 @@
 import type { Language, Preset } from '../domain/enums'
 import type {
   BenchmarkResponse,
+  ComputeStatus,
   ConfigResponse,
   DeletedModels,
   DownloadedModel,
@@ -71,6 +72,10 @@ export interface AiClient {
   // Chạy một câu mẫu qua từng khâu để đo độ trễ thực tế của máy.
   runBenchmark(source: Language, target: Language): Promise<BenchmarkResponse>
   fetchResources(): Promise<ResourceResponse>
+  // Phần cứng tính toán service thấy + thiết bị đang chọn.
+  fetchCompute(): Promise<ComputeStatus>
+  // 'auto' | 'cpu' | id một GPU. Service giải phóng model đang nạp; áp dụng lần nạp sau.
+  setCompute(choice: string): Promise<ComputeStatus>
   // Model đã tải thật trên đĩa của máy.
   fetchInstalledModels(): Promise<InstalledModel[]>
   // Dung lượng đĩa service đang chiếm, tách theo từng kho (model, lịch sử).

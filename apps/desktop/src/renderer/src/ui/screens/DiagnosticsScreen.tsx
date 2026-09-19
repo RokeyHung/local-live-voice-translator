@@ -2,11 +2,11 @@
 // nguyên tiến trình service và nhật ký WebSocket thô.
 
 import type { JSX } from 'react'
-import { prettyGpuName } from '../../adapters/compute-probe'
 import { FRAME_SAMPLES, TARGET_SAMPLE_RATE } from '../../adapters/pcm16-stream'
-import { useBenchmark, useResources } from '../../hooks/use-config'
+import { autoTarget, prettyDeviceName } from '../../application/compute'
+import { useBenchmark, useComputeStatus, useResources } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
-import { useCompute, useDict, useIsScreen } from '../../hooks/use-ui'
+import { useDict, useIsScreen } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { Icon } from '../components/Icon'
 import { Badge, EmptyState, Notice, ScreenHeader } from '../components/primitives'
@@ -78,7 +78,19 @@ function StatRow({ label, value }: { label: string; value: string }): JSX.Elemen
 
 export function DiagnosticsScreen(): JSX.Element {
   const L = useDict()
-  const compute = useCompute()
+  // GPU theo AI service, không theo Chromium (thấy nhầm GPU tích hợp trên laptop hybrid).
+  const compute = useComputeStatus()
+  const gpu = compute.data
+    ? (compute.data.devices.find((d) => d.id === compute.data.activeDevice) ??
+      autoTarget(compute.data.devices))
+    : null
+  const gpuLabel = gpu
+    ? prettyDeviceName(gpu.id)
+    : compute.data?.platform === 'darwin'
+      ? L.devAutoMetal
+      : compute.data
+        ? L.notAvail
+        : '—'
   const health = useHealth()
   const benchmark = useBenchmark()
   // Màn bị ẩn (người dùng đang ở tab khác) thì ngừng hỏi tài nguyên: nhịp 2 giây
@@ -271,12 +283,7 @@ export function DiagnosticsScreen(): JSX.Element {
             }
             color="#fb923c"
           />
-          <InfoTile
-            label={L.gpuLbl}
-            value={compute ? prettyGpuName(compute.gpuRenderer) || L.notAvail : '—'}
-            note={compute?.recommended}
-            color="#d946ef"
-          />
+          <InfoTile label={L.gpuLbl} value={gpuLabel} note={gpu?.backend} color="#d946ef" />
         </div>
       </div>
 

@@ -77,24 +77,27 @@ export interface Dict {
   instanceT: string
   instanceSub: string
   detecting: string
+  computeNeedsService: string
   gpuLbl: string
   cpuLbl: string
   ramLbl: string
-  apiLbl: string
-  recommended: string
+  runningOn: string
+  notLoaded: string
   notAvail: string
   devAuto: string
   devAutoSub: string
-  devCuda: string
-  devMetal: string
-  devVulkan: string
+  devAutoNone: string
+  devAutoMetal: string
+  devDiscrete: string
+  devIntegrated: string
   devCpu: string
   devCpuSub: string
   devInUse: string
   cores: string
-  atLeast: string
-  computeReadOnly: string
-  computeFromService: string
+  computeHint: string
+  computeApplyNext: string
+  computeLockedSession: string
+  computeMlxNote: string
   sysStatus: string
   models: string
   compute: string
@@ -212,6 +215,7 @@ export interface Dict {
   logModelsFailed: string
   logModelsUnloaded: string
   logPresetChanged: string
+  logComputeChanged: string
   logModelsDeleted: string
   logModelDownloaded: string
   logModelDeleted: string
@@ -492,28 +496,31 @@ const vi: Dict = {
     'Thu qua loopback của hệ điều hành, tự bật khi bắt đầu phiên ở chế độ Nghe hoặc Hai chiều. macOS cần cấp quyền Ghi màn hình cho ứng dụng.',
   sysCapturing: 'Đang thu',
   ducking: 'Tạm ngưng thu (đang phát bản dịch)',
-  instanceT: 'Cấu hình thực thi (Instance)',
-  instanceSub: 'Phần cứng phát hiện được từ ứng dụng.',
+  instanceT: 'Cấu hình thực thi',
+  instanceSub: 'Thiết bị chạy model — do AI service phát hiện, không phải trình duyệt.',
   detecting: 'Đang phát hiện phần cứng…',
+  computeNeedsService: 'Cần AI service đang chạy để phát hiện phần cứng và đổi thiết bị.',
   gpuLbl: 'GPU',
   cpuLbl: 'CPU',
   ramLbl: 'RAM',
-  apiLbl: 'API',
-  recommended: 'Khuyến nghị',
+  runningOn: 'ASR đang chạy trên',
+  notLoaded: 'Chưa nạp model',
   notAvail: 'Không khả dụng',
   devAuto: 'Tự động',
-  devAutoSub: 'Theo phần cứng',
-  devCuda: 'NVIDIA CUDA',
-  devMetal: 'Apple Metal',
-  devVulkan: 'Vulkan (AMD/Intel)',
+  devAutoSub: 'Dùng {device}',
+  devAutoNone: 'Không thấy GPU — chạy CPU',
+  devAutoMetal: 'GPU Apple (Metal)',
+  devDiscrete: 'Card rời',
+  devIntegrated: 'Tích hợp',
   devCpu: 'Chỉ CPU',
-  devCpuSub: 'Tương thích nhất',
-  devInUse: 'Đang dùng',
-  cores: 'lõi',
-  atLeast: 'ít nhất',
-  computeReadOnly: 'AI service tự chọn backend khi nạp model — chưa đổi được từ giao diện.',
-  computeFromService:
-    'Thiết bị thật của từng khâu do AI service báo về khi nạp model — chưa đổi được từ giao diện.',
+  devCpuSub: 'Chậm nhất, máy nào cũng chạy',
+  devInUse: 'Đang chạy',
+  cores: 'luồng',
+  computeHint: 'Chọn GPU cho khâu nhận dạng giọng nói (whisper.cpp). "Chỉ CPU" tắt GPU ở mọi khâu.',
+  computeApplyNext:
+    'Đã lưu. Có hiệu lực ở lần nạp model kế tiếp — bấm "Khởi động model" ở màn Quản lý model.',
+  computeLockedSession: 'Đang có phiên dịch — dừng phiên để đổi thiết bị.',
+  computeMlxNote: 'MLX luôn chạy trên GPU Apple; lựa chọn ở đây áp dụng cho whisper.cpp và NLLB.',
   sysStatus: 'Trạng thái hệ thống',
   models: 'Model',
   compute: 'Tính toán',
@@ -634,6 +641,7 @@ const vi: Dict = {
   logModelsFailed: 'Nạp model thất bại: {msg}',
   logModelsUnloaded: 'Đã giải phóng model khỏi bộ nhớ',
   logPresetChanged: 'Đổi preset sang {preset}',
+  logComputeChanged: 'Đổi thiết bị tính toán sang {device}',
   logModelsDeleted: 'Đã xóa model trên đĩa, giải phóng {size}',
   logModelDownloaded: 'Đã tải model {name}',
   logModelDeleted: 'Đã xoá một model, giải phóng {size}',
@@ -928,29 +936,32 @@ const en: Dict = {
     'Captured through the OS loopback; starts automatically in Listen or Two-way mode. On macOS the app needs Screen Recording permission.',
   sysCapturing: 'Capturing',
   ducking: 'Capture paused (playing translation)',
-  instanceT: 'Instance settings',
-  instanceSub: 'Hardware detected from the app.',
+  instanceT: 'Compute',
+  instanceSub: 'Where models run — detected by the AI service, not the browser.',
   detecting: 'Detecting hardware…',
+  computeNeedsService: 'The AI service must be running to detect hardware and switch devices.',
   gpuLbl: 'GPU',
   cpuLbl: 'CPU',
   ramLbl: 'RAM',
-  apiLbl: 'API',
-  recommended: 'Recommended',
+  runningOn: 'ASR running on',
+  notLoaded: 'No model loaded',
   notAvail: 'Not available',
   devAuto: 'Automatic',
-  devAutoSub: 'Follows hardware',
-  devCuda: 'NVIDIA CUDA',
-  devMetal: 'Apple Metal',
-  devVulkan: 'Vulkan (AMD/Intel)',
+  devAutoSub: 'Uses {device}',
+  devAutoNone: 'No GPU found — runs on CPU',
+  devAutoMetal: 'Apple GPU (Metal)',
+  devDiscrete: 'Discrete',
+  devIntegrated: 'Integrated',
   devCpu: 'CPU only',
-  devCpuSub: 'Most compatible',
-  devInUse: 'In use',
-  cores: 'cores',
-  atLeast: 'at least',
-  computeReadOnly:
-    'The AI service picks the backend when loading models — not switchable from the UI.',
-  computeFromService:
-    'Per-stage device reported by the AI service after loading models — not switchable from the UI.',
+  devCpuSub: 'Slowest, runs anywhere',
+  devInUse: 'Running',
+  cores: 'threads',
+  computeHint:
+    'Pick the GPU for speech recognition (whisper.cpp). "CPU only" turns the GPU off for every stage.',
+  computeApplyNext:
+    'Saved. Takes effect on the next model load — press "Start models" on the Models screen.',
+  computeLockedSession: 'A session is running — stop it to change device.',
+  computeMlxNote: 'MLX always runs on the Apple GPU; this choice applies to whisper.cpp and NLLB.',
   sysStatus: 'System status',
   models: 'Models',
   compute: 'Compute',
@@ -1071,6 +1082,7 @@ const en: Dict = {
   logModelsFailed: 'Loading models failed: {msg}',
   logModelsUnloaded: 'Models freed from memory',
   logPresetChanged: 'Preset changed to {preset}',
+  logComputeChanged: 'Compute device changed to {device}',
   logModelsDeleted: 'Models deleted from disk, freed {size}',
   logModelDownloaded: 'Downloaded model {name}',
   logModelDeleted: 'Removed one model, freed {size}',

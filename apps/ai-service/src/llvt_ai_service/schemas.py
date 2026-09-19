@@ -20,6 +20,39 @@ class HealthResponse(BaseModel):
     platform: str
 
 
+class ComputeDeviceSchema(BaseModel):
+    """Một GPU mà whisper.cpp thấy được qua ggml."""
+
+    id: str  # tên thật của card — cũng là giá trị gửi lên PUT /api/compute
+    backend: str  # "Vulkan" | "Metal" | "CUDA"
+    kind: str  # "discrete" | "integrated"
+    memoryMb: int | None = None
+
+
+class ComputeResponse(BaseModel):
+    """Phần cứng service THẤY và lựa chọn thiết bị đang lưu.
+
+    Khác ô phần cứng cũ đọc từ renderer: Chromium chỉ thấy GPU nó dùng để vẽ giao
+    diện (trên laptop hybrid là GPU tích hợp) và chặn RAM ở 8 GB.
+    """
+
+    choice: str  # "auto" | "cpu" | id của một GPU trong `devices`
+    devices: list[ComputeDeviceSchema]
+    # GPU cụ thể chọn được hay không. Chỉ khi whisper.cpp liệt kê được thiết bị (bản
+    # Windows Vulkan); macOS chỉ có một GPU nên chỉ còn "Tự động"/"Chỉ CPU".
+    deviceSelectable: bool
+    activeDevice: str | None  # thiết bị ASR đang chạy; None = chưa nạp / không biết
+    asrAdapter: str | None  # runtime ASR đang nạp — MLX không đổi thiết bị được
+    platform: str
+    cpuName: str
+    cpuCores: int | None
+    ramGb: float | None
+
+
+class ComputeUpdate(BaseModel):
+    choice: str
+
+
 class StageInfoSchema(BaseModel):
     """Một khâu pipeline với model + thiết bị THẬT của provider đang chạy."""
 

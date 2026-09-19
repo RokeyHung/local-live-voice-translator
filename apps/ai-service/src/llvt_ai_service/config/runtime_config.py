@@ -30,7 +30,14 @@ CONFIG_PATH = Path.home() / ".llvt" / "settings.json"
 
 # Chỉ những khoá này được phép ghi từ API; tránh biến file thành nơi đặt bất cứ thứ gì.
 WRITABLE_KEYS = frozenset(
-    {"models_dir", "hf_token", "custom_asr_adapter", "custom_asr_model", "custom_mt_model"}
+    {
+        "models_dir",
+        "hf_token",
+        "custom_asr_adapter",
+        "custom_asr_model",
+        "custom_mt_model",
+        "compute_device",
+    }
 )
 
 # Khoá là bí mật: không được log ra, không được trả về nguyên văn qua REST.

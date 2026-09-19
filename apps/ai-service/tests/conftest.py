@@ -68,7 +68,9 @@ def _fake_asr_loader(monkeypatch: pytest.MonkeyPatch) -> None:
     from llvt_ai_service.adapters.asr import whisper_cpp
 
     monkeypatch.setattr(
-        whisper_cpp, "_default_loader", lambda _model_id, _models_dir: FakeWhisperModel()
+        whisper_cpp,
+        "_default_loader",
+        lambda _model_id, _models_dir, device="auto": FakeWhisperModel(),
     )
 
 

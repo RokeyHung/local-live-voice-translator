@@ -9,12 +9,21 @@
 
 import { useState, type JSX } from 'react'
 import { looksLikeHeadphones, playTestTone, type AudioDevice } from '../../adapters/audio-devices'
-import { prettyGpuName } from '../../adapters/compute-probe'
-import type { Dict } from '../../application/i18n'
+import {
+  activeTile,
+  AUTO,
+  autoTarget,
+  CPU_ONLY,
+  effectiveChoice,
+  formatVram,
+  gpuSummary,
+  prettyDeviceName
+} from '../../application/compute'
+import { format, type Dict } from '../../application/i18n'
 import { PRESET_META } from '../../application/presets'
-import { useResources, useServiceConfig } from '../../hooks/use-config'
+import { useComputeStatus, useServiceConfig, useSetCompute } from '../../hooks/use-config'
 import { useHealth } from '../../hooks/use-health'
-import { useAudioDevices, useCompute, useDict, useIsScreen, useMicLevel } from '../../hooks/use-ui'
+import { useAudioDevices, useDict, useMicLevel } from '../../hooks/use-ui'
 import { useSessionStore } from '../../stores/session-store'
 import { useUiStore } from '../../stores/ui-store'
 import { Icon, type IconName } from '../components/Icon'
@@ -130,129 +139,93 @@ function HwTile({
   )
 }
 
-// Năm thiết bị tính toán của thiết kế. Ứng dụng KHÔNG chọn được backend (AI service
-// tự quyết lúc nạp model) nên các ô này chỉ để đọc: ô nào trùng với `accel` service
-// đang báo về thì đánh dấu "đang dùng", ô nào máy không có thì mờ đi.
-interface ComputeTileDef {
-  id: string
-  icon: IconName
-  color: string
-  label: (L: Dict) => string
-  sub: (L: Dict) => string
-  available: (kind: string) => boolean
-}
-
-const COMPUTE_TILES: ComputeTileDef[] = [
-  {
-    id: 'auto',
-    icon: 'sun',
-    color: '#22d3ee',
-    label: (L) => L.devAuto,
-    sub: (L) => L.devAutoSub,
-    available: () => true
-  },
-  {
-    id: 'cuda',
-    icon: 'chip',
-    color: '#76b900',
-    label: (L) => L.devCuda,
-    sub: () => '',
-    available: (kind) => kind === 'nvidia'
-  },
-  {
-    id: 'metal',
-    icon: 'apple',
-    color: '#38bdf8',
-    label: (L) => L.devMetal,
-    sub: () => '',
-    available: (kind) => kind === 'apple'
-  },
-  {
-    id: 'vulkan',
-    icon: 'box',
-    color: '#a855f7',
-    label: (L) => L.devVulkan,
-    sub: () => '',
-    // Vulkan nằm trong driver của cả NVIDIA — bản cài Windows chạy whisper.cpp qua
-    // Vulkan trên mọi card (tools/build_whisper_vulkan.sh).
-    available: (kind) => kind === 'nvidia' || kind === 'amd' || kind === 'intel'
-  },
-  {
-    id: 'cpu',
-    icon: 'chip',
-    color: '#64748b',
-    label: (L) => L.devCpu,
-    sub: (L) => L.devCpuSub,
-    available: () => true
-  }
-]
-
-/** Tên bộ tăng tốc service báo về ("Metal", "CUDA", "mps", "BLAS"…) → ô tương ứng. */
-function tileOfAccel(accel: string): string {
-  const a = accel.toLowerCase()
-  if (a.includes('metal') || a.includes('mps')) return 'metal'
-  if (a.includes('cuda')) return 'cuda'
-  if (a.includes('vulkan')) return 'vulkan'
-  return 'cpu'
-}
-
-function ComputeTile({
+// Một ô chọn thiết bị tính toán. Khác bản cũ (năm ô cố định CUDA/Metal/Vulkan… chỉ để
+// xem, đoán từ GPU mà Chromium thấy): mỗi ô là một lựa chọn service THẬT SỰ chạy
+// được, bấm được, và ô nào khoá thì nói lý do — cách TranscriptionSuite làm.
+function ComputeChoiceTile({
   icon,
   color,
   label,
   sub,
-  available,
-  inUse,
-  recommended,
-  hint,
+  tags,
+  selected,
+  running,
+  disabled,
+  reason,
+  onSelect,
   L
 }: {
   icon: IconName
   color: string
   label: string
   sub: string
-  available: boolean
-  inUse: boolean
-  recommended: boolean
-  hint: string
+  tags?: string[]
+  selected: boolean
+  running: boolean
+  disabled: boolean
+  reason?: string
+  onSelect: () => void
   L: Dict
 }): JSX.Element {
   return (
-    <div
-      title={hint}
-      className={`flex flex-col items-start gap-2 rounded-[13px] border p-3.5 ${available ? '' : 'opacity-40'}`}
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={disabled}
+      aria-pressed={selected}
+      title={disabled ? reason : label}
+      className="flex min-w-0 cursor-pointer flex-col items-start gap-2 rounded-[13px] border p-3.5 text-left transition-colors hover:border-line-strong disabled:cursor-not-allowed disabled:opacity-55"
       style={{
-        borderColor: inUse ? color : 'var(--line)',
-        background: inUse ? `${color}14` : 'var(--surface)',
-        ...(inUse ? { boxShadow: `0 0 14px ${color}22` } : {})
+        borderColor: selected ? color : 'var(--line)',
+        background: selected ? `${color}14` : 'var(--surface)',
+        ...(selected ? { boxShadow: `0 0 14px ${color}22` } : {})
       }}
     >
-      <div className="flex w-full items-center justify-between">
+      <div className="flex w-full items-center justify-between gap-2">
         <span
-          className="inline-flex size-8.5 items-center justify-center rounded-[9px]"
+          className="inline-flex size-8.5 shrink-0 items-center justify-center rounded-[9px]"
           style={{ background: `${color}1a`, color }}
         >
           <Icon name={icon} size={18} />
         </span>
-        {inUse ? (
-          <span className="flex" style={{ color }} title={L.devInUse}>
-            <Icon name="check" size={16} strokeWidth={2.6} />
+        {running && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-bold"
+            style={{ color: 'var(--ac-grn)', background: 'rgba(34,197,94,.12)' }}
+          >
+            <Icon name="check" size={11} strokeWidth={2.8} />
+            {L.devInUse}
           </span>
-        ) : (
-          recommended && (
-            <span
-              className="rounded-full px-1.5 py-0.5 text-3xs font-bold"
-              style={{ color, background: `${color}1a` }}
-            >
-              {L.recommended}
-            </span>
-          )
         )}
       </div>
-      <div className="text-[12px] leading-tight font-bold">{label}</div>
-      <div className="text-[10px] text-fg-4">{available ? sub : L.notAvail}</div>
-    </div>
+      <div title={label} className="truncate-1 w-full text-[12px] leading-tight font-bold">
+        {label}
+      </div>
+      <div className="truncate-1 w-full text-[10px] text-fg-4">{sub}</div>
+      {tags && tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-line-soft px-1.5 py-px text-3xs font-semibold text-fg-3"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </button>
   )
+}
+
+// Màu theo hãng — chỉ để phân biệt các ô GPU, không mang nghĩa gì khác.
+function vendorColor(id: string): string {
+  const name = id.toLowerCase()
+  if (name.includes('nvidia') || name.includes('geforce')) return '#76b900'
+  if (name.includes('amd') || name.includes('radeon')) return '#ed1c24'
+  if (name.includes('intel')) return '#0071c5'
+  if (name.includes('apple')) return '#38bdf8'
+  return '#a855f7'
 }
 
 const LOOP_TONE = {
@@ -334,22 +307,13 @@ function StatusRow({
   )
 }
 
-const KIND_COLOR: Record<string, string> = {
-  nvidia: '#76b900',
-  apple: 'var(--ac-sky)',
-  amd: '#ed1c24',
-  intel: '#0071c5',
-  cpu: 'var(--text3)'
-}
-
 export function SetupScreen(): JSX.Element {
   const L = useDict()
-  const compute = useCompute()
   const { inputs, outputs } = useAudioDevices()
   const health = useHealth()
   const serviceConfig = useServiceConfig()
-  const visible = useIsScreen('setup')
-  const resources = useResources(health.isSuccess && visible)
+  const compute = useComputeStatus()
+  const setCompute = useSetCompute()
   const active = useSessionStore((s) => s.active)
   const sessionMicLevel = useSessionStore((s) => s.micLevel)
   const systemLevel = useSessionStore((s) => s.systemLevel)
@@ -365,14 +329,25 @@ export function SetupScreen(): JSX.Element {
   const previewLevel = useMicLevel(inputDeviceId, !active)
   const micLevel = active ? sessionMicLevel : previewLevel
 
-  const serviceStages = serviceConfig.data?.stages ?? []
-  // Khâu nào đã nạp thì `accel` là bộ tăng tốc THẬT đang chạy — dùng nó để đánh dấu
-  // ô thiết bị, chứ không suy từ phần cứng máy.
-  const accelsInUse = new Set(
-    serviceStages.filter((s) => s.loaded).map((s) => tileOfAccel(s.accel))
-  )
-  // Đã có khâu chạy GPU (vd. Vulkan trên card NVIDIA) thì đừng gợi ý ô GPU khác nữa.
-  const gpuInUse = ['cuda', 'metal', 'vulkan'].some((id) => accelsInUse.has(id))
+  const status = health.isSuccess ? compute.data : undefined
+  const chosen = status ? effectiveChoice(status) : null
+  const running = status ? activeTile(status) : null
+  const auto = status ? autoTarget(status.devices) : null
+  // Đổi thiết bị giải phóng model — giữa phiên là cắt ngang bản dịch đang chạy.
+  const lockReason = active ? L.computeLockedSession : undefined
+  const locked = active || setCompute.isPending
+  const choose = (choice: string): void => {
+    if (!locked && choice !== chosen) setCompute.mutate(choice)
+  }
+  const runningLabel = !status?.activeDevice
+    ? L.notLoaded
+    : status.activeDevice === CPU_ONLY
+      ? L.devCpu
+      : status.devices.some((d) => d.id === status.activeDevice)
+        ? prettyDeviceName(status.activeDevice)
+        : status.platform === 'darwin'
+          ? L.devAutoMetal
+          : status.activeDevice
   const outputLabel = outputs.find((d) => d.deviceId === outputDeviceId)?.label ?? ''
 
   const loop = !outputLabel
@@ -450,7 +425,7 @@ export function SetupScreen(): JSX.Element {
         </div>
       </div>
 
-      {/* phần cứng phát hiện được */}
+      {/* thiết bị tính toán — do AI service phát hiện, chọn được */}
       <div className="panel px-5 py-4.5">
         <div className="flex flex-wrap items-center justify-between gap-3.5">
           <div className="flex items-center gap-2.5">
@@ -462,7 +437,7 @@ export function SetupScreen(): JSX.Element {
               <div className="mt-px text-sm text-fg-3">{L.instanceSub}</div>
             </div>
           </div>
-          {!compute && (
+          {health.isSuccess && !status && (
             <span className="inline-flex items-center gap-2 text-sm text-fg-3">
               <span className="flex text-[#22d3ee]">
                 <Icon name="spinner" size={13} strokeWidth={2.6} spin />
@@ -472,71 +447,107 @@ export function SetupScreen(): JSX.Element {
           )}
         </div>
 
-        {compute && (
+        {!health.isSuccess && (
+          <div className="mt-4 rounded-md border border-dashed border-line-strong bg-inset px-3 py-2.5 text-sm text-fg-4">
+            {L.computeNeedsService}
+          </div>
+        )}
+
+        {status && (
           <>
             <div className="mt-4 grid grid-cols-4 gap-2.5">
               <HwTile
                 label={L.gpuLbl}
-                value={prettyGpuName(compute.gpuRenderer) || L.notAvail}
-                color={KIND_COLOR[compute.kind]}
+                value={
+                  gpuSummary(status.devices) ||
+                  (status.platform === 'darwin' ? L.devAutoMetal : L.notAvail)
+                }
                 mono={false}
               />
               <HwTile
                 label={L.cpuLbl}
                 value={
-                  resources.data
-                    ? `${resources.data.cpuCount} ${L.cores}`
-                    : compute.cpuCores
-                      ? `${compute.cpuCores} ${L.cores}`
-                      : '—'
+                  status.cpuCores
+                    ? `${prettyDeviceName(status.cpuName)} · ${status.cpuCores} ${L.cores}`
+                    : prettyDeviceName(status.cpuName)
                 }
+                mono={false}
               />
               <HwTile
                 label={L.ramLbl}
-                value={
-                  resources.data
-                    ? `${(resources.data.systemTotalMb / 1024).toFixed(0)} GB`
-                    : compute.ramGb
-                      ? `≥${compute.ramGb} GB`
-                      : '—'
-                }
+                value={status.ramGb ? `${Math.round(status.ramGb)} GB` : '—'}
               />
-              <HwTile label={L.apiLbl} value={compute.webgpu ? 'WebGPU + WebGL' : 'WebGL'} />
+              <HwTile
+                label={L.runningOn}
+                value={runningLabel}
+                color={status.activeDevice ? 'var(--ac-grn)' : 'var(--text4)'}
+                mono={false}
+              />
             </div>
 
-            {/* thiết bị tính toán — chỉ để đọc, dấu tích là accel THẬT service báo về */}
-            <div className="mt-3 grid grid-cols-5 gap-2.5">
-              {COMPUTE_TILES.map((tile) => {
-                const available = tile.available(compute.kind)
-                const inUse = accelsInUse.has(tile.id)
-                return (
-                  <ComputeTile
-                    key={tile.id}
-                    icon={tile.icon}
-                    color={tile.color}
-                    label={tile.label(L)}
-                    sub={tile.sub(L)}
-                    available={available}
-                    inUse={inUse}
-                    recommended={
-                      available &&
-                      !inUse &&
-                      !gpuInUse &&
-                      ((compute.kind === 'nvidia' && tile.id === 'cuda') ||
-                        (compute.kind === 'apple' && tile.id === 'metal'))
-                    }
-                    hint={L.computeReadOnly}
-                    L={L}
-                  />
-                )
-              })}
+            <div
+              className="mt-3 grid gap-2.5"
+              style={{
+                gridTemplateColumns: `repeat(${status.devices.length + 2}, minmax(0, 1fr))`
+              }}
+            >
+              <ComputeChoiceTile
+                icon="sun"
+                color="#22d3ee"
+                label={L.devAuto}
+                sub={
+                  auto
+                    ? format(L.devAutoSub, { device: prettyDeviceName(auto.id) })
+                    : status.platform === 'darwin'
+                      ? L.devAutoMetal
+                      : L.devAutoNone
+                }
+                selected={chosen === AUTO}
+                running={running === AUTO}
+                disabled={locked}
+                reason={lockReason}
+                onSelect={() => choose(AUTO)}
+                L={L}
+              />
+              {status.devices.map((device) => (
+                <ComputeChoiceTile
+                  key={device.id}
+                  icon="chip"
+                  color={vendorColor(device.id)}
+                  label={prettyDeviceName(device.id)}
+                  sub={[device.backend, formatVram(device.memoryMb)].filter(Boolean).join(' · ')}
+                  tags={[device.kind === 'discrete' ? L.devDiscrete : L.devIntegrated]}
+                  selected={chosen === device.id}
+                  running={running === device.id}
+                  disabled={locked}
+                  reason={lockReason}
+                  onSelect={() => choose(device.id)}
+                  L={L}
+                />
+              ))}
+              <ComputeChoiceTile
+                icon="chip"
+                color="#64748b"
+                label={L.devCpu}
+                sub={L.devCpuSub}
+                selected={chosen === CPU_ONLY}
+                running={running === CPU_ONLY}
+                disabled={locked}
+                reason={lockReason}
+                onSelect={() => choose(CPU_ONLY)}
+                L={L}
+              />
             </div>
 
-            <div className="mt-3 flex items-center gap-2.25 rounded-[11px] border border-line-soft bg-inset px-3.25 py-2.5 text-sm text-fg-3">
-              <Badge color={KIND_COLOR[compute.kind]}>{compute.kind}</Badge>
-              <span className="flex-1">
-                {serviceStages.length > 0 ? L.computeFromService : L.computeReadOnly}
-              </span>
+            <div className="mt-3 flex flex-col gap-1.5 rounded-[11px] border border-line-soft bg-inset px-3.25 py-2.5 text-sm text-fg-3">
+              {setCompute.isError ? (
+                <span className="text-(color:--ac-red)">{setCompute.error.message}</span>
+              ) : setCompute.isSuccess && !status.activeDevice ? (
+                <span className="text-(color:--ac-grn)">{L.computeApplyNext}</span>
+              ) : (
+                <span>{active ? L.computeLockedSession : L.computeHint}</span>
+              )}
+              {status.asrAdapter === 'mlx_whisper' && <span>{L.computeMlxNote}</span>}
             </div>
           </>
         )}
@@ -560,7 +571,7 @@ export function SetupScreen(): JSX.Element {
             <StatusRow
               icon="chip"
               label={L.compute}
-              value={compute ? `${compute.kind} · ${compute.recommended}` : L.detecting}
+              value={status ? runningLabel : L.detecting}
               color="var(--ac-sky)"
             />
             <StatusRow

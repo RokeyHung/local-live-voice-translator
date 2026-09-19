@@ -36,6 +36,27 @@ export interface BenchmarkResponse {
 }
 
 // Tài nguyên của chính tiến trình AI service (GET /api/resources).
+// GET/PUT /api/compute — mirror của ComputeResponse trong schemas.py.
+// Phần cứng do AI service thấy (chính tiến trình chạy model), không phải renderer.
+export interface ComputeDevice {
+  id: string // tên thật của card — cũng là giá trị gửi lên khi chọn
+  backend: string // 'Vulkan' | 'Metal' | 'CUDA'
+  kind: 'discrete' | 'integrated'
+  memoryMb: number | null
+}
+
+export interface ComputeStatus {
+  choice: string // 'auto' | 'cpu' | id của một GPU
+  devices: ComputeDevice[]
+  deviceSelectable: boolean
+  activeDevice: string | null // thiết bị ASR đang chạy; null = chưa nạp
+  asrAdapter: string | null
+  platform: string
+  cpuName: string
+  cpuCores: number | null
+  ramGb: number | null
+}
+
 export interface ResourceResponse {
   cpuPercent: number
   cpuCount: number

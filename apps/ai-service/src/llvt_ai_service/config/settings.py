@@ -81,6 +81,12 @@ class Settings(BaseSettings):
     custom_asr_model: str = ""
     custom_mt_model: str = ""
 
+    # Thiết bị tính toán (màn Thiết bị âm thanh → "Cấu hình thực thi"): "auto", "cpu",
+    # hoặc tên một GPU đúng như ggml báo (vd "NVIDIA GeForce RTX 4060 Laptop GPU").
+    # Lưu theo TÊN chứ không theo số thứ tự: thứ tự ggml liệt kê đổi được khi cắm màn
+    # hình rời hay cập nhật driver, tên thì không. Trống = auto.
+    compute_device: str = ""
+
     # --- Tách người nói (diarization) — chỉ dùng cho màn Nhập tệp ---------------
     #
     # Mặc định TẮT vì hai lẽ: model pyannote là repo *gated* (lần tải đầu cần access

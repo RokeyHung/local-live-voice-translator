@@ -16,10 +16,18 @@ import numpy as np
 import pytest
 
 from llvt_ai_service.adapters.asr.whisper_cpp import (
+    AUTO,
+    CPU_ONLY,
+    DEV_CPU,
+    DEV_GPU,
+    DEV_IGPU,
     MODEL_MAP,
+    GgmlDevice,
     WhisperCppAsr,
     gpu_backend_from_log,
+    gpu_device_from_log,
     pick_gpu_device,
+    resolve_device,
 )
 from llvt_ai_service.domain.enums import Language
 
@@ -87,25 +95,58 @@ def test_gpu_backend_read_from_init_log():
     assert gpu_backend_from_log("") is None
 
 
+IRIS = GgmlDevice("Vulkan0", "Intel(R) Iris(R) Xe Graphics", DEV_IGPU, 16000)
+RTX = GgmlDevice("Vulkan1", "NVIDIA GeForce RTX 4060 Laptop GPU", DEV_GPU, 8000)
+CPU = GgmlDevice("CPU", "12th Gen Intel(R) Core(TM) i5-12500H", DEV_CPU)
+# Thứ tự ggml thật trên máy dev: GPU tích hợp đứng trước.
+HYBRID = [IRIS, RTX, CPU]
+
+
+def test_gpu_device_name_read_from_init_log():
+    assert gpu_device_from_log("whisper_backend_init_gpu: using Vulkan1 backend") == "Vulkan1"
+    assert gpu_device_from_log("whisper_backend_init_gpu: no GPU found") is None
+
+
 def test_discrete_gpu_wins_over_the_integrated_one_listed_first():
     """Laptop hybrid: ggml liệt kê Iris Xe trước RTX 4060, whisper.cpp lấy cái đầu."""
-    devices = [("Vulkan0", 2), ("Vulkan1", 1), ("CPU", 0)]
-    assert pick_gpu_device(devices) == {"gpu_device": 1}
+    assert pick_gpu_device(HYBRID) == {"gpu_device": 1}
 
 
 def test_default_kept_when_the_first_gpu_is_already_discrete():
-    assert pick_gpu_device([("Vulkan0", 1), ("Vulkan1", 2), ("CPU", 0)]) is None
-    assert pick_gpu_device([("MTL0", 1), ("CPU", 0)]) is None
+    assert pick_gpu_device([RTX, IRIS, CPU]) is None
+    assert pick_gpu_device([GgmlDevice("MTL0", "Apple M4", DEV_GPU), CPU]) is None
 
 
 def test_integrated_gpu_only_is_still_used():
     """Iris Xe vẫn nhanh hơn CPU (~9,9 s so với ~17 s), nên không ép về CPU."""
-    assert pick_gpu_device([("Vulkan0", 2), ("CPU", 0)]) is None
+    assert pick_gpu_device([IRIS, CPU]) is None
 
 
 def test_no_device_list_keeps_whisper_default():
     assert pick_gpu_device([]) is None
-    assert pick_gpu_device([("CPU", 0)]) is None
+    assert pick_gpu_device([CPU]) is None
+
+
+def test_auto_choice_is_the_discrete_preference():
+    assert resolve_device(AUTO, HYBRID) == {"gpu_device": 1}
+    assert resolve_device("", HYBRID) == {"gpu_device": 1}
+
+
+def test_cpu_only_turns_the_gpu_off():
+    assert resolve_device(CPU_ONLY, HYBRID) == {"use_gpu": False}
+    # Cả khi ggml không liệt kê được gì (macOS, loader lỗi).
+    assert resolve_device(CPU_ONLY, []) == {"use_gpu": False}
+
+
+def test_a_named_gpu_is_used_even_when_auto_would_pick_another():
+    """Người dùng chủ động chọn Iris Xe (vd để nhường RTX cho game) thì phải tôn trọng."""
+    assert resolve_device(IRIS.description, HYBRID) is None  # nó đứng đầu → mặc định
+    assert resolve_device(RTX.description, HYBRID) == {"gpu_device": 1}
+
+
+def test_a_saved_gpu_that_is_gone_falls_back_to_auto():
+    """settings.json mang từ máy khác, hay eGPU đã tháo: đừng làm hỏng lượt nạp."""
+    assert resolve_device("AMD Radeon RX 7900", HYBRID) == {"gpu_device": 1}
 
 
 def test_runtime_info_prefers_the_device_seen_at_load_time():

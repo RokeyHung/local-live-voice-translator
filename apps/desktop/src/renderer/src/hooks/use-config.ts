@@ -9,6 +9,7 @@ import { logInfo, logWarn } from '../application/logger'
 import type { Language, Preset } from '../domain/enums'
 import type {
   BenchmarkResponse,
+  ComputeStatus,
   ConfigResponse,
   DeletedModels,
   DownloadedModel,
@@ -251,6 +252,38 @@ export function useResources(enabled: boolean): UseQueryResult<ResourceResponse,
     refetchInterval: 2000,
     retry: false,
     enabled
+  })
+}
+
+// Phần cứng tính toán + thiết bị đang chọn/đang chạy (GET /api/compute).
+//
+// Thiết bị ĐANG CHẠY chỉ đổi khi model được nạp/giải phóng — mà việc đó xảy ra từ
+// nhiều nơi (nút Khởi động model, bắt đầu phiên, benchmark). Thay vì cắm vào từng
+// mutation, khoá query theo chính `stages` của /api/config (vốn đã được hỏi lại định
+// kỳ): stages đổi thì query này tự hỏi lại.
+export function useComputeStatus(): UseQueryResult<ComputeStatus, Error> {
+  const config = useServiceConfig()
+  const stagesKey = (config.data?.stages ?? []).map((s) => `${s.stage}:${s.accel}`).join('|')
+  return useQuery({
+    queryKey: ['compute', stagesKey],
+    queryFn: () => client.fetchCompute(),
+    staleTime: 60_000,
+    retry: false,
+    enabled: config.isSuccess
+  })
+}
+
+export function useSetCompute(): UseMutationResult<ComputeStatus, Error, string> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (choice: string) => client.setCompute(choice),
+    onSuccess: (data) => {
+      // Service đã giải phóng model → /api/config đổi, kéo lại để badge trạng thái đúng.
+      void queryClient.invalidateQueries({ queryKey: ['config'] })
+      void queryClient.invalidateQueries({ queryKey: ['compute'] })
+      logInfo('models', (L) => format(L.logComputeChanged, { device: data.choice }))
+    },
+    onError: (error) => logWarn('models', (L) => format(L.logModelsFailed, { msg: error.message }))
   })
 }
 

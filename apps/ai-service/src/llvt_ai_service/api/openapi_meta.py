@@ -93,6 +93,14 @@ TAGS_METADATA = [
         ),
     },
     {
+        "name": "compute",
+        "description": (
+            "Phần cứng tính toán mà service thấy (GPU liệt kê từ chính whisper.cpp, tên "
+            "CPU, RAM thật) và lựa chọn thiết bị: tự động, một GPU cụ thể, hay chỉ CPU. "
+            "Lựa chọn áp dụng ở lần nạp model kế tiếp."
+        ),
+    },
+    {
         "name": "sessions",
         "description": (
             "Lịch sử phiên: mỗi câu lưu kèm cặp ngôn ngữ, câu gốc, bản dịch, thời gian "

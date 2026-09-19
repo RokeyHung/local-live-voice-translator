@@ -60,6 +60,16 @@ def vad_params(cfg: PresetConfig) -> VadParams:
     return VadParams(**values)
 
 
+def cpu_only() -> str | None:
+    """``"cpu"`` khi người dùng chọn "Chỉ CPU", còn lại None để adapter tự chọn như cũ.
+
+    Chọn một GPU cụ thể chỉ có nghĩa với whisper.cpp (nó mới liệt kê được thiết bị
+    qua ggml); NLLB (torch) và faster-whisper tự lấy thiết bị tốt nhất chúng có. Nhưng
+    "Chỉ CPU" thì phải đúng cho MỌI khâu, không thì ô đó nói một đằng làm một nẻo.
+    """
+    return "cpu" if get_settings().compute_device == "cpu" else None
+
+
 def asr_adapter_name(cfg: PresetConfig) -> str:
     """Adapter ASR sẽ dùng: ``LLVT_ASR_ADAPTER`` nếu có đặt, không thì của preset."""
     override = get_settings().asr_adapter.strip()
@@ -103,6 +113,7 @@ ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
         models_dir=str(get_settings().models_dir / "whisper-cpp"),
         min_confidence=get_settings().asr_min_confidence,
         audio_ctx=get_settings().asr_audio_ctx,
+        device=get_settings().compute_device,
     ),
     "mlx_whisper": lambda cfg: MlxWhisperAsr(
         asr_model(cfg, "mlx_whisper"),
@@ -113,6 +124,7 @@ ASR_REGISTRY: dict[str, Callable[[PresetConfig], SpeechToTextProvider]] = {
         asr_model(cfg, "faster_whisper"),
         models_dir=str(get_settings().models_dir / "faster-whisper"),
         min_confidence=get_settings().asr_min_confidence,
+        device=cpu_only(),
     ),
 }
 
@@ -161,6 +173,7 @@ MT_REGISTRY: dict[str, Callable[[PresetConfig], TranslationProvider]] = {
     "nllb": lambda cfg: NllbTranslator(
         cfg.mt_model,
         models_dir=str(get_settings().models_dir / "nllb"),
+        device=cpu_only(),
     ),
 }
 TTS_REGISTRY: dict[str, Callable[[PresetConfig], TextToSpeechProvider]] = {
@@ -237,6 +250,13 @@ class ModelManager:
         if self._providers is None:
             raise RuntimeError("Chưa nạp preset — gọi load_preset() trước.")
         return self._providers
+
+    def asr_device(self) -> str | None:
+        """Thiết bị ASR đang thật sự chạy (tên GPU hoặc "cpu"); None nếu chưa nạp hay
+        adapter không báo được (MLX, faster-whisper)."""
+        if self._providers is None:
+            return None
+        return getattr(self._providers.asr, "active_device", None)
 
     def stages(self) -> list[StageInfo]:
         """Các khâu kèm model + thiết bị đang thật sự dùng (rỗng nếu chưa nạp preset).

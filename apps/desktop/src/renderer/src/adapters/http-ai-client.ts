@@ -4,6 +4,7 @@ import { AI_BASE_URL } from '../application/config'
 import type { Language, Preset } from '../domain/enums'
 import type {
   BenchmarkResponse,
+  ComputeStatus,
   ConfigResponse,
   DeletedModels,
   DownloadedModel,
@@ -191,6 +192,25 @@ export class HttpAiClient implements AiClient {
     const res = await fetch(`${AI_BASE_URL}/api/resources`)
     if (!res.ok) throw new Error(`Đọc tài nguyên thất bại: HTTP ${res.status}`)
     return (await res.json()) as ResourceResponse
+  }
+
+  async fetchCompute(): Promise<ComputeStatus> {
+    const res = await fetch(`${AI_BASE_URL}/api/compute`)
+    if (!res.ok) throw new Error(`Đọc phần cứng thất bại: HTTP ${res.status}`)
+    return (await res.json()) as ComputeStatus
+  }
+
+  async setCompute(choice: string): Promise<ComputeStatus> {
+    const res = await fetch(`${AI_BASE_URL}/api/compute`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ choice })
+    })
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null)
+      throw new Error(detail?.detail ?? `Đổi thiết bị thất bại: HTTP ${res.status}`)
+    }
+    return (await res.json()) as ComputeStatus
   }
 
   async fetchInstalledModels(): Promise<InstalledModel[]> {
