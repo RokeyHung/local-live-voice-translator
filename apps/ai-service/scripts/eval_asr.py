@@ -125,7 +125,11 @@ async def main_async(args: argparse.Namespace) -> None:
     asr = ASR_REGISTRY[adapter](cfg)
     print(f"Nạp ASR: {model} qua {adapter} (preset {args.preset})…", flush=True)
     await asr.load()
-    print(f"  backend: {asr.runtime_info()}", flush=True)
+    # Chụp lại NGAY khi model còn trong bộ nhớ. Sau `unload()` thì `accel` lùi về đọc
+    # cờ lúc build, và bản build Vulkan không khai gì trong `system_info()` — file JSON
+    # đã chốt sẽ ghi "CPU" cho một lượt chạy trên GPU.
+    runtime = asr.runtime_info()
+    print(f"  backend: {runtime}", flush=True)
 
     languages = [Language(code) for code in args.language] if args.language else LANGUAGES
     results = [await run_language(asr, language, args.limit) for language in languages]
@@ -139,7 +143,7 @@ async def main_async(args: argparse.Namespace) -> None:
             "preset": args.preset,
             "adapter": adapter,
             "model": model,
-            "runtime": asr.runtime_info(),
+            "runtime": runtime,
             "hallucination_filter": bool(args.with_filter),
             "limit": args.limit,
             "languages": [asdict(r) for r in results],

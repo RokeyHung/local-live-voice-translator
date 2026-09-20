@@ -25,6 +25,11 @@
 
 set -euo pipefail
 
+# Chạy thẳng script này trên Windows (Git Bash) thì stdout là cp1252 và dòng log
+# tiếng Việt làm Python chết bằng UnicodeEncodeError. Makefile cũng export biến
+# này, đặt lại ở đây để gọi trực tiếp cũng chạy được.
+export PYTHONUTF8=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_DIR="$(dirname "$SCRIPT_DIR")"
 REPO_ROOT="$(dirname "$(dirname "$AI_DIR")")"

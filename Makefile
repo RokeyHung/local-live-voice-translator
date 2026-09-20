@@ -5,6 +5,10 @@
 AI_DIR      := apps/ai-service
 DESKTOP_DIR := apps/desktop
 UV          ?= uv
+# Windows: stdout bị pipe (make, tee, CI) mặc định là cp1252, nên mọi dòng log
+# tiếng Việt của script Python làm cả lệnh chết bằng UnicodeEncodeError. Cùng họ
+# lỗi với log của service khi bị spawn — xem tools/… và docs/04 mục 7.
+export PYTHONUTF8 := 1
 NPM         ?= npm
 NPX         ?= npx
 # Prettier dùng chung cho Markdown (đến từ node_modules của desktop)
@@ -37,8 +41,8 @@ FULL_DEPS    := --group eval --extra diarization --extra ctranslate2 $(MLX_EXTRA
         build typecheck lint format format-docs health docs docx test test-service test-desktop e2e \
         icons bundle-service dist \
         bench accuracy soak segment \
-        endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 \
-        fetch-fleurs eval-asr eval-mt eval-comet eval-latency clean
+        endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 setup-vulkan \
+        fetch-fleurs eval-asr eval-mt eval-comet eval-latency eval-latency-all clean
 
 help: ## Hiện danh sách lệnh
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -69,6 +73,16 @@ setup-diarization: ## Chỉ cài khâu tách người nói (pyannote.audio) cho 
 
 setup-ctranslate2: ## Chỉ cài backend ASR faster-whisper (CPU int8 / NVIDIA fp16)
 	cd $(AI_DIR) && $(UV) sync --extra ctranslate2
+
+setup-vulkan: ## Windows: đổi pywhispercpp của venv dev sang bản chạy GPU qua Vulkan
+	@# Bộ cài đã mang wheel Vulkan (tools/bundle_service.sh --with-vulkan), nhưng venv
+	@# dev thì vẫn là wheel CPU trên PyPI — nên `make dev` và cả `make eval-asr` chạy
+	@# whisper.cpp trên CPU (~17 s cho 3 s audio) trong khi bản cài chạy ~0,13 s. Dùng
+	@# lại wheel đã build ở dist/wheels/vulkan nếu có, không thì build (cần VS Build
+	@# Tools + Vulkan SDK, ~6 phút).
+	@# LƯU Ý: `uv sync` sau lệnh này sẽ trả lại wheel CPU vì lock ghim bản PyPI. Chạy
+	@# các lệnh đo bằng `UV_NO_SYNC=1 make eval-asr` để giữ nguyên bản Vulkan.
+	@WHEEL=$$(ls -t dist/wheels/vulkan/pywhispercpp-*-win_amd64.whl 2>/dev/null | head -1); 	if [ -z "$$WHEEL" ]; then 		PWC=$$(cd $(AI_DIR) && $(UV) run --no-sync python -c "import importlib.metadata as m;print(m.version('pywhispercpp'))"); 		WHEEL=$$(tools/build_whisper_vulkan.sh $$PWC $(CURDIR)/dist/wheels | tail -1); 	fi; 	echo "▶ Cài $$WHEEL"; 	cd $(AI_DIR) && $(UV) pip install --reinstall --no-deps "$(CURDIR)/$$WHEEL"
 
 setup-desktop: ## Cài phụ thuộc desktop (npm install)
 	cd $(DESKTOP_DIR) && $(NPM) install
@@ -183,6 +197,13 @@ eval-comet: ## Chấm COMET cho eval-mt.json — chạy ở môi trường riên
 
 eval-latency: ## Total Inference Time + RTF toàn hệ thống, mục 3c (make eval-latency LIMIT=20)
 	cd $(AI_DIR) && $(EVAL_ENV) $(UV) run --group eval python scripts/eval_latency.py  $(if $(LIMIT),--limit $(LIMIT)) --json eval-latency.json
+
+# Sáu chiều trong một lệnh. Trước đây phải gõ tay sáu lượt `eval_latency.py --source …`
+# nên bảng ở docs/05 mục 8c khó dựng lại; mỗi chiều ghi ra một file riêng đúng tên mà
+# docs/results đang dùng. SUFFIX để tách lượt chạy của máy khác: SUFFIX=-win.
+DIRS ?= vi:en en:vi vi:ja ja:vi vi:zh zh:vi
+eval-latency-all: ## Đo độ trễ CẢ SÁU chiều (make eval-latency-all LIMIT=50 SUFFIX=-win)
+	@for d in $(DIRS); do 		src=$${d%%:*}; tgt=$${d##*:}; 		echo "▶ $$src → $$tgt"; 		(cd $(AI_DIR) && $(EVAL_ENV) $(UV) run --group eval python scripts/eval_latency.py 			--source $$src --target $$tgt $(if $(LIMIT),--limit $(LIMIT)) 			--json eval-latency-$$src-$$tgt$(SUFFIX).json) || exit 1; 	done
 
 endpointing: ## So ngưỡng tách câu của VAD trên một bản ghi (make endpointing MEDIA=file.mov)
 	@test -n "$(MEDIA)" || { echo "Thiếu MEDIA: make endpointing MEDIA=ban-ghi.mov"; exit 1; }
