@@ -141,7 +141,7 @@ def main() -> None:
     parser.add_argument(
         "--preset",
         action="append",
-        choices=[p.value for p in Preset],
+        choices=[p.value for p in PRESETS],
         help="preset cần đo (lặp lại được); mặc định đo cả ba",
     )
     parser.add_argument(
@@ -164,7 +164,7 @@ def main() -> None:
     if not args.no_legacy:
         configs.append(("trước khi sửa (max 20s)", LEGACY))
 
-    presets = [Preset(p) for p in (args.preset or [p.value for p in Preset])]
+    presets = [Preset(p) for p in (args.preset or [p.value for p in PRESETS])]
     for preset in presets:
         tuning = PRESETS[preset].vad
         configs.append((f"{preset.value} ({tuning.max_speech_ms}ms)", _from_tuning(tuning)))
