@@ -22,7 +22,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import os
+import sys
 import time
+from pathlib import Path
 from typing import Any, Callable, Protocol
 
 import numpy as np
@@ -80,13 +83,53 @@ ModelLoader = Callable[[str, str | None, str | None], FasterWhisperModel]
 
 
 def _pick_device() -> str:
-    """CUDA nếu có, không thì CPU. CTranslate2 chưa có backend Metal nên bỏ qua MPS."""
-    try:
-        import torch
+    """CUDA nếu có, không thì CPU. CTranslate2 chưa có backend Metal nên bỏ qua MPS.
 
-        return "cuda" if torch.cuda.is_available() else "cpu"
-    except ImportError:  # pragma: no cover - torch luôn có (silero-vad kéo theo)
+    Hỏi chính CTranslate2 chứ không hỏi `torch.cuda.is_available()`: hai thư viện mang
+    runtime CUDA riêng, không liên quan nhau. Bản torch trên PyPI cho Windows chỉ có
+    CPU, nên hỏi torch thì một máy RTX vẫn bị trả về `cpu` và faster-whisper chạy int8
+    trên CPU trong khi bánh xe CTranslate2 đã sẵn sàng chạy float16 trên card đó.
+    """
+    try:
+        import ctranslate2
+
+        return "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
+    except Exception:  # pragma: no cover - không có ctranslate2 thì cũng không có adapter
         return "cpu"
+
+
+def _register_cuda_dll_dirs() -> None:
+    """Windows: cho CTranslate2 thấy cuBLAS/cuDNN cài qua pip.
+
+    CTranslate2 nạp ``cublas64_12.dll``/``cudnn*.dll`` bằng tên, và Windows chỉ tìm
+    trong PATH cùng vài thư mục hệ thống — không tìm trong site-packages. Các gói
+    ``nvidia-cublas-cu12``/``nvidia-cudnn-cu12`` lại đặt DLL ở
+    ``site-packages/nvidia/*/bin``, nên nếu không khai thêm thì `load()` chạy tới câu
+    đầu tiên mới chết bằng "Library cublas64_12.dll is not found" — sau khi đã tải
+    xong model. torch không cứu được: bản cu130 mang cuBLAS **12+1**
+    (``cublas64_13.dll``), tên khác nên CTranslate2 không nhận.
+
+    Phải sửa ``PATH`` chứ không phải gọi ``os.add_dll_directory``: hàm đó chỉ thêm vào
+    đường tìm của ``LoadLibraryEx`` với cờ ``SEARCH_DEFAULT_DIRS``, còn CTranslate2 nạp
+    thư viện từ mã C++ bằng ``LoadLibrary`` trần — mà ``LoadLibrary`` trần thì chỉ tra
+    thư mục chứa exe, thư mục hệ thống, thư mục hiện tại và PATH.
+
+    Không tìm thấy thư mục nào thì im lặng bỏ qua: máy chỉ chạy CPU không cần tới nó.
+    """
+    if sys.platform != "win32":
+        return
+    found: list[str] = []
+    for parent in (Path(entry) / "nvidia" for entry in sys.path if entry):
+        if not parent.is_dir():
+            continue
+        found += [str(d) for d in parent.glob("*/bin") if d.is_dir()]
+    if not found:
+        return
+    current = os.environ.get("PATH", "")
+    missing = [d for d in found if d.lower() not in current.lower()]
+    if missing:
+        os.environ["PATH"] = os.pathsep.join([*missing, current])
+        logger.debug("Thêm %d thư mục DLL của NVIDIA vào PATH", len(missing))
 
 
 def _compute_type(device: str) -> str:
@@ -105,6 +148,8 @@ def _default_loader(repo_id: str, models_dir: str | None, device: str | None) ->
         raise RuntimeError("Chưa cài faster-whisper. Chạy: uv sync --extra ctranslate2") from exc
 
     target = device or _pick_device()
+    if target == "cuda":
+        _register_cuda_dll_dirs()
     return WhisperModel(
         repo_id,
         device=target,

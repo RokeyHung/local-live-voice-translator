@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Callable, Protocol
+from typing import Any, Callable, Protocol
 
 from llvt_ai_service.application.inference import SerialExecutor
 from llvt_ai_service.domain.enums import Language
@@ -55,6 +55,20 @@ class TranslationBackend(Protocol):
 BackendLoader = Callable[[str, str | None, str | None], TranslationBackend]
 
 
+def _pick_device(torch: Any) -> str:
+    """CUDA → MPS → CPU, theo đúng thứ tự nhanh dần xuống.
+
+    Nhánh `cuda` từng thiếu, nên trên máy Windows có card rời NLLB vẫn chạy CPU và MT
+    là khâu chậm nhất chuỗi (~1,7 s/câu). Nó chỉ có tác dụng khi torch được cài bản
+    CUDA — bản mặc định trên PyPI cho Windows là CPU-only, xem `--extra cuda`.
+    """
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 class _TransformersNllb:
     """Backend thật: bọc tokenizer + seq2seq model của transformers."""
 
@@ -63,7 +77,7 @@ class _TransformersNllb:
         from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
         self._torch = torch
-        self.device = device or ("mps" if torch.backends.mps.is_available() else "cpu")
+        self.device = device or _pick_device(torch)
         self._device = self.device
         self._tokenizer = AutoTokenizer.from_pretrained(repo_id, cache_dir=models_dir)
         self._model = AutoModelForSeq2SeqLM.from_pretrained(repo_id, cache_dir=models_dir).to(

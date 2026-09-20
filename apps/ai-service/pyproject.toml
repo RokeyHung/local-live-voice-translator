@@ -46,6 +46,26 @@ diarization = [
 ]
 ctranslate2 = [
     "faster-whisper>=1.1",
+    # CTranslate2 liên kết động với CUDA 12 và nạp DLL bằng TÊN lúc chạy câu đầu tiên,
+    # nên thiếu hai gói này thì model tải xong, nạp xong, rồi mới chết bằng "Library
+    # cublas64_12.dll is not found". Không dùng ké được cuBLAS của torch: bản cu130
+    # mang `cublas64_13.dll`, tên khác. Chỉ đánh dấu cho Windows — máy Mac không có
+    # CUDA, còn trên Linux thì bánh xe CTranslate2 đi đường khác.
+    "nvidia-cublas-cu12>=12.9; sys_platform == 'win32'",
+    "nvidia-cudnn-cu12>=9.26; sys_platform == 'win32'",
+]
+# Torch bản CUDA cho máy Windows/Linux có card NVIDIA. Không nằm trong phụ thuộc lõi
+# vì bản trên PyPI chỉ có CPU và bản CUDA nặng thêm ~3 GB — quá đắt cho một bộ cài mà
+# phần lớn máy đích không có card rời. Cài riêng khi cần đo hoặc chạy nhanh:
+#   uv sync --extra cuda      (và `make dist BUNDLE_EXTRAS="--extra cuda"` nếu muốn gói)
+# Khâu được lợi là MT: NLLB chạy CPU mất ~1,7 s/câu, là khâu chậm nhất chuỗi trên
+# Windows. ASR không cần extra này — whisper.cpp đi đường Vulkan, faster-whisper mang
+# runtime CUDA riêng trong wheel CTranslate2.
+cpu = [
+    "torch==2.13.0",
+]
+cuda = [
+    "torch==2.13.0",
 ]
 
 [build-system]
@@ -74,3 +94,33 @@ extend-select = ["I"]  # I = isort (sort imports)
 
 [tool.ruff.lint.isort]
 known-first-party = ["llvt_ai_service"]
+
+# Chỉ số riêng của PyTorch cho bản CUDA 13.0 — PyPI không phát hành bản +cu*.
+# `explicit = true`: chỉ những gói được trỏ vào đây mới lấy từ chỉ số này, còn lại
+# vẫn đi PyPI. Cặp `extra = "cuda"` giữ cho bản mặc định (CPU) không đổi.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+# Hai extra phải được khai là XUNG ĐỘT, không chỉ là hai lựa chọn. Thiếu dòng này thì
+# uv gộp cả hai vào một lần giải phụ thuộc, chọn ra một bản torch duy nhất — và bản
+# CUDA thắng, nên `uv sync` trần (thứ mà tools/bundle_service.sh chạy) cũng kéo về
+# ~3 GB thư viện NVIDIA. Đo bằng `uv sync --dry-run`: mặc định phải là torch thường.
+[tool.uv]
+# Ghim đúng bản torch mà hai bộ cài macOS/Windows đã kiểm — thêm chỉ số CUDA vào đây
+# không phải lý do để nâng thư viện lõi. Ràng buộc này áp cho cả nhánh mặc định lẫn
+# nhánh CUDA (`==2.13.0` khớp cả `2.13.0+cu130`).
+constraint-dependencies = ["torch==2.13.0"]
+conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cuda" },
+]
