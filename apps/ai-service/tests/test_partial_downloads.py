@@ -11,6 +11,7 @@ chết, và kiểm hai lối thoát: xoá đi, hoặc tải lại với `force`.
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -20,6 +21,41 @@ from llvt_ai_service.app import app
 from llvt_ai_service.application import model_download
 from llvt_ai_service.application.installed_models import scan
 from llvt_ai_service.config.settings import get_settings
+
+
+def _symlinks_work(tmp_path: Path) -> bool:
+    """Máy này có tạo được symlink không.
+
+    Windows chỉ cho tạo symlink khi bật Developer Mode hoặc chạy bằng quyền admin, còn
+    lại ném `WinError 1314`. Hỏi bằng cách thử chứ không bằng `sys.platform`: một máy
+    Windows đã bật Developer Mode thì vẫn nên chạy đủ bài.
+    """
+    probe = tmp_path / ".symlink-probe"
+    target = tmp_path / ".symlink-target"
+    target.write_bytes(b"")
+    try:
+        probe.symlink_to(target)
+    except (OSError, NotImplementedError):
+        return False
+    finally:
+        probe.unlink(missing_ok=True)
+        target.unlink(missing_ok=True)
+    return True
+
+
+def _link_or_copy(link: Path, blob: Path) -> None:
+    """Symlink nếu được, không thì copy — đúng cách `huggingface_hub` tự lùi.
+
+    Cache thật trên một máy Windows không bật Developer Mode là file copy chứ không
+    phải symlink (`huggingface_hub` in hẳn cảnh báo về việc đó khi tải). Dựng cache giả
+    bằng symlink cứng nhắc thì 13 test ở file này hỏng sẵn trên Windows bằng
+    `WinError 1314` — hỏng vì môi trường, không phải vì mã sai, mà lại che mất những
+    lần hỏng thật.
+    """
+    try:
+        link.symlink_to(blob)
+    except (OSError, NotImplementedError):
+        shutil.copy2(blob, link)
 
 
 def _hf_repo(cache_dir: Path, repo: str, *, files: dict[str, bytes]) -> Path:
@@ -34,7 +70,7 @@ def _hf_repo(cache_dir: Path, repo: str, *, files: dict[str, bytes]) -> Path:
     for index, (name, data) in enumerate(files.items()):
         blob = blobs / f"sha{index}"
         blob.write_bytes(data)
-        (snapshot / name).symlink_to(blob)
+        _link_or_copy(snapshot / name, blob)
     return repo_dir
 
 
@@ -79,7 +115,7 @@ def test_a_revision_nothing_points_at_does_not_decide(tmp_path):
     repo = _hf_repo(cache, "facebook/nllb-200-distilled-600M", files={"config.json": b"{}"})
     orphan = repo / "snapshots" / "moi-hon"
     orphan.mkdir()
-    (orphan / "model.safetensors").symlink_to(repo / "blobs" / "sha0")
+    _link_or_copy(orphan / "model.safetensors", repo / "blobs" / "sha0")
 
     (model,) = scan(tmp_path)
     assert model.complete is True
@@ -105,6 +141,8 @@ def test_a_download_cut_before_the_first_file_is_incomplete(tmp_path):
 
 def test_a_cache_with_a_dangling_symlink_is_incomplete(tmp_path):
     """Blob bị xoá tay mà snapshot còn trỏ vào: file coi như không có."""
+    if not _symlinks_work(tmp_path):
+        pytest.skip("máy không tạo được symlink — cache thật ở đây là file copy")
     repo = _hf_repo(tmp_path / "pyannote", "pyannote/segmentation-3.0", files={"w.bin": b"z" * 16})
     (repo / "blobs" / "sha0").unlink()
 

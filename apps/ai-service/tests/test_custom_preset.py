@@ -108,6 +108,23 @@ def test_config_exposes_the_real_choices_not_a_hand_written_list(client: TestCli
 
 
 @pytest.fixture
+def every_runtime(monkeypatch: pytest.MonkeyPatch):
+    """Môi trường có ĐỦ ba runtime, bất kể máy đang chạy test cài những extra nào.
+
+    Các bài về quy tắc "model phải hợp runtime" nói về LUẬT, không nói về máy: chúng
+    cần `mlx_whisper` được chấp nhận để có hai runtime mà bắt chéo. Không cố định thì
+    ba bài đó hỏng sẵn trên mọi máy không cài extra `mlx` — tức là mọi máy không phải
+    Apple Silicon, kể cả CI — và hỏng vì môi trường chứ không phải vì mã sai.
+    """
+    import llvt_ai_service.api.config as config_api
+    import llvt_ai_service.application.model_manager as mm
+
+    every = list(mm.ASR_REGISTRY)
+    monkeypatch.setattr(mm, "available_asr_adapters", lambda: every)
+    monkeypatch.setattr(config_api, "available_asr_adapters", lambda: every)
+
+
+@pytest.fixture
 def core_only(monkeypatch: pytest.MonkeyPatch):
     """Môi trường chỉ có phụ thuộc lõi: whisper.cpp có, hai runtime kia không."""
     import llvt_ai_service.api.config as config_api
@@ -149,7 +166,7 @@ def test_choosing_a_runtime_that_is_not_installed_is_rejected(client: TestClient
     assert "mlx_audio" in response.json()["detail"]
 
 
-def test_saving_choices_survives_and_shows_up_in_config(client: TestClient):
+def test_saving_choices_survives_and_shows_up_in_config(client: TestClient, every_runtime):
     body = _put(
         client, customAsrAdapter="mlx_whisper", customAsrModel="mlx-community/whisper-tiny-asr-8bit"
     )
@@ -160,7 +177,7 @@ def test_saving_choices_survives_and_shows_up_in_config(client: TestClient):
     assert get_preset_config(Preset.custom).asr_model == "mlx-community/whisper-tiny-asr-8bit"
 
 
-def test_a_model_from_the_wrong_runtime_is_refused(client: TestClient):
+def test_a_model_from_the_wrong_runtime_is_refused(client: TestClient, every_runtime):
     """Chọn mlx_whisper + một file GGML từng lưu được rồi ném 500 lúc nạp.
 
     MLX đi hỏi HuggingFace một repo tên `ggml-....bin` → 404. Người dùng chỉ thấy
@@ -175,7 +192,7 @@ def test_a_model_from_the_wrong_runtime_is_refused(client: TestClient):
     assert "không chạy được trên runtime" in response.json()["detail"]
 
 
-def test_switching_runtime_resets_a_model_that_no_longer_fits(client: TestClient):
+def test_switching_runtime_resets_a_model_that_no_longer_fits(client: TestClient, every_runtime):
     """Đổi mỗi runtime mà giữ model cũ cũng ra tổ hợp hỏng — trả về mặc định."""
     _put(client, customAsrAdapter="whisper_cpp", customAsrModel="ggml-tiny-q5_1.bin")
     body = _put(client, customAsrAdapter="mlx_whisper")

@@ -238,7 +238,7 @@ def test_a_relative_audio_path_is_refused(client: TestClient):
     assert "tuyệt đối" in response.json()["detail"]
 
 
-def test_a_missing_audio_file_is_reported_not_silently_replaced(client: TestClient):
+def test_a_missing_audio_file_is_reported_not_silently_replaced(client: TestClient, tmp_path):
     # Khai báo file rồi mà sai đường dẫn thì phải BÁO — rơi lặng lẽ về giọng tổng hợp
     # thì người chạy tưởng mình đang có số đo giọng thật.
     response = client.post(
@@ -251,7 +251,11 @@ def test_a_missing_audio_file_is_reported_not_silently_replaced(client: TestClie
                     "target": "en",
                     "transcript": "xin chào",
                     "translation": "hello",
-                    "audio": "/tmp/khong-co-that-12345.wav",
+                    # Dựng từ `tmp_path` chứ không viết cứng "/tmp/…": trên
+                    # Windows chuỗi đó KHÔNG tuyệt đối (thiếu ổ đĩa), nên API
+                    # chặn ở luật "phải là đường dẫn tuyệt đối" và bài này không
+                    # còn kiểm được cái nó định kiểm là "file không tồn tại".
+                    "audio": str(tmp_path / "khong-co-that-12345.wav"),
                 }
             ]
         },
