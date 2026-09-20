@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Tải trước dữ liệu FLEURS cho bộ đánh giá (docs/17) — chạy được nhiều lần, file nào
+# Tải trước dữ liệu FLEURS cho bộ đánh giá (docs/05) — chạy được nhiều lần, file nào
 # đã có thì bỏ qua.
 #
 #   scripts/fetch_fleurs.sh              # cả bốn ngôn ngữ, split test (~2,3 GB)

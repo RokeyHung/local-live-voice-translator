@@ -2,11 +2,16 @@
 
 **Đề tài:** Xây dựng hệ thống dịch giọng nói đa ngôn ngữ gần thời gian thực bằng mô hình AI chạy cục bộ  
 **Sinh viên:** Ngô Mạnh Hùng — 24410300 · **GVHD:** ThS. Nguyễn Thành Luân  
-**Ngày:** 07/09/2026 · **Nguồn yêu cầu:** biên bản họp 19/08/2026, mục 3 và câu hỏi số 2
+**Ngày:** 07/09/2026 · **Bổ sung:** 20/09/2026 · **Nguồn yêu cầu:** biên bản họp 19/08/2026, mục 3 và câu hỏi số 2
 
 Báo cáo gồm 3 phần chính: cách đánh giá, kết quả đo và các vấn đề cần GVHD xác nhận.
 
 **Hai phần cần GVHD xác nhận:** mục 3.5 về ngưỡng RTF và mục 8 về 5 vấn đề còn lại.
+
+> **Mục 12 là phần bổ sung ngày 20/09.** Toàn bộ mục 1–11 giữ nguyên như bản đã gửi ngày
+> 07/09 (số đo trên máy Apple M4). Sau đó em đã đo thêm trên máy Windows + card NVIDIA và
+> ba trong bốn việc ở mục 10 đã xong — mục 12 ghi phần đó, và nêu hai chỗ làm **đổi kết
+> luận** của mục 6 và mục 9.
 
 ---
 
@@ -384,3 +389,83 @@ Số liệu thô của các lượt chạy được lưu dạng JSON, gồm cả
 - Lee, T.-H. _Ear Voice Span in English into Korean Simultaneous Interpretation._
 - ITU-T Recommendation G.114.  
   <https://www.itu.int/rec/T-REC-G.114>
+
+---
+
+## 12. Bổ sung ngày 20/09/2026 — đo trên máy Windows + NVIDIA
+
+Máy đo: Windows 11, Intel Core i5-12500H, NVIDIA GeForce RTX 4060 Laptop (8 GB), RAM 16 GB.
+Cùng bộ `google/fleurs` split `test`, cùng số mẫu như mục 4 và mục 6.
+
+### 12.1. Mục 10 — ba việc đã xong
+
+| Việc (mục 10)                                   | Trạng thái 20/09                                         |
+| ----------------------------------------------- | -------------------------------------------------------- |
+| Chạy đầy đủ whisper.cpp để so công bằng với MLX | **Xong** — mục 12.2                                      |
+| Đo trên Windows + NVIDIA                        | **Xong** — mục 12.2 và 12.3                              |
+| Chuẩn bị bộ audio giọng nói hội thoại thực tế   | **Chưa** — vẫn là việc còn lại lớn nhất                  |
+| Xác định baseline cloud theo hướng dẫn của GVHD | **Xin phép bỏ** — lý do ở mục 12.5, mong thầy cho ý kiến |
+
+### 12.2. Mục (a) — cùng 3.099 bản thu, ba runtime ASR
+
+| Runtime (máy)                    | vi (WER)  | en (WER) | zh (CER) | ja (CER) | RTF khâu ASR |
+| -------------------------------- | --------- | -------- | -------- | -------- | ------------ |
+| MLX / Metal — Apple M4 (mục 4)   | **8,8 %** | 4,8 %    | 8,1 %    | 4,7 %    | 0,141        |
+| faster-whisper / CUDA — RTX 4060 | 9,2 %     | 5,0 %    | 8,3 %    | 4,7 %    | 0,034        |
+| whisper.cpp / Vulkan — RTX 4060  | 10,4 %    | 5,0 %    | 8,6 %    | 4,9 %    | 0,018        |
+
+Ba runtime xếp cùng một thứ tự ở cả bốn ngôn ngữ. Cần nói rõ để không đọc quá lên: đây
+là ba **model khác nhau** (`large-v3` 8bit, `large-v3-turbo` fp16, `large-v3-turbo`
+q5_0) vì ba runtime không dùng chung định dạng model, nên bảng này so **cấu hình**, không
+so thuần runtime. Cặp so được sạch nhất là hai dòng dưới — cùng `large-v3-turbo`, chỉ
+khác mức lượng tử hoá: q5_0 kém fp16 1,2 điểm WER tiếng Việt, đổi lại nhanh gấp đôi.
+
+Hai cột RTF cuối không so được với dòng đầu vì khác máy.
+
+### 12.3. Mục (c) — độ trễ, và chỗ này làm đổi kết luận của mục 6
+
+| Chiều | ASR   | MT    | TTS     | Tổng TB  | RTF p90 (Windows) | RTF p90 (M4, mục 6) |
+| ----- | ----- | ----- | ------- | -------- | ----------------- | ------------------- |
+| vi→en | 570ms | 459ms | 373ms   | 1.531 ms | **0,146**         | 0,580               |
+| en→vi | 308ms | 390ms | 327ms   | 1.137 ms | **0,148**         | 0,496               |
+| vi→zh | 577ms | 458ms | 1.969ms | 3.133 ms | **0,273**         | 0,727               |
+| zh→vi | 330ms | 392ms | 336ms   | 1.177 ms | **0,147**         | 0,509               |
+| vi→ja | 612ms | 507ms | 2.510ms | 3.833 ms | **0,383**         | 0,786               |
+| ja→vi | 360ms | 440ms | 352ms   | 1.288 ms | **0,114**         | 0,395               |
+
+**Cả sáu chiều đạt mức đề xuất p90 ≤ 0,5**, trong khi ở mục 6 chỉ có ba chiều đạt. Vì vậy
+hai câu kết luận của mục 6 chỉ còn đúng cho cấu hình Apple M4:
+
+1. "Ba chiều chưa đạt đều có tiếng Việt ở đầu vào" — trên Windows không còn chiều nào chưa đạt.
+2. "Nên ưu tiên ASR tiếng Việt và TTS tiếng Nhật" — **ASR không còn là khâu tốn nhất**.
+   Giờ TTS chiếm 65% toàn chuỗi ở chiều vi→ja và 63% ở vi→zh, còn ASR chỉ 15–18%. Chỗ
+   đáng tối ưu tiếp theo là **TTS cho hai đích ja/zh**, và nó đang chạy CPU.
+
+Nguyên nhân của mức chênh: khâu ASR chạy GPU qua Vulkan, và khâu dịch (NLLB) trước đây
+luôn chạy CPU do thiếu nhánh chọn thiết bị CUDA — sửa xong thì cùng một bộ câu, cùng một
+máy, thời gian dịch trung vị giảm từ 789 ms xuống 181 ms.
+
+### 12.4. Hai phép đo bổ sung
+
+**Chạy liên tục 60 phút** (tiêu chí nghiệm thu số 14 của SPEC), lần đầu chạy với model
+thật: **877 phát ngôn, 0 lỗi**, độ trễ p50 443 ms / p95 541 ms, độ trễ **không trôi**
+(+2 ms giữa 10% đầu và 10% cuối), bộ nhớ service 1.110 → 1.122 MB.
+
+**Rút ngắn ngữ cảnh encoder của Whisper** (`audio_ctx` 768 thay vì 1500) — một mẹo tăng
+tốc hay được nhắc tới. Đo trên cùng 3.099 bản thu: WER/CER hỏng hẳn — vi 10,4 → 33,7%,
+en 5,0 → 31,4%, zh 8,6 → 45,1%, ja 4,9 → 46,5% — đổi lại chỉ nhanh hơn 6–26% thời gian
+ASR. Kết luận: không dùng. Em ghi lại đây vì đây là một điểm đo cho phần "đánh đổi độ
+trễ ↔ chất lượng" mà thầy có thể sẽ hỏi.
+
+### 12.5. Hai điểm xin thầy cho ý kiến
+
+1. **Ngưỡng RTF (câu 2 của mục 8) giờ có hai đáp án khác nhau theo máy.** Nếu thầy chốt
+   p90 ≤ 0,5 thì bản Windows đạt cả sáu chiều còn bản macOS chỉ đạt ba. Em đề nghị báo
+   cáo ghi cả hai bảng kèm cấu hình máy, thay vì chọn một máy để báo cáo.
+2. **Baseline cloud (Ưu tiên 3):** em xin phép bỏ. Mục đích của nó là có một mốc để đối
+   chiếu chất lượng, và mốc đó giờ đã có từ hai nguồn: bảng ba runtime ở mục 12.2 và
+   điểm COMET ở mục 5. Ngoài ra việc gọi API cloud đi ngược yêu cầu "chạy hoàn toàn cục
+   bộ" của đề tài. Nếu thầy vẫn muốn có, em sẽ làm.
+
+Số liệu thô của toàn bộ các lượt đo ở trên được lưu dạng JSON trong mã nguồn
+(`docs/results/`), gồm cả từng mẫu của mỗi chiều.

@@ -45,8 +45,12 @@ make fetch-fleurs                # tải trước dữ liệu FLEURS (một lầ
 make eval-asr LIMIT=20           # (a) WER/CER từng ngôn ngữ
 make eval-mt LIMIT=30            # (b) spBLEU + chrF++ trên 6 chiều
 make eval-comet                  # (b) chấm COMET cho eval-mt.json
-make eval-latency LIMIT=20       # (c) Total Inference Time + RTF
+make eval-latency LIMIT=20       # (c) Total Inference Time + RTF, một chiều
+make eval-latency-all LIMIT=50   # (c) cả sáu chiều, mỗi chiều một file JSON
 ```
+
+Trên Windows còn hai bước nữa, xem mục 8d: `make setup-vulkan` (không có thì whisper.cpp
+chạy CPU) và tiền tố `UV_NO_SYNC=1` cho mọi lệnh đo.
 
 Bỏ `LIMIT` để chạy toàn bộ tập `test` — đó mới là số đưa vào báo cáo. `LIMIT` dùng để
 ước lượng thời gian và dung lượng tải trước khi chạy bản đầy đủ.
@@ -313,9 +317,12 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 - **FLEURS là giọng đọc, không phải giọng hội thoại.** Đọc rõ ràng, ít nhiễu, gần như
   không có từ đệm hay ngắt quãng. WER trên FLEURS sẽ **thấp hơn** WER trong một cuộc họp
   thật. Đây là điểm phải nói trước ở phần bảo vệ chứ không để hội đồng hỏi.
-- **Đo trên một máy.** Con số RTF gắn với cấu hình máy chạy; báo cáo phải ghi kèm CPU/GPU
-  và cờ build của whisper.cpp (JSON đã có sẵn trường `runtime`).
-- **Chưa có đối chứng cloud** (mục 5 trong biên bản, thầy hướng dẫn ở buổi sau).
+- **RTF gắn với máy chạy.** Đã đo trên hai máy (M4/Metal và RTX 4060/Vulkan) và hai bảng
+  lệch nhau nhiều lần, nên mọi con số RTF phải đi kèm cấu hình máy — file JSON ghi sẵn
+  `runtimes` (thiết bị từng khâu) và `machine`.
+- **Không có đối chứng cloud.** Quyết bỏ ngày 20/09: mục đích của nó đã được phục vụ
+  bằng bảng ba runtime ASR (mục 8d) và điểm COMET, còn gọi API cloud thì đi ngược tinh
+  thần chạy hoàn toàn cục bộ của đề tài.
 
 ---
 
@@ -328,9 +335,10 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
       (đã chạy đủ **sáu** chiều, 50 mẫu mỗi chiều — mục 8c)
 - [x] Tra công thức RTF, ngưỡng real-time và ba độ đo còn lại, có trích nguồn —
       [`06`](06_bon-do-do-wer-bleu-comet-rtf.md)
-- [ ] Gửi thầy [báo cáo GVHD](gvhd/bao-cao-bo-danh-gia.md) — mục 3 (công thức RTF +
-      ngưỡng đề xuất) và mục 9 (5 điểm cần chốt), kèm phụ lục
-      [`06`](06_bon-do-do-wer-bleu-comet-rtf.md)
+- [x] Gửi thầy [báo cáo GVHD](gvhd/bao-cao-danh-gia.md) — mục 3 (công thức RTF + ngưỡng
+      đề xuất) và mục 8 (các điểm cần chốt), kèm phụ lục
+      [`06`](06_bon-do-do-wer-bleu-comet-rtf.md). **Đã gửi.** Số đo trên Windows có sau
+      khi gửi nên nằm ở phần bổ sung cuối báo cáo.
 
 ---
 

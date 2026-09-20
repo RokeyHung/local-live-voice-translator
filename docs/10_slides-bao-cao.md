@@ -182,7 +182,7 @@ Không phải vẽ cho đẹp — ba tình huống có thật trong quá trình 
 **Pipeline dịch — chạy bằng model thật, không có mock**
 
 - ✅ Cắt câu bằng **Silero VAD** theo khoảng lặng, có giới hạn độ dài tối đa một câu.
-- ✅ **ASR** whisper.cpp `large-v3-turbo-q5`, tăng tốc Metal; nhận cả 4 ngôn ngữ.
+- ✅ **ASR** whisper.cpp `large-v3-turbo-q5`, tăng tốc Metal trên macOS và Vulkan trên Windows; nhận cả 4 ngôn ngữ.
 - ✅ **MT** NLLB-200 distilled 600M — chạy được **đủ 6 chiều** vi ↔ en / ja / zh.
 - ✅ **TTS** 4 ngôn ngữ: sherpa-onnx (vi/en/zh) + Kokoro & OpenJTalk (ja).
 - ✅ Ba **preset Fast / Balanced / Quality**, đổi được ngay lúc đang chạy.
@@ -294,12 +294,12 @@ cấu hình chứ không phải so runtime thuần. Cột RTF của hàng đầu
 
 ## 13. Còn lại phải làm
 
-| Việc                                                       | Cản trở                                                                              |
+| Việc                                                       | Trạng thái                                                                           |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Đo lại toàn bộ trên **Windows 11**                         | Chưa có máy Windows để đo                                                            |
-| **Soak 60 phút** với model thật                            | Cần một máy rảnh 1 giờ (script đã sẵn)                                               |
+| ~~Đo lại toàn bộ trên **Windows 11**~~                     | ✅ **Xong 20/09** — mục 11b, cả ba runtime ASR và sáu chiều độ trễ                   |
+| ~~**Soak 60 phút** với model thật~~                        | ✅ **Xong 20/09** — 877 câu, 0 lỗi, độ trễ không trôi, RSS +12 MB                    |
 | **Bộ câu giọng người thật** (WER trong điều kiện họp thật) | Đã cắt sẵn 115 đoạn từ bản ghi 8 phút; phần **gõ lời tham chiếu không tự động được** |
-| **T9**: báo cáo, đóng gói cài đặt, video demo              | Tuần 10/09 – 23/09                                                                   |
+| **T9**: báo cáo, video demo, slide                         | Bộ cài macOS xong 15/09, Windows xong 19/09                                          |
 
 > **Số cho báo cáo đã có** — mục 11b, đo trên FLEURS. Con số WER 12,5% / chrF 53,4% của
 > chế độ **round-trip qua TTS** không dùng làm kết quả chính (giọng máy sạch nên lạc
@@ -323,6 +323,10 @@ cấu hình chứ không phải so runtime thuần. Cột RTF của hàng đầu
 8. **Cách trích dẫn TranscriptionSuite** (nguồn tham khảo kiến trúc) cho đúng mực.
 
 → Thầy đã trả lời nhóm câu này ở buổi họp 19/08: `docs/meetings/bien-ban-hop-GVHD-2026-08-19.md`
+
+Hai câu đã hết hiệu lực từ sau buổi đó: **câu 3** (đã có máy Windows, số đo ở mục 11b) và
+**câu 5** (bỏ tích hợp Google Meet ngày 10/09 — demo là dịch và phát ra loa máy, không
+đẩy vào cuộc họp).
 
 ---
 

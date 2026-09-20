@@ -12,10 +12,15 @@ chạy thử, chạy dở hay chạy trên máy khác thì vẫn không commit �
 **Máy đo:** Apple M4, macOS 26.6 · **Ngày:** 06–07/09/2026 · **Dữ liệu:** `google/fleurs`
 split `test`.
 
-**Ngoại lệ — lượt chạy trên Windows, 20/09/2026:** `eval-asr-ggml-win-vulkan.json` đo trên
-Windows 11, Intel Core i5-12500H + NVIDIA GeForce RTX 4060 Laptop GPU. Mỗi file kết quả
-đều ghi sẵn máy đo ở trường `hardware`/`runtime`, nên đừng đọc RTF của hai máy trong cùng
-một cột.
+**Ngoại lệ — các lượt chạy trên Windows, 20/09/2026** (đuôi `-win`): Windows 11, Intel
+Core i5-12500H + NVIDIA GeForce RTX 4060 Laptop GPU, 16 GB RAM. Đừng đọc RTF của hai máy
+trong cùng một cột.
+
+Hai file `eval-asr-*-win.json` ghi sẵn máy đo ở trường `hardware` và thiết bị ASR ở
+`runtime.accel`. **Sáu file `eval-latency-*-win.json` thì không**: script lúc chạy chưa
+ghi hai trường đó, nên máy đo của chúng chỉ nằm ở đây và ở
+[`05` mục 8e](../05_bo-danh-gia-fleurs.md). Cấu hình của sáu lượt đó là whisper.cpp trên
+Vulkan + NLLB trên CUDA + TTS trên CPU.
 
 ## Gộp chung
 
@@ -27,9 +32,9 @@ một cột.
 
 | File                                                                       | Lượt chạy                                                                                          | Dùng ở      |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------- |
-| [`eval-asr-fleurs-full.json`](eval-asr-fleurs-full.json)                   | ASR, 3.099 bản thu, 4 ngôn ngữ, `mlx-community/whisper-large-v3-asr-8bit`                          | `17` mục 8  |
-| [`eval-mt-fleurs-full.json`](eval-mt-fleurs-full.json)                     | MT, 2.022 cặp câu, 6 chiều, có COMET, **kèm từng câu** (nguồn/dịch/tham chiếu)                     | `17` mục 8b |
-| `eval-latency-<nguồn>-<đích>.json` (6 file)                                | Độ trễ cả chuỗi VAD→ASR→MT→TTS, 50 mẫu mỗi chiều, **kèm từng mẫu**                                 | `17` mục 8c |
+| [`eval-asr-fleurs-full.json`](eval-asr-fleurs-full.json)                   | ASR, 3.099 bản thu, 4 ngôn ngữ, `mlx-community/whisper-large-v3-asr-8bit`                          | `05` mục 8  |
+| [`eval-mt-fleurs-full.json`](eval-mt-fleurs-full.json)                     | MT, 2.022 cặp câu, 6 chiều, có COMET, **kèm từng câu** (nguồn/dịch/tham chiếu)                     | `05` mục 8b |
+| `eval-latency-<nguồn>-<đích>.json` (6 file)                                | Độ trễ cả chuỗi VAD→ASR→MT→TTS, 50 mẫu mỗi chiều, **kèm từng mẫu**                                 | `05` mục 8c |
 | [`eval-asr-ggml-win-vulkan.json`](eval-asr-ggml-win-vulkan.json)           | ASR, 3.099 bản thu, 4 ngôn ngữ, `ggml-large-v3-turbo-q5_0` trên **whisper.cpp + Vulkan** (Windows) | `05` mục 8d |
 | [`eval-asr-fasterwhisper-win.json`](eval-asr-fasterwhisper-win.json)       | ASR, 3.099 bản thu, 4 ngôn ngữ, `large-v3-turbo-ct2` trên **faster-whisper + CUDA** (Windows)      | `05` mục 8d |
 | `eval-latency-<nguồn>-<đích>-win.json` (6 file)                            | Độ trễ cả chuỗi trên Windows: whisper.cpp/Vulkan + NLLB/CUDA                                       | `05` mục 8e |

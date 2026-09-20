@@ -577,6 +577,12 @@ Benchmark trên chính bản cài, preset Balanced, 3 giây audio (ms):
 
 Trước khi chuyển sang Vulkan, cùng phép đo vi→en ra ASR 17.573 ms và tổng 19.164 ms.
 
+**Cột MT của bảng này đã lỗi thời.** Nó đo ngày 19/09, khi adapter NLLB còn thiếu nhánh
+chọn thiết bị CUDA nên luôn chạy CPU; sửa ngày 20/09 thì cùng bộ câu, cùng máy, thời gian
+dịch trung vị còn 181 ms (xem [`08` mục 8](08_viec-con-lai.md)). Giữ bảng nguyên trạng vì
+nó là biên bản của lượt kiểm bộ cài hôm đó, không phải số hiện hành — số hiện hành ở
+[`05` mục 8e](05_bo-danh-gia-fleurs.md).
+
 ### 7.3. Bảy lỗi lộ ra nhờ kiểm, đều đã sửa
 
 | #   | Triệu chứng                                                          | Nguyên nhân                                                                                                      | Sửa                                                                                              | Lộ ra ở |

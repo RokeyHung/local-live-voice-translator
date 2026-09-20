@@ -158,8 +158,9 @@ bắt đầu phiên dịch đầu tiên (lúc đó câu đầu sẽ phải chờ
 | TTS  | Piper vi/en, VITS zh-ll            | GitHub release `tts-models` của k2-fsa      |
 | TTS  | Kokoro v1.0 (tiếng Nhật)           | GitHub release của kokoro-onnx              |
 
-Preset **Fast** dùng `ggml-small-q5_1.bin` + NLLB int8 (nhẹ và nhanh hơn, chính xác kém
-hơn); **Quality** dùng `ggml-large-v3-turbo-q8_0.bin`. Đổi ở màn **Cài đặt**.
+Ba preset chỉ khác nhau ở model ASR: **Fast** dùng `ggml-small-q5_1.bin` (nhẹ và nhanh
+hơn, chính xác kém hơn), **Quality** dùng `ggml-large-v3-turbo-q8_0.bin`. Khâu dịch dùng
+cùng một model ở cả ba. Đổi ở màn **Cài đặt**.
 
 **Chỗ lưu model** mặc định là `~/.llvt/models` (Windows: `C:\Users\<tên>\.llvt\models`).
 Đổi ở màn **Cài đặt → Thư mục lưu model**; model đã tải **không** tự chuyển sang chỗ

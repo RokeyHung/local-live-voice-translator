@@ -166,7 +166,10 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 
 ---
 
-## 5. Hai điều cần nói với thầy khi báo cáo
+## 5. Hai điều đã nói với thầy — giữ lại vì sẽ bị hỏi lúc bảo vệ
+
+_Cả hai đã nằm trong [báo cáo đã gửi](gvhd/bao-cao-danh-gia.md) (mục 3, mục 8 câu 1 và
+câu 5). Phần dưới là lập luận đầy đủ để trả lời khi hội đồng hỏi lại._
 
 **Không dùng WER cho tiếng Trung và tiếng Nhật được.** Kế hoạch thầy giao ghi "WER" cho
 cả bốn ngôn ngữ, nhưng zh/ja không tách từ bằng khoảng trắng — chấm WER thực chất là chấm

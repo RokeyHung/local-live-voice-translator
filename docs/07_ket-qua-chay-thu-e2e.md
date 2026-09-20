@@ -1,4 +1,4 @@
-# 25 — Kết quả chạy thử đầu-cuối trên máy thật
+# Kết quả chạy thử đầu-cuối trên máy thật
 
 Bài chạy tự động trên **ứng dụng Electron đã đóng gói** + **AI service thật**, dùng
 đúng preset **Tự chọn** đang lưu trong `~/.llvt/settings.json`. Không có bước nào làm
