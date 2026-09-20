@@ -17,23 +17,16 @@ và cả sáu chiều đều đạt ngưỡng chặt RTF p90 ≤ 0,5 trên cấu
 gần như chỉ còn Tuần 9 (báo cáo, video demo, slide) và những thứ **bắt buộc phải có
 giọng người thật** ở mục 2.
 
-Tóm tắt của đợt trước (07/09): **đã có bộ số đo thật đầu tiên** trên macOS Apple Silicon
-([`07`](07_ket-qua-chay-thu-e2e.md)) — độ trễ đủ sáu chiều và WER/chrF, chạy tự động
-trên app đóng gói. Việc còn lại chia làm hai loại rạch ròi: những thứ chỉ cần **chạy
-trên phần cứng/dữ liệu chưa có** (Windows, giọng người thật, FLEURS), và
-những thứ **cần người quyết** (nhắn thầy, chốt ngưỡng RTF).
+Sáu việc của các đợt bổ sung đã đóng, chi tiết ở
+[`04_cac-dot-bo-sung.md`](04_cac-dot-bo-sung.md): màn hình đánh giá trong app (biên bản
+3d); backend ASR thứ hai (MLX) và thứ ba (faster-whisper) cùng khâu tách người nói;
+duyệt trước khi gửi và các thao tác quản lý model từng bị vô hiệu; đặt tên model theo
+đường dẫn thượng nguồn; chọn model không còn là nạp model; model tải dở không còn bị
+tính là đã tải. Kèm theo:
 
-Đã xong từ 04/09 tới nay, không cần làm lại:
-
-Sáu việc dưới đây đã đóng, chi tiết ở [`04_cac-dot-bo-sung.md`](04_cac-dot-bo-sung.md):
-màn hình đánh giá trong app (biên bản 3d); backend ASR thứ hai (MLX) và thứ ba
-(faster-whisper) cùng khâu tách người nói; duyệt trước khi gửi và các thao tác quản lý
-model từng bị vô hiệu; đặt tên model theo đường dẫn thượng nguồn; chọn model không còn là
-nạp model và tải được repo HF bất kỳ; model tải dở không còn bị tính là đã tải. Kèm theo:
-
-- **Ba lớp test**: pytest (327 pass, 6 skip) · vitest cho renderer (69) · Playwright trên
-  app Electron thật + service thật (11). `make test` chạy hai lớp đầu, `make e2e` chạy
-  lớp thứ ba. _(Đếm lại ngày 20/09, chạy trên Windows.)_
+- **Ba lớp test**: pytest (327 pass, 6 skip) · vitest cho renderer (69) · Playwright
+  trên app Electron thật + service thật (11). `make test` chạy hai lớp đầu, `make e2e`
+  chạy lớp thứ ba. _(Đếm lại 20/09 trên Windows.)_
 - **Bộ mẫu đánh giá phủ đủ sáu chiều** vi↔en, vi↔ja, vi↔zh (22 câu)
 
 ---
@@ -64,84 +57,31 @@ tính tay, cái bẫy khi diễn giải, ngưỡng đề xuất và danh sách n
 
 ---
 
-## 1. Chạy thật bộ đánh giá — việc lớn nhất
+## 1. Bộ đánh giá — đã chạy thật, khối này đóng
 
-Đây là thứ chặn gần như mọi việc còn lại. Code đã xong ở
-[`05_bo-danh-gia-fleurs.md`](05_bo-danh-gia-fleurs.md).
+Cách chạy, dung lượng phải tải và chỗ để dữ liệu đều ở
+[`05` mục 2](05_bo-danh-gia-fleurs.md) — không chép lại ở đây. Bảng số ở
+[`05` mục 8/8b/8c](05_bo-danh-gia-fleurs.md) (máy M4) và
+[mục 8d/8e](05_bo-danh-gia-fleurs.md) (Windows + RTX 4060); file JSON gốc của mọi lượt
+đã chốt ở [`docs/results/`](results/README.md).
 
-```bash
-make setup                         # cài đầy đủ, gồm nhóm eval (một lần)
-make fetch-fleurs                  # tải trước dữ liệu FLEURS (một lần, ~2,3 GB)
+Cả ba mục (a)(b)(c) của biên bản đã có số thật, và ba việc còn treo tới 19/09 đã đóng
+nốt ngày 20/09:
 
-make eval-mt LIMIT=10              # chạy thử: xem NLLB mất bao lâu mỗi câu
-make eval-mt                       # bản đầy đủ → eval-mt.json
-make eval-comet                    # chấm COMET lên chính file đó
-
-make eval-asr LIMIT=20             # chạy thử
-make eval-asr                      # bản đầy đủ → eval-asr.json
-
-make eval-latency LIMIT=20         # Total Inference Time + RTF
-```
-
-**Làm `eval-mt` trước** dù thầy đánh số (a) cho ASR: nó chỉ cần phần văn bản (~600 KB
-mỗi ngôn ngữ) nên nhẹ hơn nhiều, và cho biết ngay tốc độ NLLB để ước lượng các bước sau.
-
-`make eval-mt` sẽ **ghi đè** `eval-mt.json` của lần chạy thử trước — muốn giữ lại thì
-đổi tên file đó đi trước khi chạy bản đầy đủ.
-
-### Dung lượng phải tải lần đầu
-
-| Phần                       | Dung lượng                          | Cần cho    |
-| -------------------------- | ----------------------------------- | ---------- |
-| Văn bản FLEURS             | ~600 KB / ngôn ngữ                  | eval-mt    |
-| NLLB-200 distilled 600M    | ~2,5 GB                             | eval-mt    |
-| `Unbabel/wmt22-comet-da`   | ~2,3 GB                             | eval-comet |
-| Whisper large-v3-turbo q5  | ~570 MB                             | eval-asr   |
-| Audio FLEURS, split `test` | 383–663 MB / ngôn ngữ (×4 ≈ 2,2 GB) | eval-asr   |
-
-Tổng khoảng **7,5 GB**. Nên chạy trên máy MacBook (whisper.cpp có Metal) — số RTF đo
-trên máy nào thì chỉ đúng cho máy đó, và báo cáo phải ghi kèm cấu hình máy.
-
-**Trạng thái 06/09:** phần FLEURS (2,2 GB, cả bốn ngôn ngữ, split `test`) đã tải xong về
-`fleurs-cache/`, model whisper.cpp, NLLB và COMET đều đã có sẵn — không phải tải gì thêm.
-Chi tiết cách tải và chỗ dữ liệu nằm ở [`05` mục 2](05_bo-danh-gia-fleurs.md).
-
-**Mục (a) và (b) đã xong**, bảng số và phần đọc số ở [`05` mục 8](05_bo-danh-gia-fleurs.md):
-
-- (a) ASR: 3.099 bản thu, 10,22 giờ audio, 86 phút, `mlx-community/whisper-large-v3-asr-8bit`
-  — vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7% · RTF gộp 0,141 · **0 câu rỗng**.
-- (b) MT: 2.022 cặp câu, sáu chiều, có cả điểm COMET.
-
-- (c) Độ trễ: 50 mẫu × sáu chiều, cùng cấu hình đã đo WER — **RTF p90 < 1 ở cả sáu**
-  (xấu nhất vi→ja 0,786), nhưng ngưỡng chặt hơn 0,5 thì chỉ ba chiều đạt.
-
-**Cả ba mục (a)(b)(c) của biên bản đã có số thật, và từ 20/09 thì khối đo đã đóng:**
-
-- [x] ~~Cột so sánh **whisper.cpp với MLX** trên cùng thang.~~ **Xong 20/09, và có luôn
-      cột thứ ba** — [`05` mục 8d](05_bo-danh-gia-fleurs.md). Cùng 3.099 bản thu:
-      whisper.cpp q5_0 (vi WER 10,4% · RTF 0,018) · faster-whisper fp16 (9,2% · 0,034) ·
-      MLX 8bit (8,8% · 0,141). Ba runtime xếp cùng thứ tự ở cả bốn thứ tiếng.
-- [x] ~~Ba chiều **nguồn tiếng Việt** chưa đạt ngưỡng RTF p90 ≤ 0,5.~~ **Đạt cả sáu trên
-      Windows** — [`05` mục 8e](05_bo-danh-gia-fleurs.md), xấu nhất là vi→ja 0,383 (máy
-      Mac: 0,786). Hai thứ làm nên khác biệt: whisper.cpp chạy GPU qua Vulkan, và NLLB
-      có nhánh `cuda` (trước đó luôn rơi về CPU — xem mục 8 dưới).
-      **Kết luận về chỗ đáng tối ưu tiếp theo đã đổi:** không còn là ASR nguồn tiếng
-      Việt, mà là **TTS cho đích ja/zh** — chiếm 65% và 63% toàn chuỗi, và vẫn chạy CPU.
-- [x] ~~Chạy liên tục 60 phút không sập (tiêu chí nghiệm thu số 14 của SPEC)~~ —
-      **ĐẠT, 20/09, lần đầu chạy với model thật:** 60,0 phút · 877 câu · **0 lỗi** ·
-      độ trễ p50 443 ms / p95 541 ms · **trôi độ trễ +2 ms** (cuối so với đầu) ·
-      **RSS 1.110 → 1.122 MB** (tăng 12 MB trong một giờ, không rò). Kết quả thô ở
-      [`docs/results/soak-60min-win.json`](results/soak-60min-win.json).
+- [x] ~~Cột so sánh whisper.cpp với MLX trên cùng thang.~~ **Có luôn cột thứ ba.** Cùng
+      3.099 bản thu: whisper.cpp q5_0 (vi WER 10,4% · RTF 0,018) · faster-whisper fp16
+      (9,2% · 0,034) · MLX 8bit (8,8% · 0,141). Ba runtime xếp cùng thứ tự ở cả bốn thứ
+      tiếng — nhưng là chênh giữa ba model khác nhau, xem phần đọc số ở mục 8d.
+- [x] ~~Ba chiều nguồn tiếng Việt chưa đạt ngưỡng RTF p90 ≤ 0,5.~~ **Đạt cả sáu trên
+      Windows**, xấu nhất vi→ja 0,383 (máy Mac: 0,786). Nhờ whisper.cpp chạy GPU qua
+      Vulkan và NLLB có nhánh `cuda` (mục 8). **Chỗ đáng tối ưu tiếp theo đã đổi:**
+      không còn là ASR nguồn tiếng Việt, mà là **TTS cho đích ja/zh** — 65% và 63% toàn
+      chuỗi, vẫn chạy CPU.
+- [x] ~~Chạy liên tục 60 phút không sập~~ (SPEC tiêu chí nghiệm thu 14) — **ĐẠT**, lần
+      đầu với model thật: 877 câu · 0 lỗi · trôi độ trễ +2 ms · RSS 1.110 → 1.122 MB.
 - [ ] `eval-mt` chưa chạy lại trên Windows. Không gấp: spBLEU/COMET không phụ thuộc phần
       cứng nên bảng ở [`05` mục 8b](05_bo-danh-gia-fleurs.md) vẫn dùng được; chạy lại
       chỉ để có cột thời gian MT trên GPU.
-
-### Xong là khi nào
-
-Ba file `eval-asr.json` / `eval-mt.json` / `eval-latency.json` có số thật, và ba bảng
-tương ứng chép được vào báo cáo. `eval-*.json` vẫn bị `.gitignore` theo mặc định (số
-liệu của từng máy, từng lượt chạy dở), **trừ** các lượt đã chốt: chúng được chép vào
-[`docs/results/`](results/README.md) để người đọc báo cáo kiểm lại được từng con số.
 
 ---
 
@@ -313,50 +253,32 @@ thật thì chưa**:
 
 ---
 
-## 8. Đợt 20/09 — năm lỗi lộ ra khi lần đầu chạy bộ đánh giá trên Windows
+## 8. Đợt 20/09 — sáu lỗi lộ ra khi lần đầu chạy bộ đánh giá trên Windows
 
-Toàn bộ khối đo ở mục 1 và 7 đóng được trong một buổi, nhưng không lần nào chạy thẳng
-được lần đầu. Năm lỗi dưới đây đều **đã sửa**, và cả năm đều chỉ lộ ra khi chạy thật —
-không lỗi nào bị ba lớp test bắt, vì chúng nằm ở chỗ tiếp giáp giữa môi trường và thư
-viện chứ không nằm trong logic.
+Khối đo ở mục 1 và 7 đóng được trong một buổi, nhưng không lượt nào chạy thẳng được lần
+đầu. Cả sáu lỗi đều **đã sửa** (commit `55e7b16`, `2e41e8b` — message ghi chi tiết từng
+cái), và cả sáu đều chỉ lộ ra khi chạy thật: chúng nằm ở chỗ tiếp giáp giữa môi trường
+và thư viện, không nằm trong logic, nên không lớp test nào bắt được.
 
-1. **`make fetch-fleurs` chết ngay dòng log đầu tiên.** stdout bị `make` pipe trên
-   Windows là cp1252, không mã hoá được chữ `ă`. Cùng họ với lỗi log service hôm 19/09
-   ([`04` mục 7](04_cac-dot-bo-sung.md)). Sửa: `export PYTHONUTF8 := 1` cho mọi lệnh
-   trong `Makefile`, và đặt lại trong `fetch_fleurs.sh` để gọi thẳng script cũng chạy.
+| #   | Lỗi                                                                        | Vì sao không ai thấy sớm hơn                                                              |
+| --- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 1   | `make fetch-fleurs` chết ở dòng log đầu — stdout bị pipe là cp1252         | Cùng họ với lỗi log service 19/09; chỉ xảy ra khi `make` pipe, chạy tay thì không         |
+| 2   | venv dev chạy whisper.cpp trên **CPU** (RTF 1,5 — chậm hơn thời gian thực) | Wheel Vulkan chỉ nằm trong bộ cài. **WER vẫn ra đúng**, chỉ có RTF sai — rất dễ bỏ qua    |
+| 3   | NLLB không có nhánh `cuda`, luôn rơi về CPU                                | Đo 19/09 đổ cho torch bản PyPI; thật ra adapter thiếu hẳn nhánh. 789 → 181 ms             |
+| 4   | faster-whisper hỏi `torch.cuda.is_available()` nên không bao giờ thấy GPU  | Hai thư viện mang runtime CUDA riêng. Hỏi `ctranslate2.get_cuda_device_count()` mới đúng  |
+| 5   | CTranslate2 chết vì thiếu `cublas64_12.dll` — ở **câu đầu tiên**           | Sau khi đã tải 1,6 GB và nạp xong. `os.add_dll_directory` không cứu được, phải sửa `PATH` |
+| 6   | `eval_asr.py` chụp `runtime_info()` **sau** `unload()`                     | File JSON đã chốt ghi `accel: CPU` cho lượt chạy trên GPU. Chỉ người đọc báo cáo thấy     |
 
-2. **venv dev chạy whisper.cpp trên CPU.** Wheel Vulkan chỉ được nhét vào bộ cài, nên
-   `make dev` và mọi lệnh `eval-*` trên máy Windows đều chạy CPU — RTF 1,5 thay vì 0,02,
-   **chậm hơn thời gian thực**, mà bảng WER vẫn ra đúng nên rất dễ không nhận ra. Sửa:
-   thêm `make setup-vulkan` dùng lại wheel đã build ở `dist/wheels/vulkan/`.
+Hai chi tiết đáng nhớ vì dễ dẫm lại:
 
-3. **NLLB không có nhánh `cuda`.** `adapters/mt/nllb.py` chỉ dò `mps` rồi rơi về `cpu`,
-   nên trên mọi máy NVIDIA thì MT luôn chạy CPU. Đây chính là lý do MT là khâu chậm nhất
-   trên Windows ở đo hôm 19/09 (~1,7 s). Sửa: `cuda → mps → cpu`. Đo lại trên cùng 5 câu,
-   cùng máy: **789 ms → 181 ms**. Kèm theo phải thêm extra `cuda` vào `pyproject.toml`
-   vì torch trên PyPI bản Windows chỉ có CPU — và phải khai `cpu`/`cuda` là **hai extra
-   xung đột**, không thì `uv sync` trần cũng kéo torch CUDA về và bộ cài phình thêm ~3 GB.
+- Thêm extra `cuda` phải khai `cpu`/`cuda` là **hai extra xung đột** (`[tool.uv]
+conflicts`). Thiếu dòng đó thì `uv sync` trần — thứ `tools/bundle_service.sh` chạy —
+  cũng kéo torch CUDA về, và bộ cài phình thêm ~3 GB.
+- `uv sync` trả `pywhispercpp` về bản CPU vì lock ghim bản PyPI, nên sau
+  `make setup-vulkan` thì mọi lệnh đo phải chạy với `UV_NO_SYNC=1`.
 
-4. **faster-whisper không bao giờ thấy GPU.** Adapter hỏi `torch.cuda.is_available()`,
-   mà torch bản Windows là CPU-only → luôn trả `cpu`, chạy int8. Nhưng CTranslate2 mang
-   runtime CUDA **riêng**: hỏi thẳng `ctranslate2.get_cuda_device_count()` thì ra 1 và
-   float16 sẵn sàng. Sửa: hỏi đúng thư viện làm việc đó.
-
-5. **CTranslate2 chết ở câu đầu tiên vì thiếu `cublas64_12.dll`** — sau khi đã tải model
-   1,6 GB và nạp xong. Không dùng ké cuBLAS của torch được: bản cu130 mang
-   `cublas64_13.dll`, tên khác. Và `os.add_dll_directory` **không** giải quyết được:
-   hàm đó chỉ thêm đường tìm cho `LoadLibraryEx` với cờ `SEARCH_DEFAULT_DIRS`, còn
-   CTranslate2 gọi `LoadLibrary` trần từ mã C++ — thứ chỉ tra `PATH`. Sửa: adapter tự
-   thêm `site-packages/nvidia/*/bin` vào `PATH`, và extra `ctranslate2` khai thêm
-   `nvidia-cublas-cu12`/`nvidia-cudnn-cu12` cho Windows.
-
-Một lỗi thứ sáu không ảnh hưởng ai ngoài người đọc báo cáo: `eval_asr.py` chụp
-`runtime_info()` **sau** `unload()`, nên file JSON đã chốt ghi `accel: CPU` cho một lượt
-chạy trên GPU (bản build Vulkan không khai gì trong `system_info()` nên nó lùi về đọc cờ
-lúc build). Đã sửa; file kết quả của lượt chạy trước khi sửa có ghi chú đính chính.
-
-Kèm theo, thêm `make eval-latency-all` — trước đó bảng sáu chiều phải gõ tay sáu lượt
-`eval_latency.py --source … --target …`, nên không dựng lại được bằng một lệnh.
+Thêm `make eval-latency-all`: bảng sáu chiều trước đây phải gõ tay sáu lượt nên không
+dựng lại được bằng một lệnh.
 
 **`make test` giờ sạch trên Windows: 327 pass, 6 skip** (trước là 13 hỏng). Cả 13 đều
 hỏng vì môi trường chứ không phải vì mã sai, và đó mới là vấn đề: một bộ test hỏng sẵn

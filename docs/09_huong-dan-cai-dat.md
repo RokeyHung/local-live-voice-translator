@@ -23,8 +23,11 @@ triển). Mục 2 chỉ cần cho đường thứ hai.
 | Node.js       | ≥ 20                                       | **Chỉ khi chạy từ mã nguồn.** Cho phần desktop (Electron + Vite).                                    |
 | Mạng Internet | Chỉ lần đầu                                | Để tải model. Sau đó chạy hoàn toàn offline.                                                         |
 
-GPU không bắt buộc: whisper.cpp dùng Metal trên Apple Silicon, NLLB chạy MPS/CPU.
-Máy không có tăng tốc vẫn chạy được nhưng độ trễ sẽ cao hơn số đo trong Tuần 8.
+GPU không bắt buộc. Khâu ASR tự dùng thứ có sẵn: Metal trên Apple Silicon, Vulkan trên
+Windows (mọi card NVIDIA/AMD/Intel — xem mục 3a). Khâu dịch (NLLB) chạy MPS trên máy
+Mac, còn trên máy có card NVIDIA thì cần bản torch CUDA (`uv sync --extra cuda`, chỉ cho
+người chạy từ mã nguồn) — bộ cài không gói sẵn vì nó nặng thêm ~3 GB. Máy không có tăng
+tốc vẫn chạy được, chỉ chậm hơn.
 
 ## 2. Cài công cụ — bỏ qua nếu dùng bộ cài sẵn
 

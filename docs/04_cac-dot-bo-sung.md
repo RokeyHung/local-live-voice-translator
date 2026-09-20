@@ -647,11 +647,11 @@ Ghi rõ để không bị hiểu là đã kiểm:
 - **SmartScreen chưa được thử.** Bộ cài chưa ký và mới cài trên chính máy build, nơi file không mang
   cờ "tải từ Internet". Trên máy khác sẽ hiện cảnh báo như [`09` mục 3a](09_huong-dan-cai-dat.md) mô tả.
 - **Chỉ cài im lặng**, chưa đi qua các màn hình của trình cài NSIS (chọn thư mục, shortcut).
-- **Playwright e2e chưa chạy trên Windows**, vitest chưa chạy lại. Pytest trên Windows có 13 test
-  hỏng sẵn (tạo symlink cần quyền admin, `WinError 1314`). Đã đối chiếu: chúng hỏng y hệt trên mã chưa
-  sửa, nên không do đợt này.
-- **Khâu dịch (NLLB) vẫn chạy CPU**, khoảng 1,7 s, và giờ là khâu chậm nhất. Torch bản Windows trên
-  PyPI chỉ có CPU.
+- **Playwright e2e chưa chạy trên Windows.** _(vitest và pytest thì đã chạy lại ngày 20/09:
+  69 và 327 pass — 13 test pytest hỏng sẵn ở đợt này đã sửa, xem [`08` mục 8](08_viec-con-lai.md).)_
+- ~~**Khâu dịch (NLLB) vẫn chạy CPU**, khoảng 1,7 s, và giờ là khâu chậm nhất.~~ **Sửa 20/09:**
+  adapter thiếu hẳn nhánh `cuda` chứ không chỉ do torch — 789 ms → 181 ms trên cùng bộ câu.
+  Xem [`08` mục 8](08_viec-con-lai.md).
 
 ### 7.8. Chạy lại
 

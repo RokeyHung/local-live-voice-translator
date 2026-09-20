@@ -27,7 +27,7 @@ Pipeline: `Audio → VAD (Silero) → ASR (whisper.cpp) → MT (NLLB-200) → TT
 | `11_pham-vi-da-bo-google-meet.md`    | Record of the dropped Google Meet integration — not a how-to                                                                                                                                                                                                                                                                                                                     |
 | `meetings/`, `gvhd/`                 | Meeting minutes; documents actually sent to the advisor. `gvhd/bao-cao-danh-gia.md` is the current one — one report-only file merging `05`+`06`+the older two-file split, no implementation detail, and the source `make docx` exports to Word. `gvhd/bao-cao-bo-danh-gia.md` is that older split (results file; `docs/06` was its theory appendix), kept as a frozen artifact   |
 
-The `docs/05` suite has been run end-to-end on real hardware (Apple M4): ASR over 3,099 recordings (vi WER 8.8%, en 4.8%, zh CER 8.1%, ja 4.7%), MT over 2,022 sentence pairs in six directions with COMET, and full-chain latency at RTF p90 0.395–0.786. Those tables — not `scripts/accuracy.py`, not the in-app evaluation screen — are the report-grade numbers; the other two measure smaller, synthetic sets and are for liveness checks. Remaining: an `eval-asr` run on whisper.cpp for a same-scale backend comparison, a Windows 11 run, a human-voice set (to size the gap between read speech and meeting speech), a 60-minute soak with real models, and T9 (report, packaging, demo).
+The `docs/05` suite has been run end-to-end on real hardware (Apple M4): ASR over 3,099 recordings (vi WER 8.8%, en 4.8%, zh CER 8.1%, ja 4.7%), MT over 2,022 sentence pairs in six directions with COMET, and full-chain latency at RTF p90 0.395–0.786. Those tables — not `scripts/accuracy.py`, not the in-app evaluation screen — are the report-grade numbers; the other two measure smaller, synthetic sets and are for liveness checks. The suite has since been run on Windows 11 (i5-12500H + RTX 4060) as well — `docs/05` §8d compares all three ASR runtimes over the same 3,099 recordings (whisper.cpp/Vulkan vi WER 10.4%, faster-whisper/CUDA 9.2%, MLX/Metal 8.8%), §8e has six-direction latency where all six clear RTF p90 ≤ 0.5, and the 60-minute soak passed with 877 utterances, 0 errors and +12 MB RSS. Remaining: a human-voice set (to size the gap between read speech and meeting speech) and T9 (report, demo video, slides).
 
 ## Repository layout
 
@@ -63,8 +63,11 @@ make setup-eval    # install the FLEURS evaluation deps (datasets, sacrebleu, ji
 make setup-mlx     # optional MLX ASR backend (mlx-audio; macOS + Apple Silicon only)
 make setup-diarization  # optional speaker diarization (pyannote.audio)
 make setup-ctranslate2  # optional faster-whisper ASR backend (CPU int8 / CUDA fp16)
+make setup-vulkan  # Windows only: swap the dev venv's pywhispercpp for the Vulkan build
+                   # (without it `make dev` and every eval-* run whisper.cpp on CPU)
 make fetch-fleurs  # pre-download the FLEURS test data (~2.3 GB; LANGS="vi en" for one at a time)
 make eval-asr / eval-mt / eval-comet / eval-latency  # the GVHD evaluation suite (docs/05)
+make eval-latency-all LIMIT=50 SUFFIX=-win  # all six directions in one command
 make clean     # remove .venv, node_modules, build output
 ```
 

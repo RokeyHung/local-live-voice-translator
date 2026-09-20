@@ -244,12 +244,16 @@ Mục 11 đo trên bộ câu tự dựng. Đây là số trên **FLEURS** (bản
 Google) — dữ liệu công khai, có tham chiếu do người gõ, nên **so sánh được với các công
 bố khác**. Chi tiết ở [`05` mục 8](05_bo-danh-gia-fleurs.md).
 
-**(a) ASR** — `whisper-large-v3-asr-8bit` trên MLX/Metal, **3.099 bản thu, 10,2 giờ
-audio**, chạy hết 86 phút, **0 câu rỗng**:
+**(a) ASR** — **3.099 bản thu, 10,2 giờ audio**, ba runtime trên cùng bộ dữ liệu:
 
-| vi (WER)  | en (WER)  | zh (CER)  | ja (CER)  | RTF khâu ASR |
-| --------- | --------- | --------- | --------- | ------------ |
-| **8,8 %** | **4,8 %** | **8,1 %** | **4,7 %** | 0,141        |
+| Runtime (máy)              | vi (WER)  | en (WER)  | zh (CER)  | ja (CER)  | RTF khâu ASR |
+| -------------------------- | --------- | --------- | --------- | --------- | ------------ |
+| MLX/Metal — M4             | **8,8 %** | **4,8 %** | **8,1 %** | **4,7 %** | 0,141        |
+| faster-whisper/CUDA — 4060 | 9,2 %     | 5,0 %     | 8,3 %     | 4,7 %     | 0,034        |
+| whisper.cpp/Vulkan — 4060  | 10,4 %    | 5,0 %     | 8,6 %     | 4,9 %     | 0,018        |
+
+Ba cột là ba **model khác nhau** (ba runtime không dùng chung file model), nên đây là so
+cấu hình chứ không phải so runtime thuần. Cột RTF của hàng đầu đo trên máy khác.
 
 **(b) MT** — NLLB-200-distilled-600M, **2.022 cặp câu**, đủ sáu chiều:
 
@@ -260,14 +264,17 @@ audio**, chạy hết 86 phút, **0 câu rỗng**:
 
 **(c) Độ trễ toàn chuỗi** VAD→ASR→MT→TTS, 50 mẫu mỗi chiều:
 
-| Chiều   | vi→en | en→vi | vi→zh | zh→vi | vi→ja | ja→vi |
-| ------- | ----- | ----- | ----- | ----- | ----- | ----- |
-| RTF p90 | 0,580 | 0,496 | 0,727 | 0,509 | 0,786 | 0,395 |
+| Chiều          | vi→en | en→vi | vi→zh | zh→vi | vi→ja | ja→vi |
+| -------------- | ----- | ----- | ----- | ----- | ----- | ----- |
+| RTF p90 — M4   | 0,580 | 0,496 | 0,727 | 0,509 | 0,786 | 0,395 |
+| RTF p90 — 4060 | 0,146 | 0,148 | 0,273 | 0,147 | 0,383 | 0,114 |
 
 **Ba điều nên nói trước khi hội đồng hỏi:**
 
-1. **RTF p90 < 1 ở cả sáu chiều** → hệ thống theo kịp thời gian thực. Ngưỡng chặt hơn
-   (≤ 0,5) thì ba chiều đạt; ba chiều trượt đều là ba chiều **nguồn tiếng Việt**.
+1. **RTF p90 < 1 ở cả sáu chiều trên cả hai máy** → hệ thống theo kịp thời gian thực.
+   Ngưỡng chặt hơn (≤ 0,5): trên Windows **cả sáu đạt**, trên M4 thì ba chiều trượt và
+   cả ba đều là chiều **nguồn tiếng Việt**. Khâu tốn nhất cũng đổi theo máy: trên M4 là
+   ASR, trên Windows là **TTS cho đích ja/zh** (65% và 63% toàn chuỗi, vẫn chạy CPU).
 2. **spBLEU và COMET xếp hạng khác nhau.** Theo spBLEU, vi→ja tệ nhất (11,0); theo COMET
    nó đứng hạng ba (0,824) còn chiều yếu thật sự là vi→zh. spBLEU khớp chuỗi bề mặt nên
    phạt nặng ngôn ngữ khác hệ chữ viết; COMET chấm ngữ nghĩa. Đây là lý do dùng cả hai.

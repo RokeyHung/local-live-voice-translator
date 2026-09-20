@@ -96,10 +96,13 @@ Pipeline chạy **model thật** đầy đủ: VAD (Tuần 2) → ASR (Tuần 3)
 
 Đã có **bộ số đo trên FLEURS** (bộ dữ liệu chuẩn, tham chiếu do người gõ) — chi tiết ở [docs/05 mục 8](docs/05_bo-danh-gia-fleurs.md):
 
-| Khâu                                | Kết quả                                               |
-| ----------------------------------- | ----------------------------------------------------- |
-| ASR (3.099 bản thu, 10,2 giờ audio) | vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7% |
-| MT (2.022 cặp câu, 6 chiều)         | spBLEU 11,0–37,1 · COMET 0,773–0,853                  |
-| Độ trễ cả chuỗi (50 mẫu × 6 chiều)  | RTF p90 **0,395–0,786** — dưới 1 ở mọi chiều          |
+| Khâu                                | macOS (M4, Metal)                                   | Windows (RTX 4060)                                   |
+| ----------------------------------- | --------------------------------------------------- | ---------------------------------------------------- |
+| ASR (3.099 bản thu, 10,2 giờ audio) | vi WER 8,8% · en 4,8% · zh CER 8,1% · ja 4,7% (MLX) | vi 10,4% · en 5,0% · zh 8,6% · ja 4,9% (whisper.cpp) |
+| MT (2.022 cặp câu, 6 chiều)         | spBLEU 11,0–37,1 · COMET 0,773–0,853                | không phụ thuộc phần cứng                            |
+| Độ trễ cả chuỗi (50 mẫu × 6 chiều)  | RTF p90 0,395–0,786                                 | RTF p90 **0,114–0,383**                              |
+| Chạy liên tục 60 phút               | —                                                   | 877 câu · 0 lỗi · RSS +12 MB                         |
 
-Còn lại: chạy thử thật trên Windows 11, thu bộ câu bằng giọng người thật để biết WER trong điều kiện họp thật cao hơn bao nhiêu, và Tuần 9 (báo cáo, đóng gói, video demo).
+Trên Windows cả sáu chiều đều đạt ngưỡng chặt RTF p90 ≤ 0,5; bảng đầy đủ và cả cột faster-whisper ở [docs/05 mục 8d/8e](docs/05_bo-danh-gia-fleurs.md).
+
+Còn lại: thu bộ câu bằng giọng người thật để biết WER trong điều kiện họp thật cao hơn bao nhiêu, và Tuần 9 (báo cáo, video demo, slide).
