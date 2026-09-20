@@ -41,12 +41,10 @@ tính là đã tải. Kèm theo:
       **Cập nhật 20/09:** nếu thầy chốt ngưỡng 0,5 thì cấu hình Windows đạt cả sáu
       chiều ([`05` mục 8e](05_bo-danh-gia-fleurs.md)), cấu hình macOS thì không — số
       này có sau khi gửi báo cáo nên cần nói lại với thầy.
-- [x] ~~**Nhắc thầy về baseline cloud.**~~ **Quyết 20/09: bỏ, không làm nữa.** Baseline
-      cloud là Ưu tiên 3 trong biên bản, và mục đích của nó — có một mốc để đối chiếu
-      chất lượng — giờ đã được phục vụ bằng thứ khác và tốt hơn: ba runtime ASR chạy
-      trên cùng 3.099 bản thu ([`05` mục 8d](05_bo-danh-gia-fleurs.md)) và điểm COMET
-      cho cả sáu chiều dịch. Gọi API cloud cũng đi ngược tinh thần "chạy hoàn toàn cục
-      bộ" của đề tài.
+- [x] ~~**Nhắc thầy về baseline cloud.**~~ **Quyết 20/09: bỏ.** Mục đích của nó là có
+      một mốc đối chiếu chất lượng, và mốc đó giờ có sẵn từ bảng ba runtime ASR ở mục 1
+      cùng điểm COMET. Gọi API cloud cũng đi ngược tinh thần "chạy hoàn toàn cục bộ".
+      Đã xin ý kiến thầy ở mục 13.5 của báo cáo.
 
 Kèm theo, nên báo thầy hai điều đã phát hiện khi làm (chi tiết ở mục 5 dưới): **zh/ja
 phải dùng CER chứ không phải WER**, và **COMET không cài chung môi trường được**.
@@ -117,7 +115,7 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 | ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`04`](04_cac-dot-bo-sung.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`07`](07_ket-qua-chay-thu-e2e.md) mục 4.                                                                                                                                                                                            |
 | ~~**Quyết giữ hay bỏ ràng buộc Google Meet**~~    | ✅ **Đã quyết 10/09/2026: bỏ.** Hai vấn đề ở mục 2 có mã xử lý nhưng chưa kiểm chứng được trên giọng người thật trước hạn nộp, nên giữ một tính năng chưa chắc ổn định lúc bảo vệ là rủi ro không cần thiết. Mã nguồn giữ nguyên, tắt ở lớp giao diện — [`11`](11_pham-vi-da-bo-google-meet.md) ghi lý do và cách bật lại. |
 | **Cải thiện dịch — nhưng là chiều vi→zh**         | `eval-mt` + `eval-comet` đã chạy đầy đủ ([`05` mục 8](05_bo-danh-gia-fleurs.md)): ja→vi hoá ra **không** phải chiều tệ nhất (spBLEU 19,91 · COMET 0,8191). Chiều yếu nhất là **vi→zh** — cả spBLEU (17,15) lẫn COMET (0,7729) cùng chỉ vào đó. Nhắm vào vi→zh chứ đừng nhắm ja→vi.                                         |
-| ~~**Kiểm tra ổn định trên Windows 11**~~          | ✅ **Xong 20/09.** Toàn bộ bộ đánh giá đã chạy trên Windows: 3.099 bản thu × 2 runtime ASR + 6 chiều độ trễ + soak 60 phút. Số ở [`05` mục 8d/8e](05_bo-danh-gia-fleurs.md). Ghi chú cũ "không có Metal → RTF sẽ khác" đúng nhưng ngược chiều dự đoán: Vulkan trên RTX 4060 cho RTF **thấp hơn** Metal trên M4.            |
+| ~~**Kiểm tra ổn định trên Windows 11**~~          | ✅ **Xong 20/09** — mục 1. Ghi chú cũ "không có Metal → RTF sẽ khác" đúng nhưng ngược chiều dự đoán: Vulkan trên RTX 4060 cho RTF **thấp hơn** Metal trên M4.                                                                                                                                                              |
 
 ---
 
@@ -125,10 +123,9 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 
 - [x] ~~Tích hợp baseline cloud để đối chứng~~ — **bỏ 20/09**, lý do ở mục 0.
 - [x] ~~Tích hợp thêm model khác, lập bảng so sánh chất lượng/độ trễ trên cùng tiêu chí~~
-      — **xong cho khâu ASR**: ba runtime trên cùng 3.099 bản thu
-      ([`05` mục 8d](05_bo-danh-gia-fleurs.md)). Đúng như dự đoán về hạ tầng: không phải
-      sửa dòng nào trong `pipeline.py`, chỉ đổi `--adapter` khi gọi `make eval-asr`.
-      Khâu MT thì vẫn chỉ có NLLB — đổi model MT là việc chưa làm.
+      — **xong cho khâu ASR** (mục 1). Đúng như dự đoán về hạ tầng: không phải sửa dòng
+      nào trong `pipeline.py`, chỉ đổi `--adapter` khi gọi `make eval-asr`. Khâu MT thì
+      vẫn chỉ có NLLB — đổi model MT là việc chưa làm.
 - [ ] Thiết kế option nhanh–nhẹ / chất lượng cao cho người dùng. Đã có một nửa: mỗi
       preset giờ mang một `VadTuning` riêng (4,5 / 6 / 8 giây), còn thiếu phần đo để
       chứng minh sự đánh đổi.

@@ -100,7 +100,7 @@ p90 **856 ms** · dịch p90 **396 ms** · tổng p90 **1.227 ms** · **RTF p90 
 
 > **RTF ở đây tính trên phạm vi hẹp: chỉ ASR + MT**, không gồm VAD và TTS — vì màn Đánh
 > giá chấm chất lượng dịch nên không chạy TTS. Hai con số không thay thế được nhau; báo
-> cáo phải ghi rõ phạm vi. Xem [báo cáo GVHD mục 7](gvhd/bao-cao-bo-danh-gia.md).
+> cáo phải ghi rõ phạm vi. Xem [báo cáo GVHD mục 7](gvhd/bao-cao-danh-gia.md).
 >
 > **Cập nhật 07/09 — dự đoán ở đây sai.** Chỗ này từng viết rằng RTF của
 > `make eval-latency` (cả chuỗi VAD→ASR→MT→TTS) sẽ **cao hơn** 0,818 vì nó gồm nhiều

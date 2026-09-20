@@ -158,8 +158,8 @@ _(Đây là gợi ý cần cân nhắc, chưa phải quyết định chốt — 
 - [x] Viết code đánh giá ASR trên từng ngôn ngữ → bảng WER — **đã chạy đầy đủ**: 3.099 bản thu, 10,22 giờ audio ([`05` mục 8](../05_bo-danh-gia-fleurs.md)) · vi WER 8,8% · en WER 4,8% · zh CER 8,1% · ja CER 4,7%
 - [x] Viết code đánh giá MT trên 6 chiều → bảng BLEU + COMET (`Unbabel/wmt22-comet-da`) — **đã chạy đầy đủ**: 2.022 cặp câu, đủ sáu chiều, có điểm COMET ([`05` mục 8b](../05_bo-danh-gia-fleurs.md))
 - [x] Đo end-to-end latency → Total Inference Time + RTF — 50 mẫu × sáu chiều, cùng cấu hình đã đo WER; RTF p90 0,395–0,786 ([`05` mục 8c](../05_bo-danh-gia-fleurs.md))
-- [x] Tra công thức RTF và ngưỡng real-time — công thức ở [`06` mục 6](../06_bon-do-do-wer-bleu-comet-rtf.md), ngưỡng đề xuất ở [báo cáo GVHD mục 3](../gvhd/bao-cao-bo-danh-gia.md)
-- [ ] **Báo cáo lại cho thầy** phần trên — nội dung đã soạn xong, chỉ còn việc gửi: [báo cáo GVHD](../gvhd/bao-cao-bo-danh-gia.md) (mục 3 công thức + ngưỡng đề xuất, mục 9 năm điểm cần thầy chốt) kèm phụ lục lý thuyết [`06`](../06_bon-do-do-wer-bleu-comet-rtf.md). **Đang trễ.**
+- [x] Tra công thức RTF và ngưỡng real-time — công thức ở [`06` mục 6](../06_bon-do-do-wer-bleu-comet-rtf.md), ngưỡng đề xuất ở [báo cáo GVHD mục 3](../gvhd/bao-cao-danh-gia.md)
+- [x] **Báo cáo lại cho thầy** phần trên — **đã gửi**: [báo cáo GVHD](../gvhd/bao-cao-danh-gia.md) (mục 3 công thức + ngưỡng đề xuất, mục 9 năm điểm cần thầy chốt) kèm phụ lục lý thuyết [`06`](../06_bon-do-do-wer-bleu-comet-rtf.md). Số đo trên Windows có sau khi gửi nên nằm ở mục 13 của báo cáo.
 
 Số liệu thô của cả ba lượt chạy nằm ở [`docs/results/`](../results/README.md) để kiểm lại được từng con số.
 

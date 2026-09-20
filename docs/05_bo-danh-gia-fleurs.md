@@ -262,7 +262,7 @@ của FLEURS.
 
 > Bản đầy đủ, có trích nguồn cho từng khẳng định, nằm ở
 > [`06` mục 6](06_bon-do-do-wer-bleu-comet-rtf.md); phần ngưỡng đề xuất và lý do lấy p90
-> ở [báo cáo GVHD mục 3](gvhd/bao-cao-bo-danh-gia.md) — đó mới là phần gửi thầy. Mục này
+> ở [báo cáo GVHD mục 3](gvhd/bao-cao-danh-gia.md) — đó mới là phần gửi thầy. Mục này
 > giữ lại bản tóm tắt để đọc liền mạch với phần code.
 
 $$\text{RTF} = \frac{\text{thời gian xử lý}}{\text{thời lượng audio đầu vào}}$$

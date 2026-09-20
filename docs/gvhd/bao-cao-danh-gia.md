@@ -6,12 +6,12 @@
 
 Báo cáo gồm 3 phần chính: cách đánh giá, kết quả đo và các vấn đề cần GVHD xác nhận.
 
-**Hai phần cần GVHD xác nhận:** mục 3.5 về ngưỡng RTF và mục 8 về 5 vấn đề còn lại.
+**Hai phần cần GVHD xác nhận:** mục 3.5 về ngưỡng RTF và mục 9 về 5 vấn đề còn lại.
 
 > **Mục 12 là phần bổ sung ngày 20/09.** Toàn bộ mục 1–11 giữ nguyên như bản đã gửi ngày
 > 07/09 (số đo trên máy Apple M4). Sau đó em đã đo thêm trên máy Windows + card NVIDIA và
-> ba trong bốn việc ở mục 10 đã xong — mục 12 ghi phần đó, và nêu hai chỗ làm **đổi kết
-> luận** của mục 6 và mục 9.
+> ba trong bốn việc ở mục 11 đã xong — mục 13 ghi phần đó, và nêu hai chỗ làm **đổi kết
+> luận** của mục 6 và mục 10.
 
 ---
 
@@ -167,7 +167,14 @@ RTF chỉ đo **thời gian tính toán**. Độ trễ người dùng cảm nh�
 
 Vì vậy báo cáo tách riêng cột **“chờ chốt”**, không đưa thời gian này vào RTF.
 
-Mốc độ trễ cảm nhận đề xuất là **~3 giây**. Báo cáo không dùng mốc 150 ms của ITU-T G.114 vì G.114 nói về độ trễ truyền thoại, không phải độ trễ của hệ thống dịch.
+Mốc độ trễ cảm nhận đề xuất là **~3 giây**, lấy căn cứ từ nghiên cứu về phiên dịch:
+ear-voice span của phiên dịch viên người thật trung bình khoảng 3 giây; phiên dịch viên
+chịu được khoảng 3 giây độ trễ do công cụ thêm vào mà độ chính xác không giảm rõ rệt; và
+người nghe hệ thống dịch nói đa số chọn mức 3–4 giây.
+
+Báo cáo **cố ý không dùng** mốc 150 ms của ITU-T G.114, dù mốc này hay bị trích cho hệ
+thống phiên dịch: G.114 là mốc cho **truyền dẫn thoại** (VoIP) — nó đo đường truyền chứ
+không đo việc dịch, và bản thân người phiên dịch cũng trễ vài giây.
 
 ### 3.6. Tóm tắt
 
@@ -309,7 +316,34 @@ Màn hình dịch trực tiếp từ câu tham chiếu để đánh giá MT, kh�
 
 ---
 
-## 8. Các điểm cần GVHD xác nhận
+## 8. Ba chỗ làm khác kế hoạch, và lý do
+
+**Dùng CER cho tiếng Trung và tiếng Nhật.** Kế hoạch ghi "WER" cho cả bốn ngôn ngữ, nhưng
+zh/ja không tách từ bằng khoảng trắng nên chấm WER thực chất là chấm theo chỗ Whisper
+_tình cờ_ chèn dấu cách — cùng một câu đúng nghĩa có thể ra 0% hay 100%. Bài báo FLEURS
+và bài báo Whisper đều dùng CER cho nhóm CJK. Bảng kết quả ghi rõ từng dòng đang là chỉ
+số nào, và **không** có dòng "trung bình bốn ngôn ngữ" vì WER với CER không so được với
+nhau.
+
+**COMET phải chạy ở môi trường riêng.** `unbabel-comet` ghim `numpy<2` và
+`transformers<5`, trong khi NLLB cần `numpy>=2.4` và `transformers>=5.14` — hai bộ ràng
+buộc này không cùng tồn tại trong một môi trường. Giải pháp là một script độc lập tự dựng
+môi trường riêng, đọc file kết quả của bước dịch rồi ghi điểm COMET ngược vào. Xin nói
+thêm: COMET chỉ chạy ở khâu **đánh giá offline**, không nằm trong ứng dụng người dùng
+cài, nên nó không vi phạm nguyên tắc "chạy hoàn toàn cục bộ" của đề tài.
+
+**Chọn model bằng số đo, không bằng suy đoán.** Biên bản mục 5 ghi hội đồng sẽ hỏi "tại
+sao chọn những mô hình này". Bảng ở mục 7.1 là câu trả lời: 7 bản Whisper đo trên cùng
+20 câu trước khi chạy bản đầy đủ, rút ra ba điều — lượng tử hoá 8-bit **không đổi WER**
+so với fp16 (6,7% cả hai) nhưng nhỏ hơn 2,3 lần và nhanh hơn 22%; bản turbo nhanh gấp đôi
+nhưng mất 1,4 điểm WER (đây là cơ sở cho ba preset Nhanh / Cân bằng / Chất lượng); và họ
+model `small` của mlx-community **hỏng** — WER 133,5% do kẹt vòng lặp lặp chữ, trong khi
+bản cùng cỡ ở định dạng khác chạy bình thường, nên lỗi nằm ở bản chuyển đổi chứ không
+phải ở cỡ model.
+
+---
+
+## 9. Các điểm cần GVHD xác nhận
 
 1. **CER thay WER cho zh/ja** — có tiếp tục dùng cách này không?
 2. **Ngưỡng RTF:** dùng **p90 < 1** hay **p90 ≤ 0,5** làm ngưỡng đạt?
@@ -319,7 +353,7 @@ Màn hình dịch trực tiếp từ câu tham chiếu để đánh giá MT, kh�
 
 ---
 
-## 9. Hạn chế
+## 10. Hạn chế
 
 - **FLEURS là giọng đọc**, không phải giọng họp. Vì vậy WER và RTF thực tế có thể xấu hơn.
 - Chưa chuẩn hóa số và viết tắt khi tính WER, nên một số trường hợp nghe đúng nhưng vẫn bị tính là lỗi.
@@ -329,7 +363,7 @@ Màn hình dịch trực tiếp từ câu tham chiếu để đánh giá MT, kh�
 
 ---
 
-## 10. Việc còn lại
+## 11. Việc còn lại
 
 - [ ] Chạy đầy đủ whisper.cpp để so sánh công bằng với MLX.
 - [ ] Đo trên Windows + NVIDIA.
@@ -340,7 +374,7 @@ Số liệu thô của các lượt chạy được lưu dạng JSON, gồm cả
 
 ---
 
-## 11. Nguồn trích dẫn
+## 12. Nguồn trích dẫn
 
 **Độ đo ASR**
 
@@ -392,21 +426,21 @@ Số liệu thô của các lượt chạy được lưu dạng JSON, gồm cả
 
 ---
 
-## 12. Bổ sung ngày 20/09/2026 — đo trên máy Windows + NVIDIA
+## 13. Bổ sung ngày 20/09/2026 — đo trên máy Windows + NVIDIA
 
 Máy đo: Windows 11, Intel Core i5-12500H, NVIDIA GeForce RTX 4060 Laptop (8 GB), RAM 16 GB.
 Cùng bộ `google/fleurs` split `test`, cùng số mẫu như mục 4 và mục 6.
 
-### 12.1. Mục 10 — ba việc đã xong
+### 13.1. Mục 11 — ba việc đã xong
 
-| Việc (mục 10)                                   | Trạng thái 20/09                                         |
+| Việc (mục 11)                                   | Trạng thái 20/09                                         |
 | ----------------------------------------------- | -------------------------------------------------------- |
-| Chạy đầy đủ whisper.cpp để so công bằng với MLX | **Xong** — mục 12.2                                      |
-| Đo trên Windows + NVIDIA                        | **Xong** — mục 12.2 và 12.3                              |
+| Chạy đầy đủ whisper.cpp để so công bằng với MLX | **Xong** — mục 13.2                                      |
+| Đo trên Windows + NVIDIA                        | **Xong** — mục 13.2 và 13.3                              |
 | Chuẩn bị bộ audio giọng nói hội thoại thực tế   | **Chưa** — vẫn là việc còn lại lớn nhất                  |
-| Xác định baseline cloud theo hướng dẫn của GVHD | **Xin phép bỏ** — lý do ở mục 12.5, mong thầy cho ý kiến |
+| Xác định baseline cloud theo hướng dẫn của GVHD | **Xin phép bỏ** — lý do ở mục 13.5, mong thầy cho ý kiến |
 
-### 12.2. Mục (a) — cùng 3.099 bản thu, ba runtime ASR
+### 13.2. Mục (a) — cùng 3.099 bản thu, ba runtime ASR
 
 | Runtime (máy)                    | vi (WER)  | en (WER) | zh (CER) | ja (CER) | RTF khâu ASR |
 | -------------------------------- | --------- | -------- | -------- | -------- | ------------ |
@@ -422,7 +456,7 @@ khác mức lượng tử hoá: q5_0 kém fp16 1,2 điểm WER tiếng Việt, �
 
 Hai cột RTF cuối không so được với dòng đầu vì khác máy.
 
-### 12.3. Mục (c) — độ trễ, và chỗ này làm đổi kết luận của mục 6
+### 13.3. Mục (c) — độ trễ, và chỗ này làm đổi kết luận của mục 6
 
 | Chiều | ASR   | MT    | TTS     | Tổng TB  | RTF p90 (Windows) | RTF p90 (M4, mục 6) |
 | ----- | ----- | ----- | ------- | -------- | ----------------- | ------------------- |
@@ -445,7 +479,7 @@ Nguyên nhân của mức chênh: khâu ASR chạy GPU qua Vulkan, và khâu d�
 luôn chạy CPU do thiếu nhánh chọn thiết bị CUDA — sửa xong thì cùng một bộ câu, cùng một
 máy, thời gian dịch trung vị giảm từ 789 ms xuống 181 ms.
 
-### 12.4. Hai phép đo bổ sung
+### 13.4. Hai phép đo bổ sung
 
 **Chạy liên tục 60 phút** (tiêu chí nghiệm thu số 14 của SPEC), lần đầu chạy với model
 thật: **877 phát ngôn, 0 lỗi**, độ trễ p50 443 ms / p95 541 ms, độ trễ **không trôi**
@@ -457,13 +491,13 @@ en 5,0 → 31,4%, zh 8,6 → 45,1%, ja 4,9 → 46,5% — đổi lại chỉ nhan
 ASR. Kết luận: không dùng. Em ghi lại đây vì đây là một điểm đo cho phần "đánh đổi độ
 trễ ↔ chất lượng" mà thầy có thể sẽ hỏi.
 
-### 12.5. Hai điểm xin thầy cho ý kiến
+### 13.5. Hai điểm xin thầy cho ý kiến
 
-1. **Ngưỡng RTF (câu 2 của mục 8) giờ có hai đáp án khác nhau theo máy.** Nếu thầy chốt
+1. **Ngưỡng RTF (câu 2 của mục 9) giờ có hai đáp án khác nhau theo máy.** Nếu thầy chốt
    p90 ≤ 0,5 thì bản Windows đạt cả sáu chiều còn bản macOS chỉ đạt ba. Em đề nghị báo
    cáo ghi cả hai bảng kèm cấu hình máy, thay vì chọn một máy để báo cáo.
 2. **Baseline cloud (Ưu tiên 3):** em xin phép bỏ. Mục đích của nó là có một mốc để đối
-   chiếu chất lượng, và mốc đó giờ đã có từ hai nguồn: bảng ba runtime ở mục 12.2 và
+   chiếu chất lượng, và mốc đó giờ đã có từ hai nguồn: bảng ba runtime ở mục 13.2 và
    điểm COMET ở mục 5. Ngoài ra việc gọi API cloud đi ngược yêu cầu "chạy hoàn toàn cục
    bộ" của đề tài. Nếu thầy vẫn muốn có, em sẽ làm.
 

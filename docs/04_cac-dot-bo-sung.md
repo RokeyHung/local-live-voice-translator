@@ -661,14 +661,8 @@ Ghi rõ để không bị hiểu là đã kiểm:
 
 ### 7.8. Chạy lại
 
-Một lần trên máy build (PowerShell):
-
-```powershell
-winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
-winget install KhronosGroup.VulkanSDK
-```
-
-Sau đó, trong Git Bash:
+Hai gói phải cài một lần trên máy build (VS Build Tools + Vulkan SDK): lệnh `winget` ở
+[`09` mục 3a](09_huong-dan-cai-dat.md). Sau đó, trong Git Bash:
 
 ```bash
 make dist                         # wheel Vulkan được giữ ở dist/wheels/vulkan/ cho lần sau
