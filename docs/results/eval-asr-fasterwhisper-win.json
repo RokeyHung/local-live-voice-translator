@@ -1,0 +1,57 @@
+{
+  "dataset": "google/fleurs",
+  "split": "test",
+  "preset": "balanced",
+  "adapter": "faster_whisper",
+  "model": "deepdml/faster-whisper-large-v3-turbo-ct2",
+  "runtime": {
+    "model": "deepdml/faster-whisper-large-v3-turbo-ct2",
+    "backend": "faster-whisper",
+    "accel": "cuda (float16)"
+  },
+  "hallucination_filter": false,
+  "limit": null,
+  "languages": [
+    {
+      "language": "vi",
+      "metric": "WER",
+      "score": 0.0922,
+      "samples": 857,
+      "audio_seconds": 10813.7,
+      "asr_seconds": 361.4,
+      "rtf": 0.033,
+      "empty": 1
+    },
+    {
+      "language": "en",
+      "metric": "WER",
+      "score": 0.0496,
+      "samples": 647,
+      "audio_seconds": 6387.9,
+      "asr_seconds": 227.5,
+      "rtf": 0.036,
+      "empty": 0
+    },
+    {
+      "language": "zh",
+      "metric": "CER",
+      "score": 0.0835,
+      "samples": 945,
+      "audio_seconds": 11065.2,
+      "asr_seconds": 392.3,
+      "rtf": 0.035,
+      "empty": 0
+    },
+    {
+      "language": "ja",
+      "metric": "CER",
+      "score": 0.0472,
+      "samples": 650,
+      "audio_seconds": 8511.1,
+      "asr_seconds": 270.1,
+      "rtf": 0.032,
+      "empty": 0
+    }
+  ],
+  "hardware": "Windows 11, Intel Core i5-12500H, NVIDIA GeForce RTX 4060 Laptop GPU (8 GB), driver 610.88"
+}

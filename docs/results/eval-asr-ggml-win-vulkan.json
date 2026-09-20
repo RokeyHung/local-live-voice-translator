@@ -1,0 +1,58 @@
+{
+  "dataset": "google/fleurs",
+  "split": "test",
+  "preset": "balanced",
+  "adapter": "whisper_cpp",
+  "model": "ggml-large-v3-turbo-q5_0.bin",
+  "runtime": {
+    "model": "ggml-large-v3-turbo-q5_0.bin",
+    "backend": "whisper.cpp",
+    "accel": "Vulkan",
+    "accel_note": "Lượt chạy này diễn ra trước khi sửa lỗi chụp runtime sau unload: file gốc ghi 'CPU'. Thiết bị thật là Vulkan trên NVIDIA GeForce RTX 4060 Laptop GPU, in ra ở log lúc nạp model và khớp với RTF 0,02. Lỗi đã sửa ở scripts/eval_asr.py."
+  },
+  "hallucination_filter": false,
+  "limit": null,
+  "languages": [
+    {
+      "language": "vi",
+      "metric": "WER",
+      "score": 0.1045,
+      "samples": 857,
+      "audio_seconds": 10813.7,
+      "asr_seconds": 194.1,
+      "rtf": 0.018,
+      "empty": 2
+    },
+    {
+      "language": "en",
+      "metric": "WER",
+      "score": 0.0504,
+      "samples": 647,
+      "audio_seconds": 6387.9,
+      "asr_seconds": 114.1,
+      "rtf": 0.018,
+      "empty": 0
+    },
+    {
+      "language": "zh",
+      "metric": "CER",
+      "score": 0.0857,
+      "samples": 945,
+      "audio_seconds": 11065.2,
+      "asr_seconds": 201.1,
+      "rtf": 0.018,
+      "empty": 0
+    },
+    {
+      "language": "ja",
+      "metric": "CER",
+      "score": 0.0488,
+      "samples": 650,
+      "audio_seconds": 8511.1,
+      "asr_seconds": 137.9,
+      "rtf": 0.016,
+      "empty": 0
+    }
+  ],
+  "hardware": "Windows 11, Intel Core i5-12500H, NVIDIA GeForce RTX 4060 Laptop GPU (8 GB), driver 610.88"
+}

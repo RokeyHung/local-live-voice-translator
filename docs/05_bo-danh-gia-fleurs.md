@@ -376,9 +376,103 @@ làm con số báo cáo.
 **RTF 0,14 là của riêng khâu ASR**, không phải RTF toàn hệ thống — cái đó đo ở mục (c)
 bằng `eval-latency` và sẽ cao hơn vì gồm cả VAD/MT/TTS.
 
-Chưa so được MLX với whisper.cpp trên cùng thang: bảng này chạy đầy đủ bằng MLX, còn
-whisper.cpp mới có số trên 20 câu. Muốn cột so sánh thật thì phải chạy
-`make eval-asr JSON=eval-asr-ggml.json` bản đầy đủ (~55 phút).
+Cột so sánh với whisper.cpp đã chạy đầy đủ — xem mục 8d ngay dưới.
+
+---
+
+## 8d. Cùng mục (a), hai runtime chạy trên Windows — 20/09/2026
+
+Đúng 3.099 bản thu đó, đổi runtime hai lần. Đây là cột còn thiếu để trả lời "chọn
+runtime nào", và cũng là lần đầu bộ đánh giá chạy trên Windows.
+
+| Điều kiện | whisper.cpp                                       | faster-whisper                              |
+| --------- | ------------------------------------------------- | ------------------------------------------- |
+| Model     | `ggml-large-v3-turbo-q5_0.bin`                    | `deepdml/faster-whisper-large-v3-turbo-ct2` |
+| Runtime   | pywhispercpp build `GGML_VULKAN=1`                | CTranslate2 4.8.2, CUDA float16             |
+| Máy       | Windows 11, i5-12500H, RTX 4060 Laptop, RAM 16 GB | như trên                                    |
+
+Cả hai đều là **large-v3-turbo**, khác nhau ở lượng tử hoá: q5_0 so với float16. Bộ lọc
+câu ma TẮT ở cả ba cột, giống mục 8.
+
+| Ngôn ngữ | Chỉ số | whisper.cpp (q5_0) | faster-whisper (fp16) | MLX 8bit — M4, mục 8 |
+| -------- | ------ | -----------------: | --------------------: | -------------------: |
+| vi       | WER    |          **10,4%** |              **9,2%** |             **8,8%** |
+| en       | WER    |               5,0% |                  5,0% |                 4,8% |
+| zh       | CER    |               8,6% |                  8,3% |                 8,1% |
+| ja       | CER    |               4,9% |                  4,7% |                 4,7% |
+| RTF      |        |              0,018 |                 0,034 |                0,141 |
+| Câu rỗng |        |                  2 |                     1 |                    0 |
+| Tổng ASR |        |            11 phút |               21 phút |              86 phút |
+
+### Đọc số
+
+**Ba runtime xếp cùng một thứ tự ở cả bốn thứ tiếng:** MLX tốt nhất, faster-whisper ở
+giữa, whisper.cpp cuối. Chênh lệch nhỏ và đều — 0,2 điểm ở en/ja, 0,3–0,5 ở zh, 1,6 ở
+vi. Đều một chiều như vậy là chênh thật chứ không phải nhiễu.
+
+**Nhưng đó không phải chênh giữa ba runtime.** Ba cột là ba **model khác nhau**:
+`large-v3` 8bit, `large-v3-turbo` fp16, `large-v3-turbo` q5_0. Không có cách nào so
+runtime "sạch" được — ba runtime không dùng chung file model (xem [`04`](04_cac-dot-bo-sung.md)).
+Cặp so được gần nhất là hai cột Windows: **cùng `large-v3-turbo`, chỉ khác lượng tử
+hoá**, và ở đó q5_0 đắt hơn fp16 đúng 1,2 điểm WER tiếng Việt.
+
+**Đổi lại, q5_0 nhanh gấp đôi** (RTF 0,018 so với 0,034; 11 phút so với 21 phút cho cùng
+10,22 giờ audio). Đây chính là đánh đổi mà đề tài cần trình bày: 1,2 điểm WER tiếng Việt
+đổi lấy một nửa thời gian ASR. Với RTF p90 toàn chuỗi đang là 0,383 ở chiều xấu nhất
+(mục 8e), ngân sách còn dư — nên nếu ưu tiên chất lượng thì đổi sang faster-whisper là
+lựa chọn có cơ sở, không phải cảm tính.
+
+**Đừng đọc cột RTF của MLX cạnh hai cột kia**: 0,141 là M4 + Metal, hai cột còn lại là
+RTX 4060. Khác máy. Con số so được giữa ba cột là WER/CER, vì giải mã tất định và không
+phụ thuộc phần cứng.
+
+**Câu rỗng**: 2 ở whisper.cpp, 1 ở faster-whisper, 0 ở MLX — đều trên tiếng Việt, đều
+dưới 0,25%. Không đủ để đổi quyết định, nhưng là mốc để so nếu sau này thấy trả rỗng
+nhiều hơn trên giọng thật.
+
+**Thực tế đang dùng:** bản macOS chạy MLX, bản Windows chạy whisper.cpp qua Vulkan.
+Bảng này cho biết cái giá của cấu hình Windows là khoảng 1,6 điểm WER tiếng Việt so với
+bản macOS, và cho biết có sẵn một nấc đổi lấy chất lượng nếu cần.
+
+**Hai bẫy khi chạy lại:**
+
+- venv dev cài wheel `pywhispercpp` trên PyPI, tức bản CPU — lượt chạy đầu ra RTF 1,5
+  (chậm hơn thời gian thực) mà WER vẫn đúng, nên rất dễ tưởng đã đo GPU. Phải
+  `make setup-vulkan` trước, rồi chạy với `UV_NO_SYNC=1` để `uv` không đồng bộ ngược.
+- faster-whisper cần `nvidia-cublas-cu12`/`nvidia-cudnn-cu12` (đã có trong extra
+  `ctranslate2`). Thiếu thì model tải xong, nạp xong, tới câu **đầu tiên** mới chết
+  bằng `Library cublas64_12.dll is not found`.
+
+```bash
+make setup-vulkan
+UV_NO_SYNC=1 make eval-asr JSON=eval-asr-ggml-win-vulkan.json
+UV_NO_SYNC=1 make eval-asr ADAPTER=faster_whisper JSON=eval-asr-fasterwhisper-win.json
+```
+
+### Phụ: `LLVT_ASR_AUDIO_CTX=768` — đo rồi, và câu trả lời là không
+
+Rút ngắn ngữ cảnh encoder của whisper.cpp (768 thay vì 1500) là một mẹo được nhắc tới
+nhiều, với lý do: đoạn VAD chỉ dài vài giây chứ không phải 30 giây, nên bắt encoder chạy
+đủ 1500 khung là phí. Tuỳ chọn này có trong mã từ lâu nhưng **mặc định tắt**, và ghi rõ
+là "chỉ bật sau khi đo được WER tương ứng". Đây là lượt đo đó — cùng model, cùng máy,
+cùng 3.099 bản thu, chỉ đổi một biến môi trường.
+
+| Ngôn ngữ | Chỉ số | Mặc định (1500) | `audio_ctx=768` | Thời gian ASR | Câu rỗng   |
+| -------- | ------ | --------------: | --------------: | ------------- | ---------- |
+| vi       | WER    |           10,4% |       **33,7%** | 194 s → 182 s | 2 → **13** |
+| en       | WER    |            5,0% |       **31,4%** | 114 s → 84 s  | 0 → 0      |
+| zh       | CER    |            8,6% |       **45,1%** | 201 s → 178 s | 0 → **38** |
+| ja       | CER    |            4,9% |       **46,5%** | 138 s → 121 s | 0 → **5**  |
+
+**Đổi 6–9 lần sai sót để lấy 6–26% thời gian.** Không có gì phải cân nhắc: giữ tắt.
+
+Một điểm cần trung thực khi trình bày: bản thu FLEURS dài trung bình 12,6 giây, tức
+phần âm thanh **vẫn nằm gọn** trong 768 khung (~15,4 giây) — nên mức sụt này không phải
+do cắt mất tiếng, mà do bản thân model không chịu được ngữ cảnh encoder ngắn hơn lúc
+huấn luyện. Vì vậy kết luận nhiều khả năng đúng cả với đoạn 2–8 giây của đường chạy
+thật, dù bộ FLEURS không kiểm trực tiếp được trường hợp đó. Và kể cả nếu đoạn ngắn có
+chịu được, phần thưởng cũng chỉ là vài phần trăm thời gian ASR — trong khi ASR giờ chỉ
+còn chiếm 15–18% toàn chuỗi (mục 8e), nên chỗ đáng tối ưu không nằm ở đây.
 
 ---
 
@@ -442,6 +536,48 @@ Số đối chiếu được với SPEC 14.1 là bộ đo trên **audio 3 giây*
 [`10` mục 11](10_slides-bao-cao.md): ASR 991–1.060 ms · MT 460–579 ms · TTS 141–969 ms ·
 tổng 1,8–2,6 giây — **đạt cả bốn mốc**. Bảng FLEURS trả lời một câu hỏi khác: hệ thống
 có theo kịp luồng nói liên tục không (RTF), chứ không phải một câu mất bao lâu.
+
+---
+
+## 8e. Cùng mục (c), chạy trên Windows + RTX 4060 — 20/09/2026
+
+Cùng 50 mẫu mỗi chiều, cùng bộ FLEURS, nhưng là cấu hình **bản cài Windows thật sự
+dùng**: whisper.cpp qua Vulkan (mục 8d) và NLLB trên CUDA. Sinh lại bằng một lệnh:
+`UV_NO_SYNC=1 make eval-latency-all LIMIT=50 SUFFIX=-win`.
+
+| Chiều | Mẫu |   VAD |   ASR |    MT |     TTS | Tổng TB  | Tổng p90 | RTF TB | RTF p90   | Chờ chốt |
+| ----- | --: | ----: | ----: | ----: | ------: | -------- | -------- | -----: | --------- | -------: |
+| vi→en |  50 | 129ms | 570ms | 459ms |   373ms | 1.531 ms | 2.330 ms |  0,124 | 0,146     |    256ms |
+| en→vi |  50 | 111ms | 308ms | 390ms |   327ms | 1.137 ms | 1.556 ms |  0,121 | 0,148     |    202ms |
+| vi→zh |  50 | 130ms | 577ms | 458ms | 1.969ms | 3.133 ms | 4.316 ms |  0,255 | 0,273     |    256ms |
+| zh→vi |  50 | 119ms | 330ms | 392ms |   336ms | 1.177 ms | 1.777 ms |  0,113 | 0,147     |    200ms |
+| vi→ja |  50 | 205ms | 612ms | 507ms | 2.510ms | 3.833 ms | 5.669 ms |  0,308 | **0,383** |    256ms |
+| ja→vi |  50 | 136ms | 360ms | 440ms |   352ms | 1.288 ms | 1.704 ms |  0,099 | **0,114** |    211ms |
+
+### Đọc số
+
+**Cả sáu chiều đều đạt ngưỡng chặt RTF p90 ≤ 0,5.** Trên máy Mac (mục 8c) chỉ ba chiều
+đạt, và chiều xấu nhất là 0,786. Ở đây chiều xấu nhất là vi→ja 0,383 — tức còn dư hơn
+một nửa ngân sách. Nếu GVHD chốt ngưỡng 0,5 (xem mục 3.5 của
+[báo cáo GVHD](gvhd/bao-cao-danh-gia.md)) thì cấu hình Windows đáp ứng được, cấu hình
+Mac thì không.
+
+**Cái gì đã đổi.** Ba thay đổi trong cùng một ngày, và chúng cộng dồn:
+
+| Khâu |  Mac (mục 8c) |     Windows | Vì sao                                            |
+| ---- | ------------: | ----------: | ------------------------------------------------- |
+| ASR  | 2.421–4.646ms |   308–612ms | whisper.cpp chạy GPU qua Vulkan thay vì MLX/Metal |
+| MT   |   953–1.134ms |   390–507ms | NLLB có nhánh `cuda` — trước đó luôn rơi về CPU   |
+| TTS  |   273–2.261ms | 327–2.510ms | không đổi (sherpa-onnx/Kokoro đều chạy CPU)       |
+
+**TTS giờ là khâu chậm nhất, không còn là ASR.** Ở hai chiều đích tiếng Nhật và tiếng
+Trung, TTS chiếm 65% và 63% toàn chuỗi; bốn chiều còn lại (đích vi/en) chỉ 26–29%. Kết
+luận về chỗ đáng tối ưu tiếp theo vì vậy đổi hẳn so với mục 8c: không phải ASR nguồn
+tiếng Việt nữa, mà là **TTS cho hai đích ja/zh** — và nó đang chạy CPU, chưa thử GPU.
+
+**Chiều ja→vi nhanh nhất (p90 0,114)** còn vi→ja chậm nhất (0,383), chênh gần 4 lần cho cùng
+một cặp ngôn ngữ. Toàn bộ khoảng chênh nằm ở TTS: đọc tiếng Việt mất 352 ms, đọc tiếng
+Nhật mất 2.510 ms.
 
 ---
 

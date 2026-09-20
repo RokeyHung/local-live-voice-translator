@@ -12,6 +12,11 @@ chạy thử, chạy dở hay chạy trên máy khác thì vẫn không commit �
 **Máy đo:** Apple M4, macOS 26.6 · **Ngày:** 06–07/09/2026 · **Dữ liệu:** `google/fleurs`
 split `test`.
 
+**Ngoại lệ — lượt chạy trên Windows, 20/09/2026:** `eval-asr-ggml-win-vulkan.json` đo trên
+Windows 11, Intel Core i5-12500H + NVIDIA GeForce RTX 4060 Laptop GPU. Mỗi file kết quả
+đều ghi sẵn máy đo ở trường `hardware`/`runtime`, nên đừng đọc RTF của hai máy trong cùng
+một cột.
+
 ## Gộp chung
 
 | File                                     | Nội dung                                                                      |
@@ -20,11 +25,16 @@ split `test`.
 
 ## Kết quả đầy đủ
 
-| File                                                     | Lượt chạy                                                                      | Dùng ở      |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------- |
-| [`eval-asr-fleurs-full.json`](eval-asr-fleurs-full.json) | ASR, 3.099 bản thu, 4 ngôn ngữ, `mlx-community/whisper-large-v3-asr-8bit`      | `17` mục 8  |
-| [`eval-mt-fleurs-full.json`](eval-mt-fleurs-full.json)   | MT, 2.022 cặp câu, 6 chiều, có COMET, **kèm từng câu** (nguồn/dịch/tham chiếu) | `17` mục 8b |
-| `eval-latency-<nguồn>-<đích>.json` (6 file)              | Độ trễ cả chuỗi VAD→ASR→MT→TTS, 50 mẫu mỗi chiều, **kèm từng mẫu**             | `17` mục 8c |
+| File                                                                       | Lượt chạy                                                                                          | Dùng ở      |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------- |
+| [`eval-asr-fleurs-full.json`](eval-asr-fleurs-full.json)                   | ASR, 3.099 bản thu, 4 ngôn ngữ, `mlx-community/whisper-large-v3-asr-8bit`                          | `17` mục 8  |
+| [`eval-mt-fleurs-full.json`](eval-mt-fleurs-full.json)                     | MT, 2.022 cặp câu, 6 chiều, có COMET, **kèm từng câu** (nguồn/dịch/tham chiếu)                     | `17` mục 8b |
+| `eval-latency-<nguồn>-<đích>.json` (6 file)                                | Độ trễ cả chuỗi VAD→ASR→MT→TTS, 50 mẫu mỗi chiều, **kèm từng mẫu**                                 | `17` mục 8c |
+| [`eval-asr-ggml-win-vulkan.json`](eval-asr-ggml-win-vulkan.json)           | ASR, 3.099 bản thu, 4 ngôn ngữ, `ggml-large-v3-turbo-q5_0` trên **whisper.cpp + Vulkan** (Windows) | `05` mục 8d |
+| [`eval-asr-fasterwhisper-win.json`](eval-asr-fasterwhisper-win.json)       | ASR, 3.099 bản thu, 4 ngôn ngữ, `large-v3-turbo-ct2` trên **faster-whisper + CUDA** (Windows)      | `05` mục 8d |
+| `eval-latency-<nguồn>-<đích>-win.json` (6 file)                            | Độ trễ cả chuỗi trên Windows: whisper.cpp/Vulkan + NLLB/CUDA                                       | `05` mục 8e |
+| [`eval-asr-ggml-win-audioctx768.json`](eval-asr-ggml-win-audioctx768.json) | Cùng lượt trên, bật `LLVT_ASR_AUDIO_CTX=768` — bằng chứng để **giữ tắt** tuỳ chọn đó               | `05` mục 8d |
+| [`soak-60min-win.json`](soak-60min-win.json)                               | Chạy liên tục 60 phút với model thật: 877 câu, 0 lỗi, RSS +12 MB (SPEC tiêu chí 14)                | `08` mục 1  |
 
 `eval-mt-fleurs-full.json` nặng ~1,1 MB vì giữ cả 2.022 câu dịch — đó là phần có ích
 nhất khi viết mục phân tích lỗi: soi được câu nào sai và sai kiểu gì, thay vì chỉ có một
@@ -60,6 +70,13 @@ cỡ model hay tham số giải mã. Đó là lý do preset Fast phải đổi m
 make fetch-fleurs
 make eval-asr ADAPTER=mlx_whisper MODEL=mlx-community/whisper-large-v3-asr-8bit \
   JSON=eval-asr-fleurs-full.json
+# cột whisper.cpp trên Windows: phải cài wheel Vulkan trước, không thì chạy CPU
+# (RTF 1,5 thay vì 0,02) mà WER vẫn đúng nên rất dễ không nhận ra
+make setup-eval && make setup-vulkan
+UV_NO_SYNC=1 make eval-asr JSON=eval-asr-ggml-win-vulkan.json
+UV_NO_SYNC=1 make eval-asr ADAPTER=faster_whisper JSON=eval-asr-fasterwhisper-win.json
+UV_NO_SYNC=1 make eval-latency-all LIMIT=50 SUFFIX=-win
+
 make eval-mt && make eval-comet
 # độ trễ: xem lệnh sáu chiều ở docs/05 mục 2
 ```

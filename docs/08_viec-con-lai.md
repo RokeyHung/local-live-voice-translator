@@ -1,6 +1,6 @@
-# Việc còn lại — trạng thái sau đợt 07/09/2026
+# Việc còn lại — trạng thái sau đợt 20/09/2026
 
-**Cập nhật:** 07/09/2026 · **Nhánh:** `main`
+**Cập nhật:** 20/09/2026 · **Nhánh:** `main`
 **Nguồn yêu cầu:** [biên bản họp GVHD 19/08/2026](meetings/bien-ban-hop-GVHD-2026-08-19.md)
 
 > Biên bản họp là **bản ghi thầy đã nói gì**, giữ nguyên không sửa. Tài liệu này là
@@ -10,7 +10,14 @@
 > ngày 07/09 — đó là checklist việc chứ không phải lời thầy. Mục 1–6 vẫn nguyên văn.
 > Biên bản cho cái nhìn nhanh "xong/chưa xong", file này giải thích **vì sao** còn treo.
 
-Tóm tắt một câu: **đã có bộ số đo thật đầu tiên** trên macOS Apple Silicon
+Tóm tắt một câu (20/09): **khối đo đã đóng.** Bộ đánh giá giờ có số thật trên **cả hai
+nền tảng**, ba runtime ASR đã so trên cùng 3.099 bản thu ([`05` mục 8d](05_bo-danh-gia-fleurs.md)),
+và cả sáu chiều đều đạt ngưỡng chặt RTF p90 ≤ 0,5 trên cấu hình Windows
+([`05` mục 8e](05_bo-danh-gia-fleurs.md)) — trên máy Mac chỉ ba chiều đạt. Việc còn lại
+gần như chỉ còn Tuần 9 (báo cáo, video demo, slide) và những thứ **bắt buộc phải có
+giọng người thật** ở mục 2.
+
+Tóm tắt của đợt trước (07/09): **đã có bộ số đo thật đầu tiên** trên macOS Apple Silicon
 ([`07`](07_ket-qua-chay-thu-e2e.md)) — độ trễ đủ sáu chiều và WER/chrF, chạy tự động
 trên app đóng gói. Việc còn lại chia làm hai loại rạch ròi: những thứ chỉ cần **chạy
 trên phần cứng/dữ liệu chưa có** (Windows, giọng người thật, FLEURS), và
@@ -24,25 +31,29 @@ màn hình đánh giá trong app (biên bản 3d); backend ASR thứ hai (MLX) v
 model từng bị vô hiệu; đặt tên model theo đường dẫn thượng nguồn; chọn model không còn là
 nạp model và tải được repo HF bất kỳ; model tải dở không còn bị tính là đã tải. Kèm theo:
 
-- **Ba lớp test**: pytest (302 pass, 4 skip) · vitest cho renderer (44) · Playwright trên
+- **Ba lớp test**: pytest (327 pass, 6 skip) · vitest cho renderer (69) · Playwright trên
   app Electron thật + service thật (11). `make test` chạy hai lớp đầu, `make e2e` chạy
-  lớp thứ ba. _(Số pytest đo lại ngày 07/09.)_
+  lớp thứ ba. _(Đếm lại ngày 20/09, chạy trên Windows.)_
 - **Bộ mẫu đánh giá phủ đủ sáu chiều** vi↔en, vi↔ja, vi↔zh (22 câu)
 
 ---
 
-## 0. Quá hạn — làm trước, không cần code
+## 0. Việc với GVHD — đã đóng cả hai
 
-Hai việc chỉ cần nhắn tin, nhưng đang trễ:
-
-- [ ] **Nhắc thầy về baseline cloud.** Biên bản mục 7, Ưu tiên 3 ghi rõ _"nhắc thầy sau
-      2 tuần"_. Họp 19/08 → tính tới 07/09 là **19 ngày**.
-- [ ] **Báo cáo thầy công thức RTF và ngưỡng "đạt".** Thầy dặn tự tra rồi báo lại (biên
-      bản mục 3c và câu hỏi số 2). Nội dung đã soạn xong, có trích nguồn đầy đủ:
-      **gửi [báo cáo GVHD](gvhd/bao-cao-bo-danh-gia.md)** — mục 3 là công thức RTF +
-      ngưỡng đề xuất, mục 9 là **5 điểm cần thầy chốt** (trong đó có ngưỡng RTF p90 < 1
-      là điều kiện cần, hay chặt hơn ở 0,5). Phần lý thuyết đầy đủ của cả bốn độ đo đi
-      kèm làm phụ lục: [`06`](06_bon-do-do-wer-bleu-comet-rtf.md).
+- [x] ~~**Báo cáo thầy công thức RTF và ngưỡng "đạt".**~~ **Đã gửi.**
+      [Báo cáo GVHD](gvhd/bao-cao-danh-gia.md) — mục 3 là công thức RTF + ngưỡng đề
+      xuất, mục 8 là các điểm cần thầy chốt (trong đó có ngưỡng RTF p90 < 1 là điều
+      kiện cần, hay chặt hơn ở 0,5). Phần lý thuyết đầy đủ của cả bốn độ đo đi kèm làm
+      phụ lục: [`06`](06_bon-do-do-wer-bleu-comet-rtf.md).
+      **Cập nhật 20/09:** nếu thầy chốt ngưỡng 0,5 thì cấu hình Windows đạt cả sáu
+      chiều ([`05` mục 8e](05_bo-danh-gia-fleurs.md)), cấu hình macOS thì không — số
+      này có sau khi gửi báo cáo nên cần nói lại với thầy.
+- [x] ~~**Nhắc thầy về baseline cloud.**~~ **Quyết 20/09: bỏ, không làm nữa.** Baseline
+      cloud là Ưu tiên 3 trong biên bản, và mục đích của nó — có một mốc để đối chiếu
+      chất lượng — giờ đã được phục vụ bằng thứ khác và tốt hơn: ba runtime ASR chạy
+      trên cùng 3.099 bản thu ([`05` mục 8d](05_bo-danh-gia-fleurs.md)) và điểm COMET
+      cho cả sáu chiều dịch. Gọi API cloud cũng đi ngược tinh thần "chạy hoàn toàn cục
+      bộ" của đề tài.
 
 Kèm theo, nên báo thầy hai điều đã phát hiện khi làm (chi tiết ở mục 5 dưới): **zh/ja
 phải dùng CER chứ không phải WER**, và **COMET không cài chung môi trường được**.
@@ -104,14 +115,26 @@ Chi tiết cách tải và chỗ dữ liệu nằm ở [`05` mục 2](05_bo-danh
 - (c) Độ trễ: 50 mẫu × sáu chiều, cùng cấu hình đã đo WER — **RTF p90 < 1 ở cả sáu**
   (xấu nhất vi→ja 0,786), nhưng ngưỡng chặt hơn 0,5 thì chỉ ba chiều đạt.
 
-**Cả ba mục (a)(b)(c) của biên bản đã có số thật.** Việc còn lại của khối đo:
+**Cả ba mục (a)(b)(c) của biên bản đã có số thật, và từ 20/09 thì khối đo đã đóng:**
 
-- [ ] Cột so sánh **whisper.cpp với MLX** trên cùng thang: `make eval-asr JSON=eval-asr-ggml.json`
-      bản đầy đủ (~55 phút). Hiện whisper.cpp mới có số trên 20 câu.
-- [ ] Ba chiều **nguồn tiếng Việt** chưa đạt ngưỡng RTF p90 ≤ 0,5. Theo [`05` mục 8c](05_bo-danh-gia-fleurs.md)
-      thì hai chỗ đáng sửa là ASR cho nguồn tiếng Việt (chiếm 58–75% tổng thời gian) và
-      TTS cho đích tiếng Nhật (chiếm 28,3%) — **không phải MT**, vốn ổn định ~1 giây ở
-      cả sáu chiều.
+- [x] ~~Cột so sánh **whisper.cpp với MLX** trên cùng thang.~~ **Xong 20/09, và có luôn
+      cột thứ ba** — [`05` mục 8d](05_bo-danh-gia-fleurs.md). Cùng 3.099 bản thu:
+      whisper.cpp q5_0 (vi WER 10,4% · RTF 0,018) · faster-whisper fp16 (9,2% · 0,034) ·
+      MLX 8bit (8,8% · 0,141). Ba runtime xếp cùng thứ tự ở cả bốn thứ tiếng.
+- [x] ~~Ba chiều **nguồn tiếng Việt** chưa đạt ngưỡng RTF p90 ≤ 0,5.~~ **Đạt cả sáu trên
+      Windows** — [`05` mục 8e](05_bo-danh-gia-fleurs.md), xấu nhất là vi→ja 0,383 (máy
+      Mac: 0,786). Hai thứ làm nên khác biệt: whisper.cpp chạy GPU qua Vulkan, và NLLB
+      có nhánh `cuda` (trước đó luôn rơi về CPU — xem mục 8 dưới).
+      **Kết luận về chỗ đáng tối ưu tiếp theo đã đổi:** không còn là ASR nguồn tiếng
+      Việt, mà là **TTS cho đích ja/zh** — chiếm 65% và 63% toàn chuỗi, và vẫn chạy CPU.
+- [x] ~~Chạy liên tục 60 phút không sập (tiêu chí nghiệm thu số 14 của SPEC)~~ —
+      **ĐẠT, 20/09, lần đầu chạy với model thật:** 60,0 phút · 877 câu · **0 lỗi** ·
+      độ trễ p50 443 ms / p95 541 ms · **trôi độ trễ +2 ms** (cuối so với đầu) ·
+      **RSS 1.110 → 1.122 MB** (tăng 12 MB trong một giờ, không rò). Kết quả thô ở
+      [`docs/results/soak-60min-win.json`](results/soak-60min-win.json).
+- [ ] `eval-mt` chưa chạy lại trên Windows. Không gấp: spBLEU/COMET không phụ thuộc phần
+      cứng nên bảng ở [`05` mục 8b](05_bo-danh-gia-fleurs.md) vẫn dùng được; chạy lại
+      chỉ để có cột thời gian MT trên GPU.
 
 ### Xong là khi nào
 
@@ -154,17 +177,18 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 | ~~**Màn hình đánh giá trong app**~~ (biên bản 3d) | ✅ **Xong** — [`04`](04_cac-dot-bo-sung.md). Đã chạy thật đủ 22 câu / sáu chiều, số ở [`07`](07_ket-qua-chay-thu-e2e.md) mục 4.                                                                                                                                                                                            |
 | ~~**Quyết giữ hay bỏ ràng buộc Google Meet**~~    | ✅ **Đã quyết 10/09/2026: bỏ.** Hai vấn đề ở mục 2 có mã xử lý nhưng chưa kiểm chứng được trên giọng người thật trước hạn nộp, nên giữ một tính năng chưa chắc ổn định lúc bảo vệ là rủi ro không cần thiết. Mã nguồn giữ nguyên, tắt ở lớp giao diện — [`11`](11_pham-vi-da-bo-google-meet.md) ghi lý do và cách bật lại. |
 | **Cải thiện dịch — nhưng là chiều vi→zh**         | `eval-mt` + `eval-comet` đã chạy đầy đủ ([`05` mục 8](05_bo-danh-gia-fleurs.md)): ja→vi hoá ra **không** phải chiều tệ nhất (spBLEU 19,91 · COMET 0,8191). Chiều yếu nhất là **vi→zh** — cả spBLEU (17,15) lẫn COMET (0,7729) cùng chỉ vào đó. Nhắm vào vi→zh chứ đừng nhắm ja→vi.                                         |
-| **Kiểm tra ổn định trên Windows 11**              | Máy Windows đã có sẵn. Chạy được ngay sau khi tải model. Cần chú ý: whisper.cpp trên Windows không có Metal → RTF sẽ khác macOS.                                                                                                                                                                                           |
+| ~~**Kiểm tra ổn định trên Windows 11**~~          | ✅ **Xong 20/09.** Toàn bộ bộ đánh giá đã chạy trên Windows: 3.099 bản thu × 2 runtime ASR + 6 chiều độ trễ + soak 60 phút. Số ở [`05` mục 8d/8e](05_bo-danh-gia-fleurs.md). Ghi chú cũ "không có Metal → RTF sẽ khác" đúng nhưng ngược chiều dự đoán: Vulkan trên RTX 4060 cho RTF **thấp hơn** Metal trên M4.            |
 
 ---
 
 ## 4. Ưu tiên 3 — sau khi xong 1 và 2
 
-- [ ] Tích hợp baseline cloud để đối chứng (thầy hướng dẫn — xem mục 0)
-- [ ] Tích hợp thêm model khác, lập bảng so sánh chất lượng/độ trễ trên cùng tiêu chí
-      (a)(b)(c). Hạ tầng đã sẵn: thêm adapter → thêm một dòng vào registry ở
-      `application/model_manager.py` → trỏ preset vào nó, rồi chạy lại đúng ba lệnh
-      `make eval-*`.
+- [x] ~~Tích hợp baseline cloud để đối chứng~~ — **bỏ 20/09**, lý do ở mục 0.
+- [x] ~~Tích hợp thêm model khác, lập bảng so sánh chất lượng/độ trễ trên cùng tiêu chí~~
+      — **xong cho khâu ASR**: ba runtime trên cùng 3.099 bản thu
+      ([`05` mục 8d](05_bo-danh-gia-fleurs.md)). Đúng như dự đoán về hạ tầng: không phải
+      sửa dòng nào trong `pipeline.py`, chỉ đổi `--adapter` khi gọi `make eval-asr`.
+      Khâu MT thì vẫn chỉ có NLLB — đổi model MT là việc chưa làm.
 - [ ] Thiết kế option nhanh–nhẹ / chất lượng cao cho người dùng. Đã có một nửa: mỗi
       preset giờ mang một `VadTuning` riêng (4,5 / 6 / 8 giây), còn thiếu phần đo để
       chứng minh sự đánh đổi.
@@ -194,9 +218,9 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
       và backend Vulkan không hiện trong `system_info()` nên app báo "CPU" — giờ đọc
       thiết bị thật từ log lúc nạp. Lần transcribe đầu tiên trên một máy mất ~12 s để
       driver biên dịch shader (sau đó có cache, ~0,2 s), nên được làm nóng ngay lúc nạp
-      model. **Còn mở:** khâu chậm nhất giờ là **MT** (NLLB chạy CPU, ~1,7 s) — torch bản
+      model. ~~**Còn mở:** khâu chậm nhất giờ là **MT** (NLLB chạy CPU, ~1,7 s) — torch bản
       Windows trên PyPI chỉ có CPU. Và 13 test pytest hỏng sẵn trên Windows (tạo symlink
-      cần quyền admin — `WinError 1314`), không liên quan đợt này.
+      cần quyền admin — `WinError 1314`).~~ **Cả hai đã đóng ở đợt 20/09, xem mục 8.**
 
 - [ ] **Báo cáo thử một lần trước khi bảo vệ** để lấy góp ý và chuẩn bị bộ câu hỏi dự phòng
 
@@ -228,10 +252,11 @@ script độc lập chạy ở môi trường riêng (`uv run --no-project scrip
       cho prettier: chỗ sai là kết thúc dòng trong thư mục làm việc, không phải quy
       tắc format. **Máy Windows đã clone từ trước phải chạy lại**
       `git rm --cached -r . && git reset --hard` để checkout lại theo quy tắc mới.
-- [ ] **Cân nhắc `LLVT_ASR_AUDIO_CTX`.** Rút ngắn ngữ cảnh encoder của whisper.cpp (~768
-      thay vì 1500) làm ASR nhanh lên rõ rệt vì đoạn VAD chỉ vài giây chứ không phải 30
-      giây. Đang mặc định **tắt** vì nó ảnh hưởng độ chính xác — chỉ bật sau khi đo được
-      WER tương ứng. Đây là một điểm đo đẹp cho bảng "độ trễ ↔ chất lượng" ở Ưu tiên 3.
+- [x] ~~**Cân nhắc `LLVT_ASR_AUDIO_CTX`.**~~ **Đã đo 20/09 — giữ tắt.** Cùng model, cùng
+      máy, cùng 3.099 bản thu, chỉ đổi một biến: WER/CER **10,4 → 33,7%** (vi),
+      **5,0 → 31,4%** (en), **8,6 → 45,1%** (zh), **4,9 → 46,5%** (ja), câu rỗng từ 2
+      lên 56. Đổi lại chỉ nhanh hơn 6–26% thời gian ASR — mà ASR giờ chỉ chiếm 15–18%
+      toàn chuỗi. Bảng và phần đọc số ở [`05` mục 8d](05_bo-danh-gia-fleurs.md).
 
 ---
 
@@ -282,9 +307,74 @@ thật thì chưa**:
       là việc quyết định giá trị của mọi con số trên màn Đánh giá — bộ đi kèm chỉ để
       màn hình có thứ chạy được ngay, và nó chạy bằng giọng tổng hợp nên số lạc quan
       hơn thực tế.
-- [ ] **Đo faster-whisper trên máy Windows + NVIDIA**, thêm cột thứ ba vào bảng của
-      [`05`](05_bo-danh-gia-fleurs.md): `make setup-ctranslate2` rồi
-      `LLVT_ASR_ADAPTER=faster_whisper make eval-asr`.
+- [x] ~~**Đo faster-whisper trên máy Windows + NVIDIA**~~ — **xong 20/09**, cột thứ ba ở
+      [`05` mục 8d](05_bo-danh-gia-fleurs.md): vi WER 9,2% · RTF 0,034 · CUDA float16.
+      Ba lỗi phải sửa mới chạy được, xem mục 8.
 
-**Dự án không còn việc code nào đang treo.** Toàn bộ phần còn lại là chạy thật, đo số, và
-Tuần 9 (báo cáo / đóng gói / demo).
+---
+
+## 8. Đợt 20/09 — năm lỗi lộ ra khi lần đầu chạy bộ đánh giá trên Windows
+
+Toàn bộ khối đo ở mục 1 và 7 đóng được trong một buổi, nhưng không lần nào chạy thẳng
+được lần đầu. Năm lỗi dưới đây đều **đã sửa**, và cả năm đều chỉ lộ ra khi chạy thật —
+không lỗi nào bị ba lớp test bắt, vì chúng nằm ở chỗ tiếp giáp giữa môi trường và thư
+viện chứ không nằm trong logic.
+
+1. **`make fetch-fleurs` chết ngay dòng log đầu tiên.** stdout bị `make` pipe trên
+   Windows là cp1252, không mã hoá được chữ `ă`. Cùng họ với lỗi log service hôm 19/09
+   ([`04` mục 7](04_cac-dot-bo-sung.md)). Sửa: `export PYTHONUTF8 := 1` cho mọi lệnh
+   trong `Makefile`, và đặt lại trong `fetch_fleurs.sh` để gọi thẳng script cũng chạy.
+
+2. **venv dev chạy whisper.cpp trên CPU.** Wheel Vulkan chỉ được nhét vào bộ cài, nên
+   `make dev` và mọi lệnh `eval-*` trên máy Windows đều chạy CPU — RTF 1,5 thay vì 0,02,
+   **chậm hơn thời gian thực**, mà bảng WER vẫn ra đúng nên rất dễ không nhận ra. Sửa:
+   thêm `make setup-vulkan` dùng lại wheel đã build ở `dist/wheels/vulkan/`.
+
+3. **NLLB không có nhánh `cuda`.** `adapters/mt/nllb.py` chỉ dò `mps` rồi rơi về `cpu`,
+   nên trên mọi máy NVIDIA thì MT luôn chạy CPU. Đây chính là lý do MT là khâu chậm nhất
+   trên Windows ở đo hôm 19/09 (~1,7 s). Sửa: `cuda → mps → cpu`. Đo lại trên cùng 5 câu,
+   cùng máy: **789 ms → 181 ms**. Kèm theo phải thêm extra `cuda` vào `pyproject.toml`
+   vì torch trên PyPI bản Windows chỉ có CPU — và phải khai `cpu`/`cuda` là **hai extra
+   xung đột**, không thì `uv sync` trần cũng kéo torch CUDA về và bộ cài phình thêm ~3 GB.
+
+4. **faster-whisper không bao giờ thấy GPU.** Adapter hỏi `torch.cuda.is_available()`,
+   mà torch bản Windows là CPU-only → luôn trả `cpu`, chạy int8. Nhưng CTranslate2 mang
+   runtime CUDA **riêng**: hỏi thẳng `ctranslate2.get_cuda_device_count()` thì ra 1 và
+   float16 sẵn sàng. Sửa: hỏi đúng thư viện làm việc đó.
+
+5. **CTranslate2 chết ở câu đầu tiên vì thiếu `cublas64_12.dll`** — sau khi đã tải model
+   1,6 GB và nạp xong. Không dùng ké cuBLAS của torch được: bản cu130 mang
+   `cublas64_13.dll`, tên khác. Và `os.add_dll_directory` **không** giải quyết được:
+   hàm đó chỉ thêm đường tìm cho `LoadLibraryEx` với cờ `SEARCH_DEFAULT_DIRS`, còn
+   CTranslate2 gọi `LoadLibrary` trần từ mã C++ — thứ chỉ tra `PATH`. Sửa: adapter tự
+   thêm `site-packages/nvidia/*/bin` vào `PATH`, và extra `ctranslate2` khai thêm
+   `nvidia-cublas-cu12`/`nvidia-cudnn-cu12` cho Windows.
+
+Một lỗi thứ sáu không ảnh hưởng ai ngoài người đọc báo cáo: `eval_asr.py` chụp
+`runtime_info()` **sau** `unload()`, nên file JSON đã chốt ghi `accel: CPU` cho một lượt
+chạy trên GPU (bản build Vulkan không khai gì trong `system_info()` nên nó lùi về đọc cờ
+lúc build). Đã sửa; file kết quả của lượt chạy trước khi sửa có ghi chú đính chính.
+
+Kèm theo, thêm `make eval-latency-all` — trước đó bảng sáu chiều phải gõ tay sáu lượt
+`eval_latency.py --source … --target …`, nên không dựng lại được bằng một lệnh.
+
+**`make test` giờ sạch trên Windows: 327 pass, 6 skip** (trước là 13 hỏng). Cả 13 đều
+hỏng vì môi trường chứ không phải vì mã sai, và đó mới là vấn đề: một bộ test hỏng sẵn
+thì lần hỏng thật cũng chìm luôn trong đó. Ba nhóm nguyên nhân:
+
+- `tests/test_partial_downloads.py` dựng cache HuggingFace giả bằng symlink, mà Windows
+  chỉ cho tạo symlink khi bật Developer Mode. Cache **thật** trên máy Windows cũng là
+  file copy chứ không phải symlink — `huggingface_hub` tự lùi và in cảnh báo — nên giờ
+  helper lùi y hệt, còn bài duy nhất thật sự cần symlink chỏng chơ thì `skip` kèm lý do.
+- Ba bài ở `tests/test_custom_preset.py` cần `mlx_whisper` được chấp nhận để bắt chéo
+  runtime, nên chúng hỏng trên **mọi** máy không cài extra `mlx` — tức mọi máy không
+  phải Apple Silicon. Giờ có fixture `every_runtime` cố định danh sách runtime: bài đó
+  nói về luật, không nói về máy.
+- Một bài ở `tests/test_evaluation.py` viết cứng `/tmp/…`, mà trên Windows chuỗi đó
+  không phải đường dẫn tuyệt đối (thiếu ổ đĩa) nên API chặn ở luật khác và bài không
+  còn kiểm đúng thứ nó định kiểm. Giờ dựng từ `tmp_path`.
+
+---
+
+**Dự án không còn việc code nào đang treo.** Toàn bộ phần còn lại là chạy thật trên
+giọng người (mục 2), và Tuần 9 (báo cáo / video demo / slide).

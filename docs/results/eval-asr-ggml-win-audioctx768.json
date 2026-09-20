@@ -1,0 +1,58 @@
+{
+  "dataset": "google/fleurs",
+  "split": "test",
+  "preset": "balanced",
+  "adapter": "whisper_cpp",
+  "model": "ggml-large-v3-turbo-q5_0.bin",
+  "runtime": {
+    "model": "ggml-large-v3-turbo-q5_0.bin",
+    "backend": "whisper.cpp",
+    "accel": "Vulkan"
+  },
+  "hallucination_filter": false,
+  "limit": null,
+  "languages": [
+    {
+      "language": "vi",
+      "metric": "WER",
+      "score": 0.337,
+      "samples": 857,
+      "audio_seconds": 10813.7,
+      "asr_seconds": 181.6,
+      "rtf": 0.017,
+      "empty": 13
+    },
+    {
+      "language": "en",
+      "metric": "WER",
+      "score": 0.3139,
+      "samples": 647,
+      "audio_seconds": 6387.9,
+      "asr_seconds": 83.8,
+      "rtf": 0.013,
+      "empty": 0
+    },
+    {
+      "language": "zh",
+      "metric": "CER",
+      "score": 0.4508,
+      "samples": 945,
+      "audio_seconds": 11065.2,
+      "asr_seconds": 178.0,
+      "rtf": 0.016,
+      "empty": 38
+    },
+    {
+      "language": "ja",
+      "metric": "CER",
+      "score": 0.4646,
+      "samples": 650,
+      "audio_seconds": 8511.1,
+      "asr_seconds": 121.1,
+      "rtf": 0.014,
+      "empty": 5
+    }
+  ],
+  "hardware": "Windows 11, Intel Core i5-12500H, NVIDIA GeForce RTX 4060 Laptop GPU (8 GB), driver 610.88",
+  "note": "Lượt đo LLVT_ASR_AUDIO_CTX=768 — so với eval-asr-ggml-win-vulkan.json là lượt cùng model/máy với audio_ctx mặc định (1500)."
+}
