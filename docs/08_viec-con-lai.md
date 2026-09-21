@@ -1,6 +1,6 @@
 # Việc còn lại — trạng thái sau đợt 20/09/2026
 
-**Cập nhật:** 20/09/2026 · **Nhánh:** `main`
+**Cập nhật:** 22/09/2026 · **Nhánh:** `main`
 **Nguồn yêu cầu:** [biên bản họp GVHD 19/08/2026](meetings/bien-ban-hop-GVHD-2026-08-19.md)
 
 > Biên bản họp là **bản ghi thầy đã nói gì**, giữ nguyên không sửa. Tài liệu này là
@@ -16,6 +16,13 @@ và cả sáu chiều đều đạt ngưỡng chặt RTF p90 ≤ 0,5 trên cấu
 ([`05` mục 8e](05_bo-danh-gia-fleurs.md)) — trên máy Mac chỉ ba chiều đạt. Việc còn lại
 gần như chỉ còn Tuần 9 (báo cáo, video demo, slide) và những thứ **bắt buộc phải có
 giọng người thật** ở mục 2.
+
+**22/09 — đã có giọng người thật** ([`05` mục 8f](05_bo-danh-gia-fleurs.md)): tách câu
+đo trên ba loại giọng, và 25 đoạn phỏng vấn tự phát cho WER 24,6% so với 10,4% trên
+FLEURS cùng model — gấp 2,4 lần. Kèm hai lỗi MT mà FLEURS không bắt được (vòng lặp
+NLLB, dịch nghĩa đen thuật ngữ), **ghi nhận chứ chưa sửa** vì sửa thì bảng 8b phải chạy
+lại. Hạn Tuần 9 là 23/09, gửi thầy xem trước, nộp chính thức 24/09 — từ đây không đo
+thêm, chỉ viết.
 
 Sáu việc của các đợt bổ sung đã đóng, chi tiết ở
 [`04_cac-dot-bo-sung.md`](04_cac-dot-bo-sung.md): màn hình đánh giá trong app (biên bản
@@ -83,12 +90,17 @@ nốt ngày 20/09:
 
 ---
 
-## 2. Kiểm chứng hai thứ vừa sửa — chưa xong
+## 2. Kiểm chứng hai thứ vừa sửa — xong một, còn một
 
 Đợt sửa 04/09 (commit `d0e700a`) đụng hai vấn đề thầy nêu ở mục 4.1 và 4.2. **Cả hai đều
 chưa được kiểm chứng trên giọng người thật**, nên chưa được nói với thầy là đã fix.
 
-- [ ] **Tách câu.** Cần một bản ghi có người nói liên tục ≥ 30 giây, rồi:
+- [x] ~~**Tách câu.**~~ **Xong 20/09** — [`05` mục 8f](05_bo-danh-gia-fleurs.md). Ba bản
+      ghi YouTube (bản tin đọc, phỏng vấn tự phát, TEDx), cùng bốn cấu hình. Ở bản tin,
+      10% số câu dài hơn 12,5 s với ngưỡng cũ, Balanced kéo xuống 5,87 s. Cải thiện đến
+      từ trần độ dài chứ không từ việc bắt im lặng nhanh hơn (cột chờ chốt không đổi).
+      Chạy lần đầu còn lộ ra `endpointing.py` chết khi không truyền `--preset` —
+      `KeyError` ở `Preset.custom` (commit `e6a4d84`). Hướng dẫn cũ giữ dưới đây:
 
   ```bash
   make endpointing MEDIA=ban-ghi.mov
@@ -243,7 +255,11 @@ thật thì chưa**:
 - [ ] **Nút Huỷ nạp model** mới thử được nhánh "không có gì đang chạy". Muốn thử đúng
       đường dừng-giữa-chừng thì phải xoá model đi rồi bấm nạp lại.
 
-- [ ] **Thay bộ câu mẫu 10 câu bằng câu thoại họp thật, có thu âm giọng người.** Đây
+- [ ] **Thay bộ câu mẫu 10 câu bằng câu thoại họp thật, có thu âm giọng người.**
+      _Một nửa, 22/09:_ đã có bộ 25 đoạn giọng thật
+      ([`results/phongvan-corpus.json`](results/phongvan-corpus.json)) và số đo ở
+      [`05` mục 8f](05_bo-danh-gia-fleurs.md), nhưng nó chỉ có tiếng Việt làm nguồn nên
+      không thay được bộ sáu chiều đi kèm màn Đánh giá. Phần còn lại là giọng en/ja/zh. Đây
       là việc quyết định giá trị của mọi con số trên màn Đánh giá — bộ đi kèm chỉ để
       màn hình có thứ chạy được ngay, và nó chạy bằng giọng tổng hợp nên số lạc quan
       hơn thực tế.

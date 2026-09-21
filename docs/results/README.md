@@ -1,6 +1,6 @@
 # Kết quả đo thô — chép vào repo để báo cáo tra lại được
 
-Toàn bộ số trong [`05` mục 8/8b/8c](../05_bo-danh-gia-fleurs.md) và
+Toàn bộ số trong [`05` mục 8/8b/8c/8d/8e/8f](../05_bo-danh-gia-fleurs.md) và
 [`04` mục 3.3](../04_cac-dot-bo-sung.md) sinh ra từ đúng những file
 này. Chép vào repo vì bảng trong tài liệu chỉ có phần tổng hợp: người đọc muốn kiểm lại
 một con số, hay muốn soi câu nào dịch sai, thì phải có file gốc.
@@ -17,7 +17,10 @@ Core i5-12500H + NVIDIA GeForce RTX 4060 Laptop GPU, 16 GB RAM. Đừng đọc R
 trong cùng một cột.
 
 Hai file `eval-asr-*-win.json` ghi sẵn máy đo ở trường `hardware` và thiết bị ASR ở
-`runtime.accel`. **Sáu file `eval-latency-*-win.json` thì không**: script lúc chạy chưa
+`runtime.accel`. **Ba file của mục 8f** (`accuracy-phongvan-win.json`, `phongvan-corpus.json`,
+`endpointing-3-nguon.txt`, 20–22/09) cũng đo trên máy này; WER và bảng tách câu không phụ
+thuộc thiết bị. File audio của chúng không nằm trong repo — là giọng của người khác, lấy từ
+YouTube; `phongvan-corpus.json` ghi lệnh dựng lại. **Sáu file `eval-latency-*-win.json` thì không**: script lúc chạy chưa
 ghi hai trường đó, nên máy đo của chúng chỉ nằm ở đây và ở
 [`05` mục 8e](../05_bo-danh-gia-fleurs.md). Cấu hình của sáu lượt đó là whisper.cpp trên
 Vulkan + NLLB trên CUDA + TTS trên CPU.
@@ -40,6 +43,9 @@ Vulkan + NLLB trên CUDA + TTS trên CPU.
 | `eval-latency-<nguồn>-<đích>-win.json` (6 file)                            | Độ trễ cả chuỗi trên Windows: whisper.cpp/Vulkan + NLLB/CUDA                                       | `05` mục 8e |
 | [`eval-asr-ggml-win-audioctx768.json`](eval-asr-ggml-win-audioctx768.json) | Cùng lượt trên, bật `LLVT_ASR_AUDIO_CTX=768` — bằng chứng để **giữ tắt** tuỳ chọn đó               | `05` mục 8d |
 | [`soak-60min-win.json`](soak-60min-win.json)                               | Chạy liên tục 60 phút với model thật: 877 câu, 0 lỗi, RSS +12 MB (SPEC tiêu chí 14)                | `08` mục 1  |
+| [`accuracy-phongvan-win.json`](accuracy-phongvan-win.json)                 | ASR + MT trên 25 đoạn phỏng vấn **giọng người thật**, × 3 đích en/ja/zh, **kèm từng câu**          | `05` mục 8f |
+| [`phongvan-corpus.json`](phongvan-corpus.json)                             | Bộ câu của lượt trên — chỉ phần chữ, kèm lệnh dựng lại file audio từ video gốc                     | `05` mục 8f |
+| [`endpointing-3-nguon.txt`](endpointing-3-nguon.txt)                       | `make endpointing` trên ba bản ghi: bản tin, phỏng vấn, TEDx — bốn cấu hình VAD                    | `05` mục 8f |
 
 `eval-mt-fleurs-full.json` nặng ~1,1 MB vì giữ cả 2.022 câu dịch — đó là phần có ích
 nhất khi viết mục phân tích lỗi: soi được câu nào sai và sai kiểu gì, thay vì chỉ có một

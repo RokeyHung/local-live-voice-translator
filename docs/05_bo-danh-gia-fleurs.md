@@ -317,6 +317,8 @@ Dò riêng phần này bằng `make endpointing MEDIA=<bản ghi>.mov`.
 - **FLEURS là giọng đọc, không phải giọng hội thoại.** Đọc rõ ràng, ít nhiễu, gần như
   không có từ đệm hay ngắt quãng. WER trên FLEURS sẽ **thấp hơn** WER trong một cuộc họp
   thật. Đây là điểm phải nói trước ở phần bảo vệ chứ không để hội đồng hỏi.
+  **Đã đo 22/09 (mục 8f):** cùng model, 25 đoạn hội thoại tự phát cho WER 24,6% so với
+  10,4% trên FLEURS — gấp 2,4 lần.
 - **RTF gắn với máy chạy.** Đã đo trên hai máy (M4/Metal và RTX 4060/Vulkan) và hai bảng
   lệch nhau nhiều lần, nên mọi con số RTF phải đi kèm cấu hình máy — file JSON ghi sẵn
   `runtimes` (thiết bị từng khâu) và `machine`.
@@ -635,3 +637,108 @@ gộp (spBLEU 23,88) không nói lên điều gì ngoài việc trộn hai nhóm
 chủ yếu ở các cặp ngôn ngữ giàu dữ liệu. Độ tin của nó ở vi↔ja và vi↔zh thấp hơn ở vi↔en,
 nên khoảng chênh vài phần nghìn giữa các chiều **không** đủ để kết luận chiều nào hơn
 chiều nào. Chỉ khoảng cách lớn như vi→zh (0,77) so với vi→en (0,85) mới đáng nói.
+
+---
+
+## 8f. Giọng người thật — 20–22/09/2026
+
+Mục 6 ghi FLEURS là giọng đọc nên WER đo trên đó sẽ thấp hơn trong cuộc họp thật. Mục
+này đo **khoảng cách đó** bằng bản ghi giọng người nói tự phát. Số không thay bảng
+FLEURS — 25 đoạn không đủ làm số chính — mà đặt cạnh nó để biết bảng FLEURS lạc quan
+tới đâu.
+
+### Tách câu trên ba loại giọng
+
+`make endpointing` trên ba bản ghi YouTube, mỗi bản ≥ 11 phút. Chỉ chạy Silero VAD, nên
+không phụ thuộc máy. Bảng đủ bốn cấu hình ở
+[`results/endpointing-3-nguon.txt`](results/endpointing-3-nguon.txt); dưới đây là ngưỡng
+cũ (trần 20 s) so với preset Balanced (trần 6 s):
+
+| Bản ghi                        | Kiểu giọng         | Độ dài | Đoạn dài p90: cũ → Balanced | Cắt cứng ở Balanced |
+| ------------------------------ | ------------------ | -----: | --------------------------: | ------------------: |
+| Bản tin VTV24                  | đọc kịch bản       |  688 s |            12,53 s → 5,87 s |                 30% |
+| Phỏng vấn thử Intern Fullstack | hội thoại tự phát  | 3596 s |             6,77 s → 5,66 s |                 10% |
+| TEDx Hoàng Nam Tiến            | thuyết trình tự do |  669 s |             2,61 s → 2,86 s |                  0% |
+
+**Cải thiện đến từ trần độ dài, không phải từ việc phát hiện im lặng nhanh hơn.** Cột
+"chờ chốt" (từ lúc nói xong tới lúc VAD nhả câu) gần như không đổi ở cả ba bản ghi,
+0,23–0,30 s: người nói nào cũng có khoảng nghỉ đủ rõ để ngưỡng 300 ms cũ bắt được. Chỗ
+ngưỡng cũ làm người dùng phải chờ là **khi người ta nói một mạch không nghỉ** — ở bản
+tin, 10% số câu dài hơn 12,5 s, và với trần 20 s câu tệ nhất có thể dài 20 s. Đó là cái
+"phải chờ câu dài 5–10 giây" ở mục 4.2 biên bản GVHD.
+
+**Giá phải trả là cắt giữa câu, và nó thấp nhất đúng ở giọng giống cảnh dùng thật.** Ở
+bản tin, Balanced cắt cứng 30% số đoạn (Fast 40%) — MT phải dịch mảnh câu. Ở hội thoại
+phỏng vấn chỉ còn 10%, và ở TEDx thì 0% ở mọi cấu hình: người nói tự nhiên tự ngắt
+thường xuyên nên trần không bao giờ phải ra tay. Hai bảng ghép lại mới đủ lập luận:
+ngưỡng mới chỉ can thiệp khi có người nói dài, còn hội thoại bình thường không bị đụng.
+
+### ASR + MT trên 25 đoạn phỏng vấn
+
+| Điều kiện           | Giá trị                                                                                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bản ghi             | [Phỏng vấn thử Intern/Fresher Fullstack ReactJS + SpringBoot](https://www.youtube.com/watch?v=Ck9zEm54UlQ) (Việt Trí Đạo), hai người, tiếng Việt, 60 phút |
+| Cắt đoạn            | `segment_audio.py --skip-seconds 300 --min-seconds 3 --limit 25` — 25 đoạn đầu tiên dài 3–12 s kể từ phút 5, **không chọn tay**, tổng 149 s tiếng nói     |
+| Câu tham chiếu      | Người làm đồ án nghe từng đoạn và sửa tay từ phụ đề tự sinh của YouTube, giữ nguyên chỗ người nói nói nhầm                                                |
+| Bản dịch tham chiếu | Claude soạn, bám câu nguồn kể cả chỗ nói nhầm; bản en đã được người làm đồ án duyệt, **ja/zh chưa có người bản ngữ duyệt**                                |
+| Model               | preset Balanced: `ggml-large-v3-turbo-q5_0` (whisper.cpp) + `nllb-200-distilled-600M` — cùng model ASR với cột whisper.cpp ở mục 8d                       |
+| Độ đo               | WER và chrF bản thuần Python trong `application/evaluation.py` (`scripts/accuracy.py`), MT dịch từ câu tham chiếu để tách lỗi MT khỏi lỗi ASR             |
+
+Kết quả gốc: [`results/accuracy-phongvan-win.json`](results/accuracy-phongvan-win.json),
+bộ câu (chỉ phần chữ, kèm lệnh dựng lại file audio):
+[`results/phongvan-corpus.json`](results/phongvan-corpus.json).
+
+| Bộ                     | Kiểu giọng        | Số câu | WER tiếng Việt |
+| ---------------------- | ----------------- | -----: | -------------: |
+| FLEURS `test` (mục 8d) | đọc câu soạn sẵn  |    857 |      **10,4%** |
+| Phỏng vấn thật         | hội thoại tự phát |     25 |      **24,6%** |
+
+**Cùng model, cùng máy: giọng nói thật kém gấp 2,4 lần giọng đọc.** Cả hai con số đều là
+WER **gộp cả bộ** (tổng lỗi / tổng số từ tham chiếu: 152/618), như `metrics.error_rate`
+tính cho FLEURS. `scripts/accuracy.py` in ra con số khác — **27,2%** — vì nó lấy trung
+bình WER từng câu, cách tính cho câu ngắn trọng số ngang câu dài; đừng đặt con số đó
+cạnh bảng FLEURS. Lỗi do cách viết số ("cấp ba" ↔ "cấp 3", "12 A1" ↔ "12A1") chỉ chiếm
+0,7 điểm — gỡ riêng phần đó ra còn 23,9% — nên gần như toàn bộ là nghe sai thật.
+
+**Phần lớn lỗi nằm ở thuật ngữ tiếng Anh đọc theo giọng Việt.** Trong 25 đoạn, "string"
+xuất hiện 18 lần; Whisper nghe đúng **1** lần, còn lại ra "stream" (6), "trên" (5),
+"chuyên" (3). Người nói đọc "string" gần với "sờ-trinh", và Whisper gán nó vào từ gần
+nhất trong tiếng Việt hoặc tiếng Anh. Phụ đề tự sinh của YouTube sai cùng kiểu ("spring
+Buffer", "tram Buffer", "cái trên a") — đây là giới hạn chung của ASR đa ngôn ngữ với
+code-switching, không riêng whisper.cpp. Hướng khắc phục có sẵn trong Whisper là truyền
+danh sách thuật ngữ vào `initial_prompt`; adapter hiện chưa hỗ trợ.
+
+| Chiều | chrF (ký tự) |
+| ----- | -----------: |
+| vi→en |        38,3% |
+| vi→ja |        10,8% |
+| vi→zh |        13,4% |
+
+Số chrF ở đây **chỉ để đọc cùng phần phân tích lỗi bên dưới**, không để so với mục 8b:
+câu tham chiếu không do người dịch; chrF n-gram ký tự ở chữ Hán/Kana khắt khe hơn nhiều
+so với chữ Latin (một n-gram 6 ký tự Hán gần bằng cả một cụm từ), nên đích zh/ja không so
+ngang được với đích en; và tham chiếu ja/zh giữ nguyên chữ Latin "string Buffer" trong
+khi NLLB dịch ra "缓冲" — bị trừ điểm dù đúng nghĩa.
+
+**Hai lỗi hành vi của MT mà FLEURS không bắt được:**
+
+1. **Vòng lặp mất kiểm soát, 2/75 lượt dịch, đều sang tiếng Nhật.** `pv-02` ("dạ đúng ạ.
+   Ừ trong tình huống đó…") ra "そうだ." lặp hơn 50 lần; `pv-16` ra
+   "a+b+1+1+2+3+3+3+3…". `adapters/mt/nllb.py` không có chặn lặp nào, chỉ có trần
+   `MAX_NEW_TOKENS = 256` nên vòng lặp chạy tới khi chạm trần — và trong phiên trực tiếp
+   TTS sẽ đọc to toàn bộ. FLEURS không kích hoạt được lỗi này vì câu đọc không mở đầu
+   bằng từ đệm như "dạ", "ừ". Sửa được bằng `no_repeat_ngram_size` hoặc một bộ lọc sau
+   khi dịch kiểu `asr/hallucination.py`, **nhưng chưa sửa**: đổi tham số sinh của NLLB
+   thì bảng spBLEU/COMET ở mục 8b phải chạy lại mới còn khớp với mã.
+2. **Dịch nghĩa đen thuật ngữ.** "spring" (người nói dùng từ này) thành 春天 — mùa xuân —
+   ở zh, "春のバッファー" ở ja, và cả "春节器" (thiết bị Tết Nguyên đán). NLLB không có
+   khái niệm thuật ngữ nào phải giữ nguyên.
+
+### Điều mục này không nói
+
+Một bản ghi, hai người, một chủ đề (phỏng vấn IT), một điều kiện thu, 25 đoạn, câu tham
+chiếu do một người nghe. Con số 24,6% cho thấy **độ lớn** của khoảng cách giữa giọng đọc
+và giọng nói thật — không đủ để nói WER trong họp nói chung là 25%. Chủ đề còn làm số
+xấu hơn mức trung bình, vì đoạn được cắt rơi đúng vào phần bàn String/StringBuffer dày
+đặc thuật ngữ. Muốn có số đại diện thì cần nhiều bản ghi, nhiều chủ đề, và hai người
+nghe độc lập để đo mức đồng thuận của chính câu tham chiếu.

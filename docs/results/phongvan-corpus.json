@@ -1,0 +1,690 @@
+{
+  "_note": [
+    "Bộ phỏng vấn thật: 25 đoạn tự phát, vi → en/ja/zh.",
+    "Nguồn: https://www.youtube.com/watch?v=Ck9zEm54UlQ (Việt Trí Đạo), đoạn từ phút 5.",
+    "transcript: người làm đồ án nghe và sửa tay từ phụ đề tự sinh của YouTube.",
+    "translation: Claude soạn nháp, bám câu nguồn (giữ cả chỗ nói nhầm), người làm đồ án duyệt.",
+    "Chạy: uv run python scripts/accuracy.py --corpus scripts/audio/pv-corpus.json",
+    "File audio KHÔNG nằm trong repo. Dựng lại 25 file wav bằng:",
+    "  yt-dlp -f bestaudio -o phong-van.webm https://www.youtube.com/watch?v=Ck9zEm54UlQ",
+    "  uv run python scripts/segment_audio.py phong-van.webm --srt <phụ đề .srt> --prefix pv --skip-seconds 300 --min-seconds 3 --limit 25 --out-dir scripts/audio",
+    "rồi đặt file này cạnh chúng. `_source_time` là mốc trong video gốc, để đối chiếu nếu YouTube mã hoá lại audio và VAD cắt lệch."
+  ],
+  "cases": [
+    {
+      "id": "pv-01-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-01.wav",
+      "transcript": "rồi sau đó là điều kiện qua cái gì đó rồi sau đó điều kiện là ví dụ username là bằng cái gì đó cộng username cộng cái biến username đúng không",
+      "translation": "Then after that there's a condition on something, and then the condition is, for example, username equals something, plus username plus the username variable, right?",
+      "_source_time": "303.9s → 311.1s"
+    },
+    {
+      "id": "pv-02-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-02.wav",
+      "transcript": "dạ đúng ạ. Ừ trong tình huống đó là em hay xài spring à hay là spring Boot hay là spring Buffer",
+      "translation": "Yes, that's right. Okay, in that situation do you usually use spring, or spring Boot, or spring Buffer?",
+      "_source_time": "311.7s → 317.2s"
+    },
+    {
+      "id": "pv-03-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-03.wav",
+      "transcript": "em mới biết spring Buffer đây phải trong tình huống đó em xài spring",
+      "translation": "I've only just learned about spring Buffer; in that situation I use spring.",
+      "_source_time": "318.8s → 324.6s"
+    },
+    {
+      "id": "pv-04-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-04.wav",
+      "transcript": "Ừ em toàn dùng string em toàn dùng string thôi đúng không",
+      "translation": "Okay, so you always use string, you only ever use string, right?",
+      "_source_time": "325.1s → 328.7s"
+    },
+    {
+      "id": "pv-05-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-05.wav",
+      "transcript": "Nhưng mà theo em thì tình huống đó mình dùng cái gì. Mình nên dùng cái gì",
+      "translation": "But in your opinion, what do we use in that situation? What should we use?",
+      "_source_time": "330.3s → 333.8s"
+    },
+    {
+      "id": "pv-06-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-06.wav",
+      "transcript": "em cũng không rõ nữa nhưng mà nếu như nói như vậy thì chắc mình dùng string Buffer ạ",
+      "translation": "I'm not really sure either, but if you put it that way, then I guess we'd use string Buffer.",
+      "_source_time": "342.9s → 348.5s"
+    },
+    {
+      "id": "pv-07-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-07.wav",
+      "transcript": "ừ. ví dụ như em có một cái câu em có một cái chuỗi mà em em em cộng liên tục á ví dụ như là select sao from sau đó là cộng một cái table name rồi",
+      "translation": "Yeah. For example, you have a statement, you have a string that you, you, you keep concatenating, like select star from, then you add a table name, and then",
+      "_source_time": "351.3s → 363.0s"
+    },
+    {
+      "id": "pv-08-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-08.wav",
+      "transcript": "cộng cộng cộng thì cứ mỗi dấu cộng như vậy nó rất nguy hiểm vì mỗi dấu cộng nó sẽ tạo ra một cái gì",
+      "translation": "plus, plus, plus, and each plus sign like that is very dangerous, because each plus sign creates a... what?",
+      "_source_time": "362.9s → 367.6s"
+    },
+    {
+      "id": "pv-09-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-09.wav",
+      "transcript": "nó làm cho mất à nó làm cho mất cái tính Bất Biến của string ban đầu nên là mình dùng Buffer đúng không anh",
+      "translation": "It makes us lose, uh, it makes us lose the immutability of the original string, so we use Buffer, right?",
+      "_source_time": "372.5s → 378.1s"
+    },
+    {
+      "id": "pv-10-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-10.wav",
+      "transcript": "thì nó sẽ tạo ra cái chuỗi mới là chứa a + b",
+      "translation": "then it will create a new string containing a + b",
+      "_source_time": "389.9s → 393.2s"
+    },
+    {
+      "id": "pv-11-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-11.wav",
+      "transcript": "và sau đó hai cái chuỗi A và B cũ thì nó như thế này",
+      "translation": "and after that, the two old strings A and B, they're like this",
+      "_source_time": "394.1s → 397.5s"
+    },
+    {
+      "id": "pv-12-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-12.wav",
+      "transcript": "chuỗi a + b dạ không ạ A và B cũ vẫn còn. vẫn còn ở đâu",
+      "translation": "the string a + b. No, the old A and B still remain. Remain where?",
+      "_source_time": "401.9s → 405.7s"
+    },
+    {
+      "id": "pv-13-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-13.wav",
+      "transcript": "dạ nếu như mình tạo ra một cái string a ý em nói là nếu như mình tạo ra cái string a thí dụ là a = a b = b và cái string c thì bằng a + b thì nó vẫn còn cái string A thì vẫn còn ở string a ở string",
+      "translation": "Yes, if we create a string a, I mean, if we create string a, for example a = a, b = b, and string c equals a + b, then string A still remains, it still remains in string a, in string",
+      "_source_time": "407.0s → 418.7s"
+    },
+    {
+      "id": "pv-14-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-14.wav",
+      "transcript": "b vẫn còn ở string b Còn nếu như mà mình",
+      "translation": "b, it still remains in string b. But if we",
+      "_source_time": "418.6s → 421.6s"
+    },
+    {
+      "id": "pv-15-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-15.wav",
+      "transcript": "string c bằng kí tự không có khai báo A với B vô một cái biến thì nó sẽ gộp A với B lại và lưu thành c",
+      "translation": "string c equals the characters directly, without declaring A and B into a variable, then it will merge A and B together and store them as c",
+      "_source_time": "423.8s → 430.7s"
+    },
+    {
+      "id": "pv-16-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-16.wav",
+      "transcript": "chính vì thế cho nên là người ta bảo rằng khi mà cộng cộng một cái thì được ví dụ a + b thì có thể dùng string được chứ còn bắt đầu cộng từ cái thứ hai thứ ba trở lên thì trong thực tế là người ta sẽ dùng string Buffer ngay",
+      "translation": "That's exactly why people say that when you add just one, for example a + b, you can use string, but once you start adding a second, a third or more, in practice people use string Buffer right away",
+      "_source_time": "438.5s → 448.3s"
+    },
+    {
+      "id": "pv-17-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-17.wav",
+      "transcript": "dạ. khi mà làm string Buffer thì string Buffer nó có biến đổi được không",
+      "translation": "Yes. When you use string Buffer, can string Buffer be modified?",
+      "_source_time": "449.0s → 453.1s"
+    },
+    {
+      "id": "pv-18-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-18.wav",
+      "transcript": "khi mình thay đổi cái giá trị của string Buffer thì thì nó có sinh ra đối tượng mới không",
+      "translation": "When we change the value of a string Buffer, does it, does it create a new object?",
+      "_source_time": "455.3s → 459.8s"
+    },
+    {
+      "id": "pv-19-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-19.wav",
+      "transcript": "dạ không ạ nó vẫn nguyên đối tượng đó. đó cho nên nó sẽ không tạo ra rác còn nếu như mình dùng string là nó tạo ra rất là nhiều rác rác ở trong bộ nhớ ram",
+      "translation": "No, it stays the same object. That's why it won't create garbage, whereas if we use string, it creates a lot of garbage, garbage in RAM",
+      "_source_time": "465.2s → 473.9s"
+    },
+    {
+      "id": "pv-20-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-20.wav",
+      "transcript": "Dạ em có làm việc rồi ạ. Ừm",
+      "translation": "Yes, I have worked with it. Mm-hmm.",
+      "_source_time": "481.4s → 485.7s"
+    },
+    {
+      "id": "pv-21-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-21.wav",
+      "transcript": "chưa Dạ kiểu như em có thấy nhưng mà em ít làm việc lắm. Ừm Rồi ví dụ nè anh có một bài toán như thế này Anh muốn có một cái bài toán là tạo ra cái thời khóa biểu cho giáo viên",
+      "translation": "Not yet. Well, I've seen it, but I rarely work with it. Mm. Okay, for example, I have a problem like this: I want a problem where you create a timetable for teachers",
+      "_source_time": "489.3s → 500.1s"
+    },
+    {
+      "id": "pv-22-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-22.wav",
+      "transcript": "ví dụ như là giáo viên cấp ba đi Ví dụ như giáo viên cấp 3 thì sẽ có là",
+      "translation": "for example, say high school teachers. For example, for high school teachers there will be",
+      "_source_time": "500.9s → 505.0s"
+    },
+    {
+      "id": "pv-23-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-23.wav",
+      "transcript": "rồi sau đó là dạy môn gì ví dụ như là môn toán chẳng hạn thứ nhất rồi là do ai dạy",
+      "translation": "and then what subject is taught, for example math, first, and then who teaches it",
+      "_source_time": "508.4s → 513.4s"
+    },
+    {
+      "id": "pv-24-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-24.wav",
+      "transcript": "dạy do cô giáo nào đó dạy thì thời khóa biểu nó tạo cho một lớp thôi một cái lớp cụ thể nào đó thôi Ví dụ như lớp 12 A1 chẳng hạn",
+      "translation": "taught by some teacher, and the timetable is created for just one class, just one specific class, for example class 12A1",
+      "_source_time": "514.5s → 521.5s"
+    },
+    {
+      "id": "pv-25-en",
+      "language": "vi",
+      "target": "en",
+      "audio": "pv-25.wav",
+      "transcript": "Dạ anh nói lại này ví dụ như một cái lớp 12 A1 nó cần tạo ra một cái thời khóa biểu là tiết thứ mấy rồi",
+      "translation": "Okay, let me restate it: for example, class 12A1 needs a timetable that says which period, and then",
+      "_source_time": "522.1s → 527.8s"
+    },
+    {
+      "id": "pv-01-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-01.wav",
+      "transcript": "rồi sau đó là điều kiện qua cái gì đó rồi sau đó điều kiện là ví dụ username là bằng cái gì đó cộng username cộng cái biến username đúng không",
+      "translation": "それからその後、何かの条件があって、その条件は例えば username が何かと等しい、username プラス username 変数、ですよね？",
+      "_source_time": "303.9s → 311.1s"
+    },
+    {
+      "id": "pv-02-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-02.wav",
+      "transcript": "dạ đúng ạ. Ừ trong tình huống đó là em hay xài spring à hay là spring Boot hay là spring Buffer",
+      "translation": "はい、そうです。うん、その場合、普段は spring を使う？それとも spring Boot？それとも spring Buffer？",
+      "_source_time": "311.7s → 317.2s"
+    },
+    {
+      "id": "pv-03-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-03.wav",
+      "transcript": "em mới biết spring Buffer đây phải trong tình huống đó em xài spring",
+      "translation": "spring Buffer は今知ったばかりです。その場合、僕は spring を使います。",
+      "_source_time": "318.8s → 324.6s"
+    },
+    {
+      "id": "pv-04-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-04.wav",
+      "transcript": "Ừ em toàn dùng string em toàn dùng string thôi đúng không",
+      "translation": "うん、いつも string を使う、string だけを使うんだね？",
+      "_source_time": "325.1s → 328.7s"
+    },
+    {
+      "id": "pv-05-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-05.wav",
+      "transcript": "Nhưng mà theo em thì tình huống đó mình dùng cái gì. Mình nên dùng cái gì",
+      "translation": "でも君の考えでは、その場合は何を使う？何を使うべき？",
+      "_source_time": "330.3s → 333.8s"
+    },
+    {
+      "id": "pv-06-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-06.wav",
+      "transcript": "em cũng không rõ nữa nhưng mà nếu như nói như vậy thì chắc mình dùng string Buffer ạ",
+      "translation": "僕もよく分かりませんが、そう言うなら、たぶん string Buffer を使うんだと思います。",
+      "_source_time": "342.9s → 348.5s"
+    },
+    {
+      "id": "pv-07-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-07.wav",
+      "transcript": "ừ. ví dụ như em có một cái câu em có một cái chuỗi mà em em em cộng liên tục á ví dụ như là select sao from sau đó là cộng một cái table name rồi",
+      "translation": "うん。例えば、ある文があって、ある文字列があって、それを何度も、何度も、何度も連結する、例えば select スター from、それからテーブル名を足して、それから",
+      "_source_time": "351.3s → 363.0s"
+    },
+    {
+      "id": "pv-08-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-08.wav",
+      "transcript": "cộng cộng cộng thì cứ mỗi dấu cộng như vậy nó rất nguy hiểm vì mỗi dấu cộng nó sẽ tạo ra một cái gì",
+      "translation": "プラス、プラス、プラスと、そういうプラス記号の一つ一つがとても危険です。プラス記号ごとに何が作られるから？",
+      "_source_time": "362.9s → 367.6s"
+    },
+    {
+      "id": "pv-09-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-09.wav",
+      "transcript": "nó làm cho mất à nó làm cho mất cái tính Bất Biến của string ban đầu nên là mình dùng Buffer đúng không anh",
+      "translation": "それは失わせる、ええと、元の string の不変性を失わせるので、Buffer を使うんですよね？",
+      "_source_time": "372.5s → 378.1s"
+    },
+    {
+      "id": "pv-10-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-10.wav",
+      "transcript": "thì nó sẽ tạo ra cái chuỗi mới là chứa a + b",
+      "translation": "すると a + b を含む新しい文字列が作られます",
+      "_source_time": "389.9s → 393.2s"
+    },
+    {
+      "id": "pv-11-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-11.wav",
+      "transcript": "và sau đó hai cái chuỗi A và B cũ thì nó như thế này",
+      "translation": "そしてその後、古い二つの文字列 A と B はこうなります",
+      "_source_time": "394.1s → 397.5s"
+    },
+    {
+      "id": "pv-12-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-12.wav",
+      "transcript": "chuỗi a + b dạ không ạ A và B cũ vẫn còn. vẫn còn ở đâu",
+      "translation": "文字列 a + b。いいえ、古い A と B はまだ残っています。どこに残っているの？",
+      "_source_time": "401.9s → 405.7s"
+    },
+    {
+      "id": "pv-13-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-13.wav",
+      "transcript": "dạ nếu như mình tạo ra một cái string a ý em nói là nếu như mình tạo ra cái string a thí dụ là a = a b = b và cái string c thì bằng a + b thì nó vẫn còn cái string A thì vẫn còn ở string a ở string",
+      "translation": "はい、もし string a を作ったら、つまり、string a を作って、例えば a = a、b = b、そして string c が a + b に等しいとすると、string A はまだ残っていて、string a に、string に残っています",
+      "_source_time": "407.0s → 418.7s"
+    },
+    {
+      "id": "pv-14-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-14.wav",
+      "transcript": "b vẫn còn ở string b Còn nếu như mà mình",
+      "translation": "b、string b にまだ残っています。でも、もし",
+      "_source_time": "418.6s → 421.6s"
+    },
+    {
+      "id": "pv-15-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-15.wav",
+      "transcript": "string c bằng kí tự không có khai báo A với B vô một cái biến thì nó sẽ gộp A với B lại và lưu thành c",
+      "translation": "string c を文字で直接書いて、A と B を変数に宣言しなければ、A と B をまとめて c として保存します",
+      "_source_time": "423.8s → 430.7s"
+    },
+    {
+      "id": "pv-16-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-16.wav",
+      "transcript": "chính vì thế cho nên là người ta bảo rằng khi mà cộng cộng một cái thì được ví dụ a + b thì có thể dùng string được chứ còn bắt đầu cộng từ cái thứ hai thứ ba trở lên thì trong thực tế là người ta sẽ dùng string Buffer ngay",
+      "translation": "だからこそ、一つだけ足す場合、例えば a + b なら string を使ってもいいけど、二つ目、三つ目以上を足し始めたら、実際にはすぐに string Buffer を使う、と言われているんです",
+      "_source_time": "438.5s → 448.3s"
+    },
+    {
+      "id": "pv-17-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-17.wav",
+      "transcript": "dạ. khi mà làm string Buffer thì string Buffer nó có biến đổi được không",
+      "translation": "はい。string Buffer を使うとき、string Buffer は変更できますか？",
+      "_source_time": "449.0s → 453.1s"
+    },
+    {
+      "id": "pv-18-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-18.wav",
+      "transcript": "khi mình thay đổi cái giá trị của string Buffer thì thì nó có sinh ra đối tượng mới không",
+      "translation": "string Buffer の値を変えたとき、新しいオブジェクトは生成されますか？",
+      "_source_time": "455.3s → 459.8s"
+    },
+    {
+      "id": "pv-19-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-19.wav",
+      "transcript": "dạ không ạ nó vẫn nguyên đối tượng đó. đó cho nên nó sẽ không tạo ra rác còn nếu như mình dùng string là nó tạo ra rất là nhiều rác rác ở trong bộ nhớ ram",
+      "translation": "いいえ、同じオブジェクトのままです。だからゴミを生成しません。でも string を使うと、RAM の中にたくさんのゴミ、ゴミが生成されます",
+      "_source_time": "465.2s → 473.9s"
+    },
+    {
+      "id": "pv-20-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-20.wav",
+      "transcript": "Dạ em có làm việc rồi ạ. Ừm",
+      "translation": "はい、使ったことがあります。うん。",
+      "_source_time": "481.4s → 485.7s"
+    },
+    {
+      "id": "pv-21-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-21.wav",
+      "transcript": "chưa Dạ kiểu như em có thấy nhưng mà em ít làm việc lắm. Ừm Rồi ví dụ nè anh có một bài toán như thế này Anh muốn có một cái bài toán là tạo ra cái thời khóa biểu cho giáo viên",
+      "translation": "まだです。えっと、見たことはありますが、あまり使ったことはありません。うん。では例えば、こういう課題があります。先生の時間割を作るという課題を出したいと思います",
+      "_source_time": "489.3s → 500.1s"
+    },
+    {
+      "id": "pv-22-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-22.wav",
+      "transcript": "ví dụ như là giáo viên cấp ba đi Ví dụ như giáo viên cấp 3 thì sẽ có là",
+      "translation": "例えば高校の先生にしよう。例えば高校の先生なら、",
+      "_source_time": "500.9s → 505.0s"
+    },
+    {
+      "id": "pv-23-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-23.wav",
+      "transcript": "rồi sau đó là dạy môn gì ví dụ như là môn toán chẳng hạn thứ nhất rồi là do ai dạy",
+      "translation": "それから何の科目を教えるか、例えば数学とか、まず、それから誰が教えるか",
+      "_source_time": "508.4s → 513.4s"
+    },
+    {
+      "id": "pv-24-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-24.wav",
+      "transcript": "dạy do cô giáo nào đó dạy thì thời khóa biểu nó tạo cho một lớp thôi một cái lớp cụ thể nào đó thôi Ví dụ như lớp 12 A1 chẳng hạn",
+      "translation": "ある先生が教えて、時間割は一つのクラスだけ、ある特定のクラスだけに作ります。例えば 12A1 組とか",
+      "_source_time": "514.5s → 521.5s"
+    },
+    {
+      "id": "pv-25-ja",
+      "language": "vi",
+      "target": "ja",
+      "audio": "pv-25.wav",
+      "transcript": "Dạ anh nói lại này ví dụ như một cái lớp 12 A1 nó cần tạo ra một cái thời khóa biểu là tiết thứ mấy rồi",
+      "translation": "はい、もう一度言うね。例えば 12A1 組には、何時間目か、といった時間割を作る必要があって、それから",
+      "_source_time": "522.1s → 527.8s"
+    },
+    {
+      "id": "pv-01-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-01.wav",
+      "transcript": "rồi sau đó là điều kiện qua cái gì đó rồi sau đó điều kiện là ví dụ username là bằng cái gì đó cộng username cộng cái biến username đúng không",
+      "translation": "然后是某个条件，然后条件是，比如 username 等于某个值，加上 username，再加上 username 这个变量，对吧？",
+      "_source_time": "303.9s → 311.1s"
+    },
+    {
+      "id": "pv-02-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-02.wav",
+      "transcript": "dạ đúng ạ. Ừ trong tình huống đó là em hay xài spring à hay là spring Boot hay là spring Buffer",
+      "translation": "是的，没错。嗯，在那种情况下你通常用 spring，还是 spring Boot，还是 spring Buffer？",
+      "_source_time": "311.7s → 317.2s"
+    },
+    {
+      "id": "pv-03-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-03.wav",
+      "transcript": "em mới biết spring Buffer đây phải trong tình huống đó em xài spring",
+      "translation": "我才刚知道 spring Buffer，在那种情况下我用 spring。",
+      "_source_time": "318.8s → 324.6s"
+    },
+    {
+      "id": "pv-04-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-04.wav",
+      "transcript": "Ừ em toàn dùng string em toàn dùng string thôi đúng không",
+      "translation": "嗯，你一直都用 string，你只用 string，对吧？",
+      "_source_time": "325.1s → 328.7s"
+    },
+    {
+      "id": "pv-05-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-05.wav",
+      "transcript": "Nhưng mà theo em thì tình huống đó mình dùng cái gì. Mình nên dùng cái gì",
+      "translation": "但是你觉得在那种情况下我们用什么？我们应该用什么？",
+      "_source_time": "330.3s → 333.8s"
+    },
+    {
+      "id": "pv-06-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-06.wav",
+      "transcript": "em cũng không rõ nữa nhưng mà nếu như nói như vậy thì chắc mình dùng string Buffer ạ",
+      "translation": "我也不太清楚，但如果这么说的话，那我们大概是用 string Buffer 吧。",
+      "_source_time": "342.9s → 348.5s"
+    },
+    {
+      "id": "pv-07-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-07.wav",
+      "transcript": "ừ. ví dụ như em có một cái câu em có một cái chuỗi mà em em em cộng liên tục á ví dụ như là select sao from sau đó là cộng một cái table name rồi",
+      "translation": "嗯。比如说你有一个语句，你有一个字符串，你、你、你不断地拼接，比如 select 星号 from，然后再加上一个 table name，然后",
+      "_source_time": "351.3s → 363.0s"
+    },
+    {
+      "id": "pv-08-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-08.wav",
+      "transcript": "cộng cộng cộng thì cứ mỗi dấu cộng như vậy nó rất nguy hiểm vì mỗi dấu cộng nó sẽ tạo ra một cái gì",
+      "translation": "加、加、加，每一个这样的加号都很危险，因为每一个加号都会产生一个什么？",
+      "_source_time": "362.9s → 367.6s"
+    },
+    {
+      "id": "pv-09-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-09.wav",
+      "transcript": "nó làm cho mất à nó làm cho mất cái tính Bất Biến của string ban đầu nên là mình dùng Buffer đúng không anh",
+      "translation": "它会让我们失去，呃，它会让我们失去原来 string 的不可变性，所以我们用 Buffer，对吧？",
+      "_source_time": "372.5s → 378.1s"
+    },
+    {
+      "id": "pv-10-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-10.wav",
+      "transcript": "thì nó sẽ tạo ra cái chuỗi mới là chứa a + b",
+      "translation": "那它就会创建一个包含 a + b 的新字符串",
+      "_source_time": "389.9s → 393.2s"
+    },
+    {
+      "id": "pv-11-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-11.wav",
+      "transcript": "và sau đó hai cái chuỗi A và B cũ thì nó như thế này",
+      "translation": "然后，旧的两个字符串 A 和 B 就是这样的",
+      "_source_time": "394.1s → 397.5s"
+    },
+    {
+      "id": "pv-12-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-12.wav",
+      "transcript": "chuỗi a + b dạ không ạ A và B cũ vẫn còn. vẫn còn ở đâu",
+      "translation": "字符串 a + b。不是的，旧的 A 和 B 还在。在哪里？",
+      "_source_time": "401.9s → 405.7s"
+    },
+    {
+      "id": "pv-13-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-13.wav",
+      "transcript": "dạ nếu như mình tạo ra một cái string a ý em nói là nếu như mình tạo ra cái string a thí dụ là a = a b = b và cái string c thì bằng a + b thì nó vẫn còn cái string A thì vẫn còn ở string a ở string",
+      "translation": "是的，如果我们创建一个 string a，我是说，如果我们创建 string a，比如 a = a，b = b，而 string c 等于 a + b，那么 string A 仍然存在，仍然在 string a 里，在 string",
+      "_source_time": "407.0s → 418.7s"
+    },
+    {
+      "id": "pv-14-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-14.wav",
+      "transcript": "b vẫn còn ở string b Còn nếu như mà mình",
+      "translation": "b，仍然在 string b 里。但如果我们",
+      "_source_time": "418.6s → 421.6s"
+    },
+    {
+      "id": "pv-15-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-15.wav",
+      "transcript": "string c bằng kí tự không có khai báo A với B vô một cái biến thì nó sẽ gộp A với B lại và lưu thành c",
+      "translation": "string c 直接等于字符，没有把 A 和 B 声明成变量，那它就会把 A 和 B 合并起来存成 c",
+      "_source_time": "423.8s → 430.7s"
+    },
+    {
+      "id": "pv-16-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-16.wav",
+      "transcript": "chính vì thế cho nên là người ta bảo rằng khi mà cộng cộng một cái thì được ví dụ a + b thì có thể dùng string được chứ còn bắt đầu cộng từ cái thứ hai thứ ba trở lên thì trong thực tế là người ta sẽ dùng string Buffer ngay",
+      "translation": "正因为如此，人们才说，只加一个的时候，比如 a + b，可以用 string，但是从第二个、第三个开始往上加，实际上人们会直接用 string Buffer",
+      "_source_time": "438.5s → 448.3s"
+    },
+    {
+      "id": "pv-17-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-17.wav",
+      "transcript": "dạ. khi mà làm string Buffer thì string Buffer nó có biến đổi được không",
+      "translation": "好的。用 string Buffer 的时候，string Buffer 能被修改吗？",
+      "_source_time": "449.0s → 453.1s"
+    },
+    {
+      "id": "pv-18-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-18.wav",
+      "transcript": "khi mình thay đổi cái giá trị của string Buffer thì thì nó có sinh ra đối tượng mới không",
+      "translation": "当我们改变 string Buffer 的值时，它、它会产生新的对象吗？",
+      "_source_time": "455.3s → 459.8s"
+    },
+    {
+      "id": "pv-19-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-19.wav",
+      "transcript": "dạ không ạ nó vẫn nguyên đối tượng đó. đó cho nên nó sẽ không tạo ra rác còn nếu như mình dùng string là nó tạo ra rất là nhiều rác rác ở trong bộ nhớ ram",
+      "translation": "不会，它还是同一个对象。所以它不会产生垃圾，而如果我们用 string，就会在 RAM 内存里产生很多很多垃圾",
+      "_source_time": "465.2s → 473.9s"
+    },
+    {
+      "id": "pv-20-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-20.wav",
+      "transcript": "Dạ em có làm việc rồi ạ. Ừm",
+      "translation": "是的，我用过。嗯。",
+      "_source_time": "481.4s → 485.7s"
+    },
+    {
+      "id": "pv-21-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-21.wav",
+      "transcript": "chưa Dạ kiểu như em có thấy nhưng mà em ít làm việc lắm. Ừm Rồi ví dụ nè anh có một bài toán như thế này Anh muốn có một cái bài toán là tạo ra cái thời khóa biểu cho giáo viên",
+      "translation": "还没有。就是，我见过，但是很少用。嗯。那比如说，我有一个这样的题目，我想出一个题目，就是给老师生成课程表",
+      "_source_time": "489.3s → 500.1s"
+    },
+    {
+      "id": "pv-22-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-22.wav",
+      "transcript": "ví dụ như là giáo viên cấp ba đi Ví dụ như giáo viên cấp 3 thì sẽ có là",
+      "translation": "比如说高中老师吧。比如高中老师的话，会有",
+      "_source_time": "500.9s → 505.0s"
+    },
+    {
+      "id": "pv-23-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-23.wav",
+      "transcript": "rồi sau đó là dạy môn gì ví dụ như là môn toán chẳng hạn thứ nhất rồi là do ai dạy",
+      "translation": "然后是教什么科目，比如数学，第一，然后是谁来教",
+      "_source_time": "508.4s → 513.4s"
+    },
+    {
+      "id": "pv-24-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-24.wav",
+      "transcript": "dạy do cô giáo nào đó dạy thì thời khóa biểu nó tạo cho một lớp thôi một cái lớp cụ thể nào đó thôi Ví dụ như lớp 12 A1 chẳng hạn",
+      "translation": "由某位老师教，课程表只为一个班生成，只为某一个具体的班，比如 12A1 班",
+      "_source_time": "514.5s → 521.5s"
+    },
+    {
+      "id": "pv-25-zh",
+      "language": "vi",
+      "target": "zh",
+      "audio": "pv-25.wav",
+      "transcript": "Dạ anh nói lại này ví dụ như một cái lớp 12 A1 nó cần tạo ra một cái thời khóa biểu là tiết thứ mấy rồi",
+      "translation": "好，我再说一遍，比如 12A1 班需要生成一个课程表，就是第几节课，然后",
+      "_source_time": "522.1s → 527.8s"
+    }
+  ]
+}

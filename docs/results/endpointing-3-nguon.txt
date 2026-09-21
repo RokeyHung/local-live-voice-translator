@@ -1,0 +1,24 @@
+make endpointing — ba loại giọng người, cùng bốn cấu hình VAD
+Máy: Windows 11, i5-12500H · 20/09/2026 · chỉ Silero VAD (không nạp ASR/MT/TTS)
+Cột: đoạn · dài TB · dài p90 · cắt cứng (chạm max_speech_ms) · chờ chốt TB · chờ chốt p90
+
+== Bản tin VTV24 19/09/2026 — giọng đọc kịch bản, 688 s
+   https://www.youtube.com/watch?v=eZX_ulTlGug
+trước khi sửa (max 20s)         80    7.67s   12.53s     3 (3%)    0.27s    0.31s
+fast (4500ms)                  185    3.35s    4.39s   75 (40%)    0.20s    0.36s
+balanced (6000ms)              149    4.14s    5.87s   45 (30%)    0.23s    0.36s
+quality (8000ms)               111    5.56s    7.88s   27 (24%)    0.22s    0.39s
+
+== Phỏng vấn thử Intern Fullstack — hội thoại tự phát hai người, 3596 s
+   https://www.youtube.com/watch?v=Ck9zEm54UlQ
+trước khi sửa (max 20s)        936    3.12s    6.77s     2 (0%)    0.28s    0.32s
+fast (4500ms)                 1251    2.35s    4.32s  208 (16%)    0.22s    0.32s
+balanced (6000ms)             1073    2.73s    5.66s  108 (10%)    0.25s    0.35s
+quality (8000ms)               915    3.21s    6.70s    48 (5%)    0.31s    0.41s
+
+== TEDx Hoàng Nam Tiến — thuyết trình, nói tự nhiên, 669 s
+   https://www.youtube.com/watch?v=zQy376ZwupI
+trước khi sửa (max 20s)        311    1.59s    2.61s     0 (0%)    0.28s    0.32s
+fast (4500ms)                  317    1.56s    2.42s     0 (0%)    0.25s    0.32s
+balanced (6000ms)              294    1.69s    2.86s     0 (0%)    0.30s    0.35s
+quality (8000ms)               255    1.98s    3.79s     0 (0%)    0.36s    0.42s
