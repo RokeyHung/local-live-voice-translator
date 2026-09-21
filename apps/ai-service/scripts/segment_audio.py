@@ -6,8 +6,15 @@ tách các đoạn có tiếng nói, ghi mỗi đoạn thành một file wav 16 
 khung JSON để điền lời.
 
     uv run python scripts/segment_audio.py video.mov --prefix vlog --limit 20
+    uv run python scripts/segment_audio.py video.mov --srt phu-de.srt --skip-seconds 300
 
 Kết quả: `scripts/audio/vlog-01.wav`… và `scripts/audio/vlog-draft.json`.
+
+`--srt` điền sẵn `transcript` bằng lời trong file phụ đề, khớp theo mốc thời gian, để
+SỬA thay vì gõ từ đầu. Nếu phụ đề là loại YouTube tự sinh thì nhớ: **đó cũng là đầu ra
+của một hệ ASR khác** — giữ nguyên nó làm câu tham chiếu là đang đo độ giống nhau giữa
+hai hệ ASR chứ không phải đo độ chính xác. Mỗi case sinh theo đường này vì vậy mang cờ
+`_da_sua_tay: false`; nghe và sửa xong thì bật lên true.
 
 **Việc bắt buộc làm bằng tay sau đó:** nghe từng đoạn, gõ đúng những gì nghe được vào
 `transcript`, dịch sang ngôn ngữ đích ở `translation`, rồi chép các case vào
@@ -20,6 +27,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 import shutil
 import subprocess
 import wave
@@ -45,6 +53,53 @@ OFFLINE_VAD = VadParams(
     soft_max_ms=int(MAX_SECONDS * 1000),
     max_speech_ms=int(MAX_SECONDS * 1000),
 )
+
+
+CUE = re.compile(r"(\d+):(\d+):(\d+)[,.](\d+)\s*-->\s*(\d+):(\d+):(\d+)[,.](\d+)")
+
+
+def parse_srt(path: Path) -> list[tuple[int, int, str]]:
+    """File .srt → [(bắt đầu ms, kết thúc ms, lời)].
+
+    Phụ đề tự sinh của YouTube chạy kiểu cuộn: mốc kết thúc của một dòng chồm sang tận
+    hai ba dòng sau, nên lấy đúng [start, end] của từng dòng sẽ gom trùng lời của cả
+    vùng lân cận. Lời của dòng N thật ra được nói trong khoảng tới lúc dòng N+1 bắt
+    đầu, nên ở dưới lấy mốc đó làm điểm kết.
+    """
+    raw = path.read_text(encoding="utf-8-sig").replace("\r\n", "\n")
+    cues: list[tuple[int, int, str]] = []
+    for block in re.split(r"\n\s*\n", raw):
+        lines = [line.strip() for line in block.split("\n") if line.strip()]
+        timed = next((i for i, line in enumerate(lines) if CUE.search(line)), None)
+        if timed is None:
+            continue
+        h1, m1, s1, ms1, h2, m2, s2, ms2 = (int(g) for g in CUE.search(lines[timed]).groups())
+        start = ((h1 * 60 + m1) * 60 + s1) * 1000 + ms1
+        end = ((h2 * 60 + m2) * 60 + s2) * 1000 + ms2
+        text = re.sub(r"<[^>]+>", "", " ".join(lines[timed + 1 :])).strip()
+        if text:
+            cues.append((start, end, text))
+
+    cues.sort()
+    return [
+        (start, max(min(end, cues[i + 1][0]) if i + 1 < len(cues) else end, start + 1), text)
+        for i, (start, end, text) in enumerate(cues)
+    ]
+
+
+def text_between(cues: list[tuple[int, int, str]], start_ms: int, end_ms: int) -> str:
+    """Ghép lời của các dòng phụ đề nằm CHỦ YẾU trong [start_ms, end_ms].
+
+    Lấy mọi dòng chạm vào khoảng này thì dòng nằm vắt qua ranh giới sẽ xuất hiện ở cả
+    hai đoạn, và bản nháp đầy lời thừa của đoạn bên cạnh. Đòi quá nửa thời lượng của
+    dòng nằm trong đoạn thì mỗi dòng chỉ về một chỗ.
+    """
+    parts = [
+        text
+        for cue_s, cue_e, text in cues
+        if max(0, min(cue_e, end_ms) - max(cue_s, start_ms)) * 2 >= cue_e - cue_s
+    ]
+    return re.sub(r"\s+", " ", " ".join(parts)).strip()
 
 
 def media_to_pcm(path: Path) -> bytes:
@@ -99,14 +154,31 @@ def main() -> None:
     parser.add_argument("--min-seconds", type=float, default=MIN_SECONDS)
     parser.add_argument("--max-seconds", type=float, default=MAX_SECONDS)
     parser.add_argument("--out-dir", type=Path, default=AUDIO_DIR)
+    parser.add_argument(
+        "--srt", type=Path, help="file phụ đề để điền sẵn `transcript` (vẫn phải sửa tay)"
+    )
+    parser.add_argument(
+        "--skip-seconds",
+        type=float,
+        default=0.0,
+        help="bỏ phần đầu bản ghi, vd 300 để bỏ 5 phút chào hỏi/giới thiệu kênh",
+    )
     args = parser.parse_args()
 
     pcm = media_to_pcm(args.media)
     print(f"Đầu vào: {args.media.name} — {len(pcm) / 2 / SAMPLE_RATE:.0f} giây")
 
+    cues = parse_srt(args.srt) if args.srt else []
+    if args.srt:
+        print(f"Phụ đề: {len(cues)} dòng từ {args.srt.name}")
+
     segments = asyncio.run(segment(pcm))
     keep = [s for s in segments if args.min_seconds <= (s[1] - s[0]) / 1000 <= args.max_seconds]
     print(f"VAD tách được {len(segments)} đoạn, {len(keep)} đoạn dài phù hợp.")
+    if args.skip_seconds:
+        before = len(keep)
+        keep = [s for s in keep if s[0] >= args.skip_seconds * 1000]
+        print(f"Bỏ {before - len(keep)} đoạn nằm trong {args.skip_seconds:.0f} giây đầu.")
     if args.limit:
         keep = keep[: args.limit]
 
@@ -122,8 +194,9 @@ def main() -> None:
                 "target": args.target,
                 "audio": f"audio/{name}",
                 "_source_time": f"{start_ms / 1000:.1f}s → {end_ms / 1000:.1f}s",
-                "transcript": "",
+                "transcript": text_between(cues, start_ms, end_ms) if cues else "",
                 "translation": "",
+                **({"_da_sua_tay": False} if cues else {}),
             }
         )
 
@@ -135,8 +208,21 @@ def main() -> None:
                     "Khung nháp do segment_audio.py sinh ra.",
                     "Nghe từng file wav và gõ ĐÚNG lời vào `transcript`, dịch vào `translation`.",
                     "Xong thì chép các case sang accuracy_corpus.json rồi chạy `make accuracy`.",
-                    "Bỏ `_source_time` khi chép — nó chỉ để tiện tua lại bản gốc.",
-                ],
+                    "Bỏ `_source_time` và `_da_sua_tay` khi chép — chúng chỉ để làm việc.",
+                ]
+                + (
+                    [
+                        "`transcript` đang là lời lấy từ phụ đề, CHƯA phải câu tham chiếu.",
+                        (
+                            "Phụ đề tự sinh cũng là đầu ra của một hệ ASR khác: giữ nguyên nó"
+                            " thì WER đo được là độ giống nhau giữa hai hệ ASR, không phải độ"
+                            " chính xác."
+                        ),
+                        "Nghe lại từng đoạn, sửa cho khớp lời thật, rồi bật `_da_sua_tay: true`.",
+                    ]
+                    if cues
+                    else []
+                ),
                 "cases": cases,
             },
             ensure_ascii=False,
