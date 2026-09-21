@@ -55,6 +55,27 @@ SHADE_CODE = "F2F2F2"
 SHADE_TABLE_HEADER = "E8E8E8"
 QUOTE_BAR = "9E9E9E"
 
+# Chế độ --uit: quy định "Hình thức trình bày khóa luận tốt nghiệp" (Phụ lục 2) của Phòng
+# Đào tạo Đại học UIT, bản 03/2024. Chỉ đổi đúng những gì quy định nêu; phần còn lại giữ
+# như chế độ mặc định.
+UIT_MARGINS = (Cm(3), Cm(3.5), Cm(3.5), Cm(2))  # trên, dưới, trái, phải
+UIT_HEADING_SIZES = {1: Pt(14), 2: Pt(13), 3: Pt(13), 4: Pt(13), 5: Pt(13), 6: Pt(13)}
+UIT = False  # bật bằng --uit
+# Bề rộng vùng chữ = khổ A4 21 cm trừ lề trái 3,5 và lề phải 2.
+UIT_TEXT_WIDTH = Cm(15.5)
+CAPTION_STYLES = {"Hình": "Chú thích hình", "Bảng": "Chú thích bảng"}
+RE_CAPTION = re.compile(r"^(Hình|Bảng) \d+\.\d+:")
+RE_IMAGE = re.compile(r"^\s*!\[(?P<alt>[^\]]*)\]\((?P<src>[^)]+)\)\s*$")
+# Cỡ chữ trang bìa theo mẫu bìa của trường: tên đề tài 18–30, tên tiếng Anh 15–25,
+# trường/khoa/"KHÓA LUẬN TỐT NGHIỆP" 16, năm 13, còn lại 14. Đoán theo nội dung dòng
+# vì Markdown không có chỗ ghi cỡ chữ.
+COVER_SIZES = (
+    (re.compile(r"^(TRƯỜNG|KHOA|KHÓA LUẬN)"), Pt(16)),
+    (re.compile(r"^TP\. HỒ CHÍ MINH"), Pt(13)),
+    (re.compile(r"^[A-Z][a-z].*[A-Za-z]$"), Pt(16)),  # tên tiếng Anh
+    (re.compile(r"^[A-ZÀ-Ỹ ]{40,}$"), Pt(20)),  # tên đề tài: dòng chữ hoa dài
+)
+
 # --- Phân tích Markdown -------------------------------------------------------------
 
 RE_HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
@@ -72,7 +93,7 @@ RE_META = re.compile(r"^\*\*[^*]+:\*\*")
 class Block:
     """Một khối Markdown đã tách xong, chờ đổ vào Word."""
 
-    kind: str  # heading | para | table | list | quote | code | math | hr
+    kind: str  # heading | para | table | list | quote | code | math | hr | image | directive
     text: str = ""
     level: int = 0
     lang: str = ""
@@ -123,6 +144,26 @@ def parse(md: str) -> list[Block]:
     i = 0
     while i < len(lines):
         line = lines[i]
+
+        # Chú thích HTML không phải nội dung. Trước đây nó bị in ra thành chữ; giờ nó
+        # thành một khối "directive" — chế độ --uit đọc vài chỉ thị trong đó (ngắt
+        # trang, mục lục, bắt đầu đánh số trang), chế độ mặc định bỏ qua.
+        if line.lstrip().startswith("<!--"):
+            flush()
+            body = [line]
+            while "-->" not in body[-1] and i + 1 < len(lines):
+                i += 1
+                body.append(lines[i])
+            text = " ".join(s.strip() for s in body)
+            blocks.append(Block("directive", text=text[4 : text.rfind("-->")].strip()))
+            i += 1
+            continue
+
+        if m := RE_IMAGE.match(line):
+            flush()
+            blocks.append(Block("image", text=m.group("alt"), lines=[m.group("src")]))
+            i += 1
+            continue
 
         if fence := RE_FENCE.match(line):
             flush()
@@ -530,8 +571,32 @@ def base_document() -> Document:
         hpf.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
     section = doc.sections[0]
-    section.top_margin, section.bottom_margin = MARGIN_TOP, MARGIN_BOTTOM
-    section.left_margin, section.right_margin = MARGIN_LEFT, MARGIN_RIGHT
+    if UIT:
+        section.page_width, section.page_height = Cm(21), Cm(29.7)
+        top, bottom, left, right = UIT_MARGINS
+    else:
+        top, bottom, left, right = MARGIN_TOP, MARGIN_BOTTOM, MARGIN_LEFT, MARGIN_RIGHT
+    section.top_margin, section.bottom_margin = top, bottom
+    section.left_margin, section.right_margin = left, right
+
+    if UIT:
+        # Hai kiểu chú thích riêng cho hình và bảng, để Danh mục hình và Danh mục bảng là
+        # hai field TOC lọc theo từng kiểu — Word tự điền số trang.
+        from docx.enum.style import WD_STYLE_TYPE
+
+        for name in CAPTION_STYLES.values():
+            style = doc.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+            style.base_style = normal
+            style.font.size = Pt(12)
+            style.font.italic = True
+            spf = style.paragraph_format
+            spf.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            spf.space_before, spf.space_after = Pt(3), Pt(9)
+            spf.line_spacing = 1.2
+        # Trang bìa, lời cảm ơn, mục lục, danh mục không đánh số (quy định); số trang bắt
+        # đầu từ Tóm tắt, ở section thứ hai — xem start_numbering().
+        request_field_update(doc)
+        return doc
 
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -540,6 +605,75 @@ def base_document() -> Document:
         set_font(run, BODY_FONT)
         run.font.size = Pt(11)
     return doc
+
+
+def request_field_update(doc: Document) -> None:
+    """Bảo Word cập nhật mọi field (mục lục, danh mục, số trang) khi mở file.
+
+    Không có cờ này thì mục lục hiện dòng nhắc cho tới khi người dùng tự bấm F9 — dễ nộp
+    nhầm một bản chưa có mục lục.
+    """
+    from docx.oxml import OxmlElement
+
+    flag = OxmlElement("w:updateFields")
+    flag.set(qn("w:val"), "true")
+    doc.settings.element.append(flag)
+
+
+def start_numbering(doc: Document) -> None:
+    """Mở section mới ở trang mới, đánh số trang từ 1 ở giữa chân trang."""
+    from docx.enum.section import WD_SECTION
+    from docx.oxml import OxmlElement
+
+    section = doc.add_section(WD_SECTION.NEW_PAGE)
+    section.footer.is_linked_to_previous = False
+    footer = section.footer.paragraphs[0]
+    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    add_field(footer, " PAGE ", "1")
+    for run in footer.runs:
+        set_font(run, BODY_FONT)
+        run.font.size = Pt(12)
+    pg = OxmlElement("w:pgNumType")
+    pg.set(qn("w:start"), "1")
+    section._sectPr.append(pg)
+
+
+def add_picture_block(doc: Document, src: str, alt: str) -> None:
+    """Chèn ảnh canh giữa, co về bề rộng vùng chữ nếu ảnh rộng hơn.
+
+    Ảnh chưa có (ảnh chụp màn hình phải chụp tay) thì để một ô nhắc thay vì dừng cả lượt
+    xuất — bản nháp vẫn xuất được, và chỗ còn thiếu hiện ra rõ ràng trên trang.
+    """
+    path = (SOURCE_DIR / src).resolve()
+    para = doc.add_paragraph()
+    para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    para.paragraph_format.keep_with_next = True
+    para.paragraph_format.space_before = Pt(6)
+    para.paragraph_format.space_after = Pt(0)
+    if not path.is_file():
+        add_fragments(para, [Frag(f"[CHÈN HÌNH — {src}]", bold=True, italic=True)])
+        return
+    from docx.shared import Emu
+
+    run = para.add_run()
+    pic = run.add_picture(str(path))
+    if pic.width > UIT_TEXT_WIDTH:
+        ratio = UIT_TEXT_WIDTH / pic.width
+        pic.width, pic.height = Emu(int(pic.width * ratio)), Emu(int(pic.height * ratio))
+    # Sơ đồ dọc (lưu đồ tách câu) không được cao quá khoảng hai phần ba trang.
+    max_h = Cm(15)
+    if pic.height > max_h:
+        ratio = max_h / pic.height
+        pic.width, pic.height = Emu(int(pic.width * ratio)), Emu(int(pic.height * ratio))
+
+
+def add_list_of(doc: Document, style_name: str, placeholder: str) -> None:
+    field = doc.add_paragraph()
+    add_field(field, rf' TOC \h \z \t "{style_name},1" ', placeholder)
+    for run in field.runs:
+        set_font(run, BODY_FONT)
+        run.font.size = Pt(12)
+        run.italic = True
 
 
 def table_font_size(columns: int) -> Pt:
@@ -552,9 +686,17 @@ def table_font_size(columns: int) -> Pt:
 def render(
     doc: Document, blocks: list[Block], title_first_heading: bool, toc: bool = False
 ) -> None:
+    if UIT:
+        render_uit(doc, blocks)
+        return
     first_heading = title_first_heading
     toc_pending = toc
     for block in blocks:
+        if block.kind == "directive":
+            continue
+        if block.kind == "image":
+            add_picture_block(doc, (block.lines or [""])[0], block.text)
+            continue
         # Mục lục chèn sau phần đầu trang (tiêu đề + dòng thông tin + lời dẫn), tức ngay
         # trước mục đánh số đầu tiên — không phải ở đầu file, trước cả tiêu đề.
         if toc_pending and block.kind == "heading" and block.level >= 2:
@@ -573,65 +715,189 @@ def render(
             para = doc.add_paragraph(style=f"Heading {min(block.level, 6)}")
             add_fragments(para, inline(block.text, bold=True), HEADING_SIZES[block.level])
 
-        elif block.kind == "para":
-            add_fragments(doc.add_paragraph(), inline(block.text))
+        else:
+            render_common(doc, block)
 
-        elif block.kind == "math":
+
+def render_common(doc: Document, block: Block) -> None:
+    """Khối không phải tiêu đề: giống nhau ở chế độ mặc định và chế độ --uit."""
+    if block.kind == "para":
+        add_fragments(doc.add_paragraph(), inline(block.text))
+
+    elif block.kind == "math":
+        para = doc.add_paragraph()
+        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        para.paragraph_format.space_before = Pt(6)
+        para.paragraph_format.space_after = Pt(10)
+        add_fragments(para, [Frag(latex_to_text(block.text), italic=True)])
+
+    elif block.kind == "hr":
+        # Markdown dùng `---` để ngăn mục; trong Word các Heading đã làm việc đó, thêm
+        # đường kẻ chỉ làm trang rối. Bỏ qua có chủ đích.
+        return
+
+    elif block.kind == "quote":
+        for text in block.lines or []:
             para = doc.add_paragraph()
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            para.paragraph_format.space_before = Pt(6)
-            para.paragraph_format.space_after = Pt(10)
-            add_fragments(para, [Frag(latex_to_text(block.text), italic=True)])
+            pf = para.paragraph_format
+            pf.left_indent = Cm(0.8)
+            pf.space_after = Pt(6)
+            add_fragments(para, inline(text, italic=True))
+            add_left_bar(para)
 
-        elif block.kind == "hr":
-            # Markdown dùng `---` để ngăn mục; trong Word các Heading đã làm việc đó, thêm
-            # đường kẻ chỉ làm trang rối. Bỏ qua có chủ đích.
+    elif block.kind == "code":
+        labels = {"mermaid": "Sơ đồ (mã Mermaid)", "bash": "Lệnh", "json": "JSON"}
+        label = labels.get(block.lang)
+        if label:
+            cap = doc.add_paragraph()
+            cap.paragraph_format.space_after = Pt(2)
+            add_fragments(cap, [Frag(label, italic=True)], size=Pt(11))
+        for text in block.lines or []:
+            para = doc.add_paragraph()
+            pf = para.paragraph_format
+            pf.line_spacing = 1.0
+            pf.space_before = pf.space_after = Pt(0)
+            pf.left_indent = Cm(0.4)
+            pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            run = para.add_run(text or " ")
+            set_font(run, MONO_FONT)
+            run.font.size = CODE_SIZE
+            shade(para._p.get_or_add_pPr(), SHADE_CODE)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    elif block.kind == "list":
+        for level, marker, text in block.items or []:
+            if task := RE_TASK.match(text):
+                marker = "☒" if task.group(1).lower() == "x" else "☐"
+                text = task.group(2)
+            para = doc.add_paragraph()
+            pf = para.paragraph_format
+            pf.left_indent = Cm(0.7 + 0.6 * level)
+            pf.first_line_indent = Cm(-0.5)
+            pf.space_after = Pt(3)
+            bullet = "•" if marker == "•" and level == 0 else ("–" if marker == "•" else marker)
+            add_fragments(para, [Frag(f"{bullet}\t")] + inline(text))
+
+    elif block.kind == "table":
+        render_table(doc, block)
+
+
+RE_REFERENCE = re.compile(r"^\[\d+\]\s")
+
+
+def render_uit(doc: Document, blocks: list[Block]) -> None:
+    """Dựng khóa luận theo quy định của UIT.
+
+    Khác chế độ mặc định ở năm chỗ, đều do quy định đòi:
+
+    * mỗi mục cấp 1 (bìa, lời cảm ơn, danh mục, từng chương) bắt đầu ở trang mới;
+    * các trang trước Tóm tắt không đánh số và không vào mục lục — tiêu đề của chúng là
+      đoạn chữ canh giữa chứ không phải Heading 1;
+    * số trang bắt đầu từ 1 ở Tóm tắt, giữa chân trang;
+    * ảnh được chèn thật, chú thích "Hình x.y:" / "Bảng x.y:" mang kiểu riêng để Danh mục
+      hình và Danh mục bảng tự dựng được kèm số trang;
+    * tài liệu tham khảo thụt treo, canh trái.
+
+    Chỉ thị nằm trong chú thích HTML của file nguồn: ``trang: bìa …`` (sang trang, canh
+    giữa như trang bìa), ``trang: không đánh số`` (sang trang), ``trang: bắt đầu đánh số``,
+    ``mục lục …``, ``danh-muc: hinh`` và ``danh-muc: bang``.
+    """
+    cover = False
+    numbered = False
+    fresh = True  # đang ở đầu một trang mới, chưa có gì
+    pending_break = False
+
+    def begin_page() -> None:
+        nonlocal pending_break
+        if not fresh:
+            pending_break = True
+
+    for block in blocks:
+        mark = len(doc.paragraphs)
+
+        if block.kind == "directive":
+            text = block.text.lower()
+            if text.startswith("trang: bìa"):
+                begin_page()
+                cover = True
+            elif text.startswith("trang: không đánh số"):
+                begin_page()
+                cover = False
+            elif text.startswith("trang: bắt đầu đánh số"):
+                start_numbering(doc)
+                numbered, cover, fresh, pending_break = True, False, True, False
+            elif text.startswith("mục lục"):
+                begin_page()
+                if pending_break:
+                    pending_break = False
+                    mark = len(doc.paragraphs)
+                    add_uit_title(doc, "MỤC LỤC")
+                    doc.paragraphs[mark].paragraph_format.page_break_before = True
+                else:
+                    add_uit_title(doc, "MỤC LỤC")
+                field = doc.add_paragraph()
+                add_field(field, r' TOC \o "1-3" \h \z \u ', "Mục lục — Word tự dựng khi mở tệp.")
+                fresh = False
+            elif text.startswith("danh-muc:"):
+                kind = "Hình" if "hinh" in text else "Bảng"
+                add_list_of(doc, CAPTION_STYLES[kind], f"Danh mục {kind.lower()}.")
+                fresh = False
             continue
 
-        elif block.kind == "quote":
-            for text in block.lines or []:
-                para = doc.add_paragraph()
-                pf = para.paragraph_format
-                pf.left_indent = Cm(0.8)
-                pf.space_after = Pt(6)
-                add_fragments(para, inline(text, italic=True))
-                add_left_bar(para)
+        if block.kind == "hr":
+            continue
 
-        elif block.kind == "code":
-            labels = {"mermaid": "Sơ đồ (mã Mermaid)", "bash": "Lệnh", "json": "JSON"}
-            label = labels.get(block.lang)
-            if label:
-                cap = doc.add_paragraph()
-                cap.paragraph_format.space_after = Pt(2)
-                add_fragments(cap, [Frag(label, italic=True)], size=Pt(11))
-            for text in block.lines or []:
-                para = doc.add_paragraph()
-                pf = para.paragraph_format
-                pf.line_spacing = 1.0
-                pf.space_before = pf.space_after = Pt(0)
-                pf.left_indent = Cm(0.4)
-                pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                run = para.add_run(text or " ")
-                set_font(run, MONO_FONT)
-                run.font.size = CODE_SIZE
-                shade(para._p.get_or_add_pPr(), SHADE_CODE)
-            doc.add_paragraph().paragraph_format.space_after = Pt(4)
+        if block.kind == "heading" and block.level == 1:
+            begin_page()
+            if numbered:
+                para = doc.add_paragraph(style="Heading 1")
+                para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                add_fragments(para, inline(block.text, bold=True), UIT_HEADING_SIZES[1])
+            else:
+                add_uit_title(doc, block.text)
+        elif block.kind == "heading":
+            para = doc.add_paragraph(style=f"Heading {min(block.level, 6)}")
+            add_fragments(para, inline(block.text, bold=True), UIT_HEADING_SIZES[block.level])
+        elif block.kind == "image":
+            add_picture_block(doc, (block.lines or [""])[0], block.text)
+        elif block.kind == "para" and block.text.strip() == "&nbsp;":
+            doc.add_paragraph()
+        elif block.kind == "para" and cover:
+            para = doc.add_paragraph()
+            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            para.paragraph_format.space_after = Pt(4)
+            plain = re.sub(r"[*_]", "", block.text).strip()
+            size = next((s for rx, s in COVER_SIZES if rx.search(plain)), Pt(14))
+            add_fragments(para, inline(block.text), size=size)
+        elif block.kind == "para" and (m := RE_CAPTION.match(block.text)):
+            para = doc.add_paragraph(style=CAPTION_STYLES[m.group(1)])
+            # Chú thích bảng đứng trên bảng nên phải dính với bảng; chú thích hình đứng
+            # dưới hình, còn hình thì đã tự dính xuống chú thích (add_picture_block).
+            para.paragraph_format.keep_with_next = m.group(1) == "Bảng"
+            add_fragments(para, inline(block.text), size=Pt(12))
+        elif block.kind == "para" and RE_REFERENCE.match(block.text):
+            para = doc.add_paragraph()
+            pf = para.paragraph_format
+            pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            pf.left_indent, pf.first_line_indent = Cm(1), Cm(-1)
+            pf.line_spacing = 1.3
+            add_fragments(para, inline(block.text), size=Pt(12))
+        else:
+            render_common(doc, block)
 
-        elif block.kind == "list":
-            for level, marker, text in block.items or []:
-                if task := RE_TASK.match(text):
-                    marker = "☒" if task.group(1).lower() == "x" else "☐"
-                    text = task.group(2)
-                para = doc.add_paragraph()
-                pf = para.paragraph_format
-                pf.left_indent = Cm(0.7 + 0.6 * level)
-                pf.first_line_indent = Cm(-0.5)
-                pf.space_after = Pt(3)
-                bullet = "•" if marker == "•" and level == 0 else ("–" if marker == "•" else marker)
-                add_fragments(para, [Frag(f"{bullet}\t")] + inline(text))
+        if pending_break and len(doc.paragraphs) > mark:
+            doc.paragraphs[mark].paragraph_format.page_break_before = True
+            pending_break = False
+        fresh = False
 
-        elif block.kind == "table":
-            render_table(doc, block)
+
+def add_uit_title(doc: Document, text: str) -> None:
+    """Tiêu đề trang đầu (lời cảm ơn, danh mục…): canh giữa, đậm, 14 — không vào mục lục."""
+    para = doc.add_paragraph()
+    para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    para.paragraph_format.space_after = Pt(12)
+    para.paragraph_format.keep_with_next = True
+    add_fragments(para, inline(text, bold=True), size=Pt(14))
 
 
 def add_left_bar(para: Paragraph) -> None:
@@ -690,6 +956,8 @@ def render_table(doc: Document, block: Block) -> None:
             add_fragments(para, inline(text, bold=(r == 0)), size=size)
             if r == 0:
                 shade(cell._tc.get_or_add_tcPr(), SHADE_TABLE_HEADER)
+    if UIT:
+        set_column_widths(table, rows)
     # Dòng tiêu đề lặp lại khi bảng tràn sang trang sau.
     from docx.oxml import OxmlElement
 
@@ -698,6 +966,63 @@ def render_table(doc: Document, block: Block) -> None:
     header.set(qn("w:val"), "true")
     tr_pr.append(header)
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+
+def set_column_widths(table, rows: list[list[str]]) -> None:
+    """Chia bề rộng vùng chữ cho các cột theo lượng chữ của từng cột.
+
+    python-docx tạo bảng với các cột bằng nhau, và Word giữ nguyên như thế: bảng yêu cầu
+    chức năng ra cột "Mã" rộng bằng cột nội dung. Chia làm hai bước:
+
+    1. **Sàn** — mỗi cột đủ chứa trọn từ dài nhất của nó. Không có sàn thì cột ngắn bị bóp
+       tới mức "PCN01" gãy thành từng ký tự một dòng.
+    2. **Phần dư** chia theo lượng chữ trung bình vượt quá sàn, để cột nội dung dài nhận
+       phần lớn bề rộng còn lại.
+    """
+    cols = len(rows[0])
+    # Bề rộng trung bình một ký tự Times New Roman ở cỡ chữ của bảng, tính bằng cm — ước
+    # rộng tay vì mã và chữ hoa ("PCN01", "WER") rộng hơn chữ thường; chữ đơn cách (trong
+    # dấu `) rộng hơn nữa. PAD là lề trong mặc định của ô Word, hai bên cộng lại.
+    char_cm = 0.21 * table_font_size(cols).pt / 11
+    pad_cm = 0.45
+
+    def cell_cm(text: str) -> tuple[float, float]:
+        """(từ dài nhất, cả ô) của một ô, tính bằng cm."""
+        mono = set(re.findall(r"`([^`]+)`", text))
+        words = re.sub(r"[*_]", "", text).replace("`", "").split()
+        # Word ngắt dòng được sau "-" và "/", nên tên mô hình dài như
+        # `deepdml/faster-whisper-large-v3-turbo-ct2` chỉ cần chỗ cho đoạn dài nhất.
+        pieces = [(piece, w) for w in words for piece in re.split(r"(?<=[-/])", w) if piece]
+        def width(piece: str, is_mono: bool) -> float:
+            # Chữ hoa và chữ số rộng hơn chữ thường rõ rệt ("WER" gãy thành "WE/R" nếu
+            # tính theo bề rộng trung bình); chữ đơn cách thì mọi ký tự rộng như nhau.
+            if is_mono:
+                return len(piece) * char_cm * 1.2
+            return sum(char_cm * (1.3 if ch.isupper() or ch.isdigit() else 1.0) for ch in piece)
+
+        longest = max(
+            (width(pc, any(w in m for m in mono)) for pc, w in pieces), default=0
+        )
+        return longest + pad_cm, len(" ".join(words)) * char_cm + pad_cm
+
+    measured = [[cell_cm(r[c]) for r in rows] for c in range(cols)]
+    total = UIT_TEXT_WIDTH.cm
+    floor = [max(w for w, _ in col) for col in measured]
+    if sum(floor) > total:  # từ quá dài: đành để gãy, nhưng giữ tỷ lệ giữa các cột
+        widths_cm = [f * total / sum(floor) for f in floor]
+    else:
+        want = [
+            max(sum(a for _, a in col) / len(col) - f, 0) for col, f in zip(measured, floor)
+        ]
+        spare = total - sum(floor)
+        share = [w / sum(want) if sum(want) else 1 / cols for w in want]
+        widths_cm = [f + spare * s for f, s in zip(floor, share)]
+    widths = [Cm(w) for w in widths_cm]
+    table.autofit = False
+    for c, width in enumerate(widths):
+        table.columns[c].width = width
+        for cell in table.columns[c].cells:
+            cell.width = width
 
 
 def add_toc(doc: Document) -> None:
@@ -728,7 +1053,15 @@ def main() -> int:
         action="store_true",
         help="giữ H1 đầu tiên là Heading 1 thay vì dựng thành tiêu đề canh giữa",
     )
+    ap.add_argument(
+        "--uit",
+        action="store_true",
+        help="trình bày theo quy định khóa luận của UIT (lề, số trang, ảnh, chú thích)",
+    )
     args = ap.parse_args()
+
+    global UIT
+    UIT = args.uit
 
     for src in args.sources:
         if not src.is_file():
