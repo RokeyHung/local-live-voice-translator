@@ -41,7 +41,7 @@ FULL_DEPS    := --group eval --extra diarization --extra ctranslate2 $(MLX_EXTRA
         build typecheck lint format format-docs health docs docx test test-service test-desktop e2e \
         icons bundle-service dist \
         bench accuracy soak segment \
-        endpointing setup-eval setup-mlx setup-diarization setup-ctranslate2 setup-vulkan \
+        endpointing docx-khoa-luan figures-khoa-luan setup-eval setup-mlx setup-diarization setup-ctranslate2 setup-vulkan \
         fetch-fleurs eval-asr eval-mt eval-comet eval-latency eval-latency-all clean
 
 help: ## Hiện danh sách lệnh
@@ -150,6 +150,20 @@ format-docs: ## Format Markdown ở docs/, ARCHITECTURE.md và thư mục gốc 
 docx: ## Xuất báo cáo đánh giá (gvhd/bao-cao-danh-gia.md) ra Word kèm mục lục
 	@$(UV) run --no-project tools/md_to_docx.py docs/gvhd/bao-cao-danh-gia.md \
 		--out $(WORD_DIR)/bao-cao-danh-gia.docx --toc
+
+# Tên tệp theo MSSV: quy định nộp đĩa của trường đặt tên file báo cáo khóa luận như vậy.
+docx-khoa-luan: ## Xuất khóa luận (gvhd/khoa-luan.md) ra Word theo quy định trình bày của UIT
+	@$(UV) run --no-project tools/md_to_docx.py docs/gvhd/khoa-luan.md \
+		--out $(WORD_DIR)/24410300.docx --uit
+
+# Sơ đồ UML vẽ bằng mermaid-cli; PUPPETEER_EXECUTABLE_PATH trỏ tới Chrome/Edge có sẵn để
+# không phải tải thêm Chromium. Biểu đồ số đo đọc thẳng từ docs/results/.
+figures-khoa-luan: ## Vẽ lại hình của khóa luận (docs/gvhd/khoa-luan-hinh/)
+	@cd docs/gvhd/khoa-luan-hinh && for f in src/*.mmd; do \
+		PUPPETEER_SKIP_DOWNLOAD=1 npx -y @mermaid-js/mermaid-cli@11 -p src/puppeteer.json \
+			-c src/mermaid.json -b white -s 2 -i "$$f" -o "$$(basename $$f .mmd).png" >/dev/null; \
+	done
+	@$(UV) run --no-project docs/gvhd/khoa-luan-hinh/src/charts.py
 
 health: ## Gọi thử endpoint /health của AI service
 	@curl -s http://127.0.0.1:8756/health && echo

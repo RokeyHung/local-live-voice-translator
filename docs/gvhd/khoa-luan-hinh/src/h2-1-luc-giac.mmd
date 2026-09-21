@@ -1,0 +1,15 @@
+flowchart LR
+    subgraph outer["Vòng ngoài — thay được"]
+        TR["Giao tiếp<br/>REST · WebSocket"]
+        AD["Adapter<br/>whisper.cpp · NLLB · SQLite …"]
+    end
+    subgraph core["Lõi — không biết gì về hạ tầng"]
+        AP["Application<br/>chuỗi xử lý, quản lý mô hình"]
+        PO["Ports<br/>giao diện trừu tượng"]
+        DO["Domain<br/>kiểu dữ liệu thuần"]
+    end
+    TR --> AP
+    AD -->|"hiện thực"| PO
+    AP --> PO
+    AP --> DO
+    PO --> DO

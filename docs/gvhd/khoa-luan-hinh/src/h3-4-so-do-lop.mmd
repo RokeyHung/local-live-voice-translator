@@ -1,0 +1,52 @@
+classDiagram
+    direction TB
+    class Provider {
+        <<abstract>>
+        +load()
+        +unload()
+    }
+    class VoiceActivityDetector {
+        <<abstract>>
+        +open_stream() VadStream
+    }
+    class VadStream {
+        <<abstract>>
+        +accept(pcm, rate) list~VadSegment~
+        +flush() list~VadSegment~
+        +reset()
+    }
+    class SpeechToTextProvider {
+        <<abstract>>
+        +transcribe(pcm, language, rate) Transcript
+    }
+    class TranslationProvider {
+        <<abstract>>
+        +translate(text, source, target) Translation
+    }
+    class TextToSpeechProvider {
+        <<abstract>>
+        +synthesize(text, language) SpeechAudio
+    }
+    class SessionRepository {
+        <<abstract>>
+        +save_utterance()
+        +list_sessions()
+    }
+    Provider <|-- VoiceActivityDetector
+    Provider <|-- SpeechToTextProvider
+    Provider <|-- TranslationProvider
+    Provider <|-- TextToSpeechProvider
+    VoiceActivityDetector ..> VadStream : tạo
+    VoiceActivityDetector <|-- SileroVad
+    VadStream <|-- SileroVadStream
+    SpeechToTextProvider <|-- WhisperCppAsr
+    SpeechToTextProvider <|-- MlxWhisperAsr
+    SpeechToTextProvider <|-- FasterWhisperAsr
+    TranslationProvider <|-- NllbTranslator
+    TextToSpeechProvider <|-- SherpaOnnxTts
+    TextToSpeechProvider <|-- KokoroJaTts
+    TextToSpeechProvider <|-- LanguageRoutedTts
+    SessionRepository <|-- SqliteSessionRepository
+    SessionRepository <|-- HistoryPolicy
+    LanguageRoutedTts o-- TextToSpeechProvider : chọn theo ngôn ngữ
+    HistoryPolicy o-- SessionRepository : bọc

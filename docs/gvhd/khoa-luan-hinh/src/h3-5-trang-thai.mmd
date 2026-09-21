@@ -1,0 +1,19 @@
+stateDiagram-v2
+    direction LR
+    [*] --> Listening
+    Listening --> SpeechDetected : VAD thấy giọng
+    SpeechDetected --> Recognizing : chốt câu
+    Recognizing --> Listening : câu bịa / rỗng — bỏ
+    Recognizing --> Translating : có văn bản
+    Translating --> Completed : chiều về, không TTS
+    Translating --> WaitingForConfirmation : chiều đi, bật duyệt
+    Translating --> Synthesizing : chiều đi, không duyệt
+    WaitingForConfirmation --> Synthesizing : confirm
+    WaitingForConfirmation --> Completed : discard
+    Synthesizing --> Speaking
+    Speaking --> Completed
+    Recognizing --> Error
+    Translating --> Error
+    Synthesizing --> Error
+    Completed --> [*]
+    Error --> [*]

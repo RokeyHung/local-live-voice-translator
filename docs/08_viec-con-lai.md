@@ -13,7 +13,7 @@
 Tóm tắt một câu (20/09): **khối đo đã đóng.** Bộ đánh giá giờ có số thật trên **cả hai
 nền tảng**, ba runtime ASR đã so trên cùng 3.099 bản thu ([`05` mục 8d](05_bo-danh-gia-fleurs.md)),
 và cả sáu chiều đều đạt ngưỡng chặt RTF p90 ≤ 0,5 trên cấu hình Windows
-([`05` mục 8e](05_bo-danh-gia-fleurs.md)) — trên máy Mac chỉ ba chiều đạt. Việc còn lại
+([`05` mục 8e](05_bo-danh-gia-fleurs.md)) — trên máy Mac chỉ hai chiều đạt (zh→vi 0,509 trượt sát mép). Việc còn lại
 gần như chỉ còn Tuần 9 (báo cáo, video demo, slide) và những thứ **bắt buộc phải có
 giọng người thật** ở mục 2.
 
@@ -141,7 +141,11 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
 - [ ] Thiết kế option nhanh–nhẹ / chất lượng cao cho người dùng. Đã có một nửa: mỗi
       preset giờ mang một `VadTuning` riêng (4,5 / 6 / 8 giây), còn thiếu phần đo để
       chứng minh sự đánh đổi.
-- [ ] Báo cáo, video demo
+- [ ] Báo cáo, video demo. _Bản nháp khóa luận xong 22/09:_
+      [`gvhd/khoa-luan.md`](gvhd/khoa-luan.md), trình bày theo quy định của trường (Phụ
+      lục 2, daa.uit.edu.vn): 5 chương, 85 trang, phần nội dung 65 trang (quy định 50–100),
+      23 hình, 28 bảng. Còn thiếu: 6 ảnh chụp màn hình (Hình 3.11–3.16), tên khoa/ngành
+      trên bìa, lời cảm ơn. Video demo và slide bảo vệ chưa làm.
 - [x] ~~Đóng gói cài đặt~~ — **bản macOS xong 15/09**: `make dist` ra
       `Voice Translator-1.0.0-arm64.dmg` (506 MB), mang sẵn AI service Python nên máy
       đích không cần uv/Node/Python. Đã chạy thử từ chính file `.dmg`: service tự lên

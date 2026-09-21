@@ -1,0 +1,34 @@
+---
+config:
+  layout: elk
+---
+flowchart LR
+    U(["Người dùng"])
+    OS(["Hệ điều hành"])
+    HF(["Hugging Face / GitHub<br/>(chỉ khi tải mô hình)"])
+    subgraph S["Hệ thống dịch giọng nói"]
+        UC1(["Cấu hình ngôn ngữ, thiết bị, chế độ"])
+        UC2(["Chọn preset / tự chọn mô hình"])
+        UC3(["Quản lý mô hình: tải, nạp, gỡ, xóa"])
+        UC4(["Phiên dịch hai chiều"])
+        UC4a(["Giữ phím nói / tắt tiếng"])
+        UC4b(["Duyệt bản dịch trước khi đọc"])
+        UC5(["Nhập tệp âm thanh / video"])
+        UC5a(["Tách người nói"])
+        UC6(["Xem, tìm, xóa lịch sử"])
+        UC7(["Đo độ trễ, chạy đánh giá"])
+        UC8(["Cài đặt: thư mục, token, tắt lịch sử"])
+    end
+    U --- UC1
+    U --- UC2
+    U --- UC3
+    U --- UC4
+    U --- UC5
+    U --- UC6
+    U --- UC7
+    U --- UC8
+    UC4 -.->|"«include»"| UC4a
+    UC4b -.->|"«extend»"| UC4
+    UC5a -.->|"«extend»"| UC5
+    OS --- UC4
+    UC3 --- HF

@@ -1,0 +1,14 @@
+flowchart TB
+    W["Cửa sổ 32 ms"] --> S{"Silero: có giọng?"}
+    S -->|"có"| APP["nối vào câu đang mở"]
+    APP --> MAXC{"câu dài hơn<br/>max_speech_ms?"}
+    MAXC -->|"không"| W
+    MAXC -->|"có"| BACK["lùi tìm khung yên nhất<br/>trong backoff_ms cuối"]
+    BACK --> CUT["cắt ở đó, mở câu mới<br/>chồng lấn carry_ms"]
+    S -->|"không"| LEN{"câu đã dài hơn<br/>soft_max_ms?"}
+    LEN -->|"có"| SOFT{"im lặng ≥<br/>soft_silence_ms?"}
+    LEN -->|"không"| HARD{"im lặng ≥<br/>min_silence_ms?"}
+    SOFT -->|"có"| EMIT["chốt câu → ASR"]
+    HARD -->|"có"| EMIT
+    SOFT -->|"chưa"| W
+    HARD -->|"chưa — có thể chỉ là nhịp ngắt"| W

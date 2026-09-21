@@ -1,0 +1,27 @@
+erDiagram
+    SESSIONS ||--o{ UTTERANCES : "gồm"
+    SESSIONS {
+        string id PK
+        string title
+        string mode
+        string preset
+        int started_at_ms
+        int ended_at_ms
+    }
+    UTTERANCES {
+        string id PK
+        string session_id FK
+        string source
+        string source_language
+        string target_language
+        text source_text
+        text translated_text
+        int asr_ms
+        int mt_ms
+        int tts_ms
+        string status
+        string error
+        string speaker
+        int started_at_ms
+        int ended_at_ms
+    }

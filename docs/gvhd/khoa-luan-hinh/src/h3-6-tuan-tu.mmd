@@ -1,0 +1,25 @@
+sequenceDiagram
+    autonumber
+    participant R as Renderer
+    participant C as SessionController
+    participant M as ModelManager
+    participant P as TranslationPipeline
+    participant V as VadStream
+    participant A as ASR / MT / TTS
+    R->>C: mở WebSocket /ws
+    R->>C: session.start (cặp ngôn ngữ, chế độ)
+    C->>M: ensure_loaded()
+    M-->>C: ProviderSet (nạp nếu chưa có)
+    C->>P: tạo pipeline cho từng chiều
+    loop mỗi 100 ms
+        R->>C: audio.chunk (PCM16, nguồn)
+        C->>P: đẩy khung (nếu đang giữ phím)
+        P->>V: accept()
+    end
+    V-->>P: VadSegment (câu đã chốt)
+    P->>A: transcribe()
+    P-->>R: asr.final
+    P->>A: translate()
+    P-->>R: mt.result
+    P->>A: synthesize() — chỉ chiều đi
+    P-->>R: tts.audio, metrics

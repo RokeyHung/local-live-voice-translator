@@ -1,0 +1,24 @@
+flowchart TB
+    subgraph PC["Máy tính người dùng — Windows 11 / macOS"]
+        subgraph EL["Tiến trình Electron"]
+            MAIN["Main process<br/>khởi động / tắt dịch vụ"]
+            REN["Renderer — React<br/>giao diện, thu âm, phát giọng"]
+        end
+        subgraph PY["Tiến trình Python — llvt-ai-service"]
+            API["FastAPI + WebSocket<br/>127.0.0.1:8756"]
+            PIPE["Chuỗi xử lý<br/>VAD → ASR → MT → TTS"]
+        end
+        OSA["Âm thanh hệ điều hành<br/>WASAPI / CoreAudio / ScreenCaptureKit"]
+        GPU["GPU<br/>Vulkan / CUDA / Metal"]
+        MD[("Thư mục mô hình")]
+        DB[("Lịch sử SQLite")]
+        CFG[("settings.json")]
+    end
+    OSA <--> REN
+    MAIN -->|"khởi động"| PY
+    REN <-->|"REST + WebSocket"| API
+    API --> PIPE
+    PIPE --> GPU
+    PIPE --> MD
+    PIPE --> DB
+    API --> CFG

@@ -503,9 +503,10 @@ trên mlx-audio/Metal) — bảng độ trễ và bảng WER phải nói về c�
 ### Đọc số
 
 **Đạt ngưỡng "cần" ở cả sáu chiều: RTF p90 < 1**, chiều xấu nhất là vi→ja với 0,786.
-Nhưng ngưỡng "đủ để nói chuyện thoải mái" ở mục 5 là **RTF p90 ≤ 0,5**, và chỉ **ba
-chiều đạt**: ja→vi (0,395), en→vi (0,496), zh→vi (0,509 — sát mép). Ba chiều **có tiếng
-Việt ở đầu vào** đều trượt: 0,580 · 0,727 · 0,786.
+Nhưng ngưỡng "đủ để nói chuyện thoải mái" ở mục 5 là **RTF p90 ≤ 0,5**, và chỉ **hai
+chiều đạt**: ja→vi (0,395), en→vi (0,496). zh→vi trượt sát mép (0,509) — bản đầu của mục
+này tính nó là đạt, sửa ngày 22/09 khi rà số cho khóa luận. Ba chiều **có tiếng Việt ở đầu
+vào** đều trượt: 0,580 · 0,727 · 0,786.
 
 **Hai nguyên nhân tách bạch được, và chúng nằm ở hai đầu khác nhau:**
 
@@ -566,7 +567,7 @@ dùng**: whisper.cpp qua Vulkan (mục 8d) và NLLB trên CUDA. Sinh lại bằn
 
 ### Đọc số
 
-**Cả sáu chiều đều đạt ngưỡng chặt RTF p90 ≤ 0,5.** Trên máy Mac (mục 8c) chỉ ba chiều
+**Cả sáu chiều đều đạt ngưỡng chặt RTF p90 ≤ 0,5.** Trên máy Mac (mục 8c) chỉ hai chiều
 đạt, và chiều xấu nhất là 0,786. Ở đây chiều xấu nhất là vi→ja 0,383 — tức còn dư hơn
 một nửa ngân sách. Nếu GVHD chốt ngưỡng 0,5 (xem mục 3.5 của
 [báo cáo GVHD](gvhd/bao-cao-danh-gia.md)) thì cấu hình Windows đáp ứng được, cấu hình

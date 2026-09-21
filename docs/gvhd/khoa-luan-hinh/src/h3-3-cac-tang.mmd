@@ -1,0 +1,13 @@
+flowchart TB
+    T["api/ · ws/<br/>REST, WebSocket, sự kiện → JSON"]
+    A["application/<br/>TranslationPipeline · transcribe · ModelManager<br/>HistoryPolicy · LanguageRoutedTts · SessionController"]
+    P["ports/<br/>VoiceActivityDetector · VadStream · SpeechToTextProvider<br/>TranslationProvider · TextToSpeechProvider · SpeakerDiarizer · SessionRepository"]
+    D["domain/<br/>Utterance · VadSegment · LanguagePair · PipelineEvent"]
+    AD["adapters/<br/>Silero · whisper.cpp · MLX · CTranslate2 · NLLB<br/>sherpa-onnx · Kokoro · pyannote · SQLite"]
+    C["config/<br/>settings · presets"]
+    T --> A
+    A --> P
+    A --> D
+    P --> D
+    AD -->|"hiện thực"| P
+    C --> D
