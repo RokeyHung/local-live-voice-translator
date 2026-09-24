@@ -21,8 +21,13 @@ giọng người thật** ở mục 2.
 đo trên ba loại giọng, và 25 đoạn phỏng vấn tự phát cho WER 24,6% so với 10,4% trên
 FLEURS cùng model — gấp 2,4 lần. Kèm hai lỗi MT mà FLEURS không bắt được (vòng lặp
 NLLB, dịch nghĩa đen thuật ngữ), **ghi nhận chứ chưa sửa** vì sửa thì bảng 8b phải chạy
-lại. Hạn Tuần 9 là 23/09, gửi thầy xem trước, nộp chính thức 24/09 — từ đây không đo
-thêm, chỉ viết.
+lại.
+
+**Lịch thật, theo tin nhắn GVHD ngày 23/09** (nhóm Đồ án tốt nghiệp 6TC) — dài hơn bảng
+tuần của đề cương, nên việc "chưa sửa vì hết giờ" cần xét lại: **24/09** nộp báo cáo bản 1
+cho Phòng Đào tạo (sau đó vẫn sửa tiếp được) · **29/09** gửi GVHD tiến độ cuối · **10/10**
+bảo vệ khóa luận. Tiến độ và các câu hỏi đã gửi thầy ở
+[`gvhd/tien-do-2026-09-23.md`](gvhd/tien-do-2026-09-23.md).
 
 Sáu việc của các đợt bổ sung đã đóng, chi tiết ở
 [`04_cac-dot-bo-sung.md`](04_cac-dot-bo-sung.md): màn hình đánh giá trong app (biên bản
