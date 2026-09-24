@@ -67,10 +67,10 @@ CAPTION_STYLES = {"Hình": "Chú thích hình", "Bảng": "Chú thích bảng"}
 RE_CAPTION = re.compile(r"^(Hình|Bảng) \d+\.\d+:")
 RE_IMAGE = re.compile(r"^\s*!\[(?P<alt>[^\]]*)\]\((?P<src>[^)]+)\)\s*$")
 # Cỡ chữ trang bìa theo mẫu bìa của trường: tên đề tài 18–30, tên tiếng Anh 15–25,
-# trường/khoa/"KHÓA LUẬN TỐT NGHIỆP" 16, năm 13, còn lại 14. Đoán theo nội dung dòng
+# trường/khoa/"ĐỒ ÁN TỐT NGHIỆP" 16, năm 13, còn lại 14. Đoán theo nội dung dòng
 # vì Markdown không có chỗ ghi cỡ chữ.
 COVER_SIZES = (
-    (re.compile(r"^(TRƯỜNG|KHOA|KHÓA LUẬN)"), Pt(16)),
+    (re.compile(r"^(TRƯỜNG|KHOA|KHÓA LUẬN|ĐỒ ÁN)"), Pt(16)),
     (re.compile(r"^TP\. HỒ CHÍ MINH"), Pt(13)),
     (re.compile(r"^[A-Z][a-z].*[A-Za-z]$"), Pt(16)),  # tên tiếng Anh
     (re.compile(r"^[A-ZÀ-Ỹ ]{40,}$"), Pt(20)),  # tên đề tài: dòng chữ hoa dài
@@ -593,6 +593,7 @@ def base_document() -> Document:
             spf.alignment = WD_ALIGN_PARAGRAPH.CENTER
             spf.space_before, spf.space_after = Pt(3), Pt(9)
             spf.line_spacing = 1.2
+        add_cover_border(section)
         # Trang bìa, lời cảm ơn, mục lục, danh mục không đánh số (quy định); số trang bắt
         # đầu từ Tóm tắt, ở section thứ hai — xem start_numbering().
         request_field_update(doc)
@@ -618,6 +619,35 @@ def request_field_update(doc: Document) -> None:
     flag = OxmlElement("w:updateFields")
     flag.set(qn("w:val"), "true")
     doc.settings.element.append(flag)
+
+
+def add_cover_border(section) -> None:
+    """Khung viền quanh trang bìa chính, đúng như BieuMau.docx của CITD.
+
+    python-docx không có API cho viền trang nên phải dựng thẳng `w:pgBorders`. Cờ
+    `display="firstPage"` giới hạn viền ở trang đầu của section — section đầu chứa cả
+    phần đầu tài liệu, nên nếu không có cờ này thì lời cảm ơn và các danh mục cũng bị
+    đóng khung theo. Kiểu viền lấy y bản mẫu: thinThickSmallGap ở trên/trái, đối xứng
+    lại ở dưới/phải, dày 3pt, cách mép trang 24pt.
+    """
+    from docx.oxml import OxmlElement
+
+    borders = OxmlElement("w:pgBorders")
+    borders.set(qn("w:display"), "firstPage")
+    borders.set(qn("w:offsetFrom"), "page")
+    for edge, style in (
+        ("top", "thinThickSmallGap"),
+        ("left", "thinThickSmallGap"),
+        ("bottom", "thickThinSmallGap"),
+        ("right", "thickThinSmallGap"),
+    ):
+        el = OxmlElement(f"w:{edge}")
+        el.set(qn("w:val"), style)
+        el.set(qn("w:sz"), "24")
+        el.set(qn("w:space"), "24")
+        el.set(qn("w:color"), "auto")
+        borders.append(el)
+    section._sectPr.append(borders)
 
 
 def start_numbering(doc: Document) -> None:
@@ -1056,7 +1086,7 @@ def main() -> int:
     ap.add_argument(
         "--uit",
         action="store_true",
-        help="trình bày theo quy định khóa luận của UIT (lề, số trang, ảnh, chú thích)",
+        help="trình bày theo quy định khóa luận/đồ án của UIT (lề, số trang, ảnh, chú thích)",
     )
     args = ap.parse_args()
 

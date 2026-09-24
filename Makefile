@@ -151,10 +151,13 @@ docx: ## Xuất báo cáo đánh giá (gvhd/bao-cao-danh-gia.md) ra Word kèm m�
 	@$(UV) run --no-project tools/md_to_docx.py docs/gvhd/bao-cao-danh-gia.md \
 		--out $(WORD_DIR)/bao-cao-danh-gia.docx --toc
 
-# Tên tệp theo MSSV: quy định nộp đĩa của trường đặt tên file báo cáo khóa luận như vậy.
-docx-khoa-luan: ## Xuất khóa luận (gvhd/khoa-luan.md) ra Word theo quy định trình bày của UIT
+# Tên tệp nộp theo thông báo của CITD: MSSV_HoTen_DATN, không dấu và không khoảng trắng.
+# Form của ngành nhận hai tệp Word + PDF; PDF xuất ra từ chính tệp Word này.
+SUBMIT_NAME  ?= 24410300_NgoManhHung_DATN
+
+docx-khoa-luan: ## Xuất đồ án (gvhd/khoa-luan.md) ra Word theo biểu mẫu CITD + quy định UIT
 	@$(UV) run --no-project tools/md_to_docx.py docs/gvhd/khoa-luan.md \
-		--out $(WORD_DIR)/24410300.docx --uit
+		--out $(WORD_DIR)/$(SUBMIT_NAME).docx --uit
 
 # Sơ đồ UML vẽ bằng mermaid-cli; PUPPETEER_EXECUTABLE_PATH trỏ tới Chrome/Edge có sẵn để
 # không phải tải thêm Chromium. Biểu đồ số đo đọc thẳng từ docs/results/.

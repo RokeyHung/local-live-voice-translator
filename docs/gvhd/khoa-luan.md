@@ -1,10 +1,13 @@
 <!-- markdownlint-disable MD025 MD036 MD052 -->
-<!-- Khóa luận tốt nghiệp, trình bày theo Phụ lục 2 "Hình thức trình bày khóa luận tốt
-     nghiệp" của Phòng Đào tạo Đại học UIT (daa.uit.edu.vn, bản 03/2024).
-     Xuất Word: make docx-khoa-luan → docs/word/24410300.docx (tên tệp theo MSSV, đúng
-     quy định nộp đĩa). [CẦN ĐIỀN] là thông tin chỉ sinh viên biết. [CHÈN HÌNH] là ảnh
-     chụp màn hình phải chụp từ ứng dụng rồi đặt vào docs/gvhd/khoa-luan-hinh/.
-     Trích dẫn [n] trỏ tới danh mục cuối tài liệu, xếp theo alphabet tác giả. -->
+<!-- Đồ án tốt nghiệp. Cấu trúc theo biểu mẫu của CITD (docs/word/BieuMau.docx, kèm
+     thông báo nộp báo cáo HK III 2025-2026), cách trình bày theo Phụ lục 2 "Hình thức
+     trình bày khóa luận tốt nghiệp" của Phòng Đào tạo Đại học UIT (bản 03/2024).
+     Xuất Word: make docx-khoa-luan → docs/word/24410300_NgoManhHung_DATN.docx; tên tệp
+     theo cấu trúc MSSV_HoTen_DATN mà thông báo quy định. Form của ngành nhận hai tệp
+     Word + PDF, chỉ nộp được một lần, hạn 27/09/2026.
+     [CHÈN HÌNH] là ảnh chụp màn hình phải chụp từ ứng dụng rồi đặt vào
+     docs/gvhd/khoa-luan-hinh/. Trích dẫn [n] trỏ tới danh mục cuối tài liệu, xếp theo
+     alphabet tác giả. -->
 
 <!-- trang: bìa chính -->
 
@@ -12,7 +15,7 @@
 
 **TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN**
 
-**KHOA [CẦN ĐIỀN]**
+**KHOA KHOA HỌC VÀ KỸ THUẬT THÔNG TIN**
 
 &nbsp;
 
@@ -20,7 +23,7 @@
 
 &nbsp;
 
-**KHÓA LUẬN TỐT NGHIỆP**
+**ĐỒ ÁN TỐT NGHIỆP**
 
 **XÂY DỰNG HỆ THỐNG DỊCH GIỌNG NÓI ĐA NGÔN NGỮ GẦN THỜI GIAN THỰC SỬ DỤNG MÔ HÌNH AI
 CHẠY CỤC BỘ**
@@ -29,7 +32,7 @@ CHẠY CỤC BỘ**
 
 &nbsp;
 
-**[KỸ SƯ / CỬ NHÂN — CẦN ĐIỀN] NGÀNH [CẦN ĐIỀN]**
+**CỬ NHÂN NGÀNH CÔNG NGHỆ THÔNG TIN**
 
 &nbsp;
 
@@ -41,7 +44,7 @@ CHẠY CỤC BỘ**
 
 **TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN**
 
-**KHOA [CẦN ĐIỀN]**
+**KHOA KHOA HỌC VÀ KỸ THUẬT THÔNG TIN**
 
 &nbsp;
 
@@ -49,7 +52,7 @@ CHẠY CỤC BỘ**
 
 &nbsp;
 
-**KHÓA LUẬN TỐT NGHIỆP**
+**ĐỒ ÁN TỐT NGHIỆP**
 
 **XÂY DỰNG HỆ THỐNG DỊCH GIỌNG NÓI ĐA NGÔN NGỮ GẦN THỜI GIAN THỰC SỬ DỤNG MÔ HÌNH AI
 CHẠY CỤC BỘ**
@@ -58,7 +61,7 @@ CHẠY CỤC BỘ**
 
 &nbsp;
 
-**[KỸ SƯ / CỬ NHÂN — CẦN ĐIỀN] NGÀNH [CẦN ĐIỀN]**
+**CỬ NHÂN NGÀNH CÔNG NGHỆ THÔNG TIN**
 
 &nbsp;
 
@@ -72,17 +75,23 @@ CHẠY CỤC BỘ**
 
 <!-- trang: không đánh số -->
 
-# THÔNG TIN HỘI ĐỒNG CHẤM KHÓA LUẬN TỐT NGHIỆP
+# THÔNG TIN HỘI ĐỒNG CHẤM ĐỒ ÁN TỐT NGHIỆP
 
-Hội đồng chấm khóa luận tốt nghiệp, thành lập theo Quyết định số ……………………
+Hội đồng chấm đồ án tốt nghiệp, thành lập theo Quyết định số ……………………
 ngày ………………….. của Hiệu trưởng Trường Đại học Công nghệ Thông tin.
 
 # LỜI CẢM ƠN
 
-[CẦN ĐIỀN — lời cảm ơn là phần riêng của sinh viên. Gợi ý: cảm ơn ThS. Nguyễn Thành
-Luân đã hướng dẫn, nhất là những góp ý ở buổi họp ngày 19/08/2026 về bộ độ đo đánh giá
-và về việc thu hẹp phạm vi tích hợp Google Meet; cảm ơn quý thầy cô của trường; cảm ơn
-gia đình và bạn bè.]
+Em xin cảm ơn ThS. Nguyễn Thành Luân đã hướng dẫn em trong suốt quá trình làm đồ án.
+Buổi làm việc ngày 19/08/2026 là chỗ rẽ của đề tài: thầy yêu cầu đo bằng bộ dữ liệu
+chuẩn với WER, BLEU, COMET và RTF thay vì bộ câu tự dựng, và chính yêu cầu đó dẫn tới
+toàn bộ Chương 4. Thầy cũng là người đã cùng em cân nhắc và quyết định thu hẹp phạm vi
+phần tích hợp Google Meet để tập trung vào chất lượng dịch.
+
+Em xin cảm ơn quý thầy cô Trường Đại học Công nghệ Thông tin đã dạy em trong những năm
+vừa qua. Em cảm ơn gia đình và bạn bè đã ủng hộ em trong thời gian làm đồ án.
+
+Đồ án còn nhiều chỗ chưa trọn vẹn, em mong nhận được góp ý của quý thầy cô.
 
 _Thành phố Hồ Chí Minh, tháng 9 năm 2026_
 
@@ -125,18 +134,18 @@ Sinh viên
 
 <!-- trang: bắt đầu đánh số -->
 
-# TÓM TẮT KHÓA LUẬN
+# TÓM TẮT ĐỒ ÁN
 
 Các giải pháp dịch giọng nói trong cuộc họp trực tuyến hiện nay phần lớn chạy trên đám
 mây: chúng đòi hỏi kết nối Internet ổn định, phát sinh chi phí theo lượt dùng, và đưa
-nội dung hội thoại ra khỏi máy người dùng. Khóa luận xây dựng một ứng dụng desktop dịch
+nội dung hội thoại ra khỏi máy người dùng. Đồ án xây dựng một ứng dụng desktop dịch
 giọng nói gần thời gian thực chạy hoàn toàn trên máy tính cá nhân, không gọi dịch vụ đám
 mây nào trong lúc dịch. Ứng dụng dịch hai chiều giữa tiếng Việt với tiếng Anh, tiếng Nhật
 và tiếng Trung giản thể, cho cả giọng người dùng qua microphone lẫn âm thanh đang phát
 trên máy — tức là phía bên kia của một cuộc gọi. Hệ thống chạy trên Windows 11 và macOS
 trên chip Apple Silicon, và được đóng gói thành bộ cài tự chứa.
 
-**Hướng tiếp cận.** Khóa luận chọn cách dịch theo chuỗi thay vì dùng một mô hình đầu-cuối:
+**Hướng tiếp cận.** Đồ án chọn cách dịch theo chuỗi thay vì dùng một mô hình đầu-cuối:
 Silero VAD tách câu, Whisper nhận dạng tiếng nói, NLLB-200 distilled 600M dịch văn bản,
 sherpa-onnx và Kokoro tổng hợp giọng nói. Cách này cho phép đo lỗi của từng khâu riêng và
 thay từng khâu độc lập. Hệ thống gồm hai tiến trình giao tiếp qua `127.0.0.1`: một ứng
@@ -188,7 +197,7 @@ dịch trực tiếp giữa 200 ngôn ngữ [4]; sherpa-onnx tổng hợp giọn
 [12]. Máy tính phổ thông cũng đã có GPU đủ mạnh — kể cả GPU tích hợp của chip Apple
 Silicon. Câu hỏi còn lại vì vậy không nằm ở mô hình, mà ở kỹ thuật hệ thống: ghép các mô
 hình đó thành một ứng dụng dùng được thật, đủ nhanh để theo kịp người nói, trên phần cứng
-phổ thông, ở cả hai hệ điều hành chính. Đó là lý do khóa luận chọn đề tài này.
+phổ thông, ở cả hai hệ điều hành chính. Đó là lý do đồ án chọn đề tài này.
 
 ## 1.2. Mục tiêu
 
@@ -209,8 +218,8 @@ tuyến mà không dùng dịch vụ đám mây trong quá trình dịch.
 - Đánh giá độ chính xác của từng khâu và độ trễ của cả chuỗi bằng các độ đo chuẩn, trên
   dữ liệu công khai và trên giọng người thật.
 
-"Gần thời gian thực" trong khóa luận được hiểu là **xử lý theo từng đoạn phát ngôn**: hệ
-thống chờ người nói dứt câu hoặc ngắt nghỉ rồi mới dịch cả đoạn đó. Khóa luận không đặt
+"Gần thời gian thực" trong đồ án được hiểu là **xử lý theo từng đoạn phát ngôn**: hệ
+thống chờ người nói dứt câu hoặc ngắt nghỉ rồi mới dịch cả đoạn đó. Đồ án không đặt
 mục tiêu dịch đồng thời theo từng từ trong lúc người dùng vẫn đang nói.
 
 ## 1.3. Đối tượng và phạm vi nghiên cứu
@@ -233,7 +242,7 @@ mục tiêu dịch đồng thời theo từng từ trong lúc người dùng v�
 - **Nguồn âm thanh:** microphone vật lý và âm thanh hệ thống.
 - **Đầu ra:** phụ đề song ngữ và giọng nói tổng hợp phát ra loa hoặc tai nghe.
 - Toàn bộ nhận dạng, dịch và tổng hợp giọng nói chạy cục bộ sau khi mô hình đã được tải về.
-- Khóa luận **không** nghiên cứu mô hình AI mới, không làm nhân bản giọng nói, không xử lý
+- Đồ án **không** nghiên cứu mô hình AI mới, không làm nhân bản giọng nói, không xử lý
   nhiều người nói chồng lên nhau, không làm ứng dụng di động hay web.
 
 ### 1.3.3. Điều chỉnh phạm vi so với đề cương
@@ -332,7 +341,7 @@ khâu để biết "đủ dùng" nghĩa là bao nhiêu.
 - **Đo trên dữ liệu công khai** (FLEURS) để có con số tái lập được và so được với số công
   bố của các mô hình; **đo thêm trên giọng người thật** để biết con số trên dữ liệu công khai
   lạc quan tới đâu.
-- **Ghi lại mọi kết quả đo** dưới dạng tệp JSON cùng mã nguồn, để mọi con số trong khóa luận
+- **Ghi lại mọi kết quả đo** dưới dạng tệp JSON cùng mã nguồn, để mọi con số trong đồ án
   đều kiểm lại được.
 
 ## 1.6. Kết quả đạt được
@@ -349,7 +358,7 @@ khâu để biết "đủ dùng" nghĩa là bao nhiêu.
 - Các chức năng ngoài đề cương: lịch sử phiên dịch, nhập tệp âm thanh/video, duyệt bản dịch
   trước khi đọc, màn hình đánh giá trong ứng dụng, tách người nói cho tệp nhập.
 
-## 1.7. Cấu trúc khóa luận
+## 1.7. Cấu trúc đồ án
 
 - **Chương 1 — Tổng quan:** lý do chọn đề tài, mục tiêu, phạm vi và các giải pháp liên quan.
 - **Chương 2 — Cơ sở lý thuyết:** lý thuyết của từng khâu, các độ đo đánh giá, kiến trúc và
@@ -377,7 +386,7 @@ từ âm thanh ngôn ngữ nguồn sang văn bản hoặc âm thanh ngôn ngữ 
 (cascade) ghép các mô hình chuyên biệt nối tiếp nhau: nhận dạng tiếng nói, dịch văn bản,
 rồi tổng hợp giọng nói.
 
-Khóa luận chọn cách chuỗi vì ba lý do. Thứ nhất, mỗi khâu có sẵn mô hình mã nguồn mở chất
+Đồ án chọn cách chuỗi vì ba lý do. Thứ nhất, mỗi khâu có sẵn mô hình mã nguồn mở chất
 lượng tốt, chạy được cục bộ và bao phủ đủ bốn ngôn ngữ. Thứ hai, cách chuỗi cho phép **đo
 lỗi của từng khâu riêng**: khi bản dịch sai, biết được là do nghe nhầm hay dịch nhầm —
 đúng yêu cầu "tách bạch lỗi của từng khối" mà giảng viên hướng dẫn đặt ra ở buổi họp ngày
@@ -452,7 +461,7 @@ huấn luyện trên tập lớn hơn nữa. Encoder nhận phổ log-Mel của 
 decoder sinh từng token văn bản dựa trên đầu ra của encoder và các token đã sinh trước đó.
 
 Whisper nhận các token đặc biệt ở đầu chuỗi để chọn ngôn ngữ và tác vụ: `transcribe` ghi lại
-đúng ngôn ngữ đang nói, `translate` dịch thẳng sang tiếng Anh. Khóa luận **chỉ dùng
+đúng ngôn ngữ đang nói, `translate` dịch thẳng sang tiếng Anh. Đồ án **chỉ dùng
 `transcribe`**, vì `translate` chỉ ra được tiếng Anh — không ra được tiếng Việt, Nhật hay
 Trung — và để việc dịch cho một khâu riêng thì đổi được mô hình dịch mà không đụng khâu
 nghe.
@@ -586,12 +595,12 @@ $\text{WER} = (1 + 1 + 0)/7 = 28{,}6\%$.
 Khi báo WER cho một tập nhiều câu có hai cách tính, cho ra hai con số khác nhau: **gộp cả
 tập** (tổng lỗi của mọi câu chia tổng số từ tham chiếu) và **trung bình từng câu**. Cách thứ
 hai cho câu ngắn trọng số ngang câu dài, nên một câu ba từ sai một từ kéo trung bình lên rất
-mạnh. Khóa luận dùng cách gộp cả tập — cách của thư viện jiwer và của các bài báo — cho mọi
+mạnh. Đồ án dùng cách gộp cả tập — cách của thư viện jiwer và của các bài báo — cho mọi
 con số đặt cạnh nhau.
 
 Tiếng Trung và tiếng Nhật không tách từ bằng khoảng trắng. Chấm WER cho hai thứ tiếng này
 thực chất là chấm theo chỗ mô hình tình cờ chèn dấu cách — cùng một câu đúng nghĩa có thể ra
-0% hay 100%. Vì vậy khóa luận dùng **CER** (Character Error Rate) — cùng công thức nhưng đếm
+0% hay 100%. Vì vậy đồ án dùng **CER** (Character Error Rate) — cùng công thức nhưng đếm
 trên ký tự — cho zh và ja, theo đúng quy ước của bài báo FLEURS [3] và bài báo Whisper [19].
 Hệ quả: WER và CER **không so được với nhau**, và không được lấy trung bình bốn ngôn ngữ khi
 hai trong bốn cột là CER.
@@ -611,7 +620,7 @@ BLEU phụ thuộc mạnh vào cách tách từ: Post [18] đo được chênh l
 bộ tách từ — lớn hơn cả mức cải thiện mà nhiều bài báo công bố — và đề xuất sacreBLEU để
 chuẩn hóa cách tính. Với tiếng Trung và tiếng Nhật, bộ tách theo khoảng trắng mặc định là vô
 nghĩa. **spBLEU** [8] giải quyết bằng cách tách từ bằng một mô hình SentencePiece dùng chung
-cho mọi ngôn ngữ. Khóa luận dùng sacreBLEU với tokenizer `flores200` — đúng cấu hình của bài
+cho mọi ngôn ngữ. Đồ án dùng sacreBLEU với tokenizer `flores200` — đúng cấu hình của bài
 báo NLLB — nên số đo đặt cạnh số công bố được, và sáu chiều dịch dùng chung một cách tách từ
 nên so được với nhau.
 
@@ -635,7 +644,7 @@ khoảng [0, 1]. Điểm COMET **không phải phần trăm** — 0,85 không c�
 dùng để xếp hạng các hệ thống trên cùng một tập.
 
 Báo cáo WMT22 [5] khuyến nghị dùng độ đo neural thay cho BLEU vì chúng tương quan với đánh
-giá của người tốt hơn. Khóa luận vẫn giữ spBLEU vì nó minh bạch, tính tay được và so được với
+giá của người tốt hơn. Đồ án vẫn giữ spBLEU vì nó minh bạch, tính tay được và so được với
 số công bố của NLLB; COMET là độ đo quyết định khi hai cấu hình chênh nhau, còn spBLEU và
 chrF++ là kiểm chứng chéo. Khi hai loại độ đo mâu thuẫn nhau, đó là tín hiệu phải đọc lại
 chính các câu dịch.
@@ -647,10 +656,10 @@ $$\text{RTF} = \frac{\text{thời gian xử lý}}{\text{thời lượng âm than
 RTF (Real-Time Factor) cho biết hệ thống xử lý chậm hơn người nói bao nhiêu lần. RTF < 1 là
 điều kiện **cần** để chạy trực tuyến: nếu không, hàng đợi âm thanh dài ra mãi và độ trễ tăng
 theo thời gian nói. Có tài liệu định nghĩa theo chiều ngược lại (thời lượng âm thanh chia
-thời gian xử lý, thường gọi là RTFx); khóa luận dùng chiều xử lý chia âm thanh như Kaldi và
+thời gian xử lý, thường gọi là RTFx); đồ án dùng chiều xử lý chia âm thanh như Kaldi và
 whisper.cpp, với tử số là tổng thời gian tính toán của cả bốn khâu.
 
-Khóa luận đề xuất hai ngưỡng (Bảng 2.3), đã báo cáo giảng viên hướng dẫn ngày 07/09/2026.
+Đồ án đề xuất hai ngưỡng (Bảng 2.3), đã báo cáo giảng viên hướng dẫn ngày 07/09/2026.
 
 Bảng 2.3: Ngưỡng RTF đề xuất
 
@@ -665,7 +674,7 @@ nhất 0,5 mới là mục tiêu hợp lý cho nhận dạng trực tuyến trê
 
 RTF **không phải** độ trễ người dùng cảm nhận. Người dùng còn phải chờ bộ tách câu xác nhận
 là họ đã nói xong; phần này là thời gian chờ, không phải thời gian tính toán, nên không nằm
-trong RTF. Khóa luận báo cáo nó thành một cột riêng gọi là **chờ chốt**. Khóa luận cũng không
+trong RTF. Đồ án báo cáo nó thành một cột riêng gọi là **chờ chốt**. Đồ án cũng không
 so độ trễ với mốc 150 ms của khuyến nghị ITU-T G.114 [11]: đó là mốc cho truyền dẫn thoại hai
 chiều, còn bản thân người phiên dịch chuyên nghiệp cũng nói sau người nói vài giây.
 
@@ -1304,7 +1313,7 @@ Ba lý do phụ củng cố quyết định:
   đề tài.
 - **Người trong cuộc họp nghe bản dịch thay cho giọng gốc**, vì microphone của Meet lúc đó là
   thiết bị ảo. Muốn họ nghe cả hai thì phải trộn hai nguồn bằng công cụ ngoài.
-- **Không đo được.** Mọi số đo của khóa luận dừng ở đầu ra TTS; phần truyền qua microphone ảo
+- **Không đo được.** Mọi số đo của đồ án dừng ở đầu ra TTS; phần truyền qua microphone ảo
   vào Meet không có cách đo.
 
 Về sau (mục 4.7.1), điểm yếu thứ hai — tách câu khi người nói không nghỉ — đã được kiểm chứng
@@ -1698,7 +1707,7 @@ dài, còn hội thoại bình thường gần như không bị ảnh hưởng. 
 
 Từ bản ghi phỏng vấn, 25 đoạn đầu tiên dài 3–12 giây kể từ phút thứ 5 được cắt ra bằng chính bộ
 tách câu của hệ thống — **không chọn tay** — tổng cộng 149 giây tiếng nói. Câu tham chiếu được lập
-như sau: lấy phụ đề tự sinh của YouTube làm bản nháp, rồi người làm khóa luận nghe từng đoạn và sửa
+như sau: lấy phụ đề tự sinh của YouTube làm bản nháp, rồi người làm đồ án nghe từng đoạn và sửa
 cho khớp lời thật, giữ nguyên cả chỗ người nói nói nhầm. Bước nghe và sửa là bắt buộc: phụ đề tự
 sinh cũng là đầu ra của một hệ ASR, và giữ nguyên nó làm câu tham chiếu thì WER đo được chỉ là mức
 giống nhau giữa hai hệ ASR. Mô hình là preset Cân bằng — cùng `ggml-large-v3-turbo-q5_0` với cột
@@ -1744,7 +1753,7 @@ bị trừ điểm dù đúng nghĩa. Thứ đáng nói ở đây là hai **lỗ
    Tết Nguyên đán). NLLB không có khái niệm thuật ngữ cần giữ nguyên.
 
 Lỗi thứ nhất sửa được bằng tham số sinh của NLLB hoặc một bộ lọc sau khi dịch giống bộ lọc câu bịa
-của ASR. Nó **chưa được sửa trong khóa luận**: đổi tham số sinh của NLLB làm thay đổi hành vi dịch,
+của ASR. Nó **chưa được sửa trong đồ án**: đổi tham số sinh của NLLB làm thay đổi hành vi dịch,
 nên bảng spBLEU/COMET ở mục 4.4 phải chạy lại mới còn khớp với mã nguồn, và phát hiện này có sau
 lượt đo đó. Nó được đưa vào hướng phát triển (mục 5.3).
 
@@ -1779,7 +1788,7 @@ Bảng 4.11: Đối chiếu với yêu cầu phi chức năng
 | PCN10 | Chỉ lắng nghe trên `127.0.0.1`               | Dịch vụ gắn cố định vào `127.0.0.1`                                                     | Đạt                                                  |
 
 Một yêu cầu của đặc tả chưa được đo: "người dùng mới hoàn thành cấu hình trong vòng năm phút" —
-đo yêu cầu này cần một nhóm người dùng thử, nằm ngoài khả năng của khóa luận.
+đo yêu cầu này cần một nhóm người dùng thử, nằm ngoài khả năng của đồ án.
 
 ## 4.9. Thảo luận
 
@@ -1816,7 +1825,7 @@ vi↔zh so với vi↔en. Và phép đo trên giọng thật có quy mô nhỏ, 
 
 ## 5.1. Kết luận
 
-Khóa luận đã xây dựng một ứng dụng desktop dịch giọng nói gần thời gian thực chạy hoàn toàn trên
+Đồ án đã xây dựng một ứng dụng desktop dịch giọng nói gần thời gian thực chạy hoàn toàn trên
 máy tính cá nhân, đối chiếu với các mục tiêu ở mục 1.2 như sau.
 
 - **Chuỗi xử lý bốn khâu thay được từng khâu.** Hệ thống dịch được sáu chiều Việt ↔ Anh / Nhật /
@@ -1836,9 +1845,9 @@ máy tính cá nhân, đối chiếu với các mục tiêu ở mục 1.2 như s
   10,4% trên giọng đọc cùng mô hình. Bộ tách câu mới kéo độ dài câu p90 của giọng đọc liên tục từ
   12,5 giây xuống 5,9 giây, trong khi gần như không đụng tới hội thoại bình thường.
 
-Đóng góp của khóa luận không nằm ở mô hình — tất cả mô hình đều có sẵn — mà ở ba chỗ: một kiến trúc
+Đóng góp của đồ án không nằm ở mô hình — tất cả mô hình đều có sẵn — mà ở ba chỗ: một kiến trúc
 cho phép thay từng khâu và đo từng khâu riêng; một bộ đánh giá tái lập được, với mọi con số trong
-khóa luận đều có tệp kết quả gốc đi kèm mã nguồn; và những phát hiện chỉ có được khi chạy trên máy
+đồ án đều có tệp kết quả gốc đi kèm mã nguồn; và những phát hiện chỉ có được khi chạy trên máy
 thật — GPU tích hợp được chọn nhầm trên laptop hai card, điểm nghẽn chuyển từ nhận dạng sang tổng
 hợp giọng khi có GPU, và lỗi lặp của khâu dịch mà dữ liệu giọng đọc không bao giờ kích hoạt.
 
@@ -2003,7 +2012,7 @@ Các lệnh chạy từ thư mục gốc mã nguồn, cần `uv` và `npm`. Dữ
 | Tách câu trên một bản ghi     | `make endpointing MEDIA=<tệp ghi âm>`                                             | Bảng 4.9      |
 | Kiểm thử                      | `make test`, `make e2e`                                                           | Bảng 3.11     |
 
-Kết quả gốc của mọi lượt đo trong khóa luận nằm ở thư mục `docs/results/` của mã nguồn. Chạy lại trên
+Kết quả gốc của mọi lượt đo trong đồ án nằm ở thư mục `docs/results/` của mã nguồn. Chạy lại trên
 máy khác cho thời gian và RTF khác — chúng gắn với phần cứng — nhưng WER, CER và điểm dịch gần như
 trùng, vì giải mã là tất định.
 
