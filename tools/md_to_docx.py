@@ -593,7 +593,6 @@ def base_document() -> Document:
             spf.alignment = WD_ALIGN_PARAGRAPH.CENTER
             spf.space_before, spf.space_after = Pt(3), Pt(9)
             spf.line_spacing = 1.2
-        add_cover_border(section)
         # Trang bìa, lời cảm ơn, mục lục, danh mục không đánh số (quy định); số trang bắt
         # đầu từ Tóm tắt, ở section thứ hai — xem start_numbering().
         request_field_update(doc)
@@ -621,14 +620,35 @@ def request_field_update(doc: Document) -> None:
     doc.settings.element.append(flag)
 
 
+def clear_page_border(section) -> None:
+    """Gỡ khung viền khỏi một section.
+
+    Bắt buộc phải gọi cho mọi section sau trang bìa: `add_section()` của python-docx
+    NHÂN BẢN sectPr của section trước, nên khung của trang bìa lan sang phần sau và
+    trang Tóm tắt — trang đầu của section thân bài — cũng bị đóng khung.
+    """
+    sect_pr = section._sectPr
+    for borders in sect_pr.findall(qn("w:pgBorders")):
+        sect_pr.remove(borders)
+
+
+def new_page_section(doc: Document):
+    """Sang trang bằng một section mới, không mang theo khung của section trước."""
+    from docx.enum.section import WD_SECTION
+
+    section = doc.add_section(WD_SECTION.NEW_PAGE)
+    clear_page_border(section)
+    return section
+
+
 def add_cover_border(section) -> None:
-    """Khung viền quanh trang bìa chính, đúng như BieuMau.docx của CITD.
+    """Khung viền quanh trang bìa, đúng như BieuMau.docx của CITD.
 
     python-docx không có API cho viền trang nên phải dựng thẳng `w:pgBorders`. Cờ
-    `display="firstPage"` giới hạn viền ở trang đầu của section — section đầu chứa cả
-    phần đầu tài liệu, nên nếu không có cờ này thì lời cảm ơn và các danh mục cũng bị
-    đóng khung theo. Kiểu viền lấy y bản mẫu: thinThickSmallGap ở trên/trái, đối xứng
-    lại ở dưới/phải, dày 3pt, cách mép trang 24pt.
+    `display="firstPage"` giới hạn viền ở trang ĐẦU của section, nên biểu mẫu cho mỗi
+    trang bìa một section riêng — và đây cũng làm vậy: bìa chính một section, bìa phụ
+    một section, cả hai đều có khung. Kiểu viền lấy y bản mẫu: thinThickSmallGap ở
+    trên/trái, đối xứng lại ở dưới/phải, dày 3pt, cách mép trang 24pt.
     """
     from docx.oxml import OxmlElement
 
@@ -656,6 +676,7 @@ def start_numbering(doc: Document) -> None:
     from docx.oxml import OxmlElement
 
     section = doc.add_section(WD_SECTION.NEW_PAGE)
+    clear_page_border(section)
     section.footer.is_linked_to_previous = False
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -836,6 +857,7 @@ def render_uit(doc: Document, blocks: list[Block]) -> None:
     numbered = False
     fresh = True  # đang ở đầu một trang mới, chưa có gì
     pending_break = False
+    covers_done = 0  # mỗi trang bìa là một section riêng, để khung chỉ ôm trang bìa
 
     def begin_page() -> None:
         nonlocal pending_break
@@ -848,10 +870,20 @@ def render_uit(doc: Document, blocks: list[Block]) -> None:
         if block.kind == "directive":
             text = block.text.lower()
             if text.startswith("trang: bìa"):
-                begin_page()
-                cover = True
+                # Mỗi trang bìa một section, giống biểu mẫu: `display="firstPage"` chỉ
+                # ôm trang đầu của section, nên để chung một section thì bìa phụ mất
+                # khung. Trang bìa đầu dùng luôn section có sẵn của tài liệu.
+                section = doc.sections[0] if covers_done == 0 else new_page_section(doc)
+                add_cover_border(section)
+                covers_done += 1
+                cover, fresh, pending_break = True, True, False
             elif text.startswith("trang: không đánh số"):
-                begin_page()
+                # Hết phần bìa: mở section mới KHÔNG khung, không thì khung theo sang.
+                if covers_done:
+                    new_page_section(doc)
+                    fresh, pending_break = True, False
+                else:
+                    begin_page()
                 cover = False
             elif text.startswith("trang: bắt đầu đánh số"):
                 start_numbering(doc)
