@@ -85,8 +85,7 @@ ngày ………………….. của Hiệu trưởng Trường Đại học Côn
 Em xin cảm ơn ThS. Nguyễn Thành Luân đã hướng dẫn em trong suốt quá trình làm đồ án.
 Buổi làm việc ngày 19/08/2026 là chỗ rẽ của đề tài: thầy yêu cầu đo bằng bộ dữ liệu
 chuẩn với WER, BLEU, COMET và RTF thay vì bộ câu tự dựng, và chính yêu cầu đó dẫn tới
-toàn bộ Chương 4. Thầy cũng là người đã cùng em cân nhắc và quyết định thu hẹp phạm vi
-phần tích hợp Google Meet để tập trung vào chất lượng dịch.
+toàn bộ Chương 4.
 
 Em xin cảm ơn quý thầy cô Trường Đại học Công nghệ Thông tin đã dạy em trong những năm
 vừa qua. Em cảm ơn gia đình và bạn bè đã ủng hộ em trong thời gian làm đồ án.
@@ -245,25 +244,6 @@ mục tiêu dịch đồng thời theo từng từ trong lúc người dùng v�
 - Đồ án **không** nghiên cứu mô hình AI mới, không làm nhân bản giọng nói, không xử lý
   nhiều người nói chồng lên nhau, không làm ứng dụng di động hay web.
 
-### 1.3.3. Điều chỉnh phạm vi so với đề cương
-
-Đề cương ban đầu có thêm một hạng mục: đưa giọng nói đã dịch vào Google Meet thông qua một
-thiết bị microphone ảo (VB-CABLE trên Windows, BlackHole trên macOS), để người ở phía bên
-kia cuộc họp nghe được bản dịch. **Hạng mục này đã được bỏ khỏi phạm vi nghiệm thu ngày
-10/09/2026**, sau khi thống nhất với giảng viên hướng dẫn (Bảng 1.1).
-
-Bảng 1.1: Điều chỉnh phạm vi so với đề cương
-
-| Đề cương ghi                                                         | Thực tế chốt lại                                            |
-| -------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Truyền âm thanh dịch ra VB-CABLE / BlackHole để Google Meet nhận     | **Bỏ.** Bản dịch phát ra loa hoặc tai nghe của người dùng   |
-| Kiểm thử các luồng chính với Google Meet                             | **Bỏ.** Đo trên FLEURS và trên bản ghi giọng người thật     |
-| Thu microphone và âm thanh hệ thống, phụ đề song ngữ, sáu chiều dịch | **Giữ nguyên** — vẫn dịch được cả hai phía của một cuộc gọi |
-
-Phần này đã được hiện thực và chạy được trước khi bỏ; mã nguồn còn nguyên, chỉ tắt ở lớp
-giao diện. Vì vậy đây là **thu hẹp phạm vi nghiệm thu**, không phải một hạng mục bỏ dở. Lý
-do chi tiết, cách nó đã hoạt động và việc cần làm để bật lại được trình bày ở mục 3.9.
-
 ## 1.4. Tình hình nghiên cứu và các giải pháp liên quan
 
 ### 1.4.1. Dịch vụ thương mại trên đám mây
@@ -303,7 +283,7 @@ và dịch từng câu đã chốt.
 **TranscriptionSuite** [10] là ứng dụng ghi chép giọng nói chạy hoàn toàn cục bộ, gồm giao
 diện Electron và phần mô hình viết bằng Python. Đề tài tham khảo cách tách hai tiến trình
 này và mượn ý tưởng dựng whisper.cpp với Vulkan để chạy được trên GPU của mọi hãng thay vì
-đóng gói CUDA (mục 3.10.2). TranscriptionSuite chỉ ghi chép: không dịch, không tổng hợp
+đóng gói CUDA (mục 3.9.2). TranscriptionSuite chỉ ghi chép: không dịch, không tổng hợp
 giọng nói và không có luồng hai chiều.
 
 **LocalVocal** [22] là plugin cho phần mềm phát trực tiếp OBS, nhận dạng tiếng nói bằng
@@ -314,7 +294,7 @@ video, không có tổng hợp giọng nói, không thu âm thanh của một cu
 
 ### 1.4.5. Vấn đề còn tồn tại và hướng của đề tài
 
-Bảng 1.2: So sánh các giải pháp liên quan
+Bảng 1.1: So sánh các giải pháp liên quan
 
 | Tiêu chí                    | Google Meet [7] | SeamlessM4T [23] | TranscriptionSuite [10] | LocalVocal [22] | **Đề tài** |
 | --------------------------- | :-------------: | :--------------: | :---------------------: | :-------------: | :--------: |
@@ -1275,58 +1255,9 @@ Hình 3.15: Màn hình Đánh giá
 
 Hình 3.16: Màn hình Lịch sử
 
-## 3.9. Tích hợp Google Meet — đã hiện thực, rồi tắt
+## 3.9. Đóng gói và triển khai
 
-### 3.9.1. Cách nó hoạt động
-
-Google Meet chạy trong trình duyệt và chỉ nhận âm thanh từ một thiết bị microphone của hệ điều
-hành — không có cách nào đẩy âm thanh từ ứng dụng khác vào. Vì vậy ứng dụng phát giọng đã dịch
-ra một **thiết bị âm thanh ảo** (BlackHole trên macOS, VB-CABLE trên Windows), và người dùng
-chọn thiết bị đó làm microphone trong Meet; Meet coi nó như một microphone bình thường (Hình
-3.17).
-
-![Hình 3.17: Đường tín hiệu của tích hợp Google Meet (đã tắt)](khoa-luan-hinh/h3-17-google-meet.png)
-
-Hình 3.17: Đường tín hiệu của tích hợp Google Meet (đã tắt)
-
-Phần này đã chạy được thật ở Tuần 7. Màn hình Thiết lập gợi ý thiết bị ảo theo tên
-(`blackhole`, `vb-cable`, `cable input`, `voicemeeter`…) nhưng luôn để người dùng tự chọn — đoán
-sai mà tự động chọn thì cả buổi họp không ai nghe thấy gì.
-
-### 3.9.2. Vì sao tắt
-
-Giảng viên hướng dẫn gợi ý cân nhắc bỏ ràng buộc Google Meet ngay từ buổi họp ngày 19/08/2026:
-kịch bản nói liên tục trong cuộc họp làm lộ rõ hai điểm yếu — Whisper bịa câu trên đoạn im lặng,
-và hệ thống không tìm được điểm ngắt câu khi người nói không nghỉ. Ngày 10/09/2026 thì chốt bỏ,
-vì cả hai điểm yếu đó tuy đã có mã xử lý nhưng **chưa kiểm chứng được trên giọng người thật**:
-cần một bản ghi có người nói liên tục ít nhất 30 giây, mà tín hiệu tổng hợp không dùng được —
-Silero ngừng coi âm thanh nhân tạo là giọng nói sau khoảng 3,5 giây. Giữ một tính năng chưa
-chứng minh được là ổn định vào ngày bảo vệ thì rủi ro hơn là bỏ.
-
-Ba lý do phụ củng cố quyết định:
-
-- **Phụ thuộc driver bên thứ ba.** Người chấm phải cài BlackHole hoặc VB-CABLE rồi khởi động lại
-  máy mới thấy được tính năng — một rào cản không liên quan gì tới phần AI, vốn là nội dung của
-  đề tài.
-- **Người trong cuộc họp nghe bản dịch thay cho giọng gốc**, vì microphone của Meet lúc đó là
-  thiết bị ảo. Muốn họ nghe cả hai thì phải trộn hai nguồn bằng công cụ ngoài.
-- **Không đo được.** Mọi số đo của đồ án dừng ở đầu ra TTS; phần truyền qua microphone ảo
-  vào Meet không có cách đo.
-
-Về sau (mục 4.7.1), điểm yếu thứ hai — tách câu khi người nói không nghỉ — đã được kiểm chứng
-trên giọng người thật; điểm yếu thứ nhất thì chưa. Quyết định vì vậy vẫn giữ nguyên.
-
-### 3.9.3. Bật lại
-
-Mã nguồn còn nguyên, chỉ tắt ở lớp giao diện: hàm chọn thiết bị phát của bộ phát giọng (vẫn
-được dùng, giờ để chọn loa), hàm nhận diện thiết bị ảo theo tên, và khóa lưu thiết bị ảo trong
-cấu hình người dùng. Bật lại chỉ cần dựng lại một thẻ chọn thiết bị ở màn hình Thiết lập và cho
-bộ điều khiển phiên ưu tiên thiết bị ảo khi chọn nơi phát. Cơ chế chống vòng lặp (mục 3.3.3)
-**không** thuộc phần bị tắt — nó vẫn cần vì ứng dụng vẫn thu toàn bộ âm thanh hệ thống.
-
-## 3.10. Đóng gói và triển khai
-
-### 3.10.1. Bộ Python tự chứa
+### 3.9.1. Bộ Python tự chứa
 
 Bộ cài phải chạy trên máy không có Python, Node hay trình quản lý gói nào. Phần dịch vụ AI được
 đóng gói thành **một bản sao của trình thông dịch CPython độc lập** (bản dựng sẵn mà uv phân
@@ -1348,7 +1279,7 @@ triển Apple: thêm 1,6 GB vào gói ứng dụng làm hỏng chữ ký gốc c
 bị từ chối thẳng trên máy khác. Ký lại ad-hoc đưa nó về mức "nhấp chuột phải → Mở". Có tài khoản
 nhà phát triển Apple thì bỏ bước này và ký, công chứng bình thường.
 
-### 3.10.2. Bộ cài Windows và whisper.cpp trên Vulkan
+### 3.9.2. Bộ cài Windows và whisper.cpp trên Vulkan
 
 Bộ cài Windows (`.exe`, 371 MB, khoảng 1,8 GB sau khi cài) phải dựng trên chính máy Windows vì
 PyTorch, sherpa-onnx và pywhispercpp đều mang thư viện native, không biên dịch chéo được. Bản
@@ -1378,7 +1309,7 @@ luồng xuất chuẩn của Python bị chuyển hướng trên Windows mặc �
 dòng log tiếng Việt thành lỗi — mà log là thứ duy nhất đọc được khi bộ cài lỗi trên máy người khác
 (sửa bằng cách chạy Python ở chế độ UTF-8); và lỗi chọn nhầm GPU tích hợp đã nêu ở mục 3.7.2.
 
-## 3.11. Kiểm thử phần mềm
+## 3.10. Kiểm thử phần mềm
 
 Hệ thống có ba lớp kiểm thử (Bảng 3.11); sự phân chia là có chủ đích.
 
@@ -1848,9 +1779,6 @@ cho phép thay từng khâu và đo từng khâu riêng; một bộ đánh giá 
 thật — GPU tích hợp được chọn nhầm trên laptop hai card, điểm nghẽn chuyển từ nhận dạng sang tổng
 hợp giọng khi có GPU, và lỗi lặp của khâu dịch mà dữ liệu giọng đọc không bao giờ kích hoạt.
 
-Hạng mục đưa bản dịch vào Google Meet qua microphone ảo đã được hiện thực nhưng tắt khỏi phạm vi
-nghiệm thu; lý do và cách bật lại được trình bày ở mục 3.9.
-
 ## 5.2. Hạn chế
 
 - **Thuật ngữ tiếng Anh trong câu tiếng Việt** là nguồn lỗi nhận dạng lớn nhất trên giọng thật: trong
@@ -1865,8 +1793,6 @@ nghiệm thu; lý do và cách bật lại được trình bày ở mục 3.9.
   do một người nghe; bản dịch tham chiếu tiếng Nhật và tiếng Trung chưa được người bản ngữ duyệt.
 - **Chưa đo trên máy yếu.** Hai máy thử nghiệm đều có GPU; máy chỉ có CPU chạy được nhưng chưa có
   bảng số đo.
-- **Không đưa được bản dịch vào cuộc họp** trong phạm vi nghiệm thu (mục 3.9); người phía bên kia
-  không nghe được bản dịch.
 - **Giấy phép của NLLB-200 là phi thương mại**, nên ứng dụng ở dạng hiện tại chỉ dùng được cho mục
   đích học tập và nghiên cứu.
 
@@ -1880,7 +1806,6 @@ nghiệm thu; lý do và cách bật lại được trình bày ở mục 3.9.
 - **Đưa TTS lên GPU** cho hai đích tiếng Nhật và tiếng Trung, khâu đang là điểm nghẽn.
 - **Mở rộng bộ đánh giá giọng thật**: nhiều bản ghi, nhiều chủ đề, cả bốn ngôn ngữ nguồn, hai người
   nghe độc lập để đo mức đồng thuận của câu tham chiếu.
-- **Bật lại tích hợp microphone ảo** sau khi bộ lọc câu bịa được kiểm chứng trên giọng thật.
 - **Thử mô hình dịch khác** — hiện khâu dịch chỉ có NLLB — trên cùng bộ đánh giá, nhờ kiến trúc cho
   phép thay khâu dịch như đã làm với khâu nhận dạng.
 - **Lưu token Hugging Face vào kho khóa của hệ điều hành** (Keychain trên macOS, DPAPI trên Windows)
@@ -1977,7 +1902,7 @@ _arXiv preprint_ arXiv:2312.10359, 2023.
 
 **Cài đặt từ bộ cài.** Trên Windows, chạy `Voice Translator-1.0.0-setup.exe`; trên macOS, mở tệp
 `.dmg`, kéo ứng dụng vào thư mục Applications, rồi nhấp chuột phải → Mở ở lần chạy đầu (bản macOS ký
-ad-hoc, mục 3.10.1). Máy không cần cài thêm Python, Node hay trình quản lý gói nào. Lần đầu dùng một
+ad-hoc, mục 3.9.1). Máy không cần cài thêm Python, Node hay trình quản lý gói nào. Lần đầu dùng một
 preset, ứng dụng tải mô hình về thư mục người dùng chọn ở màn hình Cài đặt; preset Cân bằng cần
 khoảng 6 GB trống — đo trên máy Windows: NLLB 4,7 GB, Whisper large-v3-turbo q5_0 0,55 GB, giọng đọc
 tiếng Nhật 0,34 GB và ba giọng còn lại 0,29 GB.

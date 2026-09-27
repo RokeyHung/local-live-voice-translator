@@ -11,8 +11,6 @@ export interface StoredPreferences {
   glossary: GlossaryEntry[]
   inputDeviceId: string
   outputDeviceId: string
-  // Không còn màn hình nào đặt giá trị này — xem ghi chú ở `stores/ui-store.ts`.
-  virtualMicDeviceId: string
 }
 
 // Access token HuggingFace KHÔNG nằm ở đây. Nó là bí mật duy nhất của ứng dụng, mà

@@ -1,8 +1,0 @@
-flowchart LR
-    MIC["Microphone thật"] --> APP["Ứng dụng<br/>VAD → ASR → MT → TTS"]
-    APP -->|"giọng đã dịch"| VMIC["Thiết bị ảo<br/>BlackHole / VB-CABLE"]
-    VMIC -->|"Meet chọn làm microphone"| MEET["Google Meet"]
-    MEET -->|"giọng phía họp"| SYS["Âm thanh hệ thống"]
-    SYS --> APP2["Ứng dụng<br/>VAD → ASR → MT"]
-    APP2 --> SUB["Phụ đề"]
-    MEET --> HP["Tai nghe người dùng"]

@@ -39,14 +39,6 @@ export function listInputDevices(): Promise<AudioDevice[]> {
   return list('audioinput')
 }
 
-// Gợi ý tên microphone ảo phổ biến theo nền tảng (giúp người dùng chọn đúng).
-//
-// KHÔNG còn chỗ nào gọi: đường đẩy tiếng dịch vào Google Meet đã bỏ khỏi phạm vi đồ
-// án. Giữ lại vì nó là hàm thuần, không tốn gì, và là thứ đầu tiên cần khi bật lại.
-export function looksLikeVirtualMic(label: string): boolean {
-  return /blackhole|vb-?cable|cable input|voicemeeter|loopback|soundflower/i.test(label)
-}
-
 // Tai nghe/earbud không gây vọng âm; loa ngoài thì có → dùng để cảnh báo vòng lặp.
 export function looksLikeHeadphones(label: string): boolean {
   return /airpod|headphone|headset|earbud|earphone|tai nghe|buds/i.test(label)

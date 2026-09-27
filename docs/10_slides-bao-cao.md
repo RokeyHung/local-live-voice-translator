@@ -60,19 +60,8 @@ Nền tảng: **Windows 11 x64** và **macOS 13+ Apple Silicon**.
 - Không đề xuất mô hình/thuật toán AI mới — đề tài là **tích hợp hệ thống**.
 - Không dịch đồng thời theo từng từ; đơn vị xử lý là **một đoạn phát ngôn** sau khi người nói ngắt câu.
 - Không voice cloning, không giữ giọng người nói, không tách nhiều người nói (diarization).
-- **Không tích hợp với phần mềm họp.** Bản dịch phát ra loa/tai nghe, không đẩy ngược
-  vào Google Meet qua microphone ảo.
-
-> **Chỗ này đã đổi so với đề cương — nên nói chủ động, đừng để hội đồng hỏi.** Phần đẩy
-> tiếng dịch vào Google Meet đã **hiện thực xong và chạy được** ở Tuần 5 + Tuần 7, rồi
-> **bỏ khỏi phạm vi ngày 10/09/2026**. GVHD gợi ý cân nhắc bỏ ngay từ buổi họp 19/08
-> (biên bản mục 4.3): kịch bản nói liên tục trong cuộc họp làm lộ rõ hai điểm yếu —
-> Whisper bịa chữ trên đoạn im lặng, và không tìm được điểm ngắt câu khi người ta nói
-> không nghỉ. Cả hai đã có mã xử lý nhưng chưa kiểm chứng được trên giọng người thật
-> trước hạn nộp, nên bỏ an toàn hơn là giữ. Mã nguồn giữ nguyên, chỉ tắt ở giao diện.
->
-> Điều **không** đổi: ứng dụng vẫn thu được âm thanh hệ thống, nên vẫn dịch được cả hai
-> phía của một cuộc gọi — chỉ là bản dịch không đi ngược vào cuộc gọi.
+- **Không tích hợp với phần mềm họp.** Bản dịch phát ra loa hoặc tai nghe của người dùng;
+  ứng dụng vẫn thu âm thanh hệ thống nên vẫn dịch được cả hai phía của cuộc gọi.
 
 ---
 
@@ -192,9 +181,6 @@ Không phải vẽ cho đẹp — ba tình huống có thật trong quá trình 
 - ✅ Thu **đồng thời** microphone và âm thanh hệ thống (ScreenCaptureKit trên macOS, WASAPI loopback trên Windows).
 - ✅ **Push-to-talk** + mute; nhả phím giữa câu thì câu đang nói dở vẫn được chốt và dịch nốt.
 - ✅ **Chặn vòng lặp âm thanh**: trong lúc TTS đang phát thì khung âm thanh hệ thống bị bỏ qua.
-- ◻️ Đẩy giọng đã dịch vào **microphone ảo** (BlackHole / VB-CABLE) để Meet nhận như một
-  micro — **đã hiện thực và chạy được, nhưng bỏ khỏi phạm vi ngày 10/09**; mã nguồn giữ
-  lại, chỉ tắt ở giao diện.
 
 ---
 
@@ -317,16 +303,14 @@ cấu hình chứ không phải so runtime thuần. Cột RTF của hàng đầu
 2. **Nguồn giọng thật:** tự thu / nhờ người quen / dùng Common Voice — thầy khuyên hướng nào?
 3. **Máy Windows 11** để đo đối chứng — có mượn được từ khoa/lab không?
 4. **Ngưỡng "đạt"** cho độ trễ gần thời gian thực: ~1,8–2,6 s/câu có được xem là đạt?
-5. **Demo bảo vệ:** chạy live trong Meet hay video quay sẵn?
+5. **Demo bảo vệ:** chạy trực tiếp hay video quay sẵn?
 6. **Giấy phép NLLB-200 (CC-BY-NC-4.0)** — dùng cho đồ án học thuật cần ghi chú thế nào?
 7. **Trọng tâm báo cáo:** nghiêng về kiến trúc hệ thống hay về phần mô hình AI?
 8. **Cách trích dẫn TranscriptionSuite** (nguồn tham khảo kiến trúc) cho đúng mực.
 
 → Thầy đã trả lời nhóm câu này ở buổi họp 19/08: `docs/meetings/bien-ban-hop-GVHD-2026-08-19.md`
 
-Hai câu đã hết hiệu lực từ sau buổi đó: **câu 3** (đã có máy Windows, số đo ở mục 11b) và
-**câu 5** (bỏ tích hợp Google Meet ngày 10/09 — demo là dịch và phát ra loa máy, không
-đẩy vào cuộc họp).
+Một câu đã hết hiệu lực từ sau buổi đó: **câu 3** — đã có máy Windows, số đo ở mục 11b.
 
 ---
 

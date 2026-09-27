@@ -1,11 +1,5 @@
 // Màn Thiết bị âm thanh: chọn/kiểm tra 3 đường tín hiệu, xem phần cứng và thiết
 // bị tính toán thật của từng khâu, cảnh báo vòng lặp âm thanh.
-//
-// Đường thứ tư — microphone ảo đẩy tiếng dịch vào Google Meet — đã bỏ khỏi phạm vi
-// đồ án (chốt với GVHD): ứng dụng chỉ dịch và phát ra loa/tai nghe, không tích hợp
-// với phần mềm họp nào. Phần hiện thực vẫn còn (`TtsPlayer.setSink`,
-// `looksLikeVirtualMic`, `uiStore.virtualMicDeviceId`) nên bật lại chỉ là dựng lại
-// thẻ chọn thiết bị ở đây.
 
 import { useState, type JSX } from 'react'
 import { looksLikeHeadphones, playTestTone, type AudioDevice } from '../../adapters/audio-devices'
