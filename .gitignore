@@ -54,3 +54,6 @@ Thumbs.db
 *.log
 
 /TranscriptionSuite
+# tsc --composite sinh ra khi chạy typecheck bằng tay (npm run typecheck đã tắt bằng
+# --composite false, nhưng gọi tsc trực tiếp thì không).
+*.tsbuildinfo
