@@ -82,26 +82,25 @@ ngày ………………….. của Hiệu trưởng Trường Đại học Côn
 
 # LỜI CẢM ƠN
 
-Em xin gửi lời cảm ơn chân thành nhất đến ThS. Nguyễn Thành Luân, người đã hướng dẫn em
-trong suốt thời gian thực hiện đồ án này. Thầy đã dành thời gian đọc từng phần em làm và
-chỉ cho em những chỗ em chưa nghĩ tới.
+Tôi xin gửi lời cảm ơn đến Ban Giám hiệu Trường Đại học Công nghệ Thông tin – Đại học
+Quốc gia Thành phố Hồ Chí Minh đã tạo điều kiện thuận lợi cho tôi trong suốt quá trình
+học tập tại trường.
 
-Em nhớ nhất buổi làm việc ngày 19/08/2026, khi thầy yêu cầu em đánh giá hệ thống bằng bộ
-dữ liệu chuẩn thay vì bộ câu do em tự dựng. Yêu cầu đó khiến em phải làm lại gần như toàn
-bộ phần đo đạc, nhưng nó dạy em một điều em sẽ còn mang theo: một con số chỉ có giá trị
-khi người khác kiểm lại được. Em biết ơn thầy vì đã không để em dừng ở mức "chạy được".
+Tôi xin chân thành cảm ơn quý thầy cô Khoa Khoa học và Kỹ thuật Thông tin đã tận tình
+giảng dạy và truyền đạt những kiến thức chuyên môn trong những năm qua. Đó là nền tảng
+để tôi có thể thực hiện đồ án này.
 
-Em xin cảm ơn quý thầy cô Trường Đại học Công nghệ Thông tin đã dạy dỗ em trong suốt
-những năm học vừa qua. Em theo học hệ đào tạo từ xa, phần lớn thời gian tự học, nên những
-buổi được thầy cô hướng dẫn và giải đáp là điều em rất trân trọng.
+Tôi xin bày tỏ lòng biết ơn sâu sắc đến ThS. Nguyễn Thành Luân, giảng viên hướng dẫn,
+người đã trực tiếp đồng hành cùng tôi từ khi hình thành đề cương cho đến lúc hoàn thành
+đồ án. Sự định hướng, những góp ý chuyên môn và sự động viên của thầy đã giúp tôi nhìn
+ra nhiều điều mà tự mình tôi khó nhận ra được.
 
-Cuối cùng, em xin cảm ơn gia đình và bạn bè đã luôn ở bên, động viên và tạo điều kiện cho
-em trong suốt thời gian làm đồ án.
+Tôi cũng xin cảm ơn gia đình và bạn bè đã luôn ở bên, động viên và tạo điều kiện cho tôi
+trong suốt thời gian thực hiện đề tài.
 
-Đồ án chắc chắn còn nhiều thiếu sót. Em rất mong nhận được những góp ý của quý thầy cô để
-hoàn thiện hơn.
-
-Em xin chân thành cảm ơn.
+Cuối cùng, do kiến thức và kinh nghiệm thực tiễn còn hạn chế, đồ án chắc chắn không
+tránh khỏi những thiếu sót. Tôi rất mong nhận được những ý kiến đóng góp và nhận xét từ
+quý thầy cô để đề tài được hoàn thiện hơn.
 
 _Thành phố Hồ Chí Minh, tháng 9 năm 2026_
 
