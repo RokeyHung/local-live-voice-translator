@@ -57,6 +57,25 @@ export function startService(
   return { proc, modelsDir }
 }
 
+/** Dừng service và MỌI tiến trình con của nó.
+ *
+ *  `proc` là tiến trình `uv`, còn cái giữ cổng 8756 và giữ các `.pyd` là tiến trình
+ *  `python` mà uv sinh ra. Trên Windows, `kill('SIGTERM')` chỉ hạ được uv và bỏ lại
+ *  python chạy mồ côi — lần sau `uv sync` sẽ báo "Access is denied" vì không thay nổi
+ *  `_pywhispercpp.cp312-win_amd64.pyd` đang bị nạp. `taskkill /T` hạ cả cây.
+ */
+export function stopService(proc: ChildProcess): void {
+  if (process.platform === 'win32' && proc.pid !== undefined) {
+    try {
+      spawn('taskkill', ['/PID', String(proc.pid), '/T', '/F'], { stdio: 'ignore' })
+      return
+    } catch {
+      // không gọi được taskkill thì lùi về cách cũ
+    }
+  }
+  proc.kill('SIGTERM')
+}
+
 export interface LaunchOptions {
   /** Thư mục model. Bỏ trống = thư mục tạm, và `stop()` sẽ xoá nó đi. */
   modelsDir?: string
@@ -97,7 +116,7 @@ export async function launch(options: LaunchOptions = {}): Promise<Harness> {
     logs,
     stop: async () => {
       await app.close().catch(() => undefined)
-      proc.kill('SIGTERM')
+      stopService(proc)
       // CHỈ xoá thư mục do chính test tạo ra. Xoá thư mục model thật của người dùng
       // là mất hàng GB và vài chục phút tải lại.
       if (temporary) rmSync(modelsDir, { recursive: true, force: true })
