@@ -1218,30 +1218,30 @@ mình có đang hiện hay không trước khi gọi dịch vụ.
 
 Bảng 3.9: Các màn hình của ứng dụng desktop
 
-| Màn hình   | Chức năng                                                                       |
-| ---------- | ------------------------------------------------------------------------------- |
-| Thiết lập  | Chế độ, cặp ngôn ngữ, thiết bị âm thanh, thiết bị tính toán, preset             |
-| Phiên dịch | Bắt đầu/dừng, giữ phím nói, phụ đề song ngữ trực tiếp, bảng duyệt trước khi đọc |
-| Nhập tệp   | Hàng đợi tệp âm thanh/video, tiến độ, kết quả song ngữ có mốc thời gian         |
-| Mô hình    | Danh mục mô hình theo khâu, trên đĩa hay chưa, tải/nạp/gỡ/xóa, tiến độ          |
-| Chẩn đoán  | Phần cứng dịch vụ nhìn thấy, CPU/RAM tiến trình, đo độ trễ từng khâu            |
-| Đánh giá   | Chạy bộ câu mẫu có bản dịch tham chiếu, ra WER/CER, chrF, độ trễ p50/p90, RTF   |
-| Lịch sử    | Danh sách phiên, tìm kiếm, xem bản song ngữ, đổi tên, xóa                       |
-| Cài đặt    | Thư mục mô hình, token Hugging Face, tắt lịch sử, dung lượng từng kho dữ liệu   |
-| Nhật ký    | Sự kiện của dịch vụ để chẩn đoán lỗi                                            |
-| Giới thiệu | Phiên bản, giấy phép của các mô hình                                            |
+| Màn hình          | Chức năng                                                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Phiên dịch        | Cặp ngôn ngữ, hai công tắc nguồn, bắt đầu/dừng, giữ phím nói, phụ đề song ngữ trực tiếp, bảng duyệt trước khi đọc |
+| Nhập tệp          | Hàng đợi tệp âm thanh/video, tiến độ, kết quả song ngữ có mốc thời gian                                           |
+| Thiết bị âm thanh | Microphone, âm thanh hệ thống, loa/tai nghe kèm nút kiểm tra; thiết bị tính toán của khâu nhận dạng               |
+| Quản lý Model     | Ba preset, danh mục mô hình theo khâu, trên đĩa hay chưa, tải/nạp/gỡ/xóa, tiến độ                                 |
+| Chẩn đoán         | Phần cứng dịch vụ nhìn thấy, CPU/RAM tiến trình, đo độ trễ từng khâu                                              |
+| Lịch sử           | Danh sách phiên, tìm kiếm, xem bản song ngữ, đổi tên, xóa                                                         |
+| Đánh giá          | Chạy bộ câu mẫu có bản dịch tham chiếu, ra WER/CER, chrF, độ trễ p50/p90, RTF                                     |
+| Cài đặt           | Thư mục mô hình, token Hugging Face, tắt lịch sử, dung lượng từng kho dữ liệu                                     |
+| Về ứng dụng       | Phiên bản, giấy phép của các mô hình                                                                              |
+| Nhật ký           | Sự kiện của dịch vụ để chẩn đoán lỗi                                                                              |
 
-![Hình 3.11: Màn hình Thiết lập](khoa-luan-hinh/h3-11-thiet-lap.png)
+![Hình 3.11: Màn hình Thiết bị âm thanh](khoa-luan-hinh/h3-11-thiet-lap.png)
 
-Hình 3.11: Màn hình Thiết lập
+Hình 3.11: Màn hình Thiết bị âm thanh
 
 ![Hình 3.12: Màn hình Phiên dịch](khoa-luan-hinh/h3-12-phien-dich.png)
 
 Hình 3.12: Màn hình Phiên dịch
 
-![Hình 3.13: Màn hình Quản lý mô hình](khoa-luan-hinh/h3-13-mo-hinh.png)
+![Hình 3.13: Màn hình Quản lý Model](khoa-luan-hinh/h3-13-mo-hinh.png)
 
-Hình 3.13: Màn hình Quản lý mô hình
+Hình 3.13: Màn hình Quản lý Model
 
 ![Hình 3.14: Màn hình Chẩn đoán](khoa-luan-hinh/h3-14-chan-doan.png)
 
@@ -1729,8 +1729,9 @@ thường là trong ngành phần mềm — đây là trường hợp thường 
 **Chọn runtime.** Bảng 4.3 và Bảng 4.6 cho một lời khuyên rõ ràng: trên máy Windows có card NVIDIA,
 whisper.cpp trên Vulkan cho độ trễ thấp nhất với WER kém nhất khoảng 1,6 điểm; faster-whisper đổi
 gấp đôi thời gian nhận dạng lấy 1,2 điểm WER tiếng Việt, và với ngân sách thời gian còn dư thì đó
-là một nấc đáng bật. Trên máy Apple Silicon, MLX cho WER tốt nhất nhưng làm ba chiều nguồn tiếng
-Việt trượt ngưỡng RTF p90 ≤ 0,5.
+là một nấc đáng bật. Trên máy Apple Silicon, MLX cho WER tốt nhất nhưng chỉ hai chiều đạt
+ngưỡng RTF p90 ≤ 0,5: ba chiều nguồn tiếng Việt trượt vì ASR đắt, còn zh→vi trượt sát mép
+ở 0,509.
 
 **Điểm nghẽn di chuyển.** Tăng tốc ASR và MT bằng GPU trên Windows không làm cả chuỗi nhanh đều: nó
 làm TTS — khâu duy nhất còn chạy CPU — thành điểm nghẽn ở hai đích ja/zh. Đây là một kết luận chỉ có
@@ -1909,11 +1910,15 @@ tiếng Nhật 0,34 GB và ba giọng còn lại 0,29 GB.
 
 **Một phiên dịch hai chiều.**
 
-1. Màn hình Thiết lập: chọn chế độ "Hai chiều", cặp ngôn ngữ, microphone và loa hoặc tai nghe.
-2. Chọn preset Cân bằng, bấm "Khởi động mô hình" và chờ bốn khâu báo đã nạp.
-3. Màn hình Phiên dịch: bấm "Bắt đầu", cho phép ứng dụng thu âm thanh hệ thống.
-4. Giữ phím nói khi nói; nhả phím để câu được dịch và đọc ra. Câu của phía bên kia hiện thành phụ
-   đề song ngữ mà không cần làm gì.
+1. Màn hình **Thiết bị âm thanh**: chọn microphone và loa hoặc tai nghe, bấm "Kiểm tra" từng
+   đường; chọn thiết bị tính toán nếu máy có nhiều GPU.
+2. Màn hình **Quản lý Model**: chọn preset Cân bằng, bấm "Khởi động model" và chờ cả bốn khâu
+   báo đã nạp.
+3. Màn hình **Phiên dịch**: chọn cặp ngôn ngữ ở hai ô "Cuộc họp" và "Tôi", bật hai công tắc
+   "Nghe cuộc họp" và "Dịch giọng tôi", rồi bấm "Bắt đầu" và cho phép ứng dụng thu âm thanh
+   hệ thống.
+4. Giữ phím Space khi nói; nhả phím để câu được dịch và đọc ra. Câu của phía bên kia hiện thành
+   phụ đề song ngữ mà không cần làm gì.
 5. Nên đeo tai nghe để bản dịch không lọt vào microphone.
 
 ## Phụ lục B. Tái lập các thí nghiệm

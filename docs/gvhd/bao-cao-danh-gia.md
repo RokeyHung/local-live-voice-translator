@@ -251,15 +251,20 @@ Có **50 mẫu mỗi chiều**, dùng cùng cấu hình đã đo WER.
 
 ### Đánh giá theo ngưỡng
 
-| Mức                  | Chiều đạt                               |
-| -------------------- | --------------------------------------- |
-| **Đạt tối thiểu**    | **Cả 6 chiều** — xấu nhất vi→ja: 0,786  |
-| **Đạt để dùng thật** | ja→vi 0,395 · en→vi 0,496 · zh→vi 0,509 |
-| **Không đạt**        | Không có                                |
+| Mức                  | Chiều đạt                              |
+| -------------------- | -------------------------------------- |
+| **Đạt tối thiểu**    | **Cả 6 chiều** — xấu nhất vi→ja: 0,786 |
+| **Đạt để dùng thật** | ja→vi 0,395 · en→vi 0,496              |
+| **Không đạt**        | Không có                               |
 
-**Kết luận:** cả 6 chiều đều đạt RTF p90 < 1. Tuy nhiên, chỉ 3 chiều đạt mức đề xuất p90 ≤ 0,5.
+**Kết luận:** cả 6 chiều đều đạt RTF p90 < 1. Tuy nhiên, chỉ 2 chiều đạt mức đề xuất p90 ≤ 0,5.
 
-Ba chiều chưa đạt đều có **tiếng Việt ở đầu vào**. Nguyên nhân chính:
+> _Đính chính 27/09/2026:_ bản gửi ngày 07/09 ghi "3 chiều đạt" và xếp zh→vi vào nhóm
+> đạt. Đó là lỗi số học của em: zh→vi là 0,509, lớn hơn 0,5 nên **không** đạt, dù chỉ
+> trượt sát mép. Số đo trong bảng không đổi, chỉ cách xếp nhóm và câu nhận xét ngay dưới
+> đây được sửa lại cho đúng.
+
+Bốn chiều chưa đạt gồm ba chiều **nguồn tiếng Việt** và chiều zh→vi. Nguyên nhân chính:
 
 1. **ASR tiếng Việt chậm hơn**, khoảng 4,6 giây so với 2,4–2,9 giây ở các chiều nguồn khác.
 2. **TTS tiếng Trung/Nhật chậm hơn**, đặc biệt TTS tiếng Nhật.
@@ -467,7 +472,7 @@ Hai cột RTF cuối không so được với dòng đầu vì khác máy.
 | vi→ja | 612ms | 507ms | 2.510ms | 3.833 ms | **0,383**         | 0,786               |
 | ja→vi | 360ms | 440ms | 352ms   | 1.288 ms | **0,114**         | 0,395               |
 
-**Cả sáu chiều đạt mức đề xuất p90 ≤ 0,5**, trong khi ở mục 6 chỉ có ba chiều đạt. Vì vậy
+**Cả sáu chiều đạt mức đề xuất p90 ≤ 0,5**, trong khi ở mục 6 chỉ có hai chiều đạt. Vì vậy
 hai câu kết luận của mục 6 chỉ còn đúng cho cấu hình Apple M4:
 
 1. "Ba chiều chưa đạt đều có tiếng Việt ở đầu vào" — trên Windows không còn chiều nào chưa đạt.

@@ -258,9 +258,10 @@ cấu hình chứ không phải so runtime thuần. Cột RTF của hàng đầu
 **Ba điều nên nói trước khi hội đồng hỏi:**
 
 1. **RTF p90 < 1 ở cả sáu chiều trên cả hai máy** → hệ thống theo kịp thời gian thực.
-   Ngưỡng chặt hơn (≤ 0,5): trên Windows **cả sáu đạt**, trên M4 thì ba chiều trượt và
-   cả ba đều là chiều **nguồn tiếng Việt**. Khâu tốn nhất cũng đổi theo máy: trên M4 là
-   ASR, trên Windows là **TTS cho đích ja/zh** (65% và 63% toàn chuỗi, vẫn chạy CPU).
+   Ngưỡng chặt hơn (≤ 0,5): trên Windows **cả sáu đạt**, trên M4 chỉ hai chiều đạt
+   (en→vi 0,496 và ja→vi 0,395) — zh→vi trượt sát mép ở 0,509. Khâu tốn nhất cũng đổi
+   theo máy: trên M4 là ASR, trên Windows là **TTS cho đích ja/zh** (65% và 63% toàn
+   chuỗi, vẫn chạy CPU).
 2. **spBLEU và COMET xếp hạng khác nhau.** Theo spBLEU, vi→ja tệ nhất (11,0); theo COMET
    nó đứng hạng ba (0,824) còn chiều yếu thật sự là vi→zh. spBLEU khớp chuỗi bề mặt nên
    phạt nặng ngôn ngữ khác hệ chữ viết; COMET chấm ngữ nghĩa. Đây là lý do dùng cả hai.
