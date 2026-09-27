@@ -47,9 +47,13 @@ MONO_FONT = "Consolas"
 LINE_SPACING = 1.5
 MARGIN_TOP, MARGIN_BOTTOM, MARGIN_LEFT, MARGIN_RIGHT = Cm(2), Cm(2), Cm(3), Cm(2)
 HEADING_SIZES = {1: Pt(16), 2: Pt(14), 3: Pt(13), 4: Pt(13), 5: Pt(13), 6: Pt(13)}
-# Bảng của docs/ có cái tới 11 cột (bảng độ trễ sáu chiều). Cỡ chữ giảm dần theo số cột
-# để bảng không bị Word ép xuống dòng ở từng ô.
-TABLE_SIZES = ((6, Pt(11)), (8, Pt(10)), (10, Pt(9)), (99, Pt(8)))
+# Mọi bảng dùng một cỡ chữ duy nhất, nhỏ hơn chữ thân bài (13pt) một bậc.
+#
+# Trước đây cỡ chữ giảm dần theo số cột (11 → 8pt) để bảng rộng khỏi bị ép xuống dòng,
+# nhưng như vậy các bảng trong cùng một tài liệu hiện ra ba bốn cỡ chữ khác nhau. Bảng
+# rộng giờ tự xuống dòng trong ô; bề rộng từng cột vẫn được chia theo lượng chữ
+# (`set_column_widths`) nên chỗ cần rộng vẫn rộng.
+TABLE_SIZE = Pt(12)
 CODE_SIZE = Pt(9)
 SHADE_CODE = "F2F2F2"
 SHADE_TABLE_HEADER = "E8E8E8"
@@ -531,7 +535,17 @@ def add_field(paragraph: Paragraph, instruction: str, placeholder: str) -> None:
         paragraph._p.append(el)
 
 
-def add_fragments(paragraph: Paragraph, frags: list[Frag], size: Pt | None = None) -> None:
+def add_fragments(
+    paragraph: Paragraph,
+    frags: list[Frag],
+    size: Pt | None = None,
+    shrink_mono: bool = True,
+) -> None:
+    """Đổ các đoạn chữ vào một paragraph.
+
+    `shrink_mono`: chữ đơn cách bị trừ 1pt vì Consolas trông to hơn Times ở cùng cỡ chữ.
+    Trong bảng thì tắt, để mọi chữ trong bảng đúng một cỡ.
+    """
     for frag in frags:
         if frag.url:
             add_hyperlink(paragraph, frag.text, frag.url)
@@ -542,7 +556,8 @@ def add_fragments(paragraph: Paragraph, frags: list[Frag], size: Pt | None = Non
         run.bold = frag.bold
         run.italic = frag.italic
         set_font(run, MONO_FONT if frag.mono else BODY_FONT)
-        run.font.size = (size or BODY_SIZE) - (Pt(1) if frag.mono else Pt(0))
+        smaller = Pt(1) if frag.mono and shrink_mono else Pt(0)
+        run.font.size = (size or BODY_SIZE) - smaller
 
 
 def base_document() -> Document:
@@ -728,10 +743,9 @@ def add_list_of(doc: Document, style_name: str, placeholder: str) -> None:
 
 
 def table_font_size(columns: int) -> Pt:
-    for limit, size in TABLE_SIZES:
-        if columns <= limit:
-            return size
-    return TABLE_SIZES[-1][1]
+    """Cỡ chữ trong bảng. Không còn phụ thuộc số cột — giữ tham số để chỗ gọi khỏi đổi."""
+    del columns
+    return TABLE_SIZE
 
 
 def render(
@@ -1015,7 +1029,7 @@ def render_table(doc: Document, block: Block) -> None:
             pf.line_spacing = 1.0
             pf.space_before = pf.space_after = Pt(2)
             pf.alignment = align_map[aligns[c] if c < len(aligns) else "left"]
-            add_fragments(para, inline(text, bold=(r == 0)), size=size)
+            add_fragments(para, inline(text, bold=(r == 0)), size=size, shrink_mono=False)
             if r == 0:
                 shade(cell._tc.get_or_add_tcPr(), SHADE_TABLE_HEADER)
     if UIT:
