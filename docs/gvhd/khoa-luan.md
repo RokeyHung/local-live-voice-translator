@@ -5,9 +5,9 @@
      Xuất Word: make docx-khoa-luan → docs/word/24410300_NgoManhHung_DATN.docx; tên tệp
      theo cấu trúc MSSV_HoTen_DATN mà thông báo quy định. Form của ngành nhận hai tệp
      Word + PDF, chỉ nộp được một lần, hạn 27/09/2026.
-     [CHÈN HÌNH] là ảnh chụp màn hình phải chụp từ ứng dụng rồi đặt vào
-     docs/gvhd/khoa-luan-hinh/. Trích dẫn [n] trỏ tới danh mục cuối tài liệu, xếp theo
-     alphabet tác giả. -->
+     Ảnh màn hình ứng dụng chụp bằng `make figures-app` (Playwright trên app đã
+     build, model thật); sơ đồ vẽ bằng `make figures-khoa-luan`. Trích dẫn [n] trỏ tới
+     danh mục cuối tài liệu, xếp theo alphabet tác giả. -->
 
 <!-- trang: bìa chính -->
 
@@ -1250,9 +1250,6 @@ Bảng 3.9: Các màn hình của ứng dụng desktop
 | Cài đặt    | Thư mục mô hình, token Hugging Face, tắt lịch sử, dung lượng từng kho dữ liệu   |
 | Nhật ký    | Sự kiện của dịch vụ để chẩn đoán lỗi                                            |
 | Giới thiệu | Phiên bản, giấy phép của các mô hình                                            |
-
-[CHÈN HÌNH — chụp màn hình ứng dụng sau khi nạp preset Cân bằng, lưu vào
-`docs/gvhd/khoa-luan-hinh/` với đúng các tên tệp dưới đây.]
 
 ![Hình 3.11: Màn hình Thiết lập](khoa-luan-hinh/h3-11-thiet-lap.png)
 

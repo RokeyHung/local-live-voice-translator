@@ -40,14 +40,17 @@ async function waitForHealth(timeoutMs = 90_000): Promise<void> {
 /** Khởi động service. Không truyền `modelsDir` thì dùng thư mục TẠM — test tải/xoá
  *  thoải mái mà không đụng model thật. Bài chạy cho báo cáo thì truyền thư mục thật
  *  vào, và tuyệt đối không được gọi lệnh xoá nào. */
-export function startService(modelsDir?: string): { proc: ChildProcess; modelsDir: string } {
+export function startService(
+  modelsDir?: string,
+  dbPath?: string
+): { proc: ChildProcess; modelsDir: string } {
   modelsDir = modelsDir ?? mkdtempSync(join(tmpdir(), 'llvt-e2e-models-'))
   const proc = spawn('uv', ['run', 'llvt-ai-service'], {
     cwd: AI_DIR,
     env: {
       ...process.env,
       LLVT_MODELS_DIR: modelsDir,
-      LLVT_DB_PATH: join(modelsDir, 'history.db')
+      LLVT_DB_PATH: dbPath ?? join(modelsDir, 'history.db')
     },
     stdio: 'ignore'
   })
@@ -57,10 +60,14 @@ export function startService(modelsDir?: string): { proc: ChildProcess; modelsDi
 export interface LaunchOptions {
   /** Thư mục model. Bỏ trống = thư mục tạm, và `stop()` sẽ xoá nó đi. */
   modelsDir?: string
+  /** Tệp SQLite lịch sử. Bỏ trống = nằm trong thư mục model, tức là rỗng với một
+   *  thư mục tạm. Bài chụp ảnh cho báo cáo trỏ vào lịch sử THẬT để màn Lịch sử có
+   *  nội dung; test thì không bao giờ được ghi vào đó. */
+  dbPath?: string
 }
 
 export async function launch(options: LaunchOptions = {}): Promise<Harness> {
-  const { proc, modelsDir } = startService(options.modelsDir)
+  const { proc, modelsDir } = startService(options.modelsDir, options.dbPath)
   const temporary = options.modelsDir === undefined
   await waitForHealth()
 

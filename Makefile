@@ -41,7 +41,7 @@ FULL_DEPS    := --group eval --extra diarization --extra ctranslate2 $(MLX_EXTRA
         build typecheck lint format format-docs health docs docx test test-service test-desktop e2e \
         icons bundle-service dist \
         bench accuracy soak segment \
-        endpointing docx-khoa-luan figures-khoa-luan setup-eval setup-mlx setup-diarization setup-ctranslate2 setup-vulkan \
+        endpointing docx-khoa-luan figures-khoa-luan figures-app setup-eval setup-mlx setup-diarization setup-ctranslate2 setup-vulkan \
         fetch-fleurs eval-asr eval-mt eval-comet eval-latency eval-latency-all clean
 
 help: ## Hiện danh sách lệnh
@@ -161,6 +161,11 @@ docx-khoa-luan: ## Xuất đồ án (gvhd/khoa-luan.md) ra Word theo biểu mẫ
 
 # Sơ đồ UML vẽ bằng mermaid-cli; PUPPETEER_EXECUTABLE_PATH trỏ tới Chrome/Edge có sẵn để
 # không phải tải thêm Chromium. Biểu đồ số đo đọc thẳng từ docs/results/.
+figures-app: ## Chụp 6 ảnh màn hình ứng dụng cho Chương 3 (cần out/ đã build + model thật)
+	@# UV_NO_SYNC=1: fixtures chạy service bằng `uv run`, không có cờ này thì uv đồng bộ
+	@# venv về wheel pywhispercpp CPU và ảnh sẽ ghi thiết bị ASR là CPU. Chạy make setup-vulkan trước.
+	cd $(DESKTOP_DIR) && UV_NO_SYNC=1 $(NPX) playwright test --config playwright.shots.config.ts
+
 figures-khoa-luan: ## Vẽ lại hình của khóa luận (docs/gvhd/khoa-luan-hinh/)
 	@cd docs/gvhd/khoa-luan-hinh && for f in src/*.mmd; do \
 		PUPPETEER_SKIP_DOWNLOAD=1 npx -y @mermaid-js/mermaid-cli@11 -p src/puppeteer.json \
