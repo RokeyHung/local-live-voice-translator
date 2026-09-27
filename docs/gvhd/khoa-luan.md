@@ -82,15 +82,26 @@ ngày ………………….. của Hiệu trưởng Trường Đại học Côn
 
 # LỜI CẢM ƠN
 
-Em xin cảm ơn ThS. Nguyễn Thành Luân đã hướng dẫn em trong suốt quá trình làm đồ án.
-Buổi làm việc ngày 19/08/2026 là chỗ rẽ của đề tài: thầy yêu cầu đo bằng bộ dữ liệu
-chuẩn với WER, BLEU, COMET và RTF thay vì bộ câu tự dựng, và chính yêu cầu đó dẫn tới
-toàn bộ Chương 4.
+Em xin gửi lời cảm ơn chân thành nhất đến ThS. Nguyễn Thành Luân, người đã hướng dẫn em
+trong suốt thời gian thực hiện đồ án này. Thầy đã dành thời gian đọc từng phần em làm và
+chỉ cho em những chỗ em chưa nghĩ tới.
 
-Em xin cảm ơn quý thầy cô Trường Đại học Công nghệ Thông tin đã dạy em trong những năm
-vừa qua. Em cảm ơn gia đình và bạn bè đã ủng hộ em trong thời gian làm đồ án.
+Em nhớ nhất buổi làm việc ngày 19/08/2026, khi thầy yêu cầu em đánh giá hệ thống bằng bộ
+dữ liệu chuẩn thay vì bộ câu do em tự dựng. Yêu cầu đó khiến em phải làm lại gần như toàn
+bộ phần đo đạc, nhưng nó dạy em một điều em sẽ còn mang theo: một con số chỉ có giá trị
+khi người khác kiểm lại được. Em biết ơn thầy vì đã không để em dừng ở mức "chạy được".
 
-Đồ án còn nhiều chỗ chưa trọn vẹn, em mong nhận được góp ý của quý thầy cô.
+Em xin cảm ơn quý thầy cô Trường Đại học Công nghệ Thông tin đã dạy dỗ em trong suốt
+những năm học vừa qua. Em theo học hệ đào tạo từ xa, phần lớn thời gian tự học, nên những
+buổi được thầy cô hướng dẫn và giải đáp là điều em rất trân trọng.
+
+Cuối cùng, em xin cảm ơn gia đình và bạn bè đã luôn ở bên, động viên và tạo điều kiện cho
+em trong suốt thời gian làm đồ án.
+
+Đồ án chắc chắn còn nhiều thiếu sót. Em rất mong nhận được những góp ý của quý thầy cô để
+hoàn thiện hơn.
+
+Em xin chân thành cảm ơn.
 
 _Thành phố Hồ Chí Minh, tháng 9 năm 2026_
 
