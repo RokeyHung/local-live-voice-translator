@@ -95,7 +95,7 @@ def fig_wer() -> None:
     fig, ax = plt.subplots(figsize=(7.2, 3.6))
     grouped(ax, ["vi (WER)", "en (WER)", "zh (CER)", "ja (CER)"], list(runs), values,
             lambda y: vn(y) + "%")
-    ax.set_ylabel("Tỷ lệ lỗi (%) — càng thấp càng tốt")
+    ax.set_ylabel("Tỷ lệ lỗi (%), càng thấp càng tốt")
     ax.set_ylim(0, 12.5)
     ax.legend(loc="upper right", fontsize=9.5)
     fig.tight_layout()
@@ -113,8 +113,8 @@ def latency(suffix: str) -> dict[str, dict]:
 def fig_rtf() -> None:
     mac, win = latency(""), latency("-win")
     values = {
-        "macOS — MLX + MPS": [mac[d]["rtf_p90"] for d in DIRECTIONS],
-        "Windows — Vulkan + CUDA": [win[d]["rtf_p90"] for d in DIRECTIONS],
+        "macOS (MLX + MPS)": [mac[d]["rtf_p90"] for d in DIRECTIONS],
+        "Windows (Vulkan + CUDA)": [win[d]["rtf_p90"] for d in DIRECTIONS],
     }
     fig, ax = plt.subplots(figsize=(7.2, 3.6))
     grouped(ax, [d.replace("-", "→") for d in DIRECTIONS], list(values), values,
@@ -123,7 +123,7 @@ def fig_rtf() -> None:
         ax.axhline(y, color=INK2, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
         ax.text(5.45, y + 0.015, text, ha="right", va="bottom", fontsize=9, color=INK2)
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: vn(v, 1)))
-    ax.set_ylabel("RTF p90 — càng thấp càng tốt")
+    ax.set_ylabel("RTF p90, càng thấp càng tốt")
     ax.set_ylim(0, 1.1)
     ax.legend(loc="upper left", fontsize=9.5)
     fig.tight_layout()
@@ -182,8 +182,8 @@ def fig_endpointing() -> None:
             blocks[current][m.group(1).split(" ")[0]] = (float(m.group(4)), int(m.group(5)))
     names = {"Bản": "Bản tin\n(đọc kịch bản)", "Phỏng": "Phỏng vấn\n(hội thoại tự phát)",
              "TEDx": "TEDx\n(thuyết trình)"}
-    configs = [("trước", "Cũ — trần 20 s"), ("fast", "Nhanh — 4,5 s"),
-               ("balanced", "Cân bằng — 6 s"), ("quality", "Chất lượng — 8 s")]
+    configs = [("trước", "Cũ (trần 20 s)"), ("fast", "Nhanh (4,5 s)"),
+               ("balanced", "Cân bằng (6 s)"), ("quality", "Chất lượng (8 s)")]
     groups = [names[k] for k in blocks]
     p90 = {label: [blocks[k][c][0] for k in blocks] for c, label in configs}
     cut = {label: [blocks[k][c][1] for k in blocks] for c, label in configs}

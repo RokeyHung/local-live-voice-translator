@@ -3,7 +3,7 @@ stateDiagram-v2
     [*] --> Listening
     Listening --> SpeechDetected : VAD thấy giọng
     SpeechDetected --> Recognizing : chốt câu
-    Recognizing --> Listening : câu bịa / rỗng — bỏ
+    Recognizing --> Listening : câu bịa / rỗng: bỏ
     Recognizing --> Translating : có văn bản
     Translating --> Completed : chiều về, không TTS
     Translating --> WaitingForConfirmation : chiều đi, bật duyệt

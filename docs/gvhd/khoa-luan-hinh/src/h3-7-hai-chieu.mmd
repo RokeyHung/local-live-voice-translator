@@ -1,13 +1,13 @@
 flowchart LR
-    subgraph OUT["Chiều đi — giọng người dùng"]
+    subgraph OUT["Chiều đi: giọng người dùng"]
         MIC["Microphone"] -->|"chỉ khi giữ phím nói<br/>và không tắt tiếng"| P1["VAD → ASR → MT → TTS"]
         P1 --> SPK["Loa / tai nghe"]
         P1 --> SUB1["Phụ đề"]
     end
-    subgraph IN["Chiều về — phía bên kia"]
+    subgraph IN["Chiều về: phía bên kia"]
         LOOP["Âm thanh hệ thống<br/>WASAPI loopback / ScreenCaptureKit"] -->|"liên tục"| GATE{"đang phát<br/>bản dịch?"}
         GATE -->|"không"| P2["VAD → ASR → MT<br/>(không TTS)"]
-        GATE -->|"có — bỏ khung"| DROP["Tạm ngưng thu"]
+        GATE -->|"có: bỏ khung"| DROP["Tạm ngưng thu"]
         P2 --> SUB2["Phụ đề"]
     end
     SPK -.->|"phát ra loa thì loopback thu lại"| LOOP

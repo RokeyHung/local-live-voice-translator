@@ -112,11 +112,11 @@ Sinh viên
 
 # DANH MỤC HÌNH
 
-<!-- danh-muc: hinh — Word dựng từ các chú thích "Hình x.y:", kèm số trang -->
+<!-- danh-muc: hinh; Word dựng từ các chú thích "Hình x.y:", kèm số trang -->
 
 # DANH MỤC BẢNG
 
-<!-- danh-muc: bang — Word dựng từ các chú thích "Bảng x.y:", kèm số trang -->
+<!-- danh-muc: bang; Word dựng từ các chú thích "Bảng x.y:", kèm số trang -->
 
 # DANH MỤC TỪ VIẾT TẮT
 
@@ -145,40 +145,29 @@ Sinh viên
 
 # TÓM TẮT ĐỒ ÁN
 
-Các giải pháp dịch giọng nói trong cuộc họp trực tuyến hiện nay phần lớn chạy trên đám
-mây: chúng đòi hỏi kết nối Internet ổn định, phát sinh chi phí theo lượt dùng, và đưa
-nội dung hội thoại ra khỏi máy người dùng. Đồ án xây dựng một ứng dụng desktop dịch
-giọng nói gần thời gian thực chạy hoàn toàn trên máy tính cá nhân, không gọi dịch vụ đám
-mây nào trong lúc dịch. Ứng dụng dịch hai chiều giữa tiếng Việt với tiếng Anh, tiếng Nhật
-và tiếng Trung giản thể, cho cả giọng người dùng qua microphone lẫn âm thanh đang phát
-trên máy — tức là phía bên kia của một cuộc gọi. Hệ thống chạy trên Windows 11 và macOS
-trên chip Apple Silicon, và được đóng gói thành bộ cài tự chứa.
+Các giải pháp dịch giọng nói cho cuộc họp trực tuyến hiện nay phần lớn chạy trên đám mây,
+nên cần kết nối Internet ổn định, tốn phí theo lượt dùng và đưa nội dung hội thoại ra khỏi
+máy người dùng. Đồ án xây dựng một ứng dụng desktop dịch giọng nói gần thời gian thực chạy
+hoàn toàn trên máy tính cá nhân. Ứng dụng dịch hai chiều giữa tiếng Việt với tiếng Anh,
+tiếng Nhật và tiếng Trung giản thể, cho cả giọng người dùng qua microphone lẫn âm thanh
+đang phát trên máy, chạy trên Windows 11 và macOS Apple Silicon, và được đóng gói thành bộ
+cài tự chứa.
 
-**Hướng tiếp cận.** Đồ án chọn cách dịch theo chuỗi thay vì dùng một mô hình đầu-cuối:
-Silero VAD tách câu, Whisper nhận dạng tiếng nói, NLLB-200 distilled 600M dịch văn bản,
-sherpa-onnx và Kokoro tổng hợp giọng nói. Cách này cho phép đo lỗi của từng khâu riêng và
-thay từng khâu độc lập. Hệ thống gồm hai tiến trình giao tiếp qua `127.0.0.1`: một ứng
-dụng Electron lo giao diện và thu âm, và một dịch vụ Python chạy các mô hình. Cả hai theo
-kiến trúc lục giác (Ports & Adapters); nhờ đó khâu nhận dạng có ba runtime thay thế được
-cho nhau — whisper.cpp, MLX và faster-whisper — và việc thêm hai runtime sau không phải
-sửa một dòng nào của chuỗi xử lý.
+Hệ thống dịch theo chuỗi: Silero VAD tách câu, Whisper nhận dạng tiếng nói, NLLB-200
+distilled 600M dịch văn bản, sherpa-onnx và Kokoro tổng hợp giọng nói. Ứng dụng Electron và
+dịch vụ Python giao tiếp qua `127.0.0.1` và cùng theo kiến trúc lục giác (Ports &
+Adapters), nhờ đó khâu nhận dạng có ba runtime thay thế được cho nhau (whisper.cpp, MLX,
+faster-whisper) mà không phải sửa chuỗi xử lý. Bộ tách câu dùng hai ngưỡng im lặng và một
+trần độ dài để người dùng không phải chờ câu dài; âm thanh hệ thống thu trong lúc đang phát
+bản dịch bị bỏ để tránh vòng lặp; mô hình chỉ được nạp khi cần; whisper.cpp được dựng với
+Vulkan để chạy trên GPU ở Windows mà không phải đóng gói CUDA.
 
-**Cách giải quyết các vấn đề chính.** Để người dùng không phải chờ khi người nói không
-ngắt nghỉ, bộ tách câu dùng hai ngưỡng im lặng và một trần độ dài, cắt ở khung yên nhất
-thay vì cắt ngang một từ. Để bản dịch đọc ra loa không bị thu ngược vào chiều nghe và dịch
-lại mãi, khung âm thanh hệ thống thu trong lúc đang phát bản dịch bị bỏ. Để ứng dụng mở
-trong chưa tới một giây thay vì 45 giây, mô hình chỉ được nạp khi thật sự cần. Để chạy
-được trên GPU của mọi hãng ở Windows mà không đóng gói CUDA nặng hơn 1 GB, whisper.cpp
-được dựng với Vulkan.
-
-**Kết quả.** Hệ thống được đánh giá trên bộ dữ liệu công khai FLEURS. Nhận dạng 3.099 bản
-thu trên bốn ngôn ngữ cho WER tiếng Việt 8,8–10,4% tùy runtime, tiếng Anh 4,8–5,0%, và CER
-tiếng Trung, tiếng Nhật dưới 9%. Dịch 2.022 cặp câu trên sáu chiều cho COMET từ 0,77 đến
-0,85. Trên cấu hình Windows có GPU rời, cả sáu chiều đạt ngưỡng RTF p90 ≤ 0,5; hệ thống
-chạy liên tục 60 phút qua 877 câu mà không lỗi nào, bộ nhớ chỉ tăng 12 MB. Đo thêm trên
-giọng người nói tự phát cho thấy WER tiếng Việt tăng từ 10,4% lên 24,6% so với giọng đọc
-cùng mô hình — phần lớn do thuật ngữ tiếng Anh được đọc theo giọng Việt — và làm lộ ra hai
-lỗi của khâu dịch mà dữ liệu giọng đọc không bắt được.
+Trên bộ dữ liệu FLEURS, nhận dạng 3.099 bản thu cho WER tiếng Việt 8,8–10,4% tùy runtime,
+tiếng Anh 4,8–5,0%, CER tiếng Trung và tiếng Nhật dưới 9%; dịch 2.022 cặp câu trên sáu chiều
+cho COMET 0,77–0,85. Trên máy Windows có GPU rời, cả sáu chiều đạt RTF p90 ≤ 0,5; hệ thống
+chạy liên tục 60 phút qua 877 câu không lỗi, bộ nhớ chỉ tăng 12 MB. Trên giọng nói tự phát,
+WER tiếng Việt tăng từ 10,4% lên 24,6%, chủ yếu do thuật ngữ tiếng Anh được đọc theo giọng
+Việt.
 
 **Từ khóa:** dịch giọng nói, nhận dạng tiếng nói, dịch máy, Whisper, NLLB-200, xử lý cục
 bộ, kiến trúc lục giác.
@@ -191,20 +180,20 @@ bộ, kiến trúc lục giác.
 
 Làm việc và học tập trực tuyến giờ là chuyện thường ngày, và cùng với nó là nhu cầu nói
 chuyện với người không dùng chung ngôn ngữ qua Google Meet, Microsoft Teams hay Zoom. Với
-người Việt, các ngôn ngữ đối tác hay gặp nhất là tiếng Anh, tiếng Nhật và tiếng Trung —
+người Việt, các ngôn ngữ đối tác hay gặp nhất là tiếng Anh, tiếng Nhật và tiếng Trung,
 ba thị trường chiếm phần lớn các dự án gia công phần mềm, du học và hợp tác doanh nghiệp.
 
 Các công cụ dịch giọng nói có sẵn hiện nay gần như đều chạy trên đám mây. Cách làm đó
 kéo theo ba vấn đề. Thứ nhất, cuộc họp phụ thuộc hoàn toàn vào đường truyền: mạng chập
 chờn thì bản dịch trễ hoặc mất. Thứ hai, chi phí tính theo thời lượng hoặc theo gói thuê
-bao, và nhiều tính năng chỉ có ở gói trả phí. Thứ ba — quan trọng nhất với cuộc họp nội
-bộ — toàn bộ âm thanh của cuộc họp phải được gửi tới máy chủ của bên thứ ba.
+bao, và nhiều tính năng chỉ có ở gói trả phí. Thứ ba, và quan trọng nhất với cuộc họp nội
+bộ, toàn bộ âm thanh của cuộc họp phải được gửi tới máy chủ của bên thứ ba.
 
 Trong khi đó, các mô hình AI mã nguồn mở cho từng khâu của bài toán đã đủ tốt và đủ nhẹ để
 chạy trên máy tính cá nhân. Whisper nhận dạng tiếng nói gần 100 ngôn ngữ [19]; NLLB-200
 dịch trực tiếp giữa 200 ngôn ngữ [4]; sherpa-onnx tổng hợp giọng nói hoàn toàn offline
-[12]. Máy tính phổ thông cũng đã có GPU đủ mạnh — kể cả GPU tích hợp của chip Apple
-Silicon. Câu hỏi còn lại vì vậy không nằm ở mô hình, mà ở kỹ thuật hệ thống: ghép các mô
+[12]. Máy tính phổ thông cũng đã có GPU đủ mạnh, kể cả GPU tích hợp của chip Apple
+Silicon. Câu hỏi còn lại vì vậy nằm ở kỹ thuật hệ thống: ghép các mô
 hình đó thành một ứng dụng dùng được thật, đủ nhanh để theo kịp người nói, trên phần cứng
 phổ thông, ở cả hai hệ điều hành chính. Đó là lý do đồ án chọn đề tài này.
 
@@ -230,6 +219,19 @@ tuyến mà không dùng dịch vụ đám mây trong quá trình dịch.
 "Gần thời gian thực" trong đồ án được hiểu là **xử lý theo từng đoạn phát ngôn**: hệ
 thống chờ người nói dứt câu hoặc ngắt nghỉ rồi mới dịch cả đoạn đó. Đồ án không đặt
 mục tiêu dịch đồng thời theo từng từ trong lúc người dùng vẫn đang nói.
+
+Hình 1.1 tóm tắt chuỗi xử lý mà các mục tiêu trên hướng tới.
+
+![Hình 1.1: Chuỗi xử lý dịch giọng nói của hệ thống](khoa-luan-hinh/h1-1-chuoi-xu-ly.png)
+
+Hình 1.1: Chuỗi xử lý dịch giọng nói của hệ thống
+
+Âm thanh từ microphone hoặc từ loa của máy được chuẩn hóa về PCM 16 kHz một kênh rồi đi qua
+bốn khâu nối tiếp. Bộ phát hiện giọng nói gom các khung âm thanh thành từng câu; khâu nhận
+dạng chuyển câu đó thành văn bản; khâu dịch chuyển văn bản sang ngôn ngữ đích; và ở chiều đi,
+khâu tổng hợp đọc bản dịch ra loa hoặc tai nghe. Kết quả của từng khâu được gửi về giao diện
+ngay khi có, nên người dùng thấy phụ đề song ngữ trước khi nghe giọng đọc. Chương 2 trình bày
+cơ sở lý thuyết của từng khâu, Chương 3 trình bày cách hiện thực chúng.
 
 ## 1.3. Đối tượng và phạm vi nghiên cứu
 
@@ -262,12 +264,12 @@ Tháng 5/2025, Google công bố tính năng dịch giọng nói trực tiếp t
 mô hình Gemini [7]. Tính năng này dịch lời người nói rồi phát lại bằng giọng tổng hợp mô
 phỏng giọng gốc, và đây là hướng mà đề tài muốn đạt tới. Nhưng nó chạy hoàn toàn trên
 máy chủ của Google, chỉ dành cho gói thuê bao trả phí, và lúc ra mắt chỉ hỗ trợ cặp Anh –
-Tây Ban Nha — không có tiếng Việt. Microsoft Teams và Zoom cũng có phụ đề dịch trực tiếp,
+Tây Ban Nha, chưa có tiếng Việt. Microsoft Teams và Zoom cũng có phụ đề dịch trực tiếp,
 đều chạy trên đám mây và đều gắn với gói trả phí.
 
-Điểm chung của nhóm này: chất lượng cao nhờ mô hình lớn, nhưng không đáp ứng được bất kỳ
-điều kiện nào trong ba điều kiện ở mục 1.1 — không cần mạng, không tốn phí theo lượt dùng,
-và không đưa âm thanh ra khỏi máy.
+Điểm chung của nhóm này là chất lượng cao nhờ mô hình lớn, nhưng không đáp ứng được điều
+kiện nào trong ba điều kiện ở mục 1.1: không cần mạng, không tốn phí theo lượt dùng, và không
+đưa âm thanh ra khỏi máy.
 
 ### 1.4.2. Mô hình dịch giọng nói đầu-cuối
 
@@ -284,7 +286,7 @@ Whisper được thiết kế để xử lý từng đoạn âm thanh 30 giây, 
 Macháček và cộng sự [13] đề xuất whisper_streaming: chạy lại Whisper trên một bộ đệm trượt
 và chỉ xác nhận phần văn bản ổn định giữa hai lần chạy liên tiếp, đạt độ trễ khoảng 3,3
 giây. Cách này cho phụ đề chạy theo lời nói, nhưng phần văn bản đầu ra thay đổi liên tục
-trước khi ổn định — không phù hợp để đưa thẳng vào dịch máy, vì mỗi lần văn bản đổi lại
+trước khi ổn định, nên không phù hợp để đưa thẳng vào dịch máy: mỗi lần văn bản đổi lại
 phải dịch lại. Đề tài chọn cách đơn giản hơn: tách câu trước bằng VAD, rồi mới nhận dạng
 và dịch từng câu đã chốt.
 
@@ -314,12 +316,12 @@ Bảng 1.1: So sánh các giải pháp liên quan
 | Tổng hợp giọng nói          |       Có        |        Có        |          Không          |      Không      |   **Có**   |
 | Thu âm thanh cuộc gọi       |       Có        |      Không       |          Không          |      Không      |   **Có**   |
 | Ứng dụng desktop độc lập    |      Không      |      Không       |           Có            |      Không      |   **Có**   |
-| Đo được lỗi từng khâu       |      Không      |      Không       |            —            |      Không      |   **Có**   |
+| Đo được lỗi từng khâu       |      Không      |      Không       |      Không áp dụng      |      Không      |   **Có**   |
 
 Chưa có giải pháp nào vừa chạy hoàn toàn cục bộ, vừa có tiếng Việt, vừa đủ cả bốn khâu
-thu – nghe – dịch – đọc cho cả hai phía của một cuộc gọi. Đề tài lấp chỗ trống đó, và
-không đặt mục tiêu vượt các dịch vụ đám mây về chất lượng — mô hình của họ lớn hơn nhiều
-bậc — mà đặt mục tiêu **đủ dùng** trên phần cứng phổ thông, với con số đo được cho từng
+thu, nghe, dịch và đọc cho cả hai phía của một cuộc gọi. Đề tài lấp chỗ trống đó. Mô hình
+của các dịch vụ đám mây lớn hơn nhiều bậc, nên đề tài không đặt mục tiêu vượt họ về chất
+lượng, mà đặt mục tiêu **đủ dùng** trên phần cứng phổ thông, với con số đo được cho từng
 khâu để biết "đủ dùng" nghĩa là bao nhiêu.
 
 ## 1.5. Phương pháp thực hiện
@@ -350,20 +352,15 @@ khâu để biết "đủ dùng" nghĩa là bao nhiêu.
 
 ## 1.7. Cấu trúc đồ án
 
-- **Chương 1 — Tổng quan:** lý do chọn đề tài, mục tiêu, phạm vi và các giải pháp liên quan.
-- **Chương 2 — Cơ sở lý thuyết:** lý thuyết của từng khâu, các độ đo đánh giá, kiến trúc và
+- **Chương 1. Tổng quan:** lý do chọn đề tài, mục tiêu, phạm vi và các giải pháp liên quan.
+- **Chương 2. Cơ sở lý thuyết:** lý thuyết của từng khâu, các độ đo đánh giá, kiến trúc và
   công nghệ sử dụng.
-- **Chương 3 — Phân tích, thiết kế và hiện thực hệ thống:** yêu cầu, thiết kế kiến trúc,
+- **Chương 3. Phân tích, thiết kế và hiện thực hệ thống:** yêu cầu, thiết kế kiến trúc,
   luồng xử lý, dữ liệu, giao tiếp; hiện thực hai tiến trình; đóng gói và kiểm thử.
-- **Chương 4 — Thử nghiệm và đánh giá:** môi trường, dữ liệu, kết quả của từng khâu, độ trễ,
+- **Chương 4. Thử nghiệm và đánh giá:** môi trường, dữ liệu, kết quả của từng khâu, độ trễ,
   độ ổn định, đánh giá trên giọng người thật và thảo luận.
-- **Chương 5 — Kết luận và hướng phát triển.**
-
-Hình 1.1 tóm tắt chuỗi xử lý mà các chương sau lần lượt đi vào chi tiết.
-
-![Hình 1.1: Chuỗi xử lý dịch giọng nói của hệ thống](khoa-luan-hinh/h1-1-chuoi-xu-ly.png)
-
-Hình 1.1: Chuỗi xử lý dịch giọng nói của hệ thống
+- **Chương 5. Kết luận và hướng phát triển:** kết quả đạt được, hạn chế và hướng mở rộng.
+- **Phụ lục:** mã nguồn, hướng dẫn cài đặt, kịch bản demo và cách tái lập các thí nghiệm.
 
 ---
 
@@ -378,8 +375,8 @@ rồi tổng hợp giọng nói.
 
 Đồ án chọn cách chuỗi vì ba lý do. Thứ nhất, mỗi khâu có sẵn mô hình mã nguồn mở chất
 lượng tốt, chạy được cục bộ và bao phủ đủ bốn ngôn ngữ. Thứ hai, cách chuỗi cho phép **đo
-lỗi của từng khâu riêng**: khi bản dịch sai, biết được là do nghe nhầm hay dịch nhầm —
-đúng yêu cầu "tách bạch lỗi của từng khối" mà giảng viên hướng dẫn đặt ra ở buổi họp ngày
+lỗi của từng khâu riêng**: khi bản dịch sai, biết được là do nghe nhầm hay dịch nhầm, đúng
+yêu cầu "tách bạch lỗi của từng khối" mà giảng viên hướng dẫn đặt ra ở buổi họp ngày
 19/08/2026. Thứ ba, từng khâu thay được độc lập: đổi runtime nhận dạng cho hợp với phần
 cứng không đụng tới khâu dịch.
 
@@ -396,7 +393,7 @@ hiện giọng nói (mục 2.3).
 Âm thanh thu từ microphone là một chuỗi mẫu biên độ lấy đều theo thời gian. Hai tham số
 quyết định dạng dữ liệu: **tần số lấy mẫu** (số mẫu mỗi giây) và **độ sâu bit** (số bit
 biểu diễn một mẫu). Toàn bộ chuỗi xử lý của đề tài dùng một định dạng duy nhất: **PCM
-16-bit có dấu, một kênh, 16 kHz** — tức 32.000 byte mỗi giây. Whisper và Silero VAD đều
+16-bit có dấu, một kênh, 16 kHz**, tức 32.000 byte mỗi giây. Whisper và Silero VAD đều
 được huấn luyện trên định dạng này, nên chuẩn hóa một lần ở đầu vào giúp các khâu sau không
 phải tự chuyển đổi.
 
@@ -415,14 +412,14 @@ là một "ảnh" hai chiều thời gian × tần số mà encoder Transformer 
 ### 2.3.1. Silero VAD
 
 VAD (Voice Activity Detection) quyết định đoạn âm thanh nào có giọng nói. Phương án đơn
-giản nhất là so năng lượng tín hiệu với một ngưỡng — cách của WebRTC VAD — nhưng cách đó dễ
+giản nhất là so năng lượng tín hiệu với một ngưỡng (cách của WebRTC VAD), nhưng cách đó dễ
 coi tiếng quạt, tiếng gõ phím hay nhạc nền là giọng nói.
 
 Silero VAD [24] là một mạng neural nhỏ chạy trên từng cửa sổ 512 mẫu (32 ms ở 16 kHz), giữ
 một trạng thái ẩn qua các cửa sổ liên tiếp, và trả về xác suất cửa sổ đó có giọng nói. Mô
 hình nhẹ, chạy trên CPU, không phụ thuộc ngôn ngữ, và phân biệt giọng nói với tiếng ồn tốt
 hơn hẳn cách dựa trên năng lượng. Vì có trạng thái ẩn, **mỗi luồng âm thanh cần một bản
-trạng thái riêng** — chi tiết này quyết định một phần thiết kế ở mục 3.2.3.
+trạng thái riêng**. Chi tiết này quyết định một phần thiết kế ở mục 3.2.3.
 
 ### 2.3.2. Tách câu
 
@@ -431,30 +428,30 @@ và quyết định khi nào câu kết thúc gọi là **tách câu** (endpoint
 người dùng phải chờ bao lâu mới thấy bản dịch, và có một mâu thuẫn cố hữu:
 
 - Chờ khoảng lặng **ngắn** để chốt câu thì phản hồi nhanh, nhưng một câu nói chậm, có ngắt
-  nghỉ giữa chừng, bị băm thành nhiều mảnh — khâu dịch nhận các mảnh rời rạc và dịch sai
+  nghỉ giữa chừng, bị băm thành nhiều mảnh; khâu dịch nhận các mảnh rời rạc và dịch sai
   nghĩa.
 - Chờ khoảng lặng **dài** thì câu trọn vẹn, nhưng người dùng phải chờ lâu; và nếu người nói
   không hề nghỉ thì câu không bao giờ được chốt.
 
 Cách giải quyết phổ biến là thêm một trần độ dài: câu dài quá một ngưỡng thì bị cắt cứng.
-Cắt cứng có rủi ro riêng — điểm cắt có thể rơi vào giữa một từ. Mục 3.7.1 trình bày cách đề
+Cắt cứng có rủi ro riêng: điểm cắt có thể rơi vào giữa một từ. Mục 3.7.1 trình bày cách đề
 tài xử lý cả hai phía của mâu thuẫn này.
 
-## 2.4. Nhận dạng tiếng nói — Whisper
+## 2.4. Nhận dạng tiếng nói với Whisper
 
 ### 2.4.1. Mô hình
 
 Whisper [19] là họ mô hình encoder–decoder Transformer của OpenAI. Bài báo gốc huấn luyện
-trên 680.000 giờ âm thanh có phụ đề thu thập từ Internet theo cách giám sát yếu — nhãn là
-phụ đề có sẵn chứ không phải bản chép lại được soạn cẩn thận; các bản `large-v3` về sau được
+trên 680.000 giờ âm thanh có phụ đề thu thập từ Internet theo cách giám sát yếu (nhãn là
+phụ đề có sẵn chứ không phải bản chép lại được soạn cẩn thận); các bản `large-v3` về sau được
 huấn luyện trên tập lớn hơn nữa. Encoder nhận phổ log-Mel của tối đa 30 giây âm thanh;
 decoder sinh từng token văn bản dựa trên đầu ra của encoder và các token đã sinh trước đó.
 
 Whisper nhận các token đặc biệt ở đầu chuỗi để chọn ngôn ngữ và tác vụ: `transcribe` ghi lại
 đúng ngôn ngữ đang nói, `translate` dịch thẳng sang tiếng Anh. Đồ án **chỉ dùng
-`transcribe`**, vì `translate` chỉ ra được tiếng Anh — không ra được tiếng Việt, Nhật hay
-Trung — và để việc dịch cho một khâu riêng thì đổi được mô hình dịch mà không đụng khâu
-nghe.
+`transcribe`**, vì hai lẽ: `translate` chỉ ra được tiếng Anh, không ra được tiếng Việt,
+Nhật hay Trung; và để việc dịch cho một khâu riêng thì đổi được mô hình dịch mà không đụng
+khâu nghe.
 
 Bản dùng trong đề tài là `large-v3` và `large-v3-turbo`. Bản turbo giữ nguyên encoder của
 large-v3 nhưng giảm decoder từ 32 xuống 4 lớp. Vì decoder chạy một lần cho mỗi token sinh ra,
@@ -491,22 +488,22 @@ Ba runtime **không dùng chung tệp mô hình nào**: GGML là một tệp tro
 `ggerganov/whisper.cpp`, còn MLX và CTranslate2 là các kho riêng đã chuyển đổi sẵn. Hệ quả
 cho thiết kế được trình bày ở mục 3.6, và hệ quả cho việc so sánh ở mục 4.3.
 
-**Lượng tử hóa** (quantization) biểu diễn trọng số bằng ít bit hơn — `q5_0` dùng 5 bit mỗi
-trọng số thay vì 16 bit của `float16` — để giảm bộ nhớ và tăng tốc độ, đổi lại một phần độ
+**Lượng tử hóa** (quantization) biểu diễn trọng số bằng ít bit hơn (`q5_0` dùng 5 bit mỗi
+trọng số thay vì 16 bit của `float16`) để giảm bộ nhớ và tăng tốc độ, đổi lại một phần độ
 chính xác. Mức giảm đó cụ thể là bao nhiêu với tiếng Việt là một trong các câu hỏi Chương 4
 trả lời bằng số đo.
 
 **Vulkan** là API đồ họa và tính toán đa nền tảng, có sẵn trong driver của NVIDIA, AMD và
 Intel. whisper.cpp dựng với backend Vulkan chạy được trên GPU của cả ba hãng mà không cần bộ
-công cụ riêng của hãng nào — khác với CUDA, vốn chỉ chạy trên card NVIDIA và nặng thêm hơn
+công cụ riêng của hãng nào, khác với CUDA vốn chỉ chạy trên card NVIDIA và nặng thêm hơn
 1 GB khi đóng gói.
 
-## 2.5. Dịch máy — NLLB-200
+## 2.5. Dịch máy với NLLB-200
 
 NLLB-200 [4] là mô hình dịch máy đa ngôn ngữ của Meta, dịch trực tiếp giữa 200 ngôn ngữ bất
 kỳ mà không đi qua tiếng Anh làm trung gian. Mô hình có kiến trúc encoder–decoder
 Transformer; bản đầy đủ 54 tỷ tham số dùng Mixture-of-Experts, và Meta phát hành kèm các bản
-chưng cất (distilled) nhỏ hơn. Đề tài dùng bản **distilled 600M** — bản nhỏ nhất, chạy được
+chưng cất (distilled) nhỏ hơn. Đề tài dùng bản **distilled 600M**, bản nhỏ nhất, chạy được
 trên CPU và nạp được vào GPU phổ thông.
 
 Ngôn ngữ nguồn được khai báo bằng một token ở đầu câu vào; ngôn ngữ đích được chỉ định bằng
@@ -514,8 +511,8 @@ cách **ép token đầu tiên của decoder** là mã ngôn ngữ đó. Bốn m
 `vie_Latn`, `eng_Latn`, `jpn_Jpan` và `zho_Hans`.
 
 Bản dịch được sinh theo kiểu tự hồi quy giống decoder của Whisper, nên cũng có thể rơi vào
-vòng lặp. Thư viện transformers có sẵn cách chặn — cấm lặp lại một n-gram hoặc phạt token đã
-xuất hiện — nhưng các cách đó không bật mặc định. Mục 4.7.3 cho thấy đây là một điểm yếu thật
+vòng lặp. Thư viện transformers có sẵn cách chặn (cấm lặp lại một n-gram hoặc phạt token đã
+xuất hiện), nhưng các cách đó không bật mặc định. Mục 4.7.3 cho thấy đây là một điểm yếu thật
 khi dịch lời nói tự phát.
 
 Hai hạn chế được ghi nhận từ đầu: giấy phép CC-BY-NC-4.0 [14] chỉ cho phép dùng phi thương
@@ -525,7 +522,7 @@ câu đã chốt, không dịch bản nhận dạng tạm thời đang thay đ�
 ## 2.6. Tổng hợp tiếng nói
 
 Các mô hình TTS hiện đại gồm hai phần. **G2P** (grapheme-to-phoneme) chuyển chữ viết thành
-chuỗi âm vị — với tiếng Anh, đó là tra từ điển phát âm và đoán cách đọc cho từ lạ; với tiếng
+chuỗi âm vị: với tiếng Anh, đó là tra từ điển phát âm và đoán cách đọc cho từ lạ; với tiếng
 Trung, trước hết phải tách từ vì văn bản không có khoảng trắng. Phần thứ hai là **mạng
 neural** chuyển chuỗi âm vị thành sóng âm; các họ phổ biến chạy được cục bộ là VITS, Piper
 (một biến thể nhẹ của VITS) và Kokoro.
@@ -534,9 +531,9 @@ sherpa-onnx [12] là runtime chạy các mô hình TTS định dạng ONNX hoàn
 dựng sẵn cho Windows và macOS, kèm phần G2P cho nhiều ngôn ngữ. Đề tài dùng nó cho tiếng
 Việt, tiếng Anh và tiếng Trung.
 
-Tiếng Nhật là trường hợp riêng. G2P tiếng Nhật phải tách từ và đọc chữ Kanji theo ngữ cảnh —
-cùng một chữ Hán có nhiều cách đọc khác nhau tùy từ ghép — và sherpa-onnx không có phần G2P
-đó cho tiếng Nhật. Đề tài giữ mô hình Kokoro [9] nhưng thay khâu G2P bằng OpenJTalk, một bộ
+Tiếng Nhật là trường hợp riêng. G2P tiếng Nhật phải tách từ và đọc chữ Kanji theo ngữ cảnh,
+vì cùng một chữ Hán có nhiều cách đọc khác nhau tùy từ ghép, và sherpa-onnx không có phần
+G2P đó cho tiếng Nhật. Đề tài giữ mô hình Kokoro [9] nhưng thay khâu G2P bằng OpenJTalk, một bộ
 phân tích tiếng Nhật mã nguồn mở (mục 3.7.4).
 
 ## 2.7. Thu âm thanh hệ thống
@@ -544,12 +541,12 @@ phân tích tiếng Nhật mã nguồn mở (mục 3.7.4).
 Thu microphone có API sẵn ở mọi nền tảng. Thu **âm thanh đang phát ra loa** thì mỗi hệ điều
 hành một cách: Windows có WASAPI loopback [15], cho phép mở thiết bị đầu ra như một nguồn
 thu; macOS từ bản 13 có ScreenCaptureKit [1], vốn làm ra cho quay màn hình nhưng thu được cả
-âm thanh hệ thống. Chromium — nền của Electron — đã bọc cả hai sau cùng một API
+âm thanh hệ thống. Chromium, nền của Electron, đã bọc cả hai sau cùng một API
 `getDisplayMedia`, nên ứng dụng không phải viết mã native riêng cho từng hệ điều hành.
 
 Thu âm thanh hệ thống đặt ra một vấn đề không có ở microphone: nó thu **toàn bộ** âm thanh
 máy phát ra, kể cả giọng đọc bản dịch của chính ứng dụng. Nếu không xử lý, bản dịch quay lại
-chiều nghe, được dịch tiếp, rồi lại được đọc ra — một vòng lặp không có điểm dừng (mục
+chiều nghe, được dịch tiếp, rồi lại được đọc ra, thành một vòng lặp không có điểm dừng (mục
 3.3.3).
 
 ## 2.8. Độ đo đánh giá
@@ -570,7 +567,7 @@ không cộng dồn vào nhau.
 ### 2.8.1. WER và CER
 
 WER (Word Error Rate) dựa trên khoảng cách Levenshtein giữa câu hệ thống nghe ra và câu tham
-chiếu — số phép sửa ít nhất để biến câu này thành câu kia:
+chiếu, tức số phép sửa ít nhất để biến câu này thành câu kia:
 
 $$\text{WER} = \frac{S + D + I}{N}$$
 
@@ -585,13 +582,13 @@ $\text{WER} = (1 + 1 + 0)/7 = 28{,}6\%$.
 Khi báo WER cho một tập nhiều câu có hai cách tính, cho ra hai con số khác nhau: **gộp cả
 tập** (tổng lỗi của mọi câu chia tổng số từ tham chiếu) và **trung bình từng câu**. Cách thứ
 hai cho câu ngắn trọng số ngang câu dài, nên một câu ba từ sai một từ kéo trung bình lên rất
-mạnh. Đồ án dùng cách gộp cả tập — cách của thư viện jiwer và của các bài báo — cho mọi
+mạnh. Đồ án dùng cách gộp cả tập, là cách của thư viện jiwer và của các bài báo, cho mọi
 con số đặt cạnh nhau.
 
 Tiếng Trung và tiếng Nhật không tách từ bằng khoảng trắng. Chấm WER cho hai thứ tiếng này
-thực chất là chấm theo chỗ mô hình tình cờ chèn dấu cách — cùng một câu đúng nghĩa có thể ra
-0% hay 100%. Vì vậy đồ án dùng **CER** (Character Error Rate) — cùng công thức nhưng đếm
-trên ký tự — cho zh và ja, theo đúng quy ước của bài báo FLEURS [3] và bài báo Whisper [19].
+thực chất là chấm theo chỗ mô hình tình cờ chèn dấu cách: cùng một câu đúng nghĩa có thể ra
+0% hay 100%. Vì vậy đồ án dùng **CER** (Character Error Rate, cùng công thức nhưng đếm
+trên ký tự) cho zh và ja, theo đúng quy ước của bài báo FLEURS [3] và bài báo Whisper [19].
 Hệ quả: WER và CER **không so được với nhau**, và không được lấy trung bình bốn ngôn ngữ khi
 hai trong bốn cột là CER.
 
@@ -607,11 +604,11 @@ xuất hiện trong tham chiếu), $c$ là độ dài bản dịch máy và $r$ 
 độ đo mức tập, không đáng tin trên từng câu riêng lẻ.
 
 BLEU phụ thuộc mạnh vào cách tách từ: Post [18] đo được chênh lệch tới 1,8 điểm chỉ do khác
-bộ tách từ — lớn hơn cả mức cải thiện mà nhiều bài báo công bố — và đề xuất sacreBLEU để
+bộ tách từ, lớn hơn cả mức cải thiện mà nhiều bài báo công bố, và đề xuất sacreBLEU để
 chuẩn hóa cách tính. Với tiếng Trung và tiếng Nhật, bộ tách theo khoảng trắng mặc định là vô
 nghĩa. **spBLEU** [8] giải quyết bằng cách tách từ bằng một mô hình SentencePiece dùng chung
-cho mọi ngôn ngữ. Đồ án dùng sacreBLEU với tokenizer `flores200` — đúng cấu hình của bài
-báo NLLB — nên số đo đặt cạnh số công bố được, và sáu chiều dịch dùng chung một cách tách từ
+cho mọi ngôn ngữ. Đồ án dùng sacreBLEU với tokenizer `flores200`, đúng cấu hình của bài
+báo NLLB, nên số đo đặt cạnh số công bố được, và sáu chiều dịch dùng chung một cách tách từ
 nên so được với nhau.
 
 chrF++ [17] tính F-score trên n-gram ký tự, cộng thêm 2-gram từ (phần "++"). Nó ổn định hơn
@@ -630,7 +627,7 @@ nhưng sai nghĩa.
 COMET [20] là độ đo dựa trên mô hình neural: nền là mô hình ngôn ngữ đa ngữ XLM-R, được tinh
 chỉnh để dự đoán điểm mà người chấm thật sẽ cho. Bản `Unbabel/wmt22-comet-da` [21] dùng trong
 đề tài nhận vào bộ ba (câu nguồn, bản dịch máy, bản dịch tham chiếu) và trả về điểm trong
-khoảng [0, 1]. Điểm COMET **không phải phần trăm** — 0,85 không có nghĩa là "đúng 85%" — mà
+khoảng [0, 1]. Điểm COMET **không phải phần trăm** (0,85 không có nghĩa là "đúng 85%") mà
 dùng để xếp hạng các hệ thống trên cùng một tập.
 
 Báo cáo WMT22 [5] khuyến nghị dùng độ đo neural thay cho BLEU vì chúng tương quan với đánh
@@ -671,8 +668,8 @@ chiều, còn bản thân người phiên dịch chuyên nghiệp cũng nói sau
 ## 2.9. Kiến trúc lục giác
 
 Kiến trúc lục giác, hay Ports & Adapters, do Cockburn [2] đề xuất, tách phần nghiệp vụ của ứng
-dụng khỏi hạ tầng. Nghiệp vụ chỉ làm việc với các **port** — giao diện trừu tượng như "nhận
-dạng tiếng nói" hay "lưu một câu vào lịch sử" — còn việc hiện thực port bằng một thư viện cụ
+dụng khỏi hạ tầng. Nghiệp vụ chỉ làm việc với các **port**, tức giao diện trừu tượng như
+"nhận dạng tiếng nói" hay "lưu một câu vào lịch sử", còn việc hiện thực port bằng một thư viện cụ
 thể nằm ở các **adapter** bên ngoài. Quy tắc duy nhất: **phụ thuộc luôn hướng vào trong**
 (Hình 2.1). Lõi không biết gì về whisper.cpp, PyTorch hay FastAPI.
 
@@ -713,7 +710,7 @@ tốn chi phí bắt tay HTTP cho mỗi khung âm thanh 100 ms.
 
 ### 3.1.1. Tác nhân
 
-Hệ thống có một tác nhân chính là **người dùng** — người tham gia một cuộc họp trực tuyến
+Hệ thống có một tác nhân chính là **người dùng**, người tham gia một cuộc họp trực tuyến
 với người nói ngôn ngữ khác. Ngoài ra có hai tác nhân phụ không phải con người: **hệ điều
 hành**, cung cấp âm thanh microphone và âm thanh hệ thống; và **Hugging Face Hub / GitHub
 Releases**, nơi tải mô hình về trong lần dùng đầu. Tác nhân thứ ba chỉ xuất hiện khi tải mô
@@ -750,7 +747,7 @@ Bảng 3.2: Yêu cầu phi chức năng
 | Mã    | Nhóm      | Yêu cầu                                                                          |
 | ----- | --------- | -------------------------------------------------------------------------------- |
 | PCN01 | Hiệu năng | Phát hiện kết thúc câu < 700 ms; ASR một câu ngắn < 1.500 ms                     |
-| PCN02 | Hiệu năng | Dịch < 1.000 ms; TTS < 1.500 ms; tổng chiều đi trung vị < 4 s                    |
+| PCN02 | Hiệu năng | Dịch < 1.000 ms; TTS < 1.500 ms; chiều đi trung vị < 4 s; phụ đề chiều về < 3 s  |
 | PCN03 | Ổn định   | Chạy liên tục tối thiểu 60 phút; bộ nhớ không tăng liên tục                      |
 | PCN04 | Ổn định   | Một mô hình lỗi không làm mất cả phiên; giải phóng tài nguyên khi kết thúc phiên |
 | PCN05 | Offline   | Sau khi cài mô hình: không cần Internet, không gọi API đám mây nào               |
@@ -797,14 +794,14 @@ Bảng 3.4: Đặc tả use case "Nhập tệp âm thanh/video"
 Hệ thống gồm hai tiến trình chạy trên cùng máy người dùng (Hình 3.2). **Ứng dụng desktop**
 (Electron) lo giao diện, thu âm thanh và phát giọng đọc. **Dịch vụ AI** (Python) chạy toàn
 bộ mô hình, giữ lịch sử và cấu hình. Hai tiến trình nói chuyện qua REST và WebSocket trên
-địa chỉ `127.0.0.1`, cổng 8756 — dịch vụ không bao giờ lắng nghe trên địa chỉ mạng.
+địa chỉ `127.0.0.1`, cổng 8756; dịch vụ không bao giờ lắng nghe trên địa chỉ mạng.
 
 ![Hình 3.2: Sơ đồ triển khai: hai tiến trình trên một máy](khoa-luan-hinh/h3-2-trien-khai.png)
 
 Hình 3.2: Sơ đồ triển khai: hai tiến trình trên một máy
 
 Tách hai tiến trình thay vì nhúng mô hình vào Electron có ba lý do. Hệ sinh thái mô hình AI
-— PyTorch, transformers, các binding của whisper.cpp và sherpa-onnx — nằm ở Python. Tiến
+(PyTorch, transformers, các binding của whisper.cpp và sherpa-onnx) nằm ở Python. Tiến
 trình Python bị treo hay tràn bộ nhớ khi nạp mô hình thì giao diện vẫn sống và báo được lỗi.
 Và dịch vụ chạy độc lập được, nên các script đánh giá gọi thẳng vào nó mà không cần mở giao
 diện.
@@ -821,15 +818,15 @@ Dịch vụ AI theo kiến trúc lục giác (mục 2.9) với năm tầng (Hìn
 
 Hình 3.3: Các tầng của dịch vụ AI
 
-- **domain** — các kiểu dữ liệu thuần: câu (`Utterance`), đoạn giọng nói (`VadSegment`),
+- **domain:** các kiểu dữ liệu thuần: câu (`Utterance`), đoạn giọng nói (`VadSegment`),
   cặp ngôn ngữ, các sự kiện của chuỗi xử lý. Không import thư viện nào.
-- **ports** — các lớp trừu tượng: `VoiceActivityDetector`, `SpeechToTextProvider`,
+- **ports:** các lớp trừu tượng `VoiceActivityDetector`, `SpeechToTextProvider`,
   `TranslationProvider`, `TextToSpeechProvider`, `SpeakerDiarizer`, `SessionRepository`.
-- **application** — nghiệp vụ: chuỗi xử lý `TranslationPipeline`, tác vụ nhập tệp,
-  `ModelManager` quản lý mô hình, các chính sách. Chỉ biết ports và domain.
-- **adapters** — hiện thực port bằng thư viện cụ thể: whisper.cpp, MLX, CTranslate2, NLLB,
+- **application:** nghiệp vụ, gồm chuỗi xử lý `TranslationPipeline`, tác vụ nhập tệp,
+  `ModelManager` quản lý mô hình và các chính sách. Chỉ biết ports và domain.
+- **adapters:** hiện thực port bằng thư viện cụ thể: whisper.cpp, MLX, CTranslate2, NLLB,
   sherpa-onnx, Kokoro, pyannote, SQLite.
-- **api, ws** — lớp giao tiếp mỏng: nhận yêu cầu REST và thông điệp WebSocket, gọi
+- **api, ws:** lớp giao tiếp mỏng, nhận yêu cầu REST và thông điệp WebSocket, gọi
   application, chuyển sự kiện thành JSON.
 
 Ứng dụng desktop dùng đúng cách phân tầng đó ở phía renderer: `domain` (kiểu dữ liệu và bản
@@ -849,14 +846,14 @@ Có hai quyết định thiết kế đáng chú ý trong sơ đồ này.
 **Port VAD tách làm hai vai.** Mọi kết nối dùng chung một bộ mô hình, nhưng Silero giữ trạng
 thái ẩn theo từng luồng âm thanh (mục 2.3.1). Nếu chiều đi và chiều về dùng chung một đối
 tượng VAD thì trạng thái của hai luồng trộn vào nhau. Vì vậy port tách thành
-`VoiceActivityDetector` — nạp mô hình một lần, dùng chung — và `VadStream` — giữ trạng thái,
+`VoiceActivityDetector`, nạp mô hình một lần và dùng chung, và `VadStream`, giữ trạng thái,
 mỗi nguồn âm thanh của mỗi phiên một bản, tạo bằng `open_stream()`. Đây là quyết định kiến
 trúc đầu tiên của dự án, đưa ra ở Tuần 2 và giữ nguyên tới cuối.
 
-**Chính sách là một adapter bọc chính port của nó.** Hai lớp ở tầng application —
-`HistoryPolicy` bọc `SessionRepository` để tắt ghi lịch sử theo lựa chọn của người dùng, và
-`LanguageRoutedTts` bọc `TextToSpeechProvider` để chọn engine theo ngôn ngữ đích — hiện thực
-đúng port mà chúng bọc. Chuỗi xử lý không biết mình đang nói chuyện với lớp chính sách hay
+**Chính sách là một adapter bọc chính port của nó.** Hai lớp ở tầng application là
+`HistoryPolicy`, bọc `SessionRepository` để tắt ghi lịch sử theo lựa chọn của người dùng, và
+`LanguageRoutedTts`, bọc `TextToSpeechProvider` để chọn engine theo ngôn ngữ đích. Cả hai
+hiện thực đúng port mà chúng bọc. Chuỗi xử lý không biết mình đang nói chuyện với lớp chính sách hay
 adapter thật. Adapter biết _cách_ làm; lớp chính sách quyết định _có được phép_ làm và _dùng
 engine nào_.
 
@@ -874,7 +871,7 @@ Hình 3.5: Sơ đồ trạng thái của một câu
 
 Trạng thái `WaitingForConfirmation` chỉ xuất hiện ở chiều đi khi bật duyệt trước khi đọc;
 chiều về không đọc thành tiếng nên không có gì để duyệt. Một câu lỗi ở bất kỳ khâu nào
-chuyển sang `Error` và được lưu kèm mã lỗi, nhưng không làm dừng phiên — câu sau vẫn chạy
+chuyển sang `Error` và được lưu kèm mã lỗi, nhưng không làm dừng phiên: câu sau vẫn chạy
 bình thường (PCN04).
 
 ### 3.3.2. Một phiên dịch
@@ -889,10 +886,10 @@ Mỗi kết nối WebSocket có một `SessionController` riêng; mỗi chiều 
 `TranslationPipeline` riêng với một `VadStream` riêng. Ứng dụng gửi khung âm thanh 100 ms một
 lần; bộ tách câu gom chúng lại và nhả ra một đoạn khi câu kết thúc. Đoạn đó đi qua ASR, MT và
 TTS; mỗi khâu được đo thời gian bằng đồng hồ đơn điệu ngay trong dịch vụ, không để phía giao
-diện ước lượng qua khoảng cách giữa các sự kiện — con số ước lượng như vậy gồm cả thời gian
-truyền WebSocket nên không dùng được.
+diện ước lượng qua khoảng cách giữa các sự kiện, vì con số ước lượng như vậy gồm cả thời
+gian truyền WebSocket.
 
-Mô hình chạy lâu và chặn luồng, nên không được chạy trên vòng lặp sự kiện của asyncio — nếu
+Mô hình chạy lâu và chặn luồng, nên không được chạy trên vòng lặp sự kiện của asyncio; nếu
 không, trong lúc Whisper đang nhận dạng thì mọi kết nối khác đều treo. Mỗi lần gọi mô hình
 được đẩy sang một luồng riêng (mục 3.7.5).
 
@@ -906,10 +903,9 @@ Hai chiều có hành vi khác nhau có chủ đích:
 
 - **Chiều đi** chỉ gửi âm thanh khi người dùng đang giữ phím nói và không tắt tiếng. Cổng này
   được chặn **hai lần**: ứng dụng không gửi, và dịch vụ cũng bỏ các khung đến ngoài lúc giữ
-  phím — không tin phía client. Nhả phím phải chốt câu ngay: khi ứng dụng ngừng gửi âm thanh,
+  phím, không tin phía client. Nhả phím phải chốt câu ngay: khi ứng dụng ngừng gửi âm thanh,
   bộ tách câu sẽ không bao giờ thấy khoảng lặng để kết thúc câu. Lỗi này chỉ lộ ra khi ghép
-  hai phần vốn đúng khi đứng riêng, và cách sửa — `VadStream.flush()` — trở thành một phần
-  của port VAD.
+  hai phần vốn đúng khi đứng riêng, và cách sửa là thêm `VadStream.flush()` vào port VAD.
 - **Chiều về** thu liên tục, không cần giữ phím, và **không đọc thành tiếng**: đọc bản dịch
   của phía bên kia thì giọng máy sẽ chồng lên giọng người thật đang nói.
 
@@ -922,7 +918,7 @@ nhất vẫn là đeo tai nghe; cơ chế này là lưới an toàn cho lúc ng�
 ### 3.3.4. Nạp mô hình theo yêu cầu
 
 Phiên bản đầu nạp toàn bộ mô hình khi dịch vụ khởi động, và mất khoảng 45 giây mới mở. Thiết
-kế hiện tại **không nạp gì lúc khởi động** — dịch vụ mở trong khoảng 0,4 giây — và mọi đường
+kế hiện tại **không nạp gì lúc khởi động** (dịch vụ mở trong khoảng 0,4 giây), và mọi đường
 cần tới mô hình đều đi qua đúng một cửa là `ModelManager.ensure_loaded()` (Hình 3.8).
 
 ![Hình 3.8: Nạp mô hình theo yêu cầu](khoa-luan-hinh/h3-8-nap-mo-hinh.png)
@@ -933,7 +929,7 @@ Năm lối vào gọi cửa đó: nút "Khởi động mô hình", lúc bắt đ
 hình nhập tệp và màn hình đánh giá. **Chọn preset không nằm trong số đó**: đổi preset chỉ gỡ
 mô hình cũ khỏi bộ nhớ và ghi nhận lựa chọn mới, nên người dùng duyệt qua các preset tức thì
 thay vì chờ tải vài gigabyte cho mỗi lần bấm. Trạng thái "chưa có gì trong bộ nhớ" được báo
-bằng một tín hiệu rõ ràng ở mức giao thức — danh sách khâu đã nạp rỗng — để giao diện không
+bằng một tín hiệu rõ ràng ở mức giao thức (danh sách khâu đã nạp rỗng) để giao diện không
 phải đoán.
 
 ## 3.4. Thiết kế giao tiếp
@@ -952,9 +948,9 @@ Bảng 3.5: Các nhóm API REST
 | Đo đạc   | `POST /api/benchmark`, `GET /api/resources`, `POST /api/evaluate`                 | Độ trễ từng khâu, CPU/RAM tiến trình, chấm bộ câu mẫu                            |
 | Bảo mật  | `POST /api/hf/verify`                                                             | Kiểm tra token Hugging Face trước khi tải mô hình cần quyền                      |
 
-Các thao tác chạy lâu — nạp mô hình, nhập tệp, chấm điểm — là một yêu cầu chặn; giao diện hỏi
+Các thao tác chạy lâu như nạp mô hình, nhập tệp, chấm điểm là một yêu cầu chặn; giao diện hỏi
 song song một đường `…/progress` riêng để vẽ thanh tiến độ. Tài liệu API sinh tự động ở
-`/docs`, và bộ giao diện Swagger được đóng gói sẵn trong dịch vụ thay vì tải từ CDN — nếu
+`/docs`, và bộ giao diện Swagger được đóng gói sẵn trong dịch vụ thay vì tải từ CDN; nếu
 không, trang tài liệu trắng trơn trên máy không có mạng, trái với chính mục tiêu của đề tài.
 
 ### 3.4.2. WebSocket
@@ -978,8 +974,8 @@ Bảng 3.6: Thông điệp WebSocket
 |                    | `metrics`                            | Thời gian từng khâu của câu đó                                   |
 |                    | `error`                              | Lỗi kèm mã                                                       |
 
-Giao thức được định nghĩa hai lần — một bản Python ở phía dịch vụ, một bản TypeScript ở phía
-ứng dụng — và phải được đồng bộ bằng tay khi thay đổi. Đây là một khoản nợ bảo trì được chấp
+Giao thức được định nghĩa hai lần, một bản Python ở phía dịch vụ và một bản TypeScript ở phía
+ứng dụng, và phải được đồng bộ bằng tay khi thay đổi. Đây là một khoản nợ bảo trì được chấp
 nhận có chủ đích: sinh mã tự động từ một đặc tả chung thì thêm một công cụ và một bước dựng
 cho một giao thức chỉ có mười bốn loại thông điệp.
 
@@ -1002,12 +998,12 @@ Hai quyết định:
 - **Lược đồ có đánh số phiên bản.** Số phiên bản lưu trong `PRAGMA user_version` (hiện là 2),
   và khi mở tệp dịch vụ tự thêm những cột còn thiếu. Lý do: lệnh tạo bảng của SQLAlchemy bỏ
   qua bảng đã tồn tại, nên chỉ dùng nó thì cơ sở dữ liệu cũ trên máy người dùng sẽ lặng lẽ
-  thiếu cột mới — như cột `speaker` được thêm khi làm chức năng tách người nói.
+  thiếu cột mới, như cột `speaker` được thêm khi làm chức năng tách người nói.
 
 ### 3.5.2. Cấu hình người dùng
 
-Lựa chọn của người dùng — thư mục mô hình, token Hugging Face, mô hình tự chọn cho từng khâu,
-thiết bị tính toán — được ghi vào `~/.llvt/settings.json`. Tệp này là nguồn cấu hình thứ hai,
+Lựa chọn của người dùng (thư mục mô hình, token Hugging Face, mô hình tự chọn cho từng khâu,
+thiết bị tính toán) được ghi vào `~/.llvt/settings.json`. Tệp này là nguồn cấu hình thứ hai,
 xếp **dưới** biến môi trường: người quản trị đặt biến môi trường là có chủ ý rõ ràng, nên khi
 đó giao diện hiện ô tương ứng ở dạng chỉ đọc.
 
@@ -1020,33 +1016,33 @@ trị.
 
 Preset là một **mức chất lượng**, không phải một mô hình cụ thể (Bảng 3.7). Mỗi preset mang
 một bộ mô hình cho từng khâu, một bộ tham số tách câu riêng, và một bảng mô hình tương đương
-cho từng runtime ASR — đổi runtime thì vẫn giữ đúng mức chất lượng người dùng đã chọn.
+cho từng runtime ASR, để đổi runtime thì vẫn giữ đúng mức chất lượng người dùng đã chọn.
 
 Bảng 3.7: Cấu hình ba preset (mô hình MLX thuộc kho `mlx-community/`; MT của cả ba là `facebook/nllb-200-distilled-600M`)
 
-| Preset     | ASR — whisper.cpp          | ASR — MLX                         | ASR — faster-whisper                        | MT        | Trần độ dài câu |
+| Preset     | ASR (whisper.cpp)          | ASR (MLX)                         | ASR (faster-whisper)                        | MT        | Trần độ dài câu |
 | ---------- | -------------------------- | --------------------------------- | ------------------------------------------- | --------- | --------------: |
 | Nhanh      | `ggml-small-q5_1`          | `whisper-large-v3-turbo-asr-4bit` | `Systran/faster-whisper-small`              | NLLB-600M |           4,5 s |
 | Cân bằng   | `ggml-large-v3-turbo-q5_0` | `whisper-large-v3-turbo-asr-8bit` | `deepdml/faster-whisper-large-v3-turbo-ct2` | NLLB-600M |           6,0 s |
 | Chất lượng | `ggml-large-v3-turbo-q8_0` | `whisper-large-v3-turbo-asr-fp16` | `Systran/faster-whisper-large-v3`           | NLLB-600M |           8,0 s |
 
 Preset Nhanh của MLX không dùng bản `small` dù đó mới là bản "cùng cỡ" với `ggml-small`: đo
-trên 20 câu FLEURS, cả bản 8-bit lẫn fp16 của `mlx-community/whisper-small` đều hỏng — WER
+trên 20 câu FLEURS, cả bản 8-bit lẫn fp16 của `mlx-community/whisper-small` đều hỏng: WER
 125–162%, một nửa số câu trả về rỗng, phần còn lại kẹt vòng lặp. Bản GGML cùng cỡ chạy bình
 thường (WER 20,6%), nên lỗi nằm ở bản chuyển đổi chứ không ở cỡ mô hình. Preset Nhanh của MLX
 vì vậy dùng `large-v3-turbo` 4-bit: nhỏ hơn bản `small` fp16, nhanh hơn và WER 8,9%.
 
 Ngoài ba preset còn có chế độ **tự chọn** mô hình cho từng khâu. Vì ba runtime ASR không dùng
 chung mô hình nào (mục 2.4.3), danh sách mô hình ASR là một bảng theo từng runtime; dịch vụ từ
-chối tổ hợp chéo — ví dụ runtime MLX với tệp GGML — bằng mã lỗi 400. Runtime nào môi trường
+chối tổ hợp chéo (ví dụ runtime MLX với tệp GGML) bằng mã lỗi 400. Runtime nào môi trường
 không cài thì không được đưa ra chọn; một lựa chọn đã lưu mà không còn chạy được thì tự lùi về
 whisper.cpp thay vì làm hỏng cả chế độ tự chọn.
 
-**Tên mô hình là đường dẫn thật ở nơi phát hành.** Mỗi mô hình có đúng một chuỗi định danh —
+**Tên mô hình là đường dẫn thật ở nơi phát hành.** Mỗi mô hình có đúng một chuỗi định danh:
 mã kho Hugging Face như `facebook/nllb-200-distilled-600M`, hoặc tên tệp trong kho với GGML
 như `ggml-small-q5_1.bin`. Chuỗi đó dùng ở mọi nơi: danh mục, ô tự chọn, API tải, và tên thư
 mục trên đĩa. Trước khi thống nhất như vậy, một mô hình có ba cách viết ở ba nơi, và danh mục
-từng có một mục "NLLB int8" thật ra trỏ về đúng kho gốc — preset quảng cáo một mô hình nhẹ hơn
+từng có một mục "NLLB int8" thật ra trỏ về đúng kho gốc, tức preset quảng cáo một mô hình nhẹ hơn
 mà nạp y hệt preset Cân bằng.
 
 ## 3.7. Hiện thực dịch vụ AI
@@ -1065,13 +1061,13 @@ Bảng 3.8: Tham số của bộ tách câu (preset Cân bằng)
 | Tham số           |  Giá trị | Ý nghĩa                                                               |
 | ----------------- | -------: | --------------------------------------------------------------------- |
 | `threshold`       |      0,5 | Ngưỡng xác suất để coi một cửa sổ 32 ms là giọng nói                  |
-| `soft_silence_ms` |   140 ms | Im lặng đủ để chốt một câu **đã dài** — chỉ cần hụt hơi một nhịp      |
+| `soft_silence_ms` |   140 ms | Im lặng đủ để chốt một câu **đã dài**, chỉ cần hụt hơi một nhịp       |
 | `min_silence_ms`  |   320 ms | Im lặng cần có để chốt một câu **còn ngắn**                           |
 | `soft_max_ms`     | 3.500 ms | Từ độ dài này trở đi, câu dùng ngưỡng im lặng ngắn                    |
 | `max_speech_ms`   | 6.000 ms | Trần cứng: vượt quá mà chưa gặp khoảng lặng nào thì cắt               |
 | `backoff_ms`      |   400 ms | Khi cắt cứng, lùi lại tìm khung yên nhất trong khoảng này để cắt ở đó |
 | `carry_ms`        |   100 ms | Đoạn mới chồng lấn đoạn cũ một khoảng này để không mất âm đầu của từ  |
-| `min_speech_ms`   |   250 ms | Đoạn ngắn hơn bị bỏ — thường là tiếng động chứ không phải lời nói     |
+| `min_speech_ms`   |   250 ms | Đoạn ngắn hơn bị bỏ, vì thường là tiếng động chứ không phải lời nói   |
 
 Cơ chế giải quyết cả hai phía của mâu thuẫn ở mục 2.3.2:
 
@@ -1081,7 +1077,7 @@ Cơ chế giải quyết cả hai phía của mâu thuẫn ở mục 2.3.2:
   `soft_max_ms` thì chốt ngay ở nhịp hụt hơi đầu tiên. Kết quả: người nói chậm không bị băm
   câu, còn người nói liên tục không phải chờ hết câu mới được dịch.
 - **Cắt cứng có lùi.** Vượt `max_speech_ms` mà chưa có khoảng lặng nào thì thay vì chặt ngay
-  tại vị trí hiện tại — dễ rơi vào giữa một từ — bộ tách câu lùi lại tìm khung 32 ms yên nhất
+  tại vị trí hiện tại, nơi dễ rơi vào giữa một từ, bộ tách câu lùi lại tìm khung 32 ms yên nhất
   trong `backoff_ms` cuối và cắt ở đó, rồi mở đoạn mới chồng lấn `carry_ms`.
 
 Phiên bản đầu dùng một ngưỡng im lặng 300 ms và trần 20 giây: người nói không nghỉ thì 20 giây
@@ -1104,11 +1100,12 @@ máy khác ra đúng con số WER cũ.
 
 **Chọn GPU trên laptop có hai card.** Laptop phổ thông thường có một GPU tích hợp và một GPU
 rời. Thư viện ggml của whisper.cpp liệt kê GPU tích hợp trước, và whisper.cpp mặc định lấy GPU
-đầu tiên. Trên máy thử nghiệm (Intel Iris Xe và NVIDIA RTX 4060), cùng một câu mất khoảng
-9,9 giây trên GPU tích hợp và 0,13 giây trên GPU rời. Adapter vì vậy liệt kê thiết bị qua thư
-viện ggml trước khi nạp và chủ động chọn card rời. Người dùng cũng chọn được thiết bị bằng tay
-(tự động, CPU hoặc một GPU cụ thể) ở màn hình Thiết lập — danh sách GPU lấy từ chính dịch vụ
-chứ không lấy từ giao diện, vì Chromium chỉ thấy GPU nó dùng để vẽ, thường là GPU tích hợp.
+đầu tiên. Trên máy thử nghiệm (Intel Iris Xe và NVIDIA RTX 4060), nhận dạng một đoạn 3 giây
+mất khoảng 9,9 giây trên GPU tích hợp, trong khi GPU rời xử lý một đoạn 7 giây lời nói chỉ
+trong 0,17–0,19 giây. Adapter vì vậy liệt kê thiết bị qua thư viện ggml trước khi nạp và chủ
+động chọn card rời. Người dùng cũng chọn được thiết bị bằng tay (tự động, CPU hoặc một GPU cụ
+thể) ở màn hình Thiết bị âm thanh. Danh sách GPU lấy từ chính dịch vụ chứ không lấy từ giao
+diện, vì Chromium chỉ thấy GPU nó dùng để vẽ, thường là GPU tích hợp.
 
 **Làm nóng khi nạp.** Lần nhận dạng đầu tiên trên Vulkan mất khoảng 11,7 giây vì driver biên
 dịch shader; các lần sau có bộ đệm trên đĩa nên chỉ còn 0,2 giây. Adapter nhận dạng một giây
@@ -1119,12 +1116,12 @@ tiên của người dùng.
 không hết, nên có thêm một lớp lọc thuần hàm, dùng chung cho cả ba adapter, dựa trên ba dấu
 hiệu độc lập:
 
-1. **Câu quen mặt** — danh sách các câu bịa đã gặp, chỉ gồm những câu **dài và đặc trưng**
+1. **Câu quen mặt:** danh sách các câu bịa đã gặp, chỉ gồm những câu **dài và đặc trưng**
    như tên kênh, "Amara.org", "ご視聴ありがとうございました". Danh sách cố ý **không** chứa các
-   câu ngắn như "Cảm ơn." hay "Thank you." — trong ứng dụng phiên dịch, đó là câu người ta nói
+   câu ngắn như "Cảm ơn." hay "Thank you.", vì trong ứng dụng phiên dịch đó là câu người ta nói
    thật, chặn nhầm còn tệ hơn để lọt.
-2. **Lặp thoái hóa** — một cụm lặp đi lặp lại nhiều lần liên tiếp.
-3. **Độ tin cậy thấp** — trung bình nhân xác suất các token dưới ngưỡng.
+2. **Lặp thoái hóa:** một cụm lặp đi lặp lại nhiều lần liên tiếp.
+3. **Độ tin cậy thấp:** trung bình nhân xác suất các token dưới ngưỡng.
 
 Câu bị bỏ được ghi vào log kèm lý do, không kèm nội dung.
 
@@ -1152,7 +1149,7 @@ OpenJTalk; tiếng Trung đổi sang giọng có kèm từ điển tách từ ji
 nghe lại đúng cả Kanji, số và Katakana.
 
 Một số đo đi ngược trực giác: trên máy Apple Silicon, bản Kokoro **int8** (92 MB) mất 1.497 ms
-trong khi bản **fp32** (326 MB) chỉ mất 706 ms — ARM không có kernel int8 tối ưu nên bản "nhẹ
+trong khi bản **fp32** (326 MB) chỉ mất 706 ms. ARM không có kernel int8 tối ưu nên bản "nhẹ
 hơn" lại chậm gấp đôi. Vì vậy loại lượng tử hóa là một tham số chọn được, không cố định.
 
 ### 3.7.5. Hai loại bộ thực thi
@@ -1167,7 +1164,7 @@ nhau, không thay nhau được:
   toán GPU vào chính luồng đã tạo ra nó: nạp mô hình ở luồng này rồi nhận dạng ở luồng khác là
   ném lỗi ngay.
 
-Vì việc tuần tự hóa nằm trong adapter, nhiều chuỗi xử lý — chiều đi và chiều về — dùng chung
+Vì việc tuần tự hóa nằm trong adapter, nhiều chuỗi xử lý (chiều đi và chiều về) dùng chung
 một bản mô hình vẫn an toàn mà chuỗi xử lý không phải biết gì.
 
 ### 3.7.6. Tải mô hình
@@ -1177,7 +1174,7 @@ dùng đầu, vào thư mục người dùng chọn. Hai quy tắc được thê
 
 - **Tải dở không phải là "đã tải".** Một lượt tải bị ngắt để lại thư mục có vẻ đầy đủ; mọi
   đường tải đều bỏ qua mô hình "đã có", nên người dùng kẹt với một mô hình hỏng mà không có
-  cách thoát. API liệt kê mô hình giờ trả thêm cờ `complete` — sai nghĩa là lượt tải bị ngắt —
+  cách thoát. API liệt kê mô hình giờ trả thêm cờ `complete` (sai nghĩa là lượt tải bị ngắt),
   và tải lại với `force` xóa bản cũ trước.
 - **Xóa chỉ trong phạm vi ứng dụng quản lý.** API xóa mô hình từ chối mọi đường dẫn nằm ngoài
   các thư mục do ứng dụng tạo ra.
@@ -1192,14 +1189,14 @@ dùng chung bộ mô hình, `ModelManager` và cách ghi lịch sử. Việc tá
 độ được tính theo **vị trí trong tệp**, không theo thời gian trôi qua, vì tốc độ xử lý thay đổi
 theo phần cứng.
 
-**Tách người nói** (diarization) dùng pyannote.audio và chỉ chạy ở tác vụ nhập tệp — trong phiên
-trực tiếp, người nói đã được biết từ nguồn âm thanh. Nó tắt mặc định: mô hình pyannote là kho
+**Tách người nói** (diarization) dùng pyannote.audio và chỉ chạy ở tác vụ nhập tệp, vì trong phiên
+trực tiếp người nói đã được biết từ nguồn âm thanh. Nó tắt mặc định: mô hình pyannote là kho
 cần quyền truy cập trên Hugging Face, đi ngược một phần tinh thần "chạy hoàn toàn cục bộ", và
 là một thư viện tùy chọn. Kết quả tách người nói và kết quả tách câu cắt âm thanh theo hai cách
-khác nhau — một theo giọng, một theo khoảng lặng — nên không tra được theo mốc bắt đầu. Nhãn
+khác nhau (một theo giọng, một theo khoảng lặng) nên không tra được theo mốc bắt đầu. Nhãn
 người nói cho mỗi câu được gán bằng một hàm thuần: trong khoảng thời gian của câu, người nói
 nào chiếm nhiều thời lượng nhất thì nhận câu đó, với điều kiện chiếm ít nhất 25%; không ai đủ
-25% thì để trống — câu rơi đúng vào chỗ chuyển lượt.
+25% thì để trống, vì câu rơi đúng vào chỗ chuyển lượt.
 
 **Duyệt trước khi đọc** tách chuỗi xử lý làm hai: bật chế độ này thì chiều đi dừng sau bước dịch,
 treo câu ở trạng thái chờ duyệt, và chỉ tổng hợp giọng khi nhận `control.confirm`; bản văn bản
@@ -1222,7 +1219,7 @@ chiều đi.
 
 Ứng dụng có mười màn hình dạng thẻ (Bảng 3.9). Mọi màn hình được dựng **một lần và giữ nguyên**
 trong suốt thời gian chạy; chuyển thẻ chỉ ẩn hoặc hiện. Nhờ vậy trạng thái riêng của từng màn
-hình — hàng đợi tệp đang nhập, ô tìm kiếm, bản nháp đang sửa — không mất khi người dùng chuyển
+hình (hàng đợi tệp đang nhập, ô tìm kiếm, bản nháp đang sửa) không mất khi người dùng chuyển
 thẻ. Cái giá là màn hình bị ẩn vẫn chạy, nên mọi truy vấn định kỳ phải kiểm tra màn hình của
 mình có đang hiện hay không trước khi gọi dịch vụ.
 
@@ -1241,25 +1238,60 @@ Bảng 3.9: Các màn hình của ứng dụng desktop
 | Về ứng dụng       | Phiên bản, giấy phép của các mô hình                                                                              |
 | Nhật ký           | Sự kiện của dịch vụ để chẩn đoán lỗi                                                                              |
 
+Các hình dưới đây chụp từ bản ứng dụng đã dựng, chạy trên máy thử nghiệm Windows với mô hình
+thật. Thanh bên trái liệt kê mười màn hình; góc dưới luôn hiện trạng thái "Sẵn sàng Offline",
+nhắc người dùng rằng không có dịch vụ đám mây nào tham gia.
+
+Màn hình **Thiết bị âm thanh** (Hình 3.11) gom ba thiết bị vào ba thẻ: microphone, âm thanh hệ
+thống và loa hoặc tai nghe, mỗi thẻ có nút "Kiểm tra" riêng. Phần "Cấu hình thực thi" bên dưới
+hiện phần cứng mà dịch vụ AI nhìn thấy: hai GPU (Intel Iris Xe tích hợp và RTX 4060 rời, cả hai
+qua Vulkan), CPU, RAM và GPU mà khâu nhận dạng đang dùng. Người dùng chọn Tự động, một GPU cụ
+thể hoặc Chỉ CPU ngay tại đây.
+
 ![Hình 3.11: Màn hình Thiết bị âm thanh](khoa-luan-hinh/h3-11-thiet-lap.png)
 
 Hình 3.11: Màn hình Thiết bị âm thanh
+
+Màn hình **Phiên dịch** (Hình 3.12) là nơi người dùng ở lại suốt cuộc họp. Thanh trên cùng chọn
+ngôn ngữ của phía "Cuộc họp" và phía "Tôi", kèm hai công tắc "Nghe cuộc họp" và "Dịch giọng tôi"
+để bật từng chiều. Phần giữa hiện phụ đề song ngữ theo từng câu; thanh dưới cùng có nút "Bắt
+đầu", nút giữ để nói (phím tắt Space), nút tắt tiếng, và thời gian ASR, MT, TTS của câu gần nhất.
 
 ![Hình 3.12: Màn hình Phiên dịch](khoa-luan-hinh/h3-12-phien-dich.png)
 
 Hình 3.12: Màn hình Phiên dịch
 
+Màn hình **Quản lý Model** (Hình 3.13) hiện ba preset và chế độ Tự chọn ở hàng đầu, kèm lượng
+bộ nhớ ước tính của từng preset. Khối "Tiến trình nạp model" chạy khi bấm "Khởi động model";
+khối "Khâu pipeline đang chạy" cho biết mô hình của từng khâu và thiết bị nó chạy trên, ở hình
+này là whisper.cpp trên Vulkan. Phía dưới là danh sách mô hình đã cài kèm dung lượng thật trên
+đĩa, và ô tìm, tải mô hình từ Hugging Face.
+
 ![Hình 3.13: Màn hình Quản lý Model](khoa-luan-hinh/h3-13-mo-hinh.png)
 
 Hình 3.13: Màn hình Quản lý Model
+
+Màn hình **Chẩn đoán** (Hình 3.14) có nút "Chạy test" đưa một câu mẫu qua cả chuỗi xử lý để đo
+độ trễ từng khâu trên chính máy đang dùng, cùng các chỉ số CPU, RAM của dịch vụ, RAM máy và mức
+dùng GPU. Phần "Đường tín hiệu audio" xác nhận định dạng đầu vào 16 kHz một kênh, khung 100 ms,
+và nhật ký WebSocket hiện từng thông điệp trạng thái để chẩn đoán lỗi.
 
 ![Hình 3.14: Màn hình Chẩn đoán](khoa-luan-hinh/h3-14-chan-doan.png)
 
 Hình 3.14: Màn hình Chẩn đoán
 
+Màn hình **Đánh giá** (Hình 3.15) chạy bộ 22 câu mẫu đi kèm ứng dụng, hoặc một bộ câu người dùng
+nạp từ tệp JSON, rồi chấm WER/CER, chrF và độ trễ. Chính màn hình ghi rõ rằng số ở đây dùng để
+thử nhanh và so các cấu hình; số báo cáo lấy từ bộ đánh giá FLEURS ở Chương 4.
+
 ![Hình 3.15: Màn hình Đánh giá](khoa-luan-hinh/h3-15-danh-gia.png)
 
 Hình 3.15: Màn hình Đánh giá
+
+Màn hình **Lịch sử** (Hình 3.16) liệt kê các phiên ở cột trái, có ô tìm theo tên và theo nội
+dung. Chọn một phiên thì cột phải hiện bản song ngữ theo từng câu: thời điểm, nguồn (giọng người
+dùng hay âm thanh hệ thống), câu gốc, bản dịch và độ trễ. Phiên xuất được ra tệp `.txt` hoặc phụ
+đề `.srt`.
 
 ![Hình 3.16: Màn hình Lịch sử](khoa-luan-hinh/h3-16-lich-su.png)
 
@@ -1276,12 +1308,12 @@ phối) với dịch vụ cài thẳng vào đó. Hai cách thông dụng hơn �
 - **Môi trường ảo (venv)** không di chuyển được: tệp cấu hình của nó ghi đường dẫn tuyệt đối tới
   trình thông dịch gốc trên máy đóng gói.
 - **PyInstaller** phải khai báo tay mọi thư viện động đi kèm PyTorch, sherpa-onnx, pywhispercpp
-  và OpenJTalk — dễ sót, và sót thì chỉ lộ ra trên máy người dùng.
+  và OpenJTalk; dễ sót, và sót thì chỉ lộ ra trên máy người dùng.
 
 Trình thông dịch độc lập tự tìm thư mục của nó từ vị trí tệp chạy, nên chạy được ở bất cứ đâu nó
 được đặt vào. Ứng dụng desktop khởi động nó khi mở (chỉ trong bản cài; khi phát triển, dịch vụ
-chạy riêng), kiểm tra cổng trước khi khởi động, tắt nó khi thoát — không thì dịch vụ sống sót
-thành tiến trình mồ côi giữ cổng 8756 — và ghi log vào thư mục dữ liệu của ứng dụng, vì bản cài
+chạy riêng), kiểm tra cổng trước khi khởi động, tắt nó khi thoát (không thì dịch vụ sống sót
+thành tiến trình mồ côi giữ cổng 8756), và ghi log vào thư mục dữ liệu của ứng dụng, vì bản cài
 không có cửa sổ dòng lệnh để in ra.
 
 Bản macOS (`.dmg`, 592 MB, gồm cả runtime MLX) được ký ad-hoc thay vì ký bằng chứng chỉ nhà phát
@@ -1294,7 +1326,7 @@ nhà phát triển Apple thì bỏ bước này và ký, công chứng bình th�
 Bộ cài Windows (`.exe`, 371 MB, khoảng 1,8 GB sau khi cài) phải dựng trên chính máy Windows vì
 PyTorch, sherpa-onnx và pywhispercpp đều mang thư viện native, không biên dịch chéo được. Bản
 đầu chạy whisper.cpp bằng CPU: khoảng 17,6 giây cho 3 giây âm thanh, tăng số luồng lên 12 cũng
-chỉ còn 11,2 giây — không dùng được.
+chỉ còn 11,2 giây, không dùng được cho dịch trực tiếp.
 
 Thay vì đóng gói bản CUDA (thêm khoảng 1 GB và chỉ chạy trên card NVIDIA), bộ cài mang bản
 pywhispercpp dựng với **Vulkan**, chỉ thêm khoảng 18 MB. Vulkan có sẵn trong driver của mọi GPU
@@ -1316,7 +1348,7 @@ Bảng 3.10: Kiểm tra bộ cài Windows theo bốn tầng
 
 Quá trình này làm lộ ra bảy lỗi, đều đã sửa. Hai lỗi đáng nêu vì chúng ảnh hưởng người dùng thật:
 luồng xuất chuẩn của Python bị chuyển hướng trên Windows mặc định dùng bảng mã cp1252, nên mọi
-dòng log tiếng Việt thành lỗi — mà log là thứ duy nhất đọc được khi bộ cài lỗi trên máy người khác
+dòng log tiếng Việt thành lỗi, trong khi log là thứ duy nhất đọc được khi bộ cài lỗi trên máy người khác
 (sửa bằng cách chạy Python ở chế độ UTF-8); và lỗi chọn nhầm GPU tích hợp đã nêu ở mục 3.7.2.
 
 ## 3.10. Kiểm thử phần mềm
@@ -1325,26 +1357,26 @@ Hệ thống có ba lớp kiểm thử (Bảng 3.11); sự phân chia là có ch
 
 Bảng 3.11: Ba lớp kiểm thử
 
-| Lớp                | Công cụ        | Phạm vi                                                                     | Số bài                     |
-| ------------------ | -------------- | --------------------------------------------------------------------------- | -------------------------- |
-| Đơn vị — dịch vụ   | pytest         | Chuỗi xử lý, bộ tách câu, lọc câu bịa, quản lý mô hình, API, lịch sử, độ đo | 327 đạt, 6 bỏ qua có lý do |
-| Đơn vị — giao diện | vitest + jsdom | Quy tắc tên mô hình, điều khiển phiên, các màn hình trên dịch vụ giả        | 69 đạt                     |
-| Đầu-cuối           | Playwright     | Ứng dụng Electron đã dựng thật + dịch vụ thật + tải một mô hình thật        | 11 đạt                     |
+| Lớp               | Công cụ        | Phạm vi                                                                     | Số bài                     |
+| ----------------- | -------------- | --------------------------------------------------------------------------- | -------------------------- |
+| Đơn vị, dịch vụ   | pytest         | Chuỗi xử lý, bộ tách câu, lọc câu bịa, quản lý mô hình, API, lịch sử, độ đo | 327 đạt, 6 bỏ qua có lý do |
+| Đơn vị, giao diện | vitest + jsdom | Quy tắc tên mô hình, điều khiển phiên, các màn hình trên dịch vụ giả        | 69 đạt                     |
+| Đầu-cuối          | Playwright     | Ứng dụng Electron đã dựng thật + dịch vụ thật + tải một mô hình thật        | 11 đạt                     |
 
 Hai lớp đầu **không chạm tới mô hình thật**: phía dịch vụ, một fixture thay bộ nạp mô hình bằng
 mô hình giả cho mọi bài kiểm thử; phía giao diện, lời gọi mạng được giả lập và một bộ khung ghi
 lại mọi lời gọi tới dịch vụ giả. Nhờ vậy hai lớp này chạy trong vài giây, không cần mạng và cho
-kết quả tất định. Lớp đầu-cuối là lớp duy nhất chứng minh được ba phần — tiến trình chính của
-Electron, giao diện và dịch vụ Python — thật sự khớp với nhau.
+kết quả tất định. Lớp đầu-cuối là lớp duy nhất chứng minh được ba phần (tiến trình chính của
+Electron, giao diện và dịch vụ Python) thật sự khớp với nhau.
 
 Bộ kiểm thử cũng phải sạch trên cả hai nền tảng. Lần đầu chạy trên Windows có 13 bài hỏng, đều
-do môi trường chứ không do mã sai — tạo liên kết tượng trưng cần quyền quản trị, một đường dẫn
+do môi trường chứ không do mã sai: tạo liên kết tượng trưng cần quyền quản trị, một đường dẫn
 viết cứng kiểu Unix, và ba bài chỉ chạy được khi có runtime MLX. Cả 13 đã được sửa, vì một bộ
 kiểm thử hỏng sẵn thì lần hỏng thật cũng chìm luôn trong đó.
 
 Có một nhóm lỗi mà không lớp kiểm thử nào bắt được: sáu lỗi lộ ra khi lần đầu chạy bộ đánh giá
-trên Windows đều nằm ở chỗ tiếp giáp giữa môi trường và thư viện — một thư viện hỏi sai hàm để
-biết có GPU hay không, một thư viện CUDA thiếu ở câu đầu tiên sau khi đã tải xong 1,6 GB — chứ
+trên Windows đều nằm ở chỗ tiếp giáp giữa môi trường và thư viện (một thư viện hỏi sai hàm để
+biết có GPU hay không, một thư viện CUDA thiếu ở câu đầu tiên sau khi đã tải xong 1,6 GB), chứ
 không nằm trong logic. Chúng chỉ lộ ra khi chạy thật, và đó là lý do Chương 4 coi việc đo trên
 máy thật là một phần của kiểm thử chứ không chỉ để lấy số.
 
@@ -1356,7 +1388,7 @@ máy thật là một phần của kiểm thử chứ không chỉ để lấy s
 
 Chương này trả lời bốn câu hỏi:
 
-1. Từng khâu **chính xác tới đâu** trên dữ liệu chuẩn — nhận dạng bao nhiêu phần trăm lỗi,
+1. Từng khâu **chính xác tới đâu** trên dữ liệu chuẩn: nhận dạng sai bao nhiêu phần trăm,
    dịch tốt tới đâu?
 2. Cả chuỗi có **theo kịp người nói** không, trên hai cấu hình máy khác nhau?
 3. Hệ thống có **chạy ổn định** trong một cuộc họp dài không?
@@ -1375,7 +1407,7 @@ Ba nguyên tắc đo được giữ xuyên suốt:
 - **Mỗi khâu một đầu vào cố định.** Nếu đưa kết quả nhận dạng vào dịch thì khi ASR trả chuỗi
   rỗng, MT sẽ "nhanh" một cách giả tạo. Khâu dịch vì vậy được đo trên văn bản tham chiếu.
 - **Giải mã tất định.** Cả ba runtime ASR tắt giải mã lại theo nhiệt độ, nên chạy lại trên
-  máy khác cho đúng con số WER cũ — chỉ thời gian là thay đổi theo phần cứng.
+  máy khác cho đúng con số WER cũ; chỉ thời gian là thay đổi theo phần cứng.
 
 ## 4.2. Môi trường và dữ liệu thử nghiệm
 
@@ -1386,9 +1418,9 @@ Bảng 4.1: Cấu hình máy thử nghiệm
 | macOS   | macOS 26.6                   | Apple M4                       | GPU tích hợp của M4                                    | MLX/Metal · PyTorch/MPS · CPU           |
 | Windows | Windows 11 Pro (build 26200) | Intel Core i5-12500H, 16 luồng | NVIDIA RTX 4060 Laptop 8 GB + Intel Iris Xe (tích hợp) | whisper.cpp/Vulkan · PyTorch/CUDA · CPU |
 
-Máy Windows có 16 GB RAM. Hai cấu hình khác nhau cả phần cứng lẫn runtime, nên **thời gian
-và RTF của hai máy không đặt chung một cột**; chỉ WER, CER và điểm dịch — vốn không phụ thuộc
-phần cứng — là so được giữa hai máy.
+Máy Windows có 64 GB RAM. Hai cấu hình khác nhau cả phần cứng lẫn runtime, nên **thời gian
+và RTF của hai máy không đặt chung một cột**; chỉ WER, CER và điểm dịch, vốn không phụ thuộc
+phần cứng, là so được giữa hai máy.
 
 Bảng 4.2: Dữ liệu thử nghiệm
 
@@ -1404,16 +1436,16 @@ Bảng 4.2: Dữ liệu thử nghiệm
 FLEURS là bộ giọng **đọc**: người thu âm đọc các câu văn soạn sẵn từ Wikipedia, rõ ràng, ít
 nhiễu, gần như không có từ đệm hay ngắt quãng. Cả bốn ngôn ngữ của đề tài đều có trong bộ, và
 bài báo NLLB cũng đánh giá trên cùng họ dữ liệu FLORES, nên số đo so được với công bố. Đó là
-lý do chọn nó — và cũng là lý do phải đo thêm trên giọng thật ở mục 4.7.
+lý do chọn nó, và cũng là lý do phải đo thêm trên giọng thật ở mục 4.7.
 
 ## 4.3. Nhận dạng tiếng nói
 
 Bảng 4.3 tổng hợp ba lượt nhận dạng trên cùng 3.099 bản thu, mỗi lượt một runtime. Cả ba lượt
-tắt bộ lọc câu bịa — tức là đo chính mô hình, không đo lớp xử lý của sản phẩm phía sau.
+tắt bộ lọc câu bịa, tức là đo chính mô hình, không đo lớp xử lý của sản phẩm phía sau.
 
 Bảng 4.3: Nhận dạng tiếng nói trên FLEURS
 
-| Ngôn ngữ       | Độ đo | whisper.cpp — Windows | faster-whisper — Windows |    MLX — macOS |
+| Ngôn ngữ       | Độ đo | whisper.cpp (Windows) | faster-whisper (Windows) |    MLX (macOS) |
 | -------------- | ----- | --------------------: | -----------------------: | -------------: |
 | Mô hình        |       |   large-v3-turbo q5_0 |      large-v3-turbo fp16 | large-v3 8-bit |
 | vi             | WER   |             **10,4%** |                 **9,2%** |       **8,8%** |
@@ -1431,12 +1463,13 @@ Hình 4.1: WER/CER của ba runtime nhận dạng trên FLEURS
 **Tiếng Việt khó gần gấp đôi tiếng Anh** ở cả ba cột: 8,8–10,4% so với 4,8–5,0%. Đây là chiều
 quan trọng nhất của đề tài, và con số này là mức sàn vì FLEURS là giọng đọc.
 
-**Ba runtime xếp cùng một thứ tự ở cả bốn thứ tiếng**: MLX tốt nhất, faster-whisper ở giữa,
-whisper.cpp cuối. Chênh lệch nhỏ và đều một chiều — 0,2 điểm ở en và ja, 0,3–0,5 ở zh, 1,6 ở
-vi — nên là chênh thật chứ không phải nhiễu. Nhưng đó **không phải chênh giữa ba runtime**: ba
-cột là ba mô hình khác nhau, vì ba runtime không dùng chung tệp mô hình nào (mục 2.4.3). Cặp so
-được gần nhất là hai cột Windows — cùng `large-v3-turbo`, chỉ khác lượng tử hóa — và ở đó q5_0
-kém fp16 đúng 1,2 điểm WER tiếng Việt, trong khi tiếng Anh không đổi. Lượng tử hóa mạnh ảnh
+**Thứ tự gần như giống nhau ở cả bốn thứ tiếng**: whisper.cpp luôn đứng cuối, MLX tốt nhất ở
+vi, en và zh, còn ở ja thì MLX và faster-whisper ngang nhau (4,7%). Chênh lệch giữa cột tốt
+nhất và cột kém nhất là 0,2 điểm ở en và ja, 0,5 ở zh và 1,6 ở vi, cùng một chiều ở cả bốn thứ
+tiếng. Nhưng đó **không phải chênh giữa ba runtime**: ba cột là ba mô hình khác nhau, vì ba
+runtime không dùng chung tệp mô hình nào (mục 2.4.3). Cặp so được gần nhất là hai cột Windows,
+cùng `large-v3-turbo` và chỉ khác lượng tử hóa; ở đó q5_0 kém fp16 1,2 điểm WER tiếng Việt,
+trong khi tiếng Anh không đổi. Lượng tử hóa mạnh ảnh
 hưởng tới tiếng Việt nhiều hơn tiếng Anh.
 
 **Đổi lại, q5_0 nhanh gấp đôi** (RTF 0,018 so với 0,034). Đây là đánh đổi mà cấu hình cần trình
@@ -1453,7 +1486,7 @@ máy.
 Có một phép đo phụ đáng ghi lại. whisper.cpp cho phép giảm độ dài ngữ cảnh âm thanh của encoder
 (`audio_ctx`) để tăng tốc. Chạy lại đúng lượt whisper.cpp ở trên với `audio_ctx = 768`, WER/CER
 tăng từ 10,4% lên 33,7% (vi), 5,0% lên 31,4% (en), 8,6% lên 45,1% (zh) và 4,9% lên 46,5% (ja),
-số câu rỗng từ 2 lên 56 — để đổi lấy chỉ 6–26% thời gian nhận dạng. Tùy chọn này vì vậy được giữ
+số câu rỗng từ 2 lên 56, để đổi lấy mức giảm chỉ 6–27% thời gian nhận dạng. Tùy chọn này vì vậy được giữ
 tắt, với số đo làm bằng chứng.
 
 ## 4.4. Dịch máy
@@ -1475,16 +1508,16 @@ Bảng 4.4: Dịch máy trên FLEURS (NLLB-200 distilled 600M, máy macOS)
 **COMET xếp hạng khác hẳn spBLEU.** Theo spBLEU, vi→ja (10,96) tệ hơn vi→zh (17,15) tới 6 điểm.
 Theo COMET thì ngược lại: vi→ja 0,8239 cao hơn vi→zh 0,7729. spBLEU khớp chuỗi bề mặt nên phạt
 rất nặng những ngôn ngữ có hệ chữ khác hẳn nguồn; COMET chấm theo nghĩa. Kết luận "dịch sang
-tiếng Nhật kém nhất" rút ra từ riêng spBLEU là sai. Chiều yếu nhất thật sự là **vi→zh** — ở đó cả
+tiếng Nhật kém nhất" rút ra từ riêng spBLEU là sai. Chiều yếu nhất thật sự là **vi→zh**, nơi cả
 hai loại độ đo đồng ý.
 
 **chrF++ của hai đích zh/ja không so ngang được.** vi→zh có chrF++ 16,14, thấp hơn cả spBLEU của
 chính nó, trong khi vi→en là 57,10 so với 35,79. Nguyên nhân là phần n-gram cấp từ của chrF++
-gần như bằng 0 khi không có khoảng trắng — phiên bản dịch máy của chuyện WER/CER ở mục 2.8.1.
+gần như bằng 0 khi không có khoảng trắng, giống chuyện WER/CER ở mục 2.8.1.
 
 **Không lấy trung bình sáu chiều.** Sáu chiều có độ khó rất khác nhau; một con số gộp trộn hai
 nhóm không cùng thang và không nói lên điều gì. Tương tự, COMET chỉ có độ tin cao ở các cặp giàu
-dữ liệu, nên khoảng chênh vài phần nghìn giữa các chiều không đủ để kết luận — chỉ khoảng cách
+dữ liệu, nên khoảng chênh vài phần nghìn giữa các chiều không đủ để kết luận; chỉ khoảng cách
 lớn như vi→zh (0,77) so với vi→en (0,85) mới đáng nói.
 
 ## 4.5. Độ trễ và hệ số thời gian thực
@@ -1521,19 +1554,19 @@ Bảng 4.6: Độ trễ và RTF trên máy Windows (whisper.cpp/Vulkan + NLLB/CU
 Hình 4.2: RTF p90 của sáu chiều dịch trên hai cấu hình máy
 
 **Cả sáu chiều đạt điều kiện cần RTF p90 < 1 trên cả hai máy.** Ngưỡng "đủ để nói" RTF p90 ≤ 0,5
-thì khác nhau: trên máy macOS chỉ hai chiều đạt — en→vi 0,496 và ja→vi 0,395; zh→vi 0,509 trượt
+thì khác nhau: trên máy macOS chỉ hai chiều đạt là en→vi 0,496 và ja→vi 0,395; zh→vi 0,509 trượt
 sát mép, và chiều xấu nhất là vi→ja 0,786. Trên máy Windows **cả sáu chiều đều đạt**, chiều xấu
-nhất là vi→ja 0,383 — còn dư hơn một nửa ngân sách.
+nhất là vi→ja 0,383, tức thời gian xử lý chưa tới 40% thời lượng âm thanh.
 
 **Trên máy macOS, hai nguyên nhân tách bạch được và nằm ở hai đầu khác nhau.** Nguồn tiếng Việt
 làm ASR đắt gần gấp đôi (khoảng 4,6 giây so với 2,4–2,9 giây), khớp với việc tiếng Việt cũng khó
-gấp đôi ở Bảng 4.3. Đích tiếng Trung hoặc tiếng Nhật làm TTS đắt gấp 6–8 lần (1.693 ms và 2.261 ms
-so với 273–318 ms cho đích vi/en) — cái giá của việc tiếng Nhật phải đi qua Kokoro và OpenJTalk
-thay vì sherpa-onnx.
+gấp đôi ở Bảng 4.3. Đích tiếng Trung hoặc tiếng Nhật làm TTS đắt gấp 5–8 lần (1.693 ms và 2.261 ms
+so với 273–318 ms cho đích vi/en); với tiếng Nhật, đó là cái giá của việc phải đi qua Kokoro và
+OpenJTalk thay vì sherpa-onnx.
 
-**Trên máy Windows, khâu chậm nhất đã đổi** (Hình 4.3). whisper.cpp chạy GPU qua Vulkan và NLLB
-chạy trên CUDA làm ASR và MT giảm 4–8 lần, trong khi TTS — vẫn chạy CPU trên cả hai máy — gần như
-giữ nguyên. Ở hai đích tiếng Nhật và tiếng Trung, TTS chiếm 65% và 63% toàn chuỗi. Chỗ đáng tối
+**Trên máy Windows, khâu chậm nhất đã đổi** (Hình 4.3). whisper.cpp chạy GPU qua Vulkan làm thời
+gian ASR giảm khoảng 8 lần, NLLB chạy trên CUDA làm thời gian MT giảm khoảng 2–2,5 lần, trong khi
+TTS vẫn chạy CPU trên cả hai máy nên gần như giữ nguyên. Ở hai đích tiếng Nhật và tiếng Trung, TTS chiếm 65% và 63% toàn chuỗi. Chỗ đáng tối
 ưu tiếp theo vì vậy không còn là nhận dạng tiếng Việt, mà là **tổng hợp giọng cho hai đích ja/zh**.
 
 ![Hình 4.3: Thời gian từng khâu trên cấu hình Windows](khoa-luan-hinh/h4-3-cac-khau.png)
@@ -1542,7 +1575,7 @@ Hình 4.3: Thời gian từng khâu trên cấu hình Windows
 
 **Cột "chờ chốt"** (200–256 ms) là thời gian từ lúc người nói dứt câu tới lúc bộ tách câu nhả câu
 ra. Nó không nằm trong RTF vì không phải thời gian tính toán, nhưng người dùng vẫn phải ngồi chờ
-nên được in riêng. Nó chỉ phụ thuộc ngôn ngữ **nguồn** — đúng như mong đợi — và giống hệt nhau
+nên được in riêng. Đúng như mong đợi, nó chỉ phụ thuộc ngôn ngữ **nguồn**, và giống hệt nhau
 trên hai máy, vì bộ tách câu chạy như nhau ở mọi nơi.
 
 **Đối chiếu với mục tiêu cho một câu ngắn.** Hai bảng trên trả lời câu hỏi "có theo kịp luồng nói
@@ -1563,8 +1596,8 @@ Cả bốn mốc đều đạt ở cả bốn chiều. Trên bản cài Windows,
 
 ## 4.6. Độ ổn định và tài nguyên
 
-Bài chạy liên tục phát một lượt nói mỗi vài giây theo **nhịp thời gian thực** — dồn cục âm thanh
-vào thì đo ra một thứ khác hẳn — với mô hình thật trên máy Windows, trong 60 phút. Ba thứ được theo
+Bài chạy liên tục phát một lượt nói mỗi vài giây theo **nhịp thời gian thực** (dồn cục âm thanh
+vào thì đo ra một thứ khác hẳn), với mô hình thật trên máy Windows, trong 60 phút. Ba thứ được theo
 dõi: dịch vụ còn sống không, bộ nhớ có tăng đều không, và độ trễ của 10% câu đầu so với 10% câu cuối.
 
 Bảng 4.8: Kết quả chạy liên tục 60 phút
@@ -1590,8 +1623,8 @@ có sẵn trên đĩa.
 ## 4.7. Đánh giá trên giọng người thật
 
 FLEURS là giọng đọc, nên con số ở mục 4.3 chắc chắn thấp hơn trong một cuộc họp thật. Mục này đo
-khoảng cách đó. Số ở đây **không thay** các bảng FLEURS — quy mô quá nhỏ để làm số chính — mà đặt
-cạnh chúng để biết các bảng đó lạc quan tới đâu.
+khoảng cách đó. Quy mô ở đây quá nhỏ để làm số chính, nên số ở đây **không thay** các bảng FLEURS
+mà đặt cạnh chúng để biết các bảng đó lạc quan tới đâu.
 
 ### 4.7.1. Tách câu trên ba loại giọng
 
@@ -1625,8 +1658,8 @@ Hình 4.4: Độ dài đoạn p90 và tỷ lệ cắt cứng trên ba loại gi�
 Ba điều đọc ra được:
 
 **Vấn đề mà giảng viên hướng dẫn chỉ ra là có thật và đo được.** Với tham số cũ, 10% số câu của bản
-tin dài hơn 12,5 giây, và câu tệ nhất có thể dài tới 20 giây — người nghe phải chờ hết chừng đó rồi
-mới tới lượt ASR, MT và TTS chạy. Ở hội thoại phỏng vấn, p90 là 6,77 giây — đúng khoảng "phải chờ
+tin dài hơn 12,5 giây, và câu tệ nhất có thể dài tới 20 giây; người nghe phải chờ hết chừng đó rồi
+mới tới lượt ASR, MT và TTS chạy. Ở hội thoại phỏng vấn, p90 là 6,77 giây, đúng khoảng "phải chờ
 câu dài 5–10 giây" trong biên bản họp. Preset Cân bằng kéo hai con số đó xuống 5,87 và 5,66 giây.
 
 **Cải thiện đến từ trần độ dài, không phải từ việc phát hiện im lặng nhanh hơn.** Cột chờ chốt gần
@@ -1635,7 +1668,7 @@ như không đổi ở cả ba bản ghi (0,20–0,36 giây): người nói nào
 nghỉ**, và ở đó trần độ dài mới là thứ quyết định.
 
 **Cái giá là cắt giữa câu, và nó thấp nhất đúng ở giọng giống cảnh dùng thật.** Ở bản tin, preset
-Cân bằng cắt cứng 30% số đoạn — khâu dịch phải dịch mảnh câu. Ở hội thoại phỏng vấn chỉ còn 10%,
+Cân bằng cắt cứng 30% số đoạn, nghĩa là khâu dịch phải dịch mảnh câu. Ở hội thoại phỏng vấn chỉ còn 10%,
 và ở TEDx là 0% với mọi cấu hình: người nói tự nhiên tự ngắt thường xuyên nên trần không bao giờ
 phải can thiệp. Ghép ba bản ghi lại mới đủ lập luận: tham số mới chỉ can thiệp khi có người nói
 dài, còn hội thoại bình thường gần như không bị ảnh hưởng. Ba preset cũng thể hiện đúng sự đánh đổi
@@ -1644,11 +1677,11 @@ dài, còn hội thoại bình thường gần như không bị ảnh hưởng. 
 ### 4.7.2. Nhận dạng trên hội thoại tự phát
 
 Từ bản ghi phỏng vấn, 25 đoạn đầu tiên dài 3–12 giây kể từ phút thứ 5 được cắt ra bằng chính bộ
-tách câu của hệ thống — **không chọn tay** — tổng cộng 149 giây tiếng nói. Câu tham chiếu được lập
+tách câu của hệ thống, **không chọn tay**, tổng cộng 149 giây tiếng nói. Câu tham chiếu được lập
 như sau: lấy phụ đề tự sinh của YouTube làm bản nháp, rồi người làm đồ án nghe từng đoạn và sửa
 cho khớp lời thật, giữ nguyên cả chỗ người nói nói nhầm. Bước nghe và sửa là bắt buộc: phụ đề tự
 sinh cũng là đầu ra của một hệ ASR, và giữ nguyên nó làm câu tham chiếu thì WER đo được chỉ là mức
-giống nhau giữa hai hệ ASR. Mô hình là preset Cân bằng — cùng `ggml-large-v3-turbo-q5_0` với cột
+giống nhau giữa hai hệ ASR. Mô hình là preset Cân bằng, cùng `ggml-large-v3-turbo-q5_0` với cột
 whisper.cpp ở Bảng 4.3.
 
 Bảng 4.10: Nhận dạng giọng đọc so với giọng nói tự phát (cùng mô hình, cùng máy)
@@ -1659,14 +1692,14 @@ Bảng 4.10: Nhận dạng giọng đọc so với giọng nói tự phát (cùn
 | Phỏng vấn thật | Hội thoại tự phát |     25 |      **24,6%** |
 
 Cả hai con số là WER gộp cả tập (152 lỗi trên 618 từ tham chiếu với bộ phỏng vấn). **Giọng nói tự
-phát cho WER gấp 2,4 lần giọng đọc.** Lỗi do cách viết số — "cấp ba" so với "cấp 3", "12 A1" so với
-"12A1" — chỉ chiếm 0,7 điểm; gỡ riêng phần đó ra còn 23,9%. Gần như toàn bộ phần còn lại là nghe
+phát cho WER gấp 2,4 lần giọng đọc.** Lỗi do cách viết số ("cấp ba" so với "cấp 3", "12 A1" so với
+"12A1") chỉ chiếm 0,7 điểm; gỡ riêng phần đó ra còn 23,9%. Gần như toàn bộ phần còn lại là nghe
 sai thật. Không đoạn nào bị bộ lọc câu bịa bỏ đi, nên việc bộ lọc bật ở lượt này và tắt ở lượt
 FLEURS không ảnh hưởng tới so sánh.
 
 **Phần lớn lỗi nằm ở thuật ngữ tiếng Anh đọc theo giọng Việt.** Buổi phỏng vấn bàn về lập trình
-Java, và trong 25 đoạn từ "string" xuất hiện 18 lần. Whisper nghe đúng **một** lần; còn lại nó nghe
-thành "stream" (6 lần), "trên" (5 lần) và "chuyên" (3 lần). Người nói đọc "string" gần với
+Java, và trong 25 đoạn từ "string" xuất hiện 18 lần. Whisper nghe đúng **một** lần; trong 17 lần
+sai, nó nghe thành "stream" 6 lần, "trên" 5 lần, "chuyên" 3 lần, và 3 lần thành các từ khác. Người nói đọc "string" gần với
 "sờ-trinh", và mô hình gán âm đó vào từ gần nhất trong tiếng Việt hoặc tiếng Anh. Phụ đề tự sinh
 của YouTube sai đúng kiểu đó ("spring Buffer", "tram Buffer", "cái trên a"), cho thấy đây là giới
 hạn chung của nhận dạng đa ngôn ngữ khi người nói chen từ tiếng Anh vào câu tiếng Việt, không phải
@@ -1678,16 +1711,16 @@ riêng của whisper.cpp.
 nguồn, kể cả chỗ người nói nói nhầm. Điểm chrF ký tự đo được là 38,3% (en), 10,8% (ja) và 13,4%
 (zh). Các con số này **chỉ dùng để đọc cùng phần phân tích lỗi**, không so với Bảng 4.4: bản dịch
 tham chiếu không do dịch giả soạn; chrF ký tự trên chữ Hán và Kana khắt khe hơn nhiều so với chữ
-Latin; và tham chiếu ja/zh giữ nguyên các thuật ngữ bằng chữ Latin trong khi NLLB dịch chúng ra —
-bị trừ điểm dù đúng nghĩa. Thứ đáng nói ở đây là hai **lỗi hành vi**:
+Latin; và tham chiếu ja/zh giữ nguyên các thuật ngữ bằng chữ Latin trong khi NLLB dịch chúng ra,
+nên bị trừ điểm dù đúng nghĩa. Thứ đáng nói ở đây là hai **lỗi hành vi**:
 
-1. **Vòng lặp mất kiểm soát** — 2 trên 75 lượt, đều sang tiếng Nhật. Một đoạn mở đầu bằng từ đệm
+1. **Vòng lặp mất kiểm soát:** 2 trên 75 lượt, đều sang tiếng Nhật. Một đoạn mở đầu bằng từ đệm
    ("dạ đúng ạ. Ừ trong tình huống đó…") được dịch thành "そうだ." lặp lại hơn 50 lần; một đoạn khác
    thành "a+b+1+1+2+3+3+3+3…". Adapter NLLB không bật cơ chế chặn lặp nào (mục 2.5), chỉ có trần 256
-   token, nên vòng lặp chạy tới khi chạm trần — và trong phiên trực tiếp, TTS sẽ đọc to toàn bộ.
+   token, nên vòng lặp chạy tới khi chạm trần, và trong phiên trực tiếp TTS sẽ đọc to toàn bộ.
    FLEURS không kích hoạt được lỗi này vì câu đọc không mở đầu bằng từ đệm.
-2. **Dịch nghĩa đen thuật ngữ.** Từ "spring" (người nói dùng từ này) được dịch thành 春天 — mùa
-   xuân — ở đích tiếng Trung, "春のバッファー" ở đích tiếng Nhật, và có lần thành "春节器" (thiết bị
+2. **Dịch nghĩa đen thuật ngữ.** Từ "spring" (người nói dùng từ này) được dịch thành 春天 (mùa
+   xuân) ở đích tiếng Trung, "春のバッファー" ở đích tiếng Nhật, và có lần thành "春节器" (thiết bị
    Tết Nguyên đán). NLLB không có khái niệm thuật ngữ cần giữ nguyên.
 
 Lỗi thứ nhất sửa được bằng tham số sinh của NLLB hoặc một bộ lọc sau khi dịch giống bộ lọc câu bịa
@@ -1715,7 +1748,7 @@ Bảng 4.11: Đối chiếu với yêu cầu phi chức năng
 | PCN01 | ASR một câu ngắn < 1.500 ms                  | 991–1.060 ms (macOS), 362–480 ms (Windows) cho câu 3 s                                  | Đạt                                                  |
 | PCN02 | Dịch < 1.000 ms; TTS < 1.500 ms              | MT 460–579 ms; TTS 141–969 ms (câu 3 s, macOS)                                          | Đạt                                                  |
 | PCN02 | Tổng chiều đi trung vị < 4 s                 | 1,8–2,6 s cho câu 3 s                                                                   | Đạt                                                  |
-| —     | Phụ đề chiều về trung vị < 3 s               | Chiều về không có TTS; ASR + MT < 1,2 s trên Windows                                    | Đạt                                                  |
+| PCN02 | Phụ đề chiều về trung vị < 3 s               | Chiều về không có TTS; ASR + MT < 1,2 s trên Windows                                    | Đạt                                                  |
 | PCN03 | Chạy liên tục 60 phút, bộ nhớ không tăng đều | 877 câu, 0 lỗi, +12 MB (Bảng 4.8)                                                       | Đạt                                                  |
 | PCN04 | Một mô hình lỗi không làm mất cả phiên       | Câu lỗi chuyển `Error`, phiên chạy tiếp; tách người nói nạp hỏng không kéo bốn khâu kia | Đạt (kiểm bằng kiểm thử đơn vị)                      |
 | PCN05 | Offline sau khi cài mô hình                  | Không có lời gọi mạng nào trên đường dịch; tài liệu API đóng gói sẵn                    | Đạt theo thiết kế; chưa có bài thử ngắt mạng tự động |
@@ -1725,32 +1758,32 @@ Bảng 4.11: Đối chiếu với yêu cầu phi chức năng
 | PCN09 | Đổi runtime không sửa chuỗi xử lý            | Thêm MLX và faster-whisper không sửa dòng nào của chuỗi xử lý                           | Đạt                                                  |
 | PCN10 | Chỉ lắng nghe trên `127.0.0.1`               | Dịch vụ gắn cố định vào `127.0.0.1`                                                     | Đạt                                                  |
 
-Một yêu cầu của đặc tả chưa được đo: "người dùng mới hoàn thành cấu hình trong vòng năm phút" —
-đo yêu cầu này cần một nhóm người dùng thử, nằm ngoài khả năng của đồ án.
+Một yêu cầu của đặc tả chưa được đo: "người dùng mới hoàn thành cấu hình trong vòng năm phút".
+Đo yêu cầu này cần một nhóm người dùng thử, nằm ngoài khả năng của đồ án.
 
 ## 4.9. Thảo luận
 
 **Giọng đọc và giọng nói thật.** Kết quả quan trọng nhất của chương có lẽ không phải một con số
 FLEURS nào, mà là tỷ lệ 2,4 lần giữa WER trên giọng nói tự phát và trên giọng đọc. Nó cho biết các
 bảng FLEURS nên được đọc như **mức sàn** của lỗi, và cho biết lỗi thật tập trung ở đâu: thuật ngữ
-tiếng Anh trong câu tiếng Việt. Với người dùng mục tiêu — người Việt họp với đối tác nước ngoài,
-thường là trong ngành phần mềm — đây là trường hợp thường gặp chứ không phải ngoại lệ.
+tiếng Anh trong câu tiếng Việt. Với người dùng mục tiêu, tức người Việt họp với đối tác nước
+ngoài, thường là trong ngành phần mềm, đây là trường hợp thường gặp chứ không phải ngoại lệ.
 
 **Chọn runtime.** Bảng 4.3 và Bảng 4.6 cho một lời khuyên rõ ràng: trên máy Windows có card NVIDIA,
-whisper.cpp trên Vulkan cho độ trễ thấp nhất với WER kém nhất khoảng 1,6 điểm; faster-whisper đổi
-gấp đôi thời gian nhận dạng lấy 1,2 điểm WER tiếng Việt, và với ngân sách thời gian còn dư thì đó
-là một nấc đáng bật. Trên máy Apple Silicon, MLX cho WER tốt nhất nhưng chỉ hai chiều đạt
+whisper.cpp trên Vulkan cho độ trễ thấp nhất, đổi lại WER tiếng Việt kém faster-whisper 1,2 điểm
+và kém MLX 1,6 điểm; faster-whisper đổi gấp đôi thời gian nhận dạng lấy 1,2 điểm WER tiếng Việt,
+và với ngân sách thời gian còn dư thì đó là một nấc đáng bật. Trên máy Apple Silicon, MLX cho WER tốt nhất nhưng chỉ hai chiều đạt
 ngưỡng RTF p90 ≤ 0,5: ba chiều nguồn tiếng Việt trượt vì ASR đắt, còn zh→vi trượt sát mép
 ở 0,509.
 
 **Điểm nghẽn di chuyển.** Tăng tốc ASR và MT bằng GPU trên Windows không làm cả chuỗi nhanh đều: nó
-làm TTS — khâu duy nhất còn chạy CPU — thành điểm nghẽn ở hai đích ja/zh. Đây là một kết luận chỉ có
+làm TTS, khâu duy nhất còn chạy CPU, thành điểm nghẽn ở hai đích ja/zh. Đây là một kết luận chỉ có
 được nhờ đo từng khâu riêng, và là lý do cách tiếp cận chuỗi (mục 2.1) đáng giá ngay cả khi mô hình
 đầu-cuối có sẵn.
 
 **Không so với dịch vụ đám mây.** Kế hoạch ban đầu có một phép đối chứng với API dịch giọng nói trên
-đám mây. Phép đối chứng đó được bỏ ngày 20/09/2026, vì hai lẽ: mục đích của nó — có một mốc để đọc
-chất lượng — đã được phục vụ bằng bảng ba runtime ASR và điểm COMET; và gọi API đám mây đi ngược
+đám mây. Phép đối chứng đó được bỏ ngày 20/09/2026, vì hai lẽ: mục đích của nó (có một mốc để đọc
+chất lượng) đã được phục vụ bằng bảng ba runtime ASR và điểm COMET; và gọi API đám mây đi ngược
 chính tinh thần chạy hoàn toàn cục bộ của đề tài.
 
 **Những yếu tố có thể làm sai lệch kết quả.** WER chưa chuẩn hóa số và chữ viết tắt, nên WER thật
@@ -1769,7 +1802,7 @@ máy tính cá nhân, đối chiếu với các mục tiêu ở mục 1.2 như s
 
 - **Chuỗi xử lý bốn khâu thay được từng khâu.** Hệ thống dịch được sáu chiều Việt ↔ Anh / Nhật /
   Trung. Khâu nhận dạng có ba runtime thay thế được cho nhau; hai runtime sau được thêm vào mà
-  không sửa một dòng nào của chuỗi xử lý — bằng chứng thực tế cho kiến trúc lục giác.
+  không sửa một dòng nào của chuỗi xử lý, là bằng chứng thực tế cho kiến trúc lục giác.
 - **Hai nguồn âm thanh, không vòng lặp.** Microphone và âm thanh hệ thống được thu đồng thời, tách
   bạch theo nguồn, mỗi nguồn một trạng thái tách câu riêng; bản dịch đang phát không bị thu ngược
   vào chiều nghe.
@@ -1784,10 +1817,10 @@ máy tính cá nhân, đối chiếu với các mục tiêu ở mục 1.2 như s
   10,4% trên giọng đọc cùng mô hình. Bộ tách câu mới kéo độ dài câu p90 của giọng đọc liên tục từ
   12,5 giây xuống 5,9 giây, trong khi gần như không đụng tới hội thoại bình thường.
 
-Đóng góp của đồ án không nằm ở mô hình — tất cả mô hình đều có sẵn — mà ở ba chỗ: một kiến trúc
-cho phép thay từng khâu và đo từng khâu riêng; một bộ đánh giá tái lập được, với mọi con số trong
-đồ án đều có tệp kết quả gốc đi kèm mã nguồn; và những phát hiện chỉ có được khi chạy trên máy
-thật — GPU tích hợp được chọn nhầm trên laptop hai card, điểm nghẽn chuyển từ nhận dạng sang tổng
+Các mô hình đều có sẵn, nên đóng góp của đồ án nằm ở ba chỗ khác: một kiến trúc cho phép thay
+từng khâu và đo từng khâu riêng; một bộ đánh giá tái lập được, với mọi con số trong đồ án đều có
+tệp kết quả gốc đi kèm mã nguồn; và những phát hiện chỉ có được khi chạy trên máy thật: GPU tích
+hợp được chọn nhầm trên laptop hai card, điểm nghẽn chuyển từ nhận dạng sang tổng
 hợp giọng khi có GPU, và lỗi lặp của khâu dịch mà dữ liệu giọng đọc không bao giờ kích hoạt.
 
 ## 5.2. Hạn chế
@@ -1810,14 +1843,14 @@ hợp giọng khi có GPU, và lỗi lặp của khâu dịch mà dữ liệu gi
 ## 5.3. Hướng phát triển
 
 - **Chặn vòng lặp ở khâu dịch**, bằng tham số sinh của NLLB hoặc một bộ lọc sau khi dịch giống bộ
-  lọc câu bịa của ASR — rồi chạy lại bộ đánh giá dịch máy để bảng số khớp với mã nguồn.
+  lọc câu bịa của ASR, rồi chạy lại bộ đánh giá dịch máy để bảng số khớp với mã nguồn.
 - **Danh sách thuật ngữ cho nhận dạng và dịch.** Whisper nhận một đoạn văn bản gợi ý ở đầu
   (`initial_prompt`) để thiên về các từ trong đó; cho người dùng nhập danh sách thuật ngữ của cuộc
   họp, đồng thời giữ nguyên các thuật ngữ đó khi dịch.
 - **Đưa TTS lên GPU** cho hai đích tiếng Nhật và tiếng Trung, khâu đang là điểm nghẽn.
 - **Mở rộng bộ đánh giá giọng thật**: nhiều bản ghi, nhiều chủ đề, cả bốn ngôn ngữ nguồn, hai người
   nghe độc lập để đo mức đồng thuận của câu tham chiếu.
-- **Thử mô hình dịch khác** — hiện khâu dịch chỉ có NLLB — trên cùng bộ đánh giá, nhờ kiến trúc cho
+- **Thử mô hình dịch khác** trên cùng bộ đánh giá (hiện khâu dịch chỉ có NLLB), nhờ kiến trúc cho
   phép thay khâu dịch như đã làm với khâu nhận dạng.
 - **Lưu token Hugging Face vào kho khóa của hệ điều hành** (Keychain trên macOS, DPAPI trên Windows)
   thay vì một tệp có quyền đọc giới hạn.
@@ -1856,7 +1889,7 @@ translation," _Trans. Assoc. Comput. Linguistics_, vol. 10, pp. 522–538, 2022.
 https://huggingface.co/hexgrad/Kokoro-82M
 
 [10] homelab-00, "TranscriptionSuite: A fully local and private speech-to-text application," GitHub
-repository, 2026. [Online]. Available: https://github.com/homelab00/TranscriptionSuite
+repository, 2026. [Online]. Available: https://github.com/homelab-00/TranscriptionSuite
 
 [11] International Telecommunication Union, "ITU-T Recommendation G.114: One-way transmission time," 2003. [Online]. Available: https://www.itu.int/rec/T-REC-G.114
 
@@ -1870,7 +1903,7 @@ ACL: System Demonstrations_, 2023, pp. 17–24.
 [14] Meta AI, "NLLB-200 distilled 600M model card," Hugging Face, 2022. License CC-BY-NC-4.0.
 [Online]. Available: https://huggingface.co/facebook/nllb-200-distilled-600M
 
-[15] Microsoft, "Loopback recording — Windows Audio Session API (WASAPI)," _Microsoft Learn_, 2025.
+[15] Microsoft, "Loopback recording: Windows Audio Session API (WASAPI)," _Microsoft Learn_, 2025.
 [Online]. Available: https://learn.microsoft.com/windows/win32/coreaudio/loopback-recording
 
 [16] K. Papineni, S. Roukos, T. Ward, and W.-J. Zhu, "BLEU: A method for automatic evaluation of
@@ -1909,36 +1942,120 @@ _arXiv preprint_ arXiv:2312.10359, 2023.
 
 # PHỤ LỤC
 
-## Phụ lục A. Cài đặt và sử dụng
+## Phụ lục A. Mã nguồn
 
-**Cài đặt từ bộ cài.** Trên Windows, chạy `Voice Translator-1.0.0-setup.exe`; trên macOS, mở tệp
-`.dmg`, kéo ứng dụng vào thư mục Applications, rồi nhấp chuột phải → Mở ở lần chạy đầu (bản macOS ký
-ad-hoc, mục 3.9.1). Máy không cần cài thêm Python, Node hay trình quản lý gói nào. Lần đầu dùng một
-preset, ứng dụng tải mô hình về thư mục người dùng chọn ở màn hình Cài đặt; preset Cân bằng cần
-khoảng 6 GB trống — đo trên máy Windows: NLLB 4,7 GB, Whisper large-v3-turbo q5_0 0,55 GB, giọng đọc
-tiếng Nhật 0,34 GB và ba giọng còn lại 0,29 GB.
+Toàn bộ mã nguồn, tài liệu thiết kế, kết quả đo gốc và kịch bản đánh giá của đồ án được công
+khai tại kho GitHub:
 
-**Một phiên dịch hai chiều.**
+**https://github.com/RokeyHung/local-live-voice-translator**
 
-1. Màn hình **Thiết bị âm thanh**: chọn microphone và loa hoặc tai nghe, bấm "Kiểm tra" từng
-   đường; chọn thiết bị tính toán nếu máy có nhiều GPU.
-2. Màn hình **Quản lý Model**: chọn preset Cân bằng, bấm "Khởi động model" và chờ cả bốn khâu
-   báo đã nạp.
-3. Màn hình **Phiên dịch**: chọn cặp ngôn ngữ ở hai ô "Cuộc họp" và "Tôi", bật hai công tắc
-   "Nghe cuộc họp" và "Dịch giọng tôi", rồi bấm "Bắt đầu" và cho phép ứng dụng thu âm thanh
-   hệ thống.
-4. Giữ phím Space khi nói; nhả phím để câu được dịch và đọc ra. Câu của phía bên kia hiện thành
-   phụ đề song ngữ mà không cần làm gì.
-5. Nên đeo tai nghe để bản dịch không lọt vào microphone.
+Kho gồm hai ứng dụng và các thư mục hỗ trợ (Bảng A.1). Mọi lệnh thường dùng được gom trong tệp
+`Makefile` ở thư mục gốc, nên người đọc chỉ cần `uv` (Python) và `npm` (Node.js) để chạy lại.
 
-## Phụ lục B. Tái lập các thí nghiệm
+Bảng A.1: Cấu trúc kho mã nguồn
+
+| Thư mục                                  | Nội dung                                                                                                                                                                    |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/ai-service/src/llvt_ai_service/`   | Dịch vụ AI viết bằng Python, chia theo các tầng `domain`, `ports`, `application`, `adapters`, `api`, `ws`, `config` (mục 3.2.2)                                             |
+| `apps/ai-service/src/.../adapters/`      | Các adapter: `asr/` (whisper.cpp, MLX, faster-whisper, bộ lọc câu bịa), `mt/` (NLLB), `tts/` (sherpa-onnx, Kokoro), `vad/` (Silero và bộ tách câu), `persistence/` (SQLite) |
+| `apps/ai-service/tests/`                 | Kiểm thử đơn vị phía dịch vụ (pytest)                                                                                                                                       |
+| `apps/ai-service/scripts/`               | Các kịch bản đo: độ chính xác, độ trễ, chạy liên tục, tách câu, bộ đánh giá FLEURS                                                                                          |
+| `apps/desktop/src/main/`, `src/preload/` | Tiến trình chính của Electron: khởi động và tắt dịch vụ AI, cấp quyền thu âm thanh hệ thống                                                                                 |
+| `apps/desktop/src/renderer/src/`         | Giao diện React, cùng cách phân tầng với dịch vụ AI; mười màn hình nằm trong `ui/screens/`                                                                                  |
+| `apps/desktop/e2e/`                      | Kiểm thử đầu-cuối bằng Playwright trên ứng dụng Electron đã dựng                                                                                                            |
+| `tools/`                                 | Kịch bản đóng gói bộ Python tự chứa, dựng whisper.cpp với Vulkan, xuất tài liệu ra Word                                                                                     |
+| `docs/`                                  | Đề cương, đặc tả, nhật ký từng tuần, hướng dẫn cài đặt và báo cáo đánh giá                                                                                                  |
+| `docs/results/`                          | Tệp JSON gốc của mọi lượt đo trong Chương 4                                                                                                                                 |
+
+Bảng A.2 liệt kê các lệnh dùng khi phát triển.
+
+Bảng A.2: Các lệnh phát triển chính
+
+| Lệnh         | Tác dụng                                                                             |
+| ------------ | ------------------------------------------------------------------------------------ |
+| `make setup` | Cài đủ thư viện cho cả hai ứng dụng, kèm bộ đánh giá và các runtime tùy chọn của máy |
+| `make dev`   | Chạy dịch vụ AI và ứng dụng desktop cùng lúc ở chế độ phát triển                     |
+| `make test`  | Chạy kiểm thử đơn vị của cả hai ứng dụng (pytest và vitest)                          |
+| `make e2e`   | Dựng ứng dụng rồi chạy kiểm thử đầu-cuối với dịch vụ và mô hình thật                 |
+| `make dist`  | Đóng gói bộ cài: `.exe` trên Windows, `.dmg` trên macOS, ra thư mục `dist/installer` |
+| `make docs`  | Mở tài liệu API sinh tự động của dịch vụ AI                                          |
+
+## Phụ lục B. Cài đặt
+
+**Từ bộ cài.** Trên Windows, chạy `Voice Translator-1.0.0-setup.exe`; trên macOS, mở tệp `.dmg`,
+kéo ứng dụng vào thư mục Applications, rồi nhấp chuột phải và chọn Mở ở lần chạy đầu (bản macOS
+ký ad-hoc, mục 3.9.1). Máy không cần cài thêm Python, Node hay trình quản lý gói nào.
+
+**Dung lượng.** Lần đầu dùng một preset, ứng dụng tải mô hình về thư mục người dùng chọn ở màn
+hình Cài đặt. Preset Cân bằng cần khoảng 6 GB trống, đo trên máy Windows: NLLB 4,7 GB, Whisper
+large-v3-turbo q5_0 0,55 GB, giọng đọc tiếng Nhật 0,34 GB và ba giọng còn lại 0,29 GB. Đây là lần
+duy nhất ứng dụng cần mạng; sau đó mọi bước dịch chạy không cần Internet.
+
+**Từ mã nguồn.** Sao chép kho ở Phụ lục A, chạy `make setup` rồi `make dev`. Dịch vụ AI lắng nghe ở
+`http://127.0.0.1:8756`, tài liệu API ở `http://127.0.0.1:8756/docs`.
+
+## Phụ lục C. Kịch bản demo
+
+Kịch bản dưới đây dùng khi trình bày trước hội đồng, trên máy Windows có GPU rời, preset Cân bằng.
+Phía "bên kia cuộc gọi" được giả lập bằng một video tiếng Anh phát trên chính máy đó, để người
+xem thấy cả hai chiều dịch mà không cần người thứ hai. Người trình bày đeo tai nghe.
+
+**Bước 1. Khởi động và cấu hình thiết bị.** Mở ứng dụng. Dịch vụ AI tự khởi động ở nền (khoảng
+12 giây trên bản cài Windows, Bảng 3.10), và góc dưới bên trái hiện "Sẵn sàng Offline". Vào màn hình
+**Thiết bị âm thanh** (Hình 3.11), chọn microphone và tai nghe, bấm "Kiểm tra" để nghe lại giọng
+mình. Ở cùng màn hình, phần thiết bị tính toán liệt kê hai GPU mà dịch vụ nhìn thấy (Intel Iris Xe
+và NVIDIA RTX 4060); để ở chế độ tự động, dịch vụ tự chọn card rời (mục 3.7.2).
+
+**Bước 2. Nạp mô hình.** Vào màn hình **Quản lý Model** (Hình 3.13), chọn preset Balanced (Cân
+bằng). Chọn preset chưa nạp gì cả; chỉ khi bấm "Khởi động model" thì thanh tiến độ của bốn khâu VAD, ASR, MT,
+TTS mới chạy, và cả bốn báo đã nạp sau khoảng 34 giây. Điểm cần chỉ ra: khâu nhận dạng báo chạy trên
+Vulkan, tức đang dùng GPU.
+
+**Bước 3. Phiên dịch hai chiều.** Vào màn hình **Phiên dịch** (Hình 3.12). Chọn "Cuộc họp" là tiếng
+Anh và "Tôi" là tiếng Việt, bật hai công tắc "Nghe cuộc họp" và "Dịch giọng tôi", bấm "Bắt đầu"
+rồi cho phép ứng dụng thu âm thanh hệ thống.
+
+- _Chiều về._ Phát video tiếng Anh. Sau mỗi câu, phụ đề song ngữ Anh–Việt hiện ra mà không cần bấm
+  gì; chiều này không đọc thành tiếng (mục 3.3.3).
+- _Chiều đi._ Dừng video, giữ phím Space và nói một câu tiếng Việt, ví dụ "Chúng ta sẽ họp lại vào
+  thứ Hai tuần sau". Nhả phím: câu được chốt ngay, phụ đề Việt–Anh hiện ra, rồi giọng đọc tiếng Anh
+  phát vào tai nghe. Theo Bảng 4.7, thời gian tính toán cho một câu 3 giây chiều Việt → Anh là
+  khoảng 1,8 giây trên máy macOS.
+- _Chống vòng lặp._ Tháo tai nghe để bản dịch phát ra loa ngoài: giao diện hiện "Tạm ngưng thu (đang
+  phát bản dịch)" và chiều về không dịch lại chính bản dịch đó.
+
+**Bước 4. Duyệt trước khi đọc.** Ở màn hình Cài đặt, bật "Duyệt trước khi gửi", bắt đầu lại phiên
+và nói một câu. Bản dịch dừng ở bảng duyệt với đồng hồ đếm ngược; sửa một từ rồi bấm "Gửi" (hoặc
+Enter) thì giọng đọc dùng đúng bản đã sửa, bấm "Bỏ" (hoặc Esc) thì câu không được đọc.
+
+**Bước 5. Lịch sử.** Bấm "Dừng", vào màn hình **Lịch sử** (Hình 3.16). Phiên vừa rồi có đủ các câu
+của cả hai chiều, bản gốc và bản dịch đặt cạnh nhau. Gõ một từ vào ô tìm kiếm để lọc theo nội dung,
+đổi tên phiên, rồi xóa phiên để chỉ ra rằng dữ liệu nằm trên máy và người dùng xóa được.
+
+**Bước 6. Nhập tệp.** Vào màn hình **Nhập tệp**, kéo thả một tệp video MP4 vào hàng đợi. Ứng dụng
+tách rãnh âm thanh, thanh tiến độ chạy theo vị trí trong tệp, và kết quả hiện theo từng đoạn có mốc
+thời gian. Nếu đã cấu hình token Hugging Face và bật tách người nói, mỗi đoạn có thêm nhãn người nói.
+
+**Bước 7. Đo đạc trong ứng dụng.** Ở màn hình **Chẩn đoán** (Hình 3.14), bấm "Chạy test" để xem thời
+gian từng khâu cho một câu mẫu và mức CPU, RAM của dịch vụ. Ở màn hình **Đánh giá** (Hình 3.15), bấm
+"Chạy đánh giá" để chấm bộ câu mẫu kèm theo ứng dụng, ra WER/CER, chrF và RTF. Nên nói rõ với hội
+đồng rằng hai màn hình này dùng bộ câu nhỏ để kiểm tra nhanh; số liệu chính thức là các bảng FLEURS
+ở Chương 4.
+
+**Bước 8. Chạy không cần mạng.** Ngắt Wi-Fi rồi lặp lại Bước 3: phiên dịch vẫn chạy bình thường vì
+mọi mô hình đã nằm trên máy (PCN05). Bước này là phép thử thủ công cho yêu cầu mà Bảng 4.11 ghi là
+mới đạt theo thiết kế.
+
+## Phụ lục D. Tái lập các thí nghiệm
 
 Các lệnh chạy từ thư mục gốc mã nguồn, cần `uv` và `npm`. Dữ liệu FLEURS khoảng 2,3 GB.
 
+Bảng D.1: Lệnh tái lập các kết quả của Chương 4
+
 | Thí nghiệm                    | Lệnh                                                                              | Kết quả ở     |
 | ----------------------------- | --------------------------------------------------------------------------------- | ------------- |
-| Cài môi trường đầy đủ         | `make setup`                                                                      | —             |
-| Tải dữ liệu FLEURS            | `make fetch-fleurs`                                                               | —             |
+| Cài môi trường đầy đủ         | `make setup`                                                                      | Không có      |
+| Tải dữ liệu FLEURS            | `make fetch-fleurs`                                                               | Không có      |
 | ASR, whisper.cpp trên Windows | `make setup-vulkan` rồi `UV_NO_SYNC=1 make eval-asr`                              | Bảng 4.3      |
 | ASR, faster-whisper           | `UV_NO_SYNC=1 make eval-asr ADAPTER=faster_whisper`                               | Bảng 4.3      |
 | ASR, MLX trên macOS           | `make eval-asr ADAPTER=mlx_whisper MODEL=mlx-community/whisper-large-v3-asr-8bit` | Bảng 4.3      |
@@ -1950,9 +2067,9 @@ Các lệnh chạy từ thư mục gốc mã nguồn, cần `uv` và `npm`. Dữ
 | Kiểm thử                      | `make test`, `make e2e`                                                           | Bảng 3.11     |
 
 Kết quả gốc của mọi lượt đo trong đồ án nằm ở thư mục `docs/results/` của mã nguồn. Chạy lại trên
-máy khác cho thời gian và RTF khác — chúng gắn với phần cứng — nhưng WER, CER và điểm dịch gần như
+máy khác cho thời gian và RTF khác vì chúng gắn với phần cứng, nhưng WER, CER và điểm dịch gần như
 trùng, vì giải mã là tất định.
 
 `make setup-vulkan` chỉ cần trên Windows: nó thay bản pywhispercpp chỉ có CPU của PyPI bằng bản dựng
-với Vulkan. Không làm bước này thì whisper.cpp chạy CPU — WER vẫn đúng nhưng RTF sai, một sai lệch rất
+với Vulkan. Không làm bước này thì whisper.cpp chạy CPU; WER vẫn đúng nhưng RTF sai, một sai lệch rất
 dễ không nhận ra.

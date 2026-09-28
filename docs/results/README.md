@@ -13,7 +13,7 @@ chạy thử, chạy dở hay chạy trên máy khác thì vẫn không commit �
 split `test`.
 
 **Ngoại lệ — các lượt chạy trên Windows, 20/09/2026** (đuôi `-win`): Windows 11, Intel
-Core i5-12500H + NVIDIA GeForce RTX 4060 Laptop GPU, 16 GB RAM. Đừng đọc RTF của hai máy
+Core i5-12500H + NVIDIA GeForce RTX 4060 Laptop GPU, 64 GB RAM. Đừng đọc RTF của hai máy
 trong cùng một cột.
 
 Hai file `eval-asr-*-win.json` ghi sẵn máy đo ở trường `hardware` và thiết bị ASR ở

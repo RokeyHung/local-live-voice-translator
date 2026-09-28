@@ -433,7 +433,7 @@ Số liệu thô của các lượt chạy được lưu dạng JSON, gồm cả
 
 ## 13. Bổ sung ngày 20/09/2026 — đo trên máy Windows + NVIDIA
 
-Máy đo: Windows 11, Intel Core i5-12500H, NVIDIA GeForce RTX 4060 Laptop (8 GB), RAM 16 GB.
+Máy đo: Windows 11, Intel Core i5-12500H, NVIDIA GeForce RTX 4060 Laptop (8 GB), RAM 64 GB.
 Cùng bộ `google/fleurs` split `test`, cùng số mẫu như mục 4 và mục 6.
 
 ### 13.1. Mục 11 — ba việc đã xong

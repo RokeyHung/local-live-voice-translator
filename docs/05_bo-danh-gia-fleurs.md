@@ -399,7 +399,7 @@ runtime nào", và cũng là lần đầu bộ đánh giá chạy trên Windows.
 | --------- | ------------------------------------------------- | ------------------------------------------- |
 | Model     | `ggml-large-v3-turbo-q5_0.bin`                    | `deepdml/faster-whisper-large-v3-turbo-ct2` |
 | Runtime   | pywhispercpp build `GGML_VULKAN=1`                | CTranslate2 4.8.2, CUDA float16             |
-| Máy       | Windows 11, i5-12500H, RTX 4060 Laptop, RAM 16 GB | như trên                                    |
+| Máy       | Windows 11, i5-12500H, RTX 4060 Laptop, RAM 64 GB | như trên                                    |
 
 Cả hai đều là **large-v3-turbo**, khác nhau ở lượng tử hoá: q5_0 so với float16. Bộ lọc
 câu ma TẮT ở cả ba cột, giống mục 8.

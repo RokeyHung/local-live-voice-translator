@@ -1,8 +1,8 @@
 flowchart LR
     MIC["Microphone<br/>(giọng người dùng)"] --> VAD
     SYS["Âm thanh hệ thống<br/>(phía bên kia cuộc gọi)"] --> VAD
-    VAD["VAD — Silero<br/>tách câu"] --> ASR["ASR — Whisper<br/>giọng nói → văn bản"]
-    ASR --> MT["MT — NLLB-200<br/>dịch văn bản"]
+    VAD["VAD (Silero)<br/>tách câu"] --> ASR["ASR (Whisper)<br/>giọng nói → văn bản"]
+    ASR --> MT["MT (NLLB-200)<br/>dịch văn bản"]
     MT --> SUB["Phụ đề song ngữ"]
-    MT -->|"chỉ chiều đi"| TTS["TTS — sherpa-onnx / Kokoro<br/>văn bản → giọng nói"]
+    MT -->|"chỉ chiều đi"| TTS["TTS (sherpa-onnx / Kokoro)<br/>văn bản → giọng nói"]
     TTS --> SPK["Loa / tai nghe"]

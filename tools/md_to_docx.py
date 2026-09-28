@@ -68,7 +68,8 @@ UIT = False  # bật bằng --uit
 # Bề rộng vùng chữ = khổ A4 21 cm trừ lề trái 3,5 và lề phải 2.
 UIT_TEXT_WIDTH = Cm(15.5)
 CAPTION_STYLES = {"Hình": "Chú thích hình", "Bảng": "Chú thích bảng"}
-RE_CAPTION = re.compile(r"^(Hình|Bảng) \d+\.\d+:")
+# Số chương là chữ số, số phụ lục là chữ cái in hoa ("Bảng A.1:").
+RE_CAPTION = re.compile(r"^(Hình|Bảng) (?:\d+|[A-Z])\.\d+:")
 RE_IMAGE = re.compile(r"^\s*!\[(?P<alt>[^\]]*)\]\((?P<src>[^)]+)\)\s*$")
 # Cỡ chữ trang bìa theo mẫu bìa của trường: tên đề tài 18–30, tên tiếng Anh 15–25,
 # trường/khoa/"ĐỒ ÁN TỐT NGHIỆP" 16, năm 13, còn lại 14. Đoán theo nội dung dòng
@@ -611,6 +612,7 @@ def base_document() -> Document:
         # Trang bìa, lời cảm ơn, mục lục, danh mục không đánh số (quy định); số trang bắt
         # đầu từ Tóm tắt, ở section thứ hai — xem start_numbering().
         request_field_update(doc)
+        keep_break_lines_unstretched(doc)
         return doc
 
     footer = section.footer.paragraphs[0]
@@ -717,7 +719,7 @@ def add_picture_block(doc: Document, src: str, alt: str) -> None:
     para.paragraph_format.space_before = Pt(6)
     para.paragraph_format.space_after = Pt(0)
     if not path.is_file():
-        add_fragments(para, [Frag(f"[CHÈN HÌNH — {src}]", bold=True, italic=True)])
+        add_fragments(para, [Frag(f"[CHÈN HÌNH: {src}]", bold=True, italic=True)])
         return
     from docx.shared import Emu
 
@@ -912,7 +914,7 @@ def render_uit(doc: Document, blocks: list[Block]) -> None:
                 else:
                     add_uit_title(doc, "MỤC LỤC")
                 field = doc.add_paragraph()
-                add_field(field, r' TOC \o "1-3" \h \z \u ', "Mục lục — Word tự dựng khi mở tệp.")
+                add_field(field, r' TOC \o "1-3" \h \z \u ', "Mục lục: Word tự dựng khi mở tệp.")
                 fresh = False
             elif text.startswith("danh-muc:"):
                 kind = "Hình" if "hinh" in text else "Bảng"
@@ -952,12 +954,7 @@ def render_uit(doc: Document, blocks: list[Block]) -> None:
             para.paragraph_format.keep_with_next = m.group(1) == "Bảng"
             add_fragments(para, inline(block.text), size=Pt(12))
         elif block.kind == "para" and RE_REFERENCE.match(block.text):
-            para = doc.add_paragraph()
-            pf = para.paragraph_format
-            pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
-            pf.left_indent, pf.first_line_indent = Cm(1), Cm(-1)
-            pf.line_spacing = 1.3
-            add_fragments(para, inline(block.text), size=Pt(12))
+            add_reference(doc, block.text)
         else:
             render_common(doc, block)
 
@@ -965,6 +962,42 @@ def render_uit(doc: Document, blocks: list[Block]) -> None:
             doc.paragraphs[mark].paragraph_format.page_break_before = True
             pending_break = False
         fresh = False
+
+
+def add_reference(doc: Document, text: str) -> None:
+    """Một mục tài liệu tham khảo: số thứ tự một cột, nội dung một cột, canh đều hai bên.
+
+    Số "[n]" và nội dung ngăn bằng tab tới đúng mép thụt treo, nên chữ của dòng đầu thẳng
+    hàng với các dòng sau, và "[9]" hay "[25]" đều bắt đầu nội dung ở cùng một chỗ. Đường
+    dẫn xuống dòng riêng: nó không ngắt được giữa chừng, để chung dòng thì Word kéo giãn
+    dòng trước nó cho đủ bề ngang (xem `keep_break_lines_unstretched`).
+    """
+    number, _, body = text.partition(" ")
+    body, sep, url = body.partition(" https://")
+    para = doc.add_paragraph()
+    pf = para.paragraph_format
+    pf.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    pf.left_indent, pf.first_line_indent = Cm(1.1), Cm(-1.1)
+    pf.tab_stops.add_tab_stop(Cm(1.1))
+    pf.line_spacing = 1.3
+    add_fragments(para, [Frag(f"{number}\t")] + inline(body), size=Pt(12))
+    if sep:
+        para.add_run().add_break()
+        add_fragments(para, inline("https://" + url), size=Pt(12))
+
+
+def keep_break_lines_unstretched(doc: Document) -> None:
+    """Dòng kết thúc bằng ngắt dòng (Shift+Enter) không bị giãn chữ khi canh đều.
+
+    Mặc định Word canh đều cả dòng đó, nên dòng đứng trước đường dẫn trong tài liệu tham
+    khảo bị kéo thưa ra hết bề ngang.
+    """
+    from docx.oxml import OxmlElement
+
+    compat = doc.settings.element.find(qn("w:compat"))
+    if compat is None:
+        return
+    compat.insert(0, OxmlElement("w:doNotExpandShiftReturn"))
 
 
 def add_uit_title(doc: Document, text: str) -> None:

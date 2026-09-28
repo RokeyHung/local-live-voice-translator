@@ -8,4 +8,4 @@ flowchart TB
     Q -->|"rồi"| REUSE["dùng lại ngay"]
     Q -->|"chưa"| LOAD["tải mô hình còn thiếu<br/>rồi load() từng khâu"]
     CFG["Đổi preset<br/>PUT /api/config"] --> SEL["unload() + ghi nhận lựa chọn<br/>KHÔNG nạp"]
-    SEL --> EMPTY["stages rỗng — giao diện biết<br/>chưa có gì trong bộ nhớ"]
+    SEL --> EMPTY["stages rỗng: giao diện biết<br/>chưa có gì trong bộ nhớ"]

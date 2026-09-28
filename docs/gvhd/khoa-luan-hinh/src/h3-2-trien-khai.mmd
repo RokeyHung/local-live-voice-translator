@@ -1,10 +1,10 @@
 flowchart TB
-    subgraph PC["Máy tính người dùng — Windows 11 / macOS"]
+    subgraph PC["Máy tính người dùng (Windows 11 / macOS)"]
         subgraph EL["Tiến trình Electron"]
             MAIN["Main process<br/>khởi động / tắt dịch vụ"]
-            REN["Renderer — React<br/>giao diện, thu âm, phát giọng"]
+            REN["Renderer (React)<br/>giao diện, thu âm, phát giọng"]
         end
-        subgraph PY["Tiến trình Python — llvt-ai-service"]
+        subgraph PY["Tiến trình Python (llvt-ai-service)"]
             API["FastAPI + WebSocket<br/>127.0.0.1:8756"]
             PIPE["Chuỗi xử lý<br/>VAD → ASR → MT → TTS"]
         end
