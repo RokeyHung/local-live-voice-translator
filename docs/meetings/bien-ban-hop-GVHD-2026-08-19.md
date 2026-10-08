@@ -1,6 +1,6 @@
 # Biên bản họp với GVHD — Đề tài khoá luận
 
-**Đề tài:** Xây dựng hệ thống dịch giọng nói đa ngôn ngữ gần thời gian thực bằng mô hình AI chạy cục bộ
+**Đề tài:** Hệ thống dịch giọng nói đa ngôn ngữ gần thời gian thực bằng mô hình AI chạy cục bộ
 **Sinh viên:** Ngô Mạnh Hùng — 24410300
 **GVHD:** ThS. Nguyễn Thành Luân
 **Ngày họp:** 19/08/2026

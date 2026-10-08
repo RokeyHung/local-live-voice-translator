@@ -13,7 +13,7 @@ _Độc Lập - Tự Do - Hạnh Phúc_
 
 # ĐỀ CƯƠNG CHI TIẾT
 
-**Tên đề tài:** Xây dựng hệ thống dịch giọng nói đa ngôn ngữ gần thời gian thực sử dụng mô hình AI chạy cục bộ
+**Tên đề tài:** Hệ thống dịch giọng nói đa ngôn ngữ gần thời gian thực sử dụng mô hình AI chạy cục bộ
 
 **Tên đề tài (tiếng Anh):** A Near Real-Time Speech Translation System Using Locally Hosted AI Models
 

@@ -12,7 +12,7 @@ footer: 'Ngô Mạnh Hùng – 24410300 · CBHD: ThS. Nguyễn Thành Luân'
 <!-- _paginate: false -->
 <!-- _header: '' -->
 
-# Xây dựng hệ thống dịch giọng nói đa ngôn ngữ gần thời gian thực bằng mô hình AI chạy cục bộ
+# Hệ thống dịch giọng nói đa ngôn ngữ gần thời gian thực bằng mô hình AI chạy cục bộ
 
 **Sinh viên:** Ngô Mạnh Hùng – 24410300 (Đào tạo từ xa)
 **CBHD:** ThS. Nguyễn Thành Luân

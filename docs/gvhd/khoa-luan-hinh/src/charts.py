@@ -70,9 +70,16 @@ def grouped(ax, groups, series, values, fmt, gap=0.02):
         ys = [values[name][j] for j in range(len(groups))]
         bars = ax.bar(xs, ys, width - gap, color=SERIES[i], label=name, zorder=2)
         for b, y in zip(bars, ys):
-            ax.annotate(fmt(y), (b.get_x() + b.get_width() / 2, y), xytext=(0, 2),
-                        textcoords="offset points", ha="center", va="bottom",
-                        fontsize=8.5, color=INK)
+            ax.annotate(
+                fmt(y),
+                (b.get_x() + b.get_width() / 2, y),
+                xytext=(0, 2),
+                textcoords="offset points",
+                ha="center",
+                va="bottom",
+                fontsize=8.5,
+                color=INK,
+            )
     ax.set_xticks(range(len(groups)))
     ax.set_xticklabels(groups)
 
@@ -93,8 +100,13 @@ def fig_wer() -> None:
         score = {x["language"]: x["score"] for x in load(f)["languages"]}
         values[label] = [score[lang] * 100 for lang in langs]
     fig, ax = plt.subplots(figsize=(7.2, 3.6))
-    grouped(ax, ["vi (WER)", "en (WER)", "zh (CER)", "ja (CER)"], list(runs), values,
-            lambda y: vn(y) + "%")
+    grouped(
+        ax,
+        ["vi (WER)", "en (WER)", "zh (CER)", "ja (CER)"],
+        list(runs),
+        values,
+        lambda y: vn(y) + "%",
+    )
     ax.set_ylabel("Tỷ lệ lỗi (%), càng thấp càng tốt")
     ax.set_ylim(0, 12.5)
     ax.legend(loc="upper right", fontsize=9.5)
@@ -117,8 +129,13 @@ def fig_rtf() -> None:
         "Windows (Vulkan + CUDA)": [win[d]["rtf_p90"] for d in DIRECTIONS],
     }
     fig, ax = plt.subplots(figsize=(7.2, 3.6))
-    grouped(ax, [d.replace("-", "→") for d in DIRECTIONS], list(values), values,
-            lambda y: vn(y, 3))
+    grouped(
+        ax,
+        [d.replace("-", "→") for d in DIRECTIONS],
+        list(values),
+        values,
+        lambda y: vn(y, 3),
+    )
     for y, text in ((1.0, "cần: RTF p90 < 1"), (0.5, "đủ để nói: RTF p90 ≤ 0,5")):
         ax.axhline(y, color=INK2, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
         ax.text(5.45, y + 0.015, text, ha="right", va="bottom", fontsize=9, color=INK2)
@@ -133,8 +150,12 @@ def fig_rtf() -> None:
 
 def fig_stages() -> None:
     win = latency("-win")
-    stages = [("VAD", "vad_ms_mean"), ("ASR", "asr_ms_mean"), ("MT", "mt_ms_mean"),
-              ("TTS", "tts_ms_mean")]
+    stages = [
+        ("VAD", "vad_ms_mean"),
+        ("ASR", "asr_ms_mean"),
+        ("MT", "mt_ms_mean"),
+        ("TTS", "tts_ms_mean"),
+    ]
     fig, ax = plt.subplots(figsize=(7.2, 3.4))
     ax.grid(axis="x", color=GRID)
     ax.grid(axis="y", visible=False)
@@ -142,8 +163,17 @@ def fig_stages() -> None:
     left = [0.0] * len(DIRECTIONS)
     for i, (name, key) in enumerate(stages):
         widths = [win[d][key] for d in DIRECTIONS]
-        ax.barh(ys, widths, left=left, height=0.62, color=SERIES[i], label=name,
-                edgecolor="white", linewidth=1.5, zorder=2)
+        ax.barh(
+            ys,
+            widths,
+            left=left,
+            height=0.62,
+            color=SERIES[i],
+            label=name,
+            edgecolor="white",
+            linewidth=1.5,
+            zorder=2,
+        )
         left = [a + b for a, b in zip(left, widths)]
     for y, d in zip(ys, DIRECTIONS):
         # Tổng đọc từ summary, không cộng lại từ trung bình từng khâu: cộng bốn số đã
@@ -153,14 +183,22 @@ def fig_stages() -> None:
         # Làm tròn nửa lên như bảng trong chương (1.176,5 → 1.177); định dạng của Python
         # làm tròn về số chẵn và ra 1.176.
         shown = int(total + 0.5)
-        ax.text(total + 40, y, f"{shown:,} ms · TTS {vn(tts, 0)}%".replace(",", "."),
-                va="center", fontsize=9, color=INK)
+        ax.text(
+            total + 40,
+            y,
+            f"{shown:,} ms · TTS {vn(tts, 0)}%".replace(",", "."),
+            va="center",
+            fontsize=9,
+            color=INK,
+        )
     ax.set_yticks(list(ys))
     ax.set_yticklabels([d.replace("-", "→") for d in DIRECTIONS])
     ax.invert_yaxis()
     ax.set_xlabel("Thời gian trung bình mỗi mẫu FLEURS (ms)")
     ax.set_xlim(0, 5200)
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:,.0f}".replace(",", ".")))
+    ax.xaxis.set_major_formatter(
+        FuncFormatter(lambda v, _: f"{v:,.0f}".replace(",", "."))
+    )
     ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=4, fontsize=9.5)
     fig.tight_layout()
     fig.savefig(OUT / "h4-3-cac-khau.png")
@@ -179,11 +217,21 @@ def fig_endpointing() -> None:
             current = line[3:].split(" —")[0].split(" ")[0]
             blocks[current] = {}
         elif current and (m := ROW.match(line)):
-            blocks[current][m.group(1).split(" ")[0]] = (float(m.group(4)), int(m.group(5)))
-    names = {"Bản": "Bản tin\n(đọc kịch bản)", "Phỏng": "Phỏng vấn\n(hội thoại tự phát)",
-             "TEDx": "TEDx\n(thuyết trình)"}
-    configs = [("trước", "Cũ (trần 20 s)"), ("fast", "Nhanh (4,5 s)"),
-               ("balanced", "Cân bằng (6 s)"), ("quality", "Chất lượng (8 s)")]
+            blocks[current][m.group(1).split(" ")[0]] = (
+                float(m.group(4)),
+                int(m.group(5)),
+            )
+    names = {
+        "Bản": "Bản tin\n(đọc kịch bản)",
+        "Phỏng": "Phỏng vấn\n(hội thoại tự phát)",
+        "TEDx": "TEDx\n(thuyết trình)",
+    }
+    configs = [
+        ("trước", "Cũ (trần 20 s)"),
+        ("fast", "Nhanh (4,5 s)"),
+        ("balanced", "Cân bằng (6 s)"),
+        ("quality", "Chất lượng (8 s)"),
+    ]
     groups = [names[k] for k in blocks]
     p90 = {label: [blocks[k][c][0] for k in blocks] for c, label in configs}
     cut = {label: [blocks[k][c][1] for k in blocks] for c, label in configs}

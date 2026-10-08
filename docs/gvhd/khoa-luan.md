@@ -25,7 +25,7 @@
 
 **ĐỒ ÁN TỐT NGHIỆP**
 
-**XÂY DỰNG HỆ THỐNG DỊCH GIỌNG NÓI ĐA NGÔN NGỮ GẦN THỜI GIAN THỰC SỬ DỤNG MÔ HÌNH AI
+**HỆ THỐNG DỊCH GIỌNG NÓI ĐA NGÔN NGỮ GẦN THỜI GIAN THỰC SỬ DỤNG MÔ HÌNH AI
 CHẠY CỤC BỘ**
 
 **A Near Real-Time Speech Translation System Using Locally Hosted AI Models**
@@ -54,7 +54,7 @@ CHẠY CỤC BỘ**
 
 **ĐỒ ÁN TỐT NGHIỆP**
 
-**XÂY DỰNG HỆ THỐNG DỊCH GIỌNG NÓI ĐA NGÔN NGỮ GẦN THỜI GIAN THỰC SỬ DỤNG MÔ HÌNH AI
+**HỆ THỐNG DỊCH GIỌNG NÓI ĐA NGÔN NGỮ GẦN THỜI GIAN THỰC SỬ DỤNG MÔ HÌNH AI
 CHẠY CỤC BỘ**
 
 **A Near Real-Time Speech Translation System Using Locally Hosted AI Models**
@@ -264,8 +264,11 @@ Tháng 5/2025, Google công bố tính năng dịch giọng nói trực tiếp t
 mô hình Gemini [7]. Tính năng này dịch lời người nói rồi phát lại bằng giọng tổng hợp mô
 phỏng giọng gốc, và đây là hướng mà đề tài muốn đạt tới. Nhưng nó chạy hoàn toàn trên
 máy chủ của Google, chỉ dành cho gói thuê bao trả phí, và lúc ra mắt chỉ hỗ trợ cặp Anh –
-Tây Ban Nha, chưa có tiếng Việt. Microsoft Teams và Zoom cũng có phụ đề dịch trực tiếp,
-đều chạy trên đám mây và đều gắn với gói trả phí.
+Tây Ban Nha. Theo trang trợ giúp của Google, đến tháng 10/2026 tính năng này dịch giữa
+tiếng Anh và sáu thứ tiếng (Pháp, Đức, Hindi, Ý, Bồ Đào Nha, Tây Ban Nha), vẫn chưa có tiếng
+Việt. Meet còn có phụ đề dịch dạng chữ, có tiếng Việt, cũng chạy trên đám mây và chỉ có ở các
+gói Workspace trả phí. Microsoft Teams và Zoom cũng có phụ đề dịch trực tiếp, đều chạy trên
+đám mây và đều gắn với gói trả phí.
 
 Điểm chung của nhóm này là chất lượng cao nhờ mô hình lớn, nhưng không đáp ứng được điều
 kiện nào trong ba điều kiện ở mục 1.1: không cần mạng, không tốn phí theo lượt dùng, và không
@@ -274,11 +277,15 @@ kiện nào trong ba điều kiện ở mục 1.1: không cần mạng, không t
 ### 1.4.2. Mô hình dịch giọng nói đầu-cuối
 
 SeamlessM4T [23] của Meta là một mô hình duy nhất làm được nhận dạng, dịch giọng nói sang
-văn bản và dịch giọng nói sang giọng nói cho khoảng 100 ngôn ngữ. Cách tiếp cận đầu-cuối
-tránh được lỗi cộng dồn giữa các khâu và chạy được cục bộ. Đổi lại, cả hệ thống đứng hay
-ngã cùng một mô hình: không thay được riêng phần nghe khi có runtime nhanh hơn cho phần cứng
-đang có, và khi kết quả sai thì không biết lỗi nằm ở phần nghe hay phần dịch. Đề tài chọn
-hướng chuỗi (mục 2.1) chính vì hai lý do này.
+văn bản và dịch giọng nói sang giọng nói cho khoảng 100 ngôn ngữ, trong đó tiếng Việt có
+cả ở đầu vào lẫn đầu ra giọng nói. Cách tiếp cận đầu-cuối tránh được lỗi cộng dồn giữa các
+khâu và chạy được cục bộ. Đổi lại, cả hệ thống đứng hay ngã cùng một mô hình 2,3 tỷ tham số:
+không thay được riêng phần nghe khi có runtime nhanh hơn cho phần cứng đang có, và khi kết
+quả sai thì không biết lỗi nằm ở phần nghe hay phần dịch. Đề tài chọn hướng chuỗi (mục 2.1)
+chính vì hai lý do này. SeamlessM4T cũng chưa phải một ứng dụng: mã nguồn chỉ có công cụ
+dòng lệnh và bản demo, không thu âm thanh trên máy, gói fairseq2 mà nó cần chỉ có bản dựng
+sẵn cho Linux x86-64 và Mac Apple Silicon, và mô hình dùng giấy phép phi thương mại
+CC-BY-NC 4.0.
 
 ### 1.4.3. Nhận dạng tiếng nói thời gian thực bằng Whisper
 
@@ -295,31 +302,38 @@ và dịch từng câu đã chốt.
 **TranscriptionSuite** [10] là ứng dụng ghi chép giọng nói chạy hoàn toàn cục bộ, gồm giao
 diện Electron và phần mô hình viết bằng Python. Đề tài tham khảo cách tách hai tiến trình
 này và mượn ý tưởng dựng whisper.cpp với Vulkan để chạy được trên GPU của mọi hãng thay vì
-đóng gói CUDA (mục 3.9.2). TranscriptionSuite chỉ ghi chép: không dịch, không tổng hợp
-giọng nói và không có luồng hai chiều.
+đóng gói CUDA (mục 3.9.2). TranscriptionSuite thu được cả micro lẫn âm thanh hệ thống và có
+chế độ chép lời trực tiếp, nhưng mục đích chính là ghi chép. Về dịch, Whisper chỉ dịch được
+sang tiếng Anh, còn Canary v2 dịch hai chiều nhưng chỉ giữa 25 ngôn ngữ châu Âu, không có
+tiếng Việt. Ứng dụng không có tổng hợp giọng nói, và trên Windows phần máy chủ chạy trong
+Docker.
 
 **LocalVocal** [22] là plugin cho phần mềm phát trực tiếp OBS, nhận dạng tiếng nói bằng
-whisper.cpp và dịch bằng CTranslate2, chạy cục bộ trên Windows, macOS và Linux. Nó gần với
-đề tài nhất về mặt kỹ thuật, nhưng phục vụ người phát trực tiếp: đầu ra là phụ đề đè lên
-video, không có tổng hợp giọng nói, không thu âm thanh của một cuộc gọi, và không phải một
-ứng dụng độc lập.
+whisper.cpp và dịch cục bộ bằng CTranslate2 với các mô hình M2M-100, NLLB-200 hoặc
+MADLAD-400 (đều có tiếng Việt); dịch qua dịch vụ đám mây như DeepL là tùy chọn. Plugin chạy
+trên Windows, macOS, Linux và nhận được mọi nguồn âm thanh trong OBS, kể cả âm thanh của ứng
+dụng khác. Đây là giải pháp gần đề tài nhất về mặt kỹ thuật, nhưng nó phục vụ người phát
+trực tiếp: đầu ra là phụ đề, không có tổng hợp giọng nói, và phải chạy bên trong OBS.
 
 ### 1.4.5. Vấn đề còn tồn tại và hướng của đề tài
 
 Bảng 1.1: So sánh các giải pháp liên quan
 
-| Tiêu chí                    | Google Meet [7] | SeamlessM4T [23] | TranscriptionSuite [10] | LocalVocal [22] | **Đề tài** |
-| --------------------------- | :-------------: | :--------------: | :---------------------: | :-------------: | :--------: |
-| Chạy cục bộ, không cần mạng |      Không      |        Có        |           Có            |       Có        |   **Có**   |
-| Có tiếng Việt               |      Không      |        Có        |           Có            |       Có        |   **Có**   |
-| Dịch                        |       Có        |        Có        |          Không          |       Có        |   **Có**   |
-| Tổng hợp giọng nói          |       Có        |        Có        |          Không          |      Không      |   **Có**   |
-| Thu âm thanh cuộc gọi       |       Có        |      Không       |          Không          |      Không      |   **Có**   |
-| Ứng dụng desktop độc lập    |      Không      |      Không       |           Có            |      Không      |   **Có**   |
-| Đo được lỗi từng khâu       |      Không      |      Không       |      Không áp dụng      |      Không      |   **Có**   |
+| Tiêu chí                    |    Google Meet [7]     |     SeamlessM4T [23]     |   TranscriptionSuite [10]    |      LocalVocal [22]       |      **Đề tài**      |
+| --------------------------- | :--------------------: | :----------------------: | :--------------------------: | :------------------------: | :------------------: |
+| Chạy cục bộ, không cần mạng |         Không          |            Có            |              Có              |            Có¹             |        **Có**        |
+| Nhận dạng tiếng Việt        |           Có           |            Có            |              Có              |             Có             |        **Có**        |
+| Dịch có tiếng Việt          |  Phụ đề, gói trả phí   |            Có            |      Chỉ sang tiếng Anh      |             Có             |        **Có**        |
+| Đọc bản dịch bằng giọng nói | Có, chưa có tiếng Việt |    Có, có tiếng Việt     |            Không             |           Không            |        **Có**        |
+| Thu âm thanh trên máy       |  Trong cuộc gọi Meet   |          Không           |   Micro, âm thanh hệ thống   | Mọi nguồn âm thanh của OBS | **Micro + hệ thống** |
+| Dạng sản phẩm               |   Tính năng của Meet   | Mô hình, dòng lệnh, demo | App Electron + server Docker |         Plugin OBS         | **Ứng dụng desktop** |
 
-Chưa có giải pháp nào vừa chạy hoàn toàn cục bộ, vừa có tiếng Việt, vừa đủ cả bốn khâu
-thu, nghe, dịch và đọc cho cả hai phía của một cuộc gọi. Đề tài lấp chỗ trống đó. Mô hình
+¹ Dịch qua dịch vụ đám mây là tùy chọn. Các ô lấy từ trang trợ giúp Google Meet và README
+của từng dự án, tra ngày 08/10/2026.
+
+Chưa có giải pháp nào vừa chạy hoàn toàn cục bộ, vừa dịch được tiếng Việt cả bằng phụ đề lẫn
+giọng đọc, vừa là một ứng dụng desktop thu được cả micro lẫn âm thanh trên máy. SeamlessM4T
+gần nhất về mô hình, LocalVocal gần nhất về ứng dụng. Đề tài lấp chỗ trống đó. Mô hình
 của các dịch vụ đám mây lớn hơn nhiều bậc, nên đề tài không đặt mục tiêu vượt họ về chất
 lượng, mà đặt mục tiêu **đủ dùng** trên phần cứng phổ thông, với con số đo được cho từng
 khâu để biết "đủ dùng" nghĩa là bao nhiêu.

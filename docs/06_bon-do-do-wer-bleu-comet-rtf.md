@@ -60,7 +60,10 @@ hiện tại"_:
 | Máy nghe   | **vụ** | trễ | hiện | tại | **(mất)** | hai | giây |
 | Loại       | S      | C   | C    | C   | D         | C   | C    |
 
-$S=1$, $D=1$, $I=0$, $N=6$ → $\text{WER} = (1+1+0)/6 = 33{,}3\%$.
+$S=1$, $D=1$, $I=0$, $N=7$ → $\text{WER} = (1+1+0)/7 = 28{,}6\%$.
+
+_(Bản gửi thầy ngày 07/09 ghi $N=6$ và 33,3%, đếm thiếu một từ; câu tham chiếu có bảy từ.
+Quyển đồ án và slide dự phòng dùng số đúng.)_
 
 ### 2.3. Bốn cái bẫy khi đọc con số WER
 

@@ -53,10 +53,13 @@ tính là đã tải. Kèm theo:
       **Cập nhật 20/09:** nếu thầy chốt ngưỡng 0,5 thì cấu hình Windows đạt cả sáu
       chiều ([`05` mục 8e](05_bo-danh-gia-fleurs.md)), cấu hình macOS thì không — số
       này có sau khi gửi báo cáo nên cần nói lại với thầy.
+      **Cập nhật 05/10:** thầy không chốt ngưỡng. Đồ án giữ hai mức tự đề xuất (p90 < 1
+      tối thiểu, p90 ≤ 0,5 mục tiêu); lập luận để trả lời hội đồng ở
+      [`12` mục 4a.5](12_chuan-bi-bao-ve.md).
 - [x] ~~**Nhắc thầy về baseline cloud.**~~ **Quyết 20/09: bỏ.** Mục đích của nó là có
       một mốc đối chiếu chất lượng, và mốc đó giờ có sẵn từ bảng ba runtime ASR ở mục 1
       cùng điểm COMET. Gọi API cloud cũng đi ngược tinh thần "chạy hoàn toàn cục bộ".
-      Đã xin ý kiến thầy ở mục 13.5 của báo cáo.
+      Đã xin ý kiến thầy ở mục 13.5 của báo cáo, **thầy đã đồng ý** (ghi nhận 05/10).
 
 Kèm theo, nên báo thầy hai điều đã phát hiện khi làm (chi tiết ở mục 5 dưới): **zh/ja
 phải dùng CER chứ không phải WER**, và **COMET không cài chung môi trường được**.
@@ -180,7 +183,13 @@ chưa được kiểm chứng trên giọng người thật**, nên chưa đư�
       Windows trên PyPI chỉ có CPU. Và 13 test pytest hỏng sẵn trên Windows (tạo symlink
       cần quyền admin — `WinError 1314`).~~ **Cả hai đã đóng ở đợt 20/09, xem mục 8.**
 
-- [ ] **Báo cáo thử một lần trước khi bảo vệ** để lấy góp ý và chuẩn bị bộ câu hỏi dự phòng
+- [x] ~~**Báo cáo thử một lần trước khi bảo vệ** để lấy góp ý và chuẩn bị bộ câu hỏi dự phòng~~
+      — **báo cáo thử 06/10/2026**, góp ý ghi ở
+      [biên bản](meetings/bien-ban-bao-cao-thu-GVHD-2026-10-06.md). Slide sửa theo góp ý
+      ngày 08/10: gộp phần phân tích bài toán vào một slide, thêm câu chốt có mũi tên đỏ
+      ở mọi slide nội dung, 13 slide dự phòng (thuật ngữ, độ đo, FLEURS, hai câu hỏi thầy
+      dự đoán) đặt sau slide Cảm ơn. Còn mở: gửi thầy slide và file báo cáo, in 3 cuốn sau
+      khi thầy duyệt, quay video demo dự phòng.
 
 ---
 
